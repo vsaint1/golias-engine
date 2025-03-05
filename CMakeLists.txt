@@ -1,0 +1,238 @@
+cmake_minimum_required(VERSION 3.22)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE INTERNAL "")
+
+project(ember_engine)
+
+message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 99)
+
+set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/assets)
+
+include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(BUILD_SHIPPING 1)
+else()
+    set(BUILD_SHIPPING 0)
+endif()
+
+add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
+
+# ios and web
+if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")    # Disable shared builds on platforms where it does not make sense to use them
+    set(SDL_SHARED OFF)
+else()
+    set(SDL_SHARED ON)
+endif()
+
+if(MSVC)
+    if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+        add_definitions(/MP)				# parallelize each target, unless Ninja is the generator
+    endif()
+endif()
+
+# ENGINE SOURCE
+file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp", "engine/private/*.cpp" "engine/private/*.c")
+
+# GAME SOURCE WILL BE AT SRC 
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
+
+add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
+
+# set(SDLTTF_VENDORED ON) # build own deps.
+# add_subdirectory(vendor/SDL_ttf EXCLUDE_FROM_ALL)
+
+# set(SDLMIXER_VENDORED ON) # build own deps.
+# set(SDLMIXER_MIDI_NATIVE OFF)  # disabled
+# set(SDLMIXER_GME OFF)
+# set(SDLMIXER_WAVPACK OFF)     
+# set(SDLMIXER_MOD OFF)
+# set(SDLMIXER_OPUS OFF)
+# set(SDLMIXER_MP3 ON)
+# set(SDLMIXER_FLAC ON)
+# add_subdirectory(vendor/SDL_mixer EXCLUDE_FROM_ALL)
+
+# set(SDLIMAGE_VENDORED ON) # build own deps.
+# set(SDLIMAGE_AVIF OFF)
+# set(SDLIMAGE_JPEG OFF)
+# set(SDLIMAGE_BMP OFF)
+# set(SDLIMAGE_WEBP OFF)
+# set(SDLIMAGE_PNG ON)
+# set(SDLIMAGE_GIF ON)
+# set(SDLIMAGE_SVG ON)
+# set(SDL2IMAGE_ZLIB  ON)
+# add_subdirectory(vendor/SDL_image EXCLUDE_FROM_ALL)
+
+# set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+# set(GLM_BUILD_TESTS OFF)
+# set(GLM_BUILD_TESTS OFF)
+# set(GLM_BUILD_TESTS OFF)
+# set(GLM_BUILD_TESTS OFF)
+# set(GLM_ENABLE_CXX_20 ON)
+# set(GLM_TEST_ENABLE OFF)
+# add_subdirectory(vendor/glm)
+
+if(EMSCRIPTEN)
+	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
+endif()
+
+
+# ios/macosx
+if(APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+endif()
+
+
+if(ANDROID)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES})
+    target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
+
+endif()
+
+# iOS [simulator/device]
+if(APPLE AND NOT BUILD_SHARED_LIBS)
+    set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
+    set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
+    
+    if(BUILD_SHIPPING)
+        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets/assets.pak")
+    else()
+        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
+    endif()
+
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
+
+    find_library(IO ImageIO REQUIRED)
+    find_library(CS CoreServices REQUIRED)
+    find_library(CT CoreText REQUIRED)
+    find_library(CG CoreGraphics REQUIRED)
+    find_library(CF CoreFoundation REQUIRED)
+    find_library(GL OpenGLES REQUIRED)
+    find_library(UKIT UIKit)
+    
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT})
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES 
+        MACOSX_BUNDLE_ICON_FILE ${ICON_PATH}
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/templates/ios/Info.plist.in"
+        XCODE_IPHONEOS_DEPLOYMENT_TARGET 12.0
+        XCODE_GENERATE_SCHEME TRUE
+        XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.emberengine.app.project"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.emberengine.app.project"
+        XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
+    )
+
+    # Ensure assets are copied into the bundle
+    set_source_files_properties(${ASSETS_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+    install(DIRECTORY ${ASSETS_PATH} DESTINATION "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app/Contents/Resources")
+
+    if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
+        message(STATUS "SIMULATOR BUILD")
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
+            XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphonesimulator"
+            XCODE_ATTRIBUTE_ARCHS "x86_64 arm64")
+    else()
+        message(STATUS "REAL DEVICE BUILD")
+        set_target_properties(${PROJECT_NAME} PROPERTIES
+            XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
+            XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphoneos"
+            XCODE_ATTRIBUTE_ARCHS "arm64")
+    endif()
+endif()
+
+
+# macosx
+if(APPLE AND BUILD_SHARED_LIBS)
+
+    message(STATUS "BUILD MACOS")
+    set(RESOURCES "${CMAKE_SOURCE_DIR}/assets")
+    find_library(OPENGL OpenGL REQUIRED)
+
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} )
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES 
+    MACOSX_BUNDLE TRUE
+    RESOURCE "${RESOURCES}")
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ ${OPENGL})
+ 
+
+endif()
+
+# Windows [x86/x64/arm]
+if(MSVC)
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+
+    if(BUILD_SHIPPING)
+        add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/assets/assets.pak
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/assets.pak)
+    else()
+        add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+    endif()
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
+endif()
+
+# WASM [emscripten]
+if(EMSCRIPTEN)
+    set(PROJECT_NAME "index")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+
+    set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/template.html")
+    if(NOT EXISTS ${SHELL_HTML_FILE})
+        message(FATAL_ERROR "Shell file not found: ${SHELL_HTML_FILE}")
+    endif()
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
+
+    # TODO: copy assets
+    # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E copy_directory
+    #     ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+    message(STATUS "BUILD LINUX")
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl)
+
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+        
+endif()
+
+# WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+
+# target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_mixer::SDL3_mixer SDL3_image::SDL3_image glm::glm) 
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3) 
+
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)

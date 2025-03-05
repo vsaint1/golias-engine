@@ -1,0 +1,13 @@
+build/
+
+.DS_Store
+
+.vscode/
+
+*.pak
+
+*.Identifier
+
+.vs/
+
+vendor/

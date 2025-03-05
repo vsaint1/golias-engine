@@ -1,0 +1,149 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 1
+  },
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "Linux - cmake",
+      "description": "Linux build with cmake",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/linux",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Linux",
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "mac",
+      "displayName": "OSX [intel/arm] - xcode",
+      "description": "MacOS build with xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/macos",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Darwin",
+        "BUILD_SHARED_LIBS": "ON"
+      }
+    },
+    {
+      "name": "ios-device",
+      "displayName": "iOS Device - xcode",
+      "description": "iOS build with xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/ios",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ios-simulator",
+      "displayName": "iOS Simulator - xcode",
+      "description": "iOS build for Simulator with Xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/ios-simulator",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64",
+        "BUILD_SHARED_LIBS": "OFF",
+        "CMAKE_OSX_SYSROOT": "iphonesimulator"
+      }
+    },
+    {
+      "name": "web",
+      "displayName": "Wasm [emscripten] - emcmake",
+      "description": "WebGL build with emscripten",
+      "binaryDir": "${sourceDir}/build/webgl",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Emscripten",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "default-windows",
+      "displayName": "Windows x64",
+      "description": "Windows x64 build MSVC",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/windows",
+      "architecture": "x64"
+    },
+    {
+      "name": "debug-windows",
+      "inherits": "default-windows",
+      "displayName": "Windows x64 Debug",
+      "description": "Windows x64 build MSVC",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_SYSTEM_NAME": "Windows"
+      }
+    },
+    {
+      "name": "rel-windows",
+      "inherits": "default-windows",
+      "displayName": "Windows x64 Release",
+      "description": "Windows x64 build MSVC",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_SYSTEM_NAME": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "macosx",
+      "displayName": "MacOS",
+      "description": "MacOS build with xcode",
+      "targets": [
+        "ember_engine"
+      ],
+      "verbose": true,
+      "configurePreset": "mac"
+    },
+    {
+      "name": "webgl-r",
+      "displayName": "WebGL Release",
+      "description": "WebGL build with emscripten",
+      "targets": [
+        "ember_engine"
+      ],
+      "verbose": true,
+      "configurePreset": "web"
+    },
+    {
+      "name": "windows-d",
+      "displayName": "Windows x64 Debug",
+      "description": "Windows x64 build MSVC",
+      "targets": [
+        "ember_engine"
+      ],
+      "verbose": true,
+      "configurePreset": "debug-windows"
+    },
+    {
+      "name": "windows-r",
+      "displayName": "Windows x64 Release",
+      "description": "Windows x64 build MSVC",
+      "targets": [
+        "ember_engine"
+      ],
+      "verbose": true,
+      "configurePreset": "rel-windows"
+    },
+    {
+      "name": "linux-d",
+      "displayName": "Linux Debug",
+      "description": "Linux build with cmake",
+      "targets": [
+        "ember_engine"
+      ],
+      "verbose": true,
+      "configurePreset": "linux"
+    }
+  ]
+}
