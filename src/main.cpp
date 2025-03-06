@@ -1,9 +1,5 @@
-#include "opengl/glad.h"
-#include <SDL3/SDL.h>
+#include "helpers/logging.h"
 #include <SDL3/SDL_main.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
 
 struct AppContext {
     SDL_Window* window;
@@ -11,18 +7,40 @@ struct AppContext {
     GLuint VAO, VBO, EBO, shaderProgram;
 };
 
+int SCREEN_WIDTH = 1280;
+int SCREEN_HEIGHT = 720;
 
+GLenum mode = GL_TRIANGLES;
+
+/* opengl shader 410 core, opengles shader 300 es */
 std::string LoadShaderSource(const std::string& filepath) {
     std::ifstream file(filepath);
+
     if (!file.is_open()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open shader file: %s", filepath.c_str());
+        LOG_ERROR("Failed to open shader file: %s", filepath.c_str())
         return "";
     }
+
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
 }
 
+float vertices[] = {
+    // 1
+     0.5f,  0.5f, 0.0f,  
+     0.5f, -0.5f, 0.0f, 
+    -0.5f,  0.5f, 0.0f, 
+    // 2
+     0.5f, -0.5f, 0.0f,  
+    -0.5f, -0.5f, 0.0f,  
+    -0.5f,  0.5f, 0.0f   
+}; 
+
+unsigned int indices[] = {
+    0,1,3,
+    1,2,3
+};
 
 GLuint CompileShader(GLenum type, const char* source) {
     GLuint shader = glCreateShader(type);
@@ -33,21 +51,19 @@ GLuint CompileShader(GLenum type, const char* source) {
     if (!success) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "shader compilation error %s", infoLog);
+        LOG_ERROR("Shader compilation error %s",infoLog);
     }
     return shader;
 }
 
 void InitOpenGL(AppContext* app) {
 
-    auto vertexShaderSource = LoadShaderSource("assets/default.glsl.vert");
-    auto fragmentShaderSource = LoadShaderSource("assets/default.glsl.frag");
+    auto vertexShaderSource = LoadShaderSource(ASSETS_PATH + "shaders/default.glsl.vert");
+    auto fragmentShaderSource = LoadShaderSource(ASSETS_PATH + "shaders/default.glsl.frag");
 
     GLuint vertexShader   = CompileShader(GL_VERTEX_SHADER, vertexShaderSource.c_str());
     GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource.c_str());
 
-    std::cout << "Vertex Shader: " << vertexShader << std::endl;
-    std::cout << "Fragment Shader: " << fragmentShader << std::endl;
 
     app->shaderProgram = glCreateProgram();
     glAttachShader(app->shaderProgram, vertexShader);
@@ -57,7 +73,6 @@ void InitOpenGL(AppContext* app) {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    float vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
 
     glGenVertexArrays(1, &app->VAO);
     glGenBuffers(1, &app->VBO);
@@ -65,7 +80,10 @@ void InitOpenGL(AppContext* app) {
     glBindVertexArray(app->VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,app->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);
@@ -77,7 +95,7 @@ void InitOpenGL(AppContext* app) {
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window* window = SDL_CreateWindow("SDL3 opengl", 1280, 720, SDL_WINDOW_OPENGL);
+    SDL_Window* window = SDL_CreateWindow("Window Sample", SCREEN_WIDTH,SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -98,10 +116,11 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
 #endif
 
+
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
     if (!glContext) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to create OpenGL context: %s", SDL_GetError());
+        LOG_ERROR("Failed to create OpenGL/ES context: %s",SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
@@ -109,29 +128,40 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress);
 
-
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
     gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress);
 
 #endif
 
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Version %s", glGetString(GL_VERSION));
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Vendor %s", glGetString(GL_VENDOR));
+    LOG_INFO( "Version %s", glGetString(GL_VERSION));
+    LOG_INFO( "Vendor %s", glGetString(GL_VENDOR));
 
 
     AppContext* app = new AppContext{window, glContext};
     InitOpenGL(app);
 
-    glViewport(0,0,640,360);
+    glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
     
     *app_state = app;
+
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
+    }
+
+
+    auto pKey = SDL_GetKeyboardState(0);
+    
+    if(pKey[SDL_SCANCODE_E]){
+        mode = GL_LINE;
+    }
+
+    if(pKey[SDL_SCANCODE_Q]){
+        mode = GL_FILL;
     }
 
     return SDL_APP_CONTINUE;
@@ -146,7 +176,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     glUseProgram(app->shaderProgram);
     glBindVertexArray(app->VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glPolygonMode(GL_FRONT_AND_BACK,mode);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     SDL_GL_SwapWindow(app->window);
     return SDL_APP_CONTINUE;
@@ -157,6 +188,7 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     glDeleteVertexArrays(1, &app->VAO);
     glDeleteBuffers(1, &app->VBO);
+    glDeleteBuffers(1,&app->EBO);
     glDeleteProgram(app->shaderProgram);
 
     SDL_GL_DestroyContext(app->glContext);
