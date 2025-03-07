@@ -1,25 +1,37 @@
-#include "helpers/logging.h"
+#include "core/renderer/vertex_buffer.h"
+#include "core/renderer/element_buffer.h"
 #include <SDL3/SDL_main.h>
 
-#define GL_ERROR()                                     \
-    {                                                  \
-        GLenum error = glGetError();                   \
-        if (error != GL_NO_ERROR) {                    \
-            LOG_ERROR("OPENGL ERROR_CODE: %d", error); \
-        }                                              \
-    }
 
+struct Renderer {
+    unsigned int VAO, shaderProgram;
+    VertexBuffer vertexBuffer;
+    ElementBuffer elementBuffer;
+};
 
 struct AppContext {
     SDL_Window* window;
     SDL_GLContext glContext;
-    GLuint VAO, VBO, EBO, shaderProgram;
+    Renderer renderer;
+    SDL_Thread* entityThread;
 };
 
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
-GLenum mode = GL_FILL;
+unsigned int mode = GL_FILL;
+
+int EntityHandler(void* data) {
+    int ent;
+
+    for (ent = 0; ent < 1'000; ++ent) {
+        LOG_INFO("Handling entities %d",ent);
+
+        SDL_Delay(50);
+    }
+
+    return ent;
+}
 
 /* opengl shader 410 core, opengles shader 300 es */
 std::string LoadShaderSource(const std::string& file_path) {
@@ -58,12 +70,15 @@ float vertices[] = {
     // 1
     0.5f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f,
     // 2
-    0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f};
+    0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f
+
+
+};
 
 unsigned int indices[] = {0, 1, 3, 1, 2, 3};
 
 unsigned int CompileShader(GLenum type, const char* source) {
-    unsgined int shader = glCreateShader(type);
+    unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
     int bStatus;
@@ -72,55 +87,86 @@ unsigned int CompileShader(GLenum type, const char* source) {
     if (!bStatus) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        LOG_ERROR("Shader compilation error: %s", infoLog);
+
+        const char* type_str = type == GL_VERTEX_SHADER ? "VERTEX_SHADER" : "FRAGMENT_SHADER";
+        LOG_ERROR("Failed to compile shader %s", type_str);
+        LOG_INFO("Error: %s", infoLog);
         glDeleteShader(shader);
         return 0;
     }
 
     SDL_assert(shader != 0);
-    
+
     return shader;
 }
 
 void InitOpenGL(AppContext* app) {
 
-    auto vertexShaderSource   = LoadShaderSource("shaders/default.glsl.vert");
-    auto fragmentShaderSource = LoadShaderSource("shaders/default.glsl.frag");
+    std::string vertexShaderSource   = LoadShaderSource("shaders/default.glsl.vert");
+    std::string fragmentShaderSource = LoadShaderSource("shaders/default.glsl.frag");
 
     unsigned int vertexShader   = CompileShader(GL_VERTEX_SHADER, vertexShaderSource.c_str());
     unsigned int fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource.c_str());
 
 
-    app->shaderProgram = glCreateProgram();
-    glAttachShader(app->shaderProgram, vertexShader);
-    glAttachShader(app->shaderProgram, fragmentShader);
-    glLinkProgram(app->shaderProgram);
+    app->renderer.shaderProgram = glCreateProgram();
+    glAttachShader(app->renderer.shaderProgram, vertexShader);
+    GL_ERROR();
+
+    glAttachShader(app->renderer.shaderProgram, fragmentShader);
+    GL_ERROR();
+
+    glLinkProgram(app->renderer.shaderProgram);
+    GL_ERROR();
 
     glDeleteShader(vertexShader);
+    GL_ERROR();
+
     glDeleteShader(fragmentShader);
+    GL_ERROR();
+
+    glGenVertexArrays(1, &app->renderer.VAO);
+    GL_ERROR();
+
+    glBindVertexArray(app->renderer.VAO);
+    GL_ERROR();
 
 
-    glGenVertexArrays(1, &app->VAO);
-    glGenBuffers(1, &app->VBO);
+    VertexBuffer vBuffer(vertices, 18 * sizeof(float));
 
-    glBindVertexArray(app->VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0); // XYZ
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 12); // RGB
+    // VAO
     glEnableVertexAttribArray(0);
+    GL_ERROR();
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    GL_ERROR();
+
+    ElementBuffer eBuffer(indices, 6);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    GL_ERROR();
+
     glBindVertexArray(0);
+    GL_ERROR();
+
+
+    glUseProgram(app->renderer.shaderProgram);
+    GL_ERROR();
+
+    unsigned int u_Color = glGetUniformLocation(app->renderer.shaderProgram, "u_Color");
+
+    SDL_assert(u_Color != -1);
+
+    glUniform4f(u_Color, 1.0f, 0.0f, 0.0f, 1.0f);
 }
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
-    SDL_Init(SDL_INIT_VIDEO);
+    
+    if(!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS))
+    {
+        LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
+		return SDL_APP_FAILURE;
+    }
 
     SDL_Window* window = SDL_CreateWindow("Window Sample", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
 
@@ -135,9 +181,9 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
     /* OPENGL 4.1 -> GLSL: 410*/
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
@@ -169,6 +215,8 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     AppContext* app = new AppContext{window, glContext};
     InitOpenGL(app);
 
+    SDL_Thread* entities = SDL_CreateThread(EntityHandler, "entities", (void*)NULL);
+
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     *app_state = app;
@@ -177,10 +225,10 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 }
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
+
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
-
 
     auto pKey = SDL_GetKeyboardState(0);
 
@@ -197,15 +245,13 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 
 SDL_AppResult SDL_AppIterate(void* app_state) {
+
     auto app = (AppContext*) app_state;
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(app->shaderProgram);
-    GL_ERROR();
-
-    glBindVertexArray(app->VAO);
+    glBindVertexArray(app->renderer.VAO);
     GL_ERROR();
 
     glPolygonMode(GL_FRONT_AND_BACK, mode);
@@ -215,16 +261,18 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     GL_ERROR();
 
     SDL_GL_SwapWindow(app->window);
+
+    SDL_Delay(16); // 60
+
     return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void* app_state, SDL_AppResult result) {
+
     auto app = (AppContext*) app_state;
 
-    glDeleteVertexArrays(1, &app->VAO);
-    glDeleteBuffers(1, &app->VBO);
-    glDeleteBuffers(1, &app->EBO);
-    glDeleteProgram(app->shaderProgram);
+    glDeleteVertexArrays(1, &app->renderer.VAO);
+    glDeleteProgram(app->renderer.shaderProgram);
 
     SDL_GL_DestroyContext(app->glContext);
     SDL_DestroyWindow(app->window);
