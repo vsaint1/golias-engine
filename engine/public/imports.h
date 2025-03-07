@@ -10,8 +10,7 @@
 #define _USE_MATH_DEFINES 1
 #include <math.h>
 
-#include "opengl/glad.h"
-
+#include <glad.h>
 
 #if __ANDROID__
 const std::filesystem::path BASE_PATH = "";

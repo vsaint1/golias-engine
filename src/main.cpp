@@ -1,68 +1,94 @@
 #include "helpers/logging.h"
 #include <SDL3/SDL_main.h>
 
+#define GL_ERROR()                                     \
+    {                                                  \
+        GLenum error = glGetError();                   \
+        if (error != GL_NO_ERROR) {                    \
+            LOG_ERROR("OPENGL ERROR_CODE: %d", error); \
+        }                                              \
+    }
+
+
 struct AppContext {
     SDL_Window* window;
     SDL_GLContext glContext;
     GLuint VAO, VBO, EBO, shaderProgram;
 };
 
-int SCREEN_WIDTH = 1280;
+int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
-GLenum mode = GL_TRIANGLES;
+GLenum mode = GL_FILL;
 
 /* opengl shader 410 core, opengles shader 300 es */
-std::string LoadShaderSource(const std::string& filepath) {
-    std::ifstream file(filepath);
+std::string LoadShaderSource(const std::string& file_path) {
 
-    if (!file.is_open()) {
-        LOG_ERROR("Failed to open shader file: %s", filepath.c_str())
+
+    const auto path = ASSETS_PATH + file_path;
+
+    SDL_IOStream* file_stream = SDL_IOFromFile(path.c_str(), "rb");
+
+    if (!file_stream) {
+        LOG_ERROR("Failed to open shader file: %s", SDL_GetError())
         return "";
     }
 
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
+    auto file_size = SDL_GetIOSize(file_stream);
+
+    if (file_size <= 0) {
+        LOG_ERROR("Failed to get file_size: %s", SDL_GetError())
+        return "";
+    }
+
+    /* BRIEF: for now is more than enough, TODO: use std::vector<char> */
+    char buffer[2048];
+
+    if (SDL_ReadIO(file_stream, buffer, sizeof(buffer)) != file_size) {
+        LOG_ERROR("Failed to read file: %s", SDL_GetError());
+        return "";
+    }
+
+    SDL_CloseIO(file_stream);
+
+    return std::string(buffer, file_size);
 }
 
 float vertices[] = {
     // 1
-     0.5f,  0.5f, 0.0f,  
-     0.5f, -0.5f, 0.0f, 
-    -0.5f,  0.5f, 0.0f, 
+    0.5f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f,
     // 2
-     0.5f, -0.5f, 0.0f,  
-    -0.5f, -0.5f, 0.0f,  
-    -0.5f,  0.5f, 0.0f   
-}; 
+    0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f, -0.5f, 0.5f, 0.0f};
 
-unsigned int indices[] = {
-    0,1,3,
-    1,2,3
-};
+unsigned int indices[] = {0, 1, 3, 1, 2, 3};
 
-GLuint CompileShader(GLenum type, const char* source) {
-    GLuint shader = glCreateShader(type);
+unsigned int CompileShader(GLenum type, const char* source) {
+    unsgined int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
+    int bStatus;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &bStatus);
+
+    if (!bStatus) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        LOG_ERROR("Shader compilation error %s",infoLog);
+        LOG_ERROR("Shader compilation error: %s", infoLog);
+        glDeleteShader(shader);
+        return 0;
     }
+
+    SDL_assert(shader != 0);
+    
     return shader;
 }
 
 void InitOpenGL(AppContext* app) {
 
-    auto vertexShaderSource = LoadShaderSource(ASSETS_PATH + "shaders/default.glsl.vert");
-    auto fragmentShaderSource = LoadShaderSource(ASSETS_PATH + "shaders/default.glsl.frag");
+    auto vertexShaderSource   = LoadShaderSource("shaders/default.glsl.vert");
+    auto fragmentShaderSource = LoadShaderSource("shaders/default.glsl.frag");
 
-    GLuint vertexShader   = CompileShader(GL_VERTEX_SHADER, vertexShaderSource.c_str());
-    GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource.c_str());
+    unsigned int vertexShader   = CompileShader(GL_VERTEX_SHADER, vertexShaderSource.c_str());
+    unsigned int fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource.c_str());
 
 
     app->shaderProgram = glCreateProgram();
@@ -80,10 +106,10 @@ void InitOpenGL(AppContext* app) {
     glBindVertexArray(app->VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, app->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,app->EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, app->EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0); // XYZ
     // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 12); // RGB
@@ -96,7 +122,7 @@ void InitOpenGL(AppContext* app) {
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window* window = SDL_CreateWindow("Window Sample", SCREEN_WIDTH,SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
+    SDL_Window* window = SDL_CreateWindow("Window Sample", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -115,13 +141,14 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+
 #endif
 
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
     if (!glContext) {
-        LOG_ERROR("Failed to create OpenGL/ES context: %s",SDL_GetError());
+        LOG_ERROR("Failed to create OpenGL/ES context: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
@@ -135,15 +162,15 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
 #endif
 
-    LOG_INFO( "Version %s", glGetString(GL_VERSION));
-    LOG_INFO( "Vendor %s", glGetString(GL_VENDOR));
+    LOG_INFO("Version %s", glGetString(GL_VERSION));
+    LOG_INFO("Vendor %s", glGetString(GL_VENDOR));
 
 
     AppContext* app = new AppContext{window, glContext};
     InitOpenGL(app);
 
-    glViewport(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
-    
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
     *app_state = app;
 
     return SDL_APP_CONTINUE;
@@ -156,12 +183,12 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 
     auto pKey = SDL_GetKeyboardState(0);
-    
-    if(pKey[SDL_SCANCODE_E]){
+
+    if (pKey[SDL_SCANCODE_E]) {
         mode = GL_LINE;
     }
 
-    if(pKey[SDL_SCANCODE_Q]){
+    if (pKey[SDL_SCANCODE_Q]) {
         mode = GL_FILL;
     }
 
@@ -176,9 +203,16 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(app->shaderProgram);
+    GL_ERROR();
+
     glBindVertexArray(app->VAO);
-    glPolygonMode(GL_FRONT_AND_BACK,mode);
+    GL_ERROR();
+
+    glPolygonMode(GL_FRONT_AND_BACK, mode);
+    GL_ERROR();
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    GL_ERROR();
 
     SDL_GL_SwapWindow(app->window);
     return SDL_APP_CONTINUE;
@@ -189,7 +223,7 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     glDeleteVertexArrays(1, &app->VAO);
     glDeleteBuffers(1, &app->VBO);
-    glDeleteBuffers(1,&app->EBO);
+    glDeleteBuffers(1, &app->EBO);
     glDeleteProgram(app->shaderProgram);
 
     SDL_GL_DestroyContext(app->glContext);

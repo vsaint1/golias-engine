@@ -4,10 +4,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE INTERNAL "")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(ember_engine)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
@@ -41,8 +43,12 @@ endif()
 # ENGINE SOURCE
 file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp", "engine/private/*.cpp" "engine/private/*.c")
 
-# GAME SOURCE WILL BE AT SRC 
+# GAME SOURCE WILL BE AT SRC
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
+
+add_subdirectory(vendor/glad)
+
+add_subdirectory(vendor/stb_image)
 
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 
@@ -52,7 +58,7 @@ add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 # set(SDLMIXER_VENDORED ON) # build own deps.
 # set(SDLMIXER_MIDI_NATIVE OFF)  # disabled
 # set(SDLMIXER_GME OFF)
-# set(SDLMIXER_WAVPACK OFF)     
+# set(SDLMIXER_WAVPACK OFF)
 # set(SDLMIXER_MOD OFF)
 # set(SDLMIXER_OPUS OFF)
 # set(SDLMIXER_MP3 ON)
@@ -102,7 +108,7 @@ endif()
 if(APPLE AND NOT BUILD_SHARED_LIBS)
     set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
     set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
-    
+
     if(BUILD_SHIPPING)
         set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets/assets.pak")
     else()
@@ -118,10 +124,10 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     find_library(CF CoreFoundation REQUIRED)
     find_library(GL OpenGLES REQUIRED)
     find_library(UKIT UIKit)
-    
+
     target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT})
 
-    set_target_properties(${PROJECT_NAME} PROPERTIES 
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_ICON_FILE ${ICON_PATH}
         MACOSX_BUNDLE TRUE
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/templates/ios/Info.plist.in"
@@ -164,11 +170,11 @@ if(APPLE AND BUILD_SHARED_LIBS)
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} )
 
-    set_target_properties(${PROJECT_NAME} PROPERTIES 
+    set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     RESOURCE "${RESOURCES}")
     target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ ${OPENGL})
- 
+
 
 endif()
 
@@ -225,14 +231,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
-        
+
 endif()
 
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-# target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_mixer::SDL3_mixer SDL3_image::SDL3_image glm::glm) 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3) 
+# target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_mixer::SDL3_mixer SDL3_image::SDL3_image glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image)
 
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
