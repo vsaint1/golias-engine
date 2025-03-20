@@ -12,6 +12,11 @@
 
 #include <glad.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
 #if __ANDROID__
 const std::filesystem::path BASE_PATH = "";
 #define ASSETS_PATH std::string("")
