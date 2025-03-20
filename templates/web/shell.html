@@ -4,117 +4,136 @@
 <head>
     <meta charset="utf-8">
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-    <title>[UNK_ENGINE] - Template </title>
-    <style>
-        body,
-        html {
-            font-family: Arial, sans-serif;
+    <title>[EMBER_ENGINE] - Template </title>
+    <meta name="title" content="Ember web game">
+    <meta name="description" content="Ember web videogame, developed using ember engine">
+    <meta name="keywords" content="ember, programming, html5, C, C++, library, learn, games, videogames">
+    <meta name="viewport" content="width=device-width">
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ember web game">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image" content="https://github.com/vsaint1.png">
+    <meta name="description" content="Ember web videogame, developed using ember engine">
+    <meta property="og:site_name" content="ember - web">
+    <meta property="og:url" content="https://github.com/vsaint1/ember_engine">
+    <meta property="og:description" content="New raylib web videogame, developed using raylib videogames library">
+    <meta name="description" content="Ember web videogame, developed using ember engine">
+
+     <!-- Raylib favicon because i love raylib -->
+     <link rel="shortcut icon" href="https://www.raylib.com/favicon.ico">
+
+     <style>
+        html, body {
             margin: 0;
             padding: 0;
             height: 100%;
+            background-color: #cfbebe;
+        }
+        
+        #header {
+            width: 100%;
+            height: 80px;
+            background-color: #382d2d;
             display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        
+        #logo {
+            width: 32px;
+            height: 32px;
+            background-size: cover;
+            margin-right: 20px;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA8ElEQVRYhe2XPW7DMAxGH4tO2e1NulM2A/EBDHTvTXKDAPHUJTfIkHuYc7MUReElYIfCqSzHyRYv/BaJPx/4JE0SwFhQrwBmyzCICC+LTE7kAA7gAA7gAA7gAA7gAA7gAA8BtCnQphjnankOgDYFhw+h+7rQxgjAtiw5HQNaC22MbMvymh960jj1pfVUNqdug+1DsG7z37MPwczM3lerUTy35r40D9jsDWhTEHd/X7bTMUzo39Y/E08bI5XqKE59eR3uPcH353VbqU6MA1yqSnU0MPfl9bsAcWdoLZz7fnKSWxr6hoG579z3NyGEhb/nvw6PtrXWtBjNAAAAAElFTkSuQmCC   ');
+        }
+        
+        #header span a {
+            margin-right: 15px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        #header span a:hover {
+            text-decoration: underline;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .centered-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #fafafa;
+            padding: 20px;
+            box-sizing: border-box;
         }
-
-        .centered-content {
-            text-align: center;
-        }
-
-
+        
         .spinner {
             height: 30px;
             width: 30px;
-            margin: 0 auto;
-            margin-top: 20px;
+            margin: 20px auto;
             display: block;
             -webkit-animation: rotation .8s linear infinite;
-            -moz-animation: rotation .8s linear infinite;
-            -o-animation: rotation .8s linear infinite;
             animation: rotation .8s linear infinite;
             border-left: 5px solid #ebebeb;
             border-right: 5px solid #ebebeb;
             border-bottom: 5px solid #ebebeb;
-            border-top: 5px solid #787878;
+            border-top: 5px solid #cc6b2b;
             border-radius: 100%;
-            background-color: #bdd72e;
+            background-color: #b10606;
         }
-
-        @-webkit-keyframes rotation {
-            from {
-                -webkit-transform: rotate(0)
-            }
-
-            to {
-                -webkit-transform: rotate(360deg)
-            }
-        }
-
-        @-moz-keyframes rotation {
-            from {
-                -moz-transform: rotate(0)
-            }
-
-            to {
-                -moz-transform: rotate(360deg)
-            }
-        }
-
-        @-o-keyframes rotation {
-            from {
-                -o-transform: rotate(0)
-            }
-
-            to {
-                -o-transform: rotate(360deg)
-            }
-        }
-
-        @keyframes rotation {
-            from {
-                transform: rotate(0)
-            }
-
-            to {
-                transform: rotate(360deg)
-            }
-        }
-
+        
         #status {
             display: block;
-            margin-top: 30px;
+            margin-top: 10px;
             font-weight: 700;
             color: #787878;
+            text-align: center;
         }
-
+        
         canvas {
             border: 0 none;
             background-color: #000;
             display: block;
-            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: calc(100vh - 100px); /* accounts for header */
         }
-
-        #controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-            gap: 50px;
-        }
-    </style>
+        </style>
 </head>
 
 <body>
+
+    <div id="header">
+
+        <a id="logo" href="https://github.com/vsaint1/ember_engine"></a>
+        <span>
+
+            <!-- <a href="https://github.com/vsaint1/ember_engine" target="_blank">TODO</a> -->
+
+        </span>
+
+
+    </div>
+    
     <div class="centered-content">
         <div class="spinner" id="spinner"></div>
-        <div id="status">Downloading...</div>
-        <span id="controls">
+        <div id="status">Downloading in Progress</div>
+        <!-- <span id="controls">
             <span><input type="checkbox" id="resize">Resize</span>
             <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer</span>
             <span><input type="button"
                     onclick='Module.requestFullscreen(document.getElementById("pointerLock").checked,document.getElementById("resize").checked)'
                     value="Fullscreen"></span>
-        </span>
+        </span> -->
         <progress hidden id="progress" max="100" value="0"></progress>
         <div class="emscripten_border">
             <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
@@ -157,7 +176,7 @@
                     this.totalDependencies = Math.max(this.totalDependencies, e), Module.setStatus(e ? "Preparing... (" + (this.totalDependencies - e) + "/" + this.totalDependencies + ")" : "All downloads complete.")
                 }
             };
-        Module.setStatus("Downloading..."),
+        Module.setStatus("Downloading in Progress"),
             window.onerror = e => {
                 Module.setStatus("Exception thrown, see JavaScript console"), spinnerElement.style.display = "none", Module.setStatus = e => {
                     e && console.error("[post-exception status] " + e)
@@ -167,5 +186,5 @@
 
     {{{ SCRIPT }}}
 </body>
-
+  
 </html>

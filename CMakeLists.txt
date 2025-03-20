@@ -18,6 +18,7 @@ set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/assets)
 
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
+# TODO: remove this
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(BUILD_SHIPPING 1)
 else()
@@ -150,7 +151,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
 endif()
 
 
-# macosx
+# macosx [arm]
 if(APPLE AND BUILD_SHARED_LIBS)
 
     message(STATUS "BUILD MACOS")
@@ -167,7 +168,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
 
 endif()
 
-# Windows [x86/x64/arm]
+# Windows [x86_x64/arm]
 if(MSVC)
     add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
 
@@ -191,22 +192,20 @@ if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
 
-    set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/template.html")
+    set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
+
     if(NOT EXISTS ${SHELL_HTML_FILE})
         message(FATAL_ERROR "Shell file not found: ${SHELL_HTML_FILE}")
     endif()
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
 
-    # TODO: copy assets
-    # add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    #     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    #     ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
 endif()
 
+# Linux [x86_x64/arm]
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     message(STATUS "BUILD LINUX")
@@ -226,7 +225,6 @@ endif()
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-# target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 SDL3_ttf::SDL3_ttf SDL3_mixer::SDL3_mixer SDL3_image::SDL3_image glm::glm)
 target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image glm::glm)
 
 

@@ -115,7 +115,7 @@ unsigned int CreateShaderProgram() {
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    // WARN: since our project is simple, we don't need to delete shader's ( it helpes with debugging )
+    // WARN: since our project is simple, we don't need to delete shader's ( it help's with debugging )
     glDeleteShader(vs);
     glDeleteShader(fs);
     return program;
