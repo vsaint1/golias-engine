@@ -185,6 +185,86 @@ void UnloadTexture(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
+Font LoadFont(const std::string& file_path, float font_size) {
+    Font font{0};
+
+    auto path = ASSETS_PATH + file_path;
+
+    std::vector<unsigned char> ttf_buffer(1 << 20); // 1 mb
+
+    SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
+
+    if (!file_rw) {
+        LOG_ERROR("Failed to open font file %s", path.c_str());
+        return font;
+    }
+
+    Sint64 size = SDL_GetIOSize(file_rw);
+    if (size <= 0) {
+        LOG_ERROR("Failed to get file size %s", path.c_str());
+        SDL_CloseIO(file_rw);
+        return font;
+    }
+
+    if (SDL_ReadIO(file_rw, ttf_buffer.data(), size) != size) {
+        LOG_ERROR("Failed to read file %s", path.c_str());
+        SDL_CloseIO(file_rw);
+        return font;
+    }
+
+    stbtt_fontinfo font_info;
+
+    if (!stbtt_InitFont(&font_info, ttf_buffer.data(), 0)) {
+        LOG_ERROR("Failed to init font %s", path.c_str());
+        SDL_CloseIO(file_rw);
+        return font;
+    }
+
+
+    SDL_CloseIO(file_rw);
+
+    font.font_info      = font_info;
+    font.texture.width  = 1024;
+    font.texture.height = 1024;
+    font.font_size      = font_size;
+
+    std::vector<unsigned char> font_bitmap(font.texture.width * font.texture.height);
+
+    stbtt_BakeFontBitmap(ttf_buffer.data(), 0, font_size, font_bitmap.data(), font.texture.width, font.texture.height,
+                         32, 96, font.char_data); 
+
+    std::vector<unsigned char> rgba_bitmap(font.texture.width * font.texture.height * 4);
+
+    for (int i = 0; i < font.texture.width * font.texture.height; ++i) {
+        unsigned char alpha    = font_bitmap[i];
+        rgba_bitmap[i * 4 + 0] = 255; // R
+        rgba_bitmap[i * 4 + 1] = 255; // G
+        rgba_bitmap[i * 4 + 2] = 255; // B
+        rgba_bitmap[i * 4 + 3] = alpha; // A
+    }
+
+    glGenTextures(1, &font.texture.id);
+    glBindTexture(GL_TEXTURE_2D, font.texture.id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.texture.width, font.texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 rgba_bitmap.data());
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, path.c_str());
+    LOG_INFO(" > Width %d, Height %d", font.texture.width, font.texture.height);
+    LOG_INFO(" > Num. Glyphs %d, Start %d, Kerning %d, Font Size %.2f", font_info.numGlyphs, font_info.fontstart,
+             font_info.kern, font_size);
+
+    return font;
+}
+
+void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning = 0.0f){
+
+}
+
+
 void DrawTexture(Texture2D tex, Rectangle rect, Color color) {
     glUseProgram(renderer->shaderProgram);
 

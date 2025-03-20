@@ -51,6 +51,8 @@ add_subdirectory(vendor/glad)
 
 add_subdirectory(vendor/stb_image)
 
+add_subdirectory(vendor/stb_truetype)
+
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 
 # set(SDLTTF_VENDORED ON) # build own deps.
@@ -225,7 +227,7 @@ endif()
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm)
 
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)

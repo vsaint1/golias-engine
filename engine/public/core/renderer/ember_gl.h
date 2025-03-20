@@ -15,6 +15,10 @@ unsigned int CreateShaderProgram();
 
 Texture LoadTexture(const std::string& file_path);
 
+Font LoadFont(const std::string& file_path, float font_size);
+
+void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning = 0.0f);
+
 void DrawTexture(Texture tex, Rectangle rect, Color color= {255, 255, 255, 255}) ;
 
 void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation, Color color = {255, 255, 255, 255});

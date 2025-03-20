@@ -7,17 +7,17 @@ int SCREEN_HEIGHT = 720;
 
 Texture2D tex1;
 Texture2D tex2;
-
+Font mine_font;
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL)) {
         return SDL_APP_FAILURE;
     }
-
     SetTargetFPS(60);
 
-    tex1 = LoadTexture("sprites/Character_001.png");
-    tex2 = LoadTexture("sprites/Character_002.png");
+    tex1      = LoadTexture("sprites/Character_001.png");
+    tex2      = LoadTexture("sprites/Character_002.png");
+    mine_font = LoadFont("fonts/Minecraft.ttf", 24);
 
     return SDL_APP_CONTINUE;
 }
@@ -31,6 +31,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     BeginDrawing();
 
     DrawTexture(tex1, {0, 0, tex1.width, tex1.height});
+    
+    DrawText(mine_font, "Hello World", {100, 100}, {255, 255, 255, 255}, 1.f);
 
     DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
 
@@ -42,6 +44,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     // TODO: we can get the scale/origin dynamically
     DrawTextureEx(tex1, {192, 160, 32, 32}, {800, 350, 128, 128}, {64, 64}, 0.0f);
+
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
@@ -82,6 +85,7 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     UnloadTexture(tex1);
     UnloadTexture(tex2);
+    UnloadTexture(mine_font.texture);
 
     DestroyRenderer();
 }

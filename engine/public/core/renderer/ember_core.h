@@ -2,6 +2,8 @@
 
 #include "core/file_system.h"
 
+#include <stb_truetype.h>
+
 /*
 
 Type: OpenGL
@@ -40,7 +42,6 @@ typedef struct CoreContext {
 
 } Core, CoreData;
 
-static Core core = {0};
 
 typedef struct Texture {
     unsigned int id = 0;
@@ -48,11 +49,26 @@ typedef struct Texture {
     int height      = 0;
 } Texture2D;
 
+typedef struct {
+
+    stbtt_fontinfo font_info;
+    stbtt_bakedchar char_data[96];
+    Texture texture;
+    float font_size;
+} Font;
+
 struct Rectangle {
     int x;
     int y;
     int width;
     int height;
+};
+
+struct FRectangle {
+    float x;
+    float y;
+    float width;
+    float height;
 };
 
 struct Color {
@@ -78,3 +94,5 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 void SetTargetFPS(int fps);
 
 static Renderer* renderer = nullptr;
+
+static Core core = {0};

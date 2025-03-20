@@ -29,6 +29,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     renderer = CreateRenderer(_window, width, height);
 
+
     LOG_INFO("Successfully created window with title: %s", title);
     LOG_INFO(" > Width %d, Height %d",width,height);
     LOG_INFO(" > Renderer %s",type == OPENGL ? "OpenGL" : "Metal");
