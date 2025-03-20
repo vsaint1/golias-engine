@@ -10,7 +10,10 @@ Texture2D tex2;
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
+    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL)) {
+        return SDL_APP_FAILURE;
+    }
+
     SetTargetFPS(60);
 
     tex1 = LoadTexture("sprites/Character_001.png");
@@ -38,9 +41,9 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     }
 
     // TODO: we can get the scale/origin dynamically
-    DrawTextureEx(tex1, {192, 160, 32, 32}, {800, 350, 128,128}, {64, 64}, 0.0f);
+    DrawTextureEx(tex1, {192, 160, 32, 32}, {800, 350, 128, 128}, {64, 64}, 0.0f);
 
-    DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64,64}, angle);
+    DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
 
     EndDrawing();

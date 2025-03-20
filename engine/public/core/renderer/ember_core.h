@@ -2,6 +2,18 @@
 
 #include "core/file_system.h"
 
+/*
+
+Type: OpenGL
+ > WEB: WebGL 3.0
+ > DESKTOP: OpenGL 3.3
+ > MOBILE: OpenGLES 3.0
+
+Type: Metal
+ > Apple Devices only
+*/
+enum RendererType { OPENGL, METAL };
+
 typedef struct Renderer {
     SDL_Window* window         = nullptr;
     SDL_GLContext gl_context   = 0;
@@ -61,7 +73,7 @@ void DestroyRenderer();
 
 
 // Initialization
-void InitWindow(const char* title, int width, int height, Uint64 flags);
+bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
 
 void SetTargetFPS(int fps);
 

@@ -30,11 +30,21 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
         return nullptr;
     }
 
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+
     if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
         LOG_CRITICAL("Failed to initialize GLAD (GL_FUNCTIONS)");
         return nullptr;
     }
 
+#else
+
+    if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
+        LOG_CRITICAL("Failed to initialize GLAD (GLES_FUNCTIONS)");
+        return nullptr;
+    }
+
+#endif
 
     Renderer* _renderer    = new Renderer;
     _renderer->viewport[0] = view_width;
@@ -98,6 +108,9 @@ unsigned int CompileShader(unsigned int type, const char* src) {
         const char* type_str = type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
         LOG_CRITICAL("[%s] - Shader compilation failed: %s", type_str, info_log);
     }
+
+    LOG_INFO("Successfully compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
+
     return shader;
 }
 
@@ -145,10 +158,11 @@ Texture LoadTexture(const std::string& file_path) {
     unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 4);
 
     if (!data) {
-        LOG_ERROR("Failed to load texture: %s", path.c_str());
+        LOG_ERROR("Failed to load texture with path: %s", path.c_str());
         return {};
     }
 
+    // TODO: we should create a simple texture if failed loading.
     GLuint texId;
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
@@ -156,10 +170,13 @@ Texture LoadTexture(const std::string& file_path) {
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_NEAREST is better for pixel art style
 
     stbi_image_free(data);
-    LOG_INFO("Loaded texture: %s", path.c_str());
+    LOG_INFO("Loaded texture with ID: %d, path: %s", texId, path.c_str());
+    LOG_INFO(" > Width %d, Height %d",w,h);
+    LOG_INFO(" > Num. Channels %d",channels);
+
     return {texId, w, h};
 }
 
