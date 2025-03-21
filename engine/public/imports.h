@@ -1,10 +1,9 @@
 #pragma once
 #include <SDL3/SDL.h>
-#include <fstream>
-#include <sstream>
 #include <cmath>
 #include <string>
 #include <filesystem>
+#include <map>
 
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1

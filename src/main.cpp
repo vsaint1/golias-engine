@@ -32,9 +32,16 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawTexture(tex1, {0, 0, tex1.width, tex1.height});
-    DrawText(mine_font, "Hello World", {200, 300}, {255, 255, 255, 255}, 2.f);
+    DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
 
+
+    DrawText(mine_font, "WHATS UP my friend \n test \n it works? \n idk, i think so! \n No emojis =(", {20,100}, {255, 255, 255, 255});
+
+
+    char msg[256];
+    SDL_snprintf(msg, sizeof(msg), "Debug Angle: %.2f", angle);
+    
+    DrawText(mine_font, msg, {100,500}, {255, 0, 0, 255});
 
     DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
 

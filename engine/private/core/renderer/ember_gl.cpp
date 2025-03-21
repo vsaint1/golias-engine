@@ -163,7 +163,7 @@ Texture LoadTexture(const std::string& file_path) {
     }
 
     // TODO: we should create a simple texture if failed loading.
-    GLuint texId;
+    unsigned int texId;
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -186,8 +186,8 @@ void UnloadTexture(Texture2D texture) {
 }
 
 
-Font LoadFont(const std::string& file_path, float font_size) {
-    Font font{0};
+Font LoadFont(const std::string& file_path, int font_size) {
+    Font font = {};
 
     auto path = ASSETS_PATH + file_path;
 
@@ -204,75 +204,176 @@ Font LoadFont(const std::string& file_path, float font_size) {
         return font;
     }
 
-    std::vector<unsigned char> ttf_buffer(size);
-    if (SDL_ReadIO(file_rw, ttf_buffer.data(), size) != size) {
+    std::vector<unsigned char> font_buffer(size);
+    if (SDL_ReadIO(file_rw, font_buffer.data(), size) != size) {
         LOG_ERROR("Failed to read file %s", path.c_str());
         SDL_CloseIO(file_rw);
         return font;
     }
 
+    SDL_CloseIO(file_rw);
 
     stbtt_fontinfo font_info;
-    if (!stbtt_InitFont(&font_info, ttf_buffer.data(), 0)) {
-        LOG_ERROR("Failed to init font %s", path.c_str());
-        SDL_CloseIO(file_rw);
-        return font;
+    stbtt_InitFont(&font_info, font_buffer.data(), stbtt_GetFontOffsetForIndex(font_buffer.data(), 0));
+
+    float scale = stbtt_ScaleForPixelHeight(&font_info, (float) font_size);
+    int ascent, descent, lineGap;
+    stbtt_GetFontVMetrics(&font_info, &ascent, &descent, &lineGap);
+
+    int atlas_w = 512;
+    int atlas_h = 512;
+    std::vector<unsigned char> bitmap(atlas_w * atlas_h, 0);
+
+    int x = 0, y = 0, max_row_height = 0;
+
+    for (char c = 32; c < 127; ++c) {
+        int ax, lsb;
+        stbtt_GetCodepointHMetrics(&font_info, c, &ax, &lsb);
+
+        int x0, y0, x1, y1;
+        stbtt_GetCodepointBitmapBox(&font_info, c, scale, scale, &x0, &y0, &x1, &y1);
+
+        int gw = x1 - x0;
+        int gh = y1 - y0;
+
+        if (x + gw >= atlas_w) {
+            x = 0;
+            y += max_row_height + 1;
+            max_row_height = 0;
+        }
+
+        max_row_height = SDL_max(max_row_height, gh);
+
+        stbtt_MakeCodepointBitmap(&font_info, &bitmap[y * atlas_w + x], gw, gh, atlas_w, scale, scale, c);
+
+        Glyph glyph;
+        glyph.x0       = (float) x / atlas_w;
+        glyph.y0       = (float) y / atlas_h;
+        glyph.x1       = (float) (x + gw) / atlas_w;
+        glyph.y1       = (float) (y + gh) / atlas_h;
+        glyph.w        = gw;
+        glyph.h        = gh;
+        glyph.x_offset = x0;
+        glyph.y_offset = y0;
+        glyph.advance  = (int) (ax * scale);
+
+        font.glyphs[c] = glyph;
+
+        x += gw;
     }
 
+    std::vector<unsigned char> rgba_buffer(atlas_w * atlas_h * 4);
 
-    font.font_info      = font_info;
-    font.texture.width  = 1024;
-    font.texture.height = 1024;
-    font.font_size      = font_size;
-
-    std::vector<unsigned char> font_bitmap(font.texture.width * font.texture.height);
-    int result = stbtt_BakeFontBitmap(ttf_buffer.data(), 0, font_size, font_bitmap.data(), font.texture.width,
-                                      font.texture.height, 32, 96, (stbtt_bakedchar*) font.chars);
-
-    if (result <= 0) {
-        LOG_ERROR("Failed to bake font bitmap: %d", result);
-        return font;
-    }
-
-
-    std::vector<unsigned char> rgba_bitmap(font.texture.width * font.texture.height * 4);
-    for (int i = 0; i < font.texture.width * font.texture.height; ++i) {
-        unsigned char alpha    = font_bitmap[i];
-        rgba_bitmap[i * 4 + 0] = 255; // R
-        rgba_bitmap[i * 4 + 1] = 255; // G
-        rgba_bitmap[i * 4 + 2] = 255; // B
-        rgba_bitmap[i * 4 + 3] = alpha; // A
+    for (int i = 0; i < atlas_w * atlas_h; ++i) {
+        unsigned char gray     = bitmap[i];
+        rgba_buffer[i * 4 + 0] = gray; // R
+        rgba_buffer[i * 4 + 1] = gray; // G
+        rgba_buffer[i * 4 + 2] = gray; // B
+        rgba_buffer[i * 4 + 3] = gray; // A
     }
 
     glGenTextures(1, &font.texture.id);
-
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.texture.width, font.texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 rgba_bitmap.data());
-
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, path.c_str());
-    LOG_INFO(" > Width %d, Height %d", font.texture.width, font.texture.height);
-    LOG_INFO(" > Num. Glyphs %d, Start %d, Kerning %d, Font Size %.2f", font_info.numGlyphs, font_info.fontstart,
-             font_info.kern, font_size);
+    LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
+    LOG_INFO(" > Num. Glyphs %zu", font.glyphs.size());
+
+    font.ascent         = ascent;
+    font.descent        = descent;
+    font.line_gap        = lineGap;
+    font.scale          = scale;
+    font.font_size      = font_size;
+    font.texture.width  = atlas_w;
+    font.texture.height = atlas_h;
 
     return font;
 }
 
+void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {
 
-void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {}
-
-void DrawTexture(Texture2D tex, Rectangle rect, Color color) {
     glUseProgram(renderer->shaderProgram);
 
-    glActiveTexture(GL_TEXTURE0 + tex.id);
-    glBindTexture(GL_TEXTURE_2D, tex.id);
-    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), tex.id);
+    glActiveTexture(GL_TEXTURE0 + font.texture.id);
+    glBindTexture(GL_TEXTURE_2D, font.texture.id);
+    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Texture"), font.texture.id);
+
+    glm::vec4 norm_color = {
+        color.r / 255.0f,
+        color.g / 255.0f,
+        color.b / 255.0f,
+        color.a / 255.0f,
+    };
+
+    glm::mat4 projection = glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f);
+
+    float line_height = font.line_gap * 0.25f;
+    float line_width  = 12.f;
+
+    for (size_t i = 0; i < text.size(); i++) {
+
+        char c = text[i];
+
+        if (c == '\n') {
+            position.x = line_width;
+            position.y += line_height;
+            continue;
+        }
+
+        if (font.glyphs.find(c) == font.glyphs.end()) {
+            continue;
+        }
+
+        Glyph& g = font.glyphs[c];
+
+        glm::mat4 model =
+            glm::translate(glm::mat4(1.0f), glm::vec3(position.x + g.x_offset, position.y + g.y_offset, 0.0f));
+
+        model = glm::scale(model, glm::vec3(g.w * scale, g.h * scale, 1.0f));
+
+        glUniformMatrix4fv(glGetUniformLocation(renderer->shaderProgram, "u_Model"), 1, GL_FALSE,
+                           glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(renderer->shaderProgram, "u_Projection"), 1, GL_FALSE,
+                           glm::value_ptr(projection));
+        glUniform4fv(glGetUniformLocation(renderer->shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
+
+        float vertices[] = {
+            // pos             // tex coords
+            0.0f, 0.0f, 0.0f, g.x0, g.y0, 1.0f, 0.0f, 0.0f, g.x1, g.y0,
+            1.0f, 1.0f, 0.0f, g.x1, g.y1, 0.0f, 1.0f, 0.0f, g.x0, g.y1,
+        };
+
+        glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+        glBindVertexArray(renderer->vao);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+        if (i + 1 < text.size()) {
+            char nextChar = text[i + 1];
+
+            if (font.glyphs.find(nextChar) != font.glyphs.end()) {
+                position.x += g.advance * scale + kerning;
+            }
+        } else {
+            position.x += g.advance * scale;
+        }
+    }
+}
+
+
+void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
+    glUseProgram(renderer->shaderProgram);
+
+
+    glActiveTexture(GL_TEXTURE0 + texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Texture"), texture.id);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -310,7 +411,7 @@ void DrawTextureEx(Texture2D texture, Rectangle source, Rectangle dest, glm::vec
 
     glActiveTexture(GL_TEXTURE0 + texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), texture.id);
+    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Texture"), texture.id);
 
     glm::mat4 projection = glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f);
 

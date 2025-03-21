@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/file_system.h"
-
 #include <stb_truetype.h>
+
 
 /*
 
@@ -49,12 +49,20 @@ typedef struct Texture {
     int height      = 0;
 } Texture2D;
 
+struct Glyph {
+    float x0, y0, x1, y1;
+    int w, h;
+    int x_offset, y_offset;
+    int advance;
+};
+
 typedef struct Font {
-    stbtt_fontinfo font_info;
-    stbtt_bakedchar chars[96];
+    std::map<char, Glyph> glyphs;
     Texture texture;
-    float font_size;
+    int font_size;
     float kerning = 0.0f;
+    int ascent, descent, line_gap;
+    int scale;
 } Font;
 
 struct Rectangle {
