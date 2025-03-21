@@ -174,8 +174,8 @@ Texture LoadTexture(const std::string& file_path) {
 
     stbi_image_free(data);
     LOG_INFO("Loaded texture with ID: %d, path: %s", texId, path.c_str());
-    LOG_INFO(" > Width %d, Height %d",w,h);
-    LOG_INFO(" > Num. Channels %d",channels);
+    LOG_INFO(" > Width %d, Height %d", w, h);
+    LOG_INFO(" > Num. Channels %d", channels);
 
     return {texId, w, h};
 }
@@ -185,15 +185,13 @@ void UnloadTexture(Texture2D texture) {
     glDeleteTextures(1, &texture.id);
 }
 
+
 Font LoadFont(const std::string& file_path, float font_size) {
     Font font{0};
 
     auto path = ASSETS_PATH + file_path;
 
-    std::vector<unsigned char> ttf_buffer(1 << 20); // 1 mb
-
     SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
-
     if (!file_rw) {
         LOG_ERROR("Failed to open font file %s", path.c_str());
         return font;
@@ -206,14 +204,15 @@ Font LoadFont(const std::string& file_path, float font_size) {
         return font;
     }
 
+    std::vector<unsigned char> ttf_buffer(size);
     if (SDL_ReadIO(file_rw, ttf_buffer.data(), size) != size) {
         LOG_ERROR("Failed to read file %s", path.c_str());
         SDL_CloseIO(file_rw);
         return font;
     }
 
-    stbtt_fontinfo font_info;
 
+    stbtt_fontinfo font_info;
     if (!stbtt_InitFont(&font_info, ttf_buffer.data(), 0)) {
         LOG_ERROR("Failed to init font %s", path.c_str());
         SDL_CloseIO(file_rw);
@@ -221,20 +220,22 @@ Font LoadFont(const std::string& file_path, float font_size) {
     }
 
 
-    SDL_CloseIO(file_rw);
-
     font.font_info      = font_info;
     font.texture.width  = 1024;
     font.texture.height = 1024;
     font.font_size      = font_size;
 
     std::vector<unsigned char> font_bitmap(font.texture.width * font.texture.height);
+    int result = stbtt_BakeFontBitmap(ttf_buffer.data(), 0, font_size, font_bitmap.data(), font.texture.width,
+                                      font.texture.height, 32, 96, (stbtt_bakedchar*) font.chars);
 
-    stbtt_BakeFontBitmap(ttf_buffer.data(), 0, font_size, font_bitmap.data(), font.texture.width, font.texture.height,
-                         32, 96, font.char_data); 
+    if (result <= 0) {
+        LOG_ERROR("Failed to bake font bitmap: %d", result);
+        return font;
+    }
+
 
     std::vector<unsigned char> rgba_bitmap(font.texture.width * font.texture.height * 4);
-
     for (int i = 0; i < font.texture.width * font.texture.height; ++i) {
         unsigned char alpha    = font_bitmap[i];
         rgba_bitmap[i * 4 + 0] = 255; // R
@@ -244,13 +245,16 @@ Font LoadFont(const std::string& file_path, float font_size) {
     }
 
     glGenTextures(1, &font.texture.id);
+
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.texture.width, font.texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  rgba_bitmap.data());
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, path.c_str());
     LOG_INFO(" > Width %d, Height %d", font.texture.width, font.texture.height);
@@ -260,17 +264,15 @@ Font LoadFont(const std::string& file_path, float font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning = 0.0f){
 
-}
-
+void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {}
 
 void DrawTexture(Texture2D tex, Rectangle rect, Color color) {
     glUseProgram(renderer->shaderProgram);
 
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0 + tex.id);
     glBindTexture(GL_TEXTURE_2D, tex.id);
-    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), 0);
+    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), tex.id);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -306,9 +308,9 @@ void DrawTexture(Texture2D tex, Rectangle rect, Color color) {
 void DrawTextureEx(Texture2D texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation, Color color) {
     glUseProgram(renderer->shaderProgram);
 
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0 + texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), 0);
+    glUniform1i(glGetUniformLocation(renderer->shaderProgram, "u_Tex"), texture.id);
 
     glm::mat4 projection = glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f);
 

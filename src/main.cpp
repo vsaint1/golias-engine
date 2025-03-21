@@ -5,6 +5,8 @@
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
+
+
 Texture2D tex1;
 Texture2D tex2;
 Font mine_font;
@@ -31,8 +33,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     BeginDrawing();
 
     DrawTexture(tex1, {0, 0, tex1.width, tex1.height});
-    
-    DrawText(mine_font, "Hello World", {100, 100}, {255, 255, 255, 255}, 1.f);
+    DrawText(mine_font, "Hello World", {200, 300}, {255, 255, 255, 255}, 2.f);
+
 
     DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
 

@@ -49,12 +49,12 @@ typedef struct Texture {
     int height      = 0;
 } Texture2D;
 
-typedef struct {
-
+typedef struct Font {
     stbtt_fontinfo font_info;
-    stbtt_bakedchar char_data[96];
+    stbtt_bakedchar chars[96];
     Texture texture;
     float font_size;
+    float kerning = 0.0f;
 } Font;
 
 struct Rectangle {
