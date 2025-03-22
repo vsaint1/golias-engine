@@ -1,4 +1,4 @@
-# Ember Engine [![build](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/)
+# Ember Engine [![build](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml)
 
 
 
