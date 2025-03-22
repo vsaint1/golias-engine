@@ -6,15 +6,15 @@ int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
 
-
-Texture2D tex1;
-Texture2D tex2;
+Texture tex1;
+Texture tex2;
 Font mine_font;
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL)) {
         return SDL_APP_FAILURE;
     }
+
     SetTargetFPS(60);
 
     tex1      = LoadTexture("sprites/Character_001.png");

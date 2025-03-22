@@ -72,7 +72,7 @@ Font LoadFont(const std::string& file_path,  int font_size);
    @version 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
-   @param position Position in `pixels` not `NDC`
+   @param position Position in `pixels` coordinates
    @param color Color in RGBA
    @param scale <optional> Scale factor
    @param kerning <optional> Kerning (spacing between characters)
