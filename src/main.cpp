@@ -11,7 +11,7 @@ Texture tex2;
 Font mine_font;
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL)) {
+    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL,SDL_WINDOW_METAL)) {
         return SDL_APP_FAILURE;
     }
 
