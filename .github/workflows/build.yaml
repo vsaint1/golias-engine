@@ -2,11 +2,11 @@ name: build
 description: 'build CI workflow' 
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
 
 jobs:
-  build-linux-webgl:
+  linux-webgl:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -45,16 +45,20 @@ jobs:
           emmake cmake --build build/webgl
 
 
-#   build-windows:
-#     runs-on: windows-2022
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
+  # windows-msvc:
+  #   runs-on: windows-2022
+  #   needs: linux-webgl
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
 
-#       - name: Configure (Windows preset)
-#         run: cmake --preset=rel-windows
+  #     - name: Configure MSVC
+  #       uses: ilammy/msvc-dev-cmd@v1
 
-#       - name: Build (Windows)
-#         run: cmake --build build/windows --config Release
+  #     - name: Run preset
+  #       run: cmake --preset=rel-windows
+
+  #     - name: Build (Windows)
+  #       run: cmake --build build/windows --config Release
 
   

@@ -18,12 +18,6 @@ set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/assets)
 
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
-# TODO: remove this
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(BUILD_SHIPPING 1)
-else()
-    set(BUILD_SHIPPING 0)
-endif()
 
 add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
 
@@ -101,11 +95,8 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
     set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
 
-    if(BUILD_SHIPPING)
-        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets/assets.pak")
-    else()
-        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
-    endif()
+ 
+    set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
 
@@ -174,18 +165,13 @@ endif()
 if(MSVC)
     add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
 
-    if(BUILD_SHIPPING)
-        add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/assets/assets.pak
-            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/assets.pak)
-    else()
-        add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
-    endif()
+ 
+    add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
+    
 endif()
 
 # WASM [emscripten]
