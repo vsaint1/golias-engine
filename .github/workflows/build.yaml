@@ -28,7 +28,9 @@ jobs:
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          echo "source $(pwd)/emsdk_env.sh" >> $GITHUB_ENV
+          echo "EMSDK=${{ github.workspace }}/emsdk" >> $GITHUB_ENV
+          echo "EM_CONFIG=${{ github.workspace }}/emsdk/.emscripten" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/emsdk" >> $GITHUB_PATH
 
       - name: Configure emscripten and run preset
         run: |
