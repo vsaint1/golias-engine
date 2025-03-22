@@ -98,5 +98,5 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
     UnloadTexture(tex2);
     UnloadTexture(mine_font.texture);
 
-    DestroyRenderer();
+    CloseWindow();
 }

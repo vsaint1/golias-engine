@@ -85,7 +85,7 @@ Renderer* GetRenderer() {
     return renderer;
 }
 
-void DestroyRenderer() {
+void CloseWindow() {
     glDeleteProgram(renderer->shaderProgram);
     glDeleteVertexArrays(1, &renderer->vao);
     glDeleteBuffers(1, &renderer->vbo);
@@ -93,6 +93,8 @@ void DestroyRenderer() {
     SDL_GL_DestroyContext(renderer->gl_context);
 
     SDL_DestroyWindow(renderer->window);
+    
+    delete renderer;
 }
 
 unsigned int CompileShader(unsigned int type, const char* src) {

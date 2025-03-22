@@ -118,12 +118,12 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height);
 Renderer* GetRenderer();
 
 /*!
-    @brief Destroy the renderer instance 
+    @brief Deinitialize Window, Renderer and modules
 
     @version 0.0.1
     @return void
 */
-void DestroyRenderer();
+void CloseWindow();
 
 
 /*!
