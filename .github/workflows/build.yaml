@@ -57,23 +57,4 @@ jobs:
 #       - name: Build (Windows)
 #         run: cmake --build build/windows --config Release
 
-  build-docs:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Generate docs with Doxygen
-        run: |
-            sudo apt install -y doxygen
-            mkdir -p build/docs
-            doxygen docs/Doxyfile
-            ls build/docs
-
-      - name: Deploy docs to GH pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/docs/html
-          publish_branch: gh-pages
-          exclude_assets: ''
+  

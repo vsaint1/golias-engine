@@ -1,4 +1,6 @@
-# Ember Engine
+# Ember Engine [![build](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/)
+
+
 
 **Ember Engine** is a lightweight and modular **2D game engine** written in **C/C++**, designed to be simple yet powerful. It aims to provide developers with a flexible cross-platform solution to build 2D games and applications.
 
