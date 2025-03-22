@@ -4,7 +4,6 @@
 #include <stb_truetype.h>
 
 
-
 /*!
 
    @brief Backend `OpenGL` or `Metal`
@@ -18,28 +17,26 @@
     > Apple Devices only
 
    @version 0.0.1
-  
-*/
-enum RendererType { 
-    OPENGL, 
-    METAL 
-};
 
-typedef struct Renderer {
+*/
+enum RendererType { OPENGL, METAL };
+
+struct Renderer {
     SDL_Window* window         = nullptr;
     SDL_GLContext gl_context   = 0;
     unsigned int shaderProgram = 0;
     unsigned int vao = 0, vbo = 0, ebo = 0;
     unsigned int framebuffer = 0;
     int viewport[2]          = {640, 480};
-} RendererState;
+    RendererType type        = OPENGL;
+};
 
-typedef struct CoreContext {
+struct Core {
 
     struct {
         int width;
         int height;
-        const char* title = "Ember";
+        const char* title = "[EMBER_ENGINE] - Window";
     } Window;
 
     struct {
@@ -49,14 +46,14 @@ typedef struct CoreContext {
         double target;
     } Time;
 
-} Core, CoreData;
+};
 
 
 typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
     int height      = 0;
-} Texture2D;
+}Texture,Texture2D ;
 
 struct Glyph {
     float x0, y0, x1, y1;
@@ -65,14 +62,14 @@ struct Glyph {
     int advance;
 };
 
-typedef struct Font {
+struct Font {
     std::map<char, Glyph> glyphs;
     Texture texture;
     int font_size;
     float kerning = 0.0f;
     int ascent, descent, line_gap;
     int scale;
-} Font;
+};
 
 struct Rectangle {
     int x;
@@ -80,14 +77,6 @@ struct Rectangle {
     int width;
     int height;
 };
-
-struct FRectangle {
-    float x;
-    float y;
-    float width;
-    float height;
-};
-
 
 struct Color {
     unsigned char r;
@@ -98,7 +87,7 @@ struct Color {
 
 
 /*!
-    @brief Create a renderer instance 
+    @brief Create a renderer instance
 
     @param window SDL window instance
     @param view_width Viewport width
@@ -110,7 +99,7 @@ struct Color {
 Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height);
 
 /*!
-    @brief Get the renderer instance 
+    @brief Get the renderer instance
 
     @version 0.0.1
     @return Renderer
@@ -128,9 +117,9 @@ void CloseWindow();
 
 /*!
     @brief Initialize SDL window, renderer and modules
-    - Window   
+    - Window
     - Graphics Backend  `OpenGL` or `Metal`
-    - Audio 
+    - Audio
     - Font
 
     @version 0.0.1
@@ -138,7 +127,7 @@ void CloseWindow();
     @param width Window width
     @param height Window height
     @param type Renderer type `OPENGL` or `METAL`
-    @param flags SDL window flags 
+    @param flags SDL window flags
 
     @link https://wiki.libsdl.org/SDL_WindowFlags @endlink
 
