@@ -62,6 +62,7 @@ jobs:
       - name: Generate docs with Doxygen
         run: |
             sudo apt install -y doxygen
+            mkdir -p build/docs
             doxygen docs/Doxyfile
 
       - name: Deploy docs to GH pages
