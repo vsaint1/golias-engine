@@ -1,0 +1,71 @@
+name: build 
+description: 'build CI workflow' 
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-linux-webgl:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Ubuntu SDL3 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git make \
+          pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
+
+      - name: Install emscripten SDK
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "source $(pwd)/emsdk_env.sh" >> $GITHUB_ENV
+
+      - name: Configure emscripten and run preset
+        run: |
+          source emsdk/emsdk_env.sh
+          emcmake cmake --preset=web
+
+      - name: Build emscripten
+        run: |
+          source emsdk/emsdk_env.sh
+          emmake cmake --build build/webgl
+
+
+#   build-windows:
+#     runs-on: windows-2022
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       - name: Configure (Windows preset)
+#         run: cmake --preset=rel-windows
+
+#       - name: Build (Windows)
+#         run: cmake --build build/windows --config Release
+
+  build-docs:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate docs with Doxygen
+        run: |
+            sudo apt install -y doxygen
+            doxygen docs/Doxyfile
+
+      - name: Deploy docs to GH pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/docs/html
