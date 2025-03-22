@@ -19,7 +19,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     tex1      = LoadTexture("sprites/Character_001.png");
     tex2      = LoadTexture("sprites/Character_002.png");
-    mine_font = LoadFont("fonts/Minecraft.ttf", 24);
+    mine_font = LoadFont("fonts/Minecraft.ttf", 32);
 
     return SDL_APP_CONTINUE;
 }
@@ -35,13 +35,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
 
 
-    DrawText(mine_font, "WHATS UP my friend \n test \n it works? \n idk, i think so! \n No emojis =(", {20,100}, {255, 255, 255, 255});
+    DrawText(mine_font, "WHATS UP my friend \ntest \nit works? \nidk, i think so! \n No emojis =(", {100,400}, {255, 255, 255, 255});
 
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Debug Angle: %.2f", angle);
     
-    DrawText(mine_font, msg, {100,500}, {255, 0, 0, 255});
+    DrawText(mine_font, msg, {100,600}, {255, 0, 0, 255});
 
     DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
 

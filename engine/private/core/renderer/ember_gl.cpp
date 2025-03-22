@@ -171,7 +171,7 @@ Texture LoadTexture(const std::string& file_path) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_NEAREST is better for pixel art style
 
     stbi_image_free(data);
@@ -240,7 +240,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
         if (x + gw >= atlas_w) {
             x = 0;
-            y += max_row_height + 1;
+            y += max_row_height;
             max_row_height = 0;
         }
 
@@ -277,8 +277,6 @@ Font LoadFont(const std::string& file_path, int font_size) {
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -315,14 +313,13 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f);
 
+    float start_x = position.x;
 
-    for (size_t i = 0; i < text.size(); i++) {
-
-        char c = text[i];
+    for (char c : text) {
 
         if (c == '\n') {
-            position.x = 0.0f;
-            position.y += font.font_size;
+            position.x = start_x;
+            position.y += font.font_size * scale; 
             continue;
         }
 
@@ -330,10 +327,10 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
             continue;
         }
 
-        Glyph& g = font.glyphs[c];
+        const Glyph& g = font.glyphs[c];
 
         glm::mat4 model =
-            glm::translate(glm::mat4(1.0f), glm::vec3(position.x + g.x_offset, position.y + g.y_offset, 0.0f));
+            glm::translate(glm::mat4(1.0f), glm::vec3(position.x + g.x_offset * scale, position.y + g.y_offset * scale, 0.0f));
 
         model = glm::scale(model, glm::vec3(g.w * scale, g.h * scale, 1.0f));
 
@@ -344,9 +341,10 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
         glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
         float vertices[] = {
-            // pos             // tex coords
-            0.0f, 0.0f, 0.0f, g.x0, g.y0, 1.0f, 0.0f, 0.0f, g.x1, g.y0,
-            1.0f, 1.0f, 0.0f, g.x1, g.y1, 0.0f, 1.0f, 0.0f, g.x0, g.y1,
+            0.0f, 0.0f, 0.0f, g.x0, g.y0,
+            1.0f, 0.0f, 0.0f, g.x1, g.y0,
+            1.0f, 1.0f, 0.0f, g.x1, g.y1,
+            0.0f, 1.0f, 0.0f, g.x0, g.y1,
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
@@ -355,15 +353,7 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
         glBindVertexArray(renderer->OpenGL.vao);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-        if (i + 1 < text.size()) {
-            char nextChar = text[i + 1];
-
-            if (font.glyphs.find(nextChar) != font.glyphs.end()) {
-                position.x += g.advance * scale + kerning;
-            }
-        } else {
-            position.x += g.advance * scale;
-        }
+        position.x += g.advance * scale + kerning;
     }
 }
 
