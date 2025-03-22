@@ -54,8 +54,10 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     // TODO: we can get the scale/origin dynamically
     DrawTextureEx(tex1, {192, 160, 32, 32}, {800, 350, 128, 128}, {64, 64}, 0.0f);
 
+    DrawTextureEx(tex1, {64, 32, 32, 32}, {900, 350, 128, 128}, {64, 64}, 0.0f);
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
+
 
 
     EndDrawing();
