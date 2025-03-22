@@ -45,12 +45,13 @@ jobs:
           emmake cmake --build build/webgl
 
 
-  build-windows:
+  windows-msvc:
     runs-on: windows-2022
+    needs: linux-webgl
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
