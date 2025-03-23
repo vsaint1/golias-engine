@@ -11,7 +11,7 @@ Texture tex2;
 Font mine_font;
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL,SDL_WINDOW_METAL)) {
+    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_METAL)) {
         return SDL_APP_FAILURE;
     }
 
@@ -34,14 +34,16 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
 
+    DrawLine({100, 200}, {200, 200}, {255, 255, 0, 255});
 
-    DrawText(mine_font, "WHATS UP my friend \ntest \nit works? \nidk, i think so! \n No emojis =(", {100,400}, {255, 255, 255, 255});
+    DrawText(mine_font, "WHATS UP my friend \ntest \nit works? \nidk, i think so! \nNo emojis =(", {100, 400},
+             {255, 255, 255, 255});
 
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Debug Angle: %.2f", angle);
-    
-    DrawText(mine_font, msg, {100,600}, {255, 0, 0, 255});
+
+    DrawText(mine_font, msg, {100, 600}, {255, 0, 0, 255});
 
     DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
 
@@ -57,7 +59,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     DrawTextureEx(tex1, {64, 32, 32, 32}, {900, 350, 128, 128}, {64, 64}, 0.0f);
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
-
 
 
     EndDrawing();
