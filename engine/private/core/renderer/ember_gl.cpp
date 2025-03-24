@@ -174,8 +174,8 @@ Texture LoadTexture(const std::string& file_path) {
     auto path = ASSETS_PATH + file_path;
 
     SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
-    
-    if(!file_rw) {
+
+    if (!file_rw) {
         LOG_ERROR("Failed to open file %s", path.c_str());
         return {};
     }
@@ -188,7 +188,7 @@ Texture LoadTexture(const std::string& file_path) {
     }
 
     std::vector<char> buffer(size);
-    
+
     if (SDL_ReadIO(file_rw, buffer.data(), size) != size) {
         LOG_ERROR("Failed to read file %s", path.c_str());
         SDL_CloseIO(file_rw);
@@ -197,7 +197,7 @@ Texture LoadTexture(const std::string& file_path) {
 
     SDL_CloseIO(file_rw);
 
-    unsigned char* data = stbi_load_from_memory((unsigned char*)buffer.data(), size, &w, &h, &channels, 4);
+    unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), size, &w, &h, &channels, 4);
 
     if (!data) {
         LOG_ERROR("Failed to load texture with path: %s", path.c_str());
@@ -324,8 +324,9 @@ Font LoadFont(const std::string& file_path, int font_size) {
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, path.c_str());
     LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
@@ -342,7 +343,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {
+void DrawText(Font& font, const std::string& text,  Transform& transform, Color color, float kerning) {
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
@@ -350,7 +351,9 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
         return;
     }
 
-    scale = SDL_clamp(scale, 0.0f, 1.0f);
+    // transform.scale.x = SDL_clamp(transform.scale.x, 0.0f, 1.0f);
+    // transform.scale.y = SDL_clamp(transform.scale.y, 0.0f, 1.0f);
+    // transform.scale.z = SDL_clamp(transform.scale.z, 0.0f, 1.0f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
@@ -365,8 +368,7 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
 
     glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, 0.0f));
-    model           = glm::scale(model, glm::vec3(scale, scale, 1.0f));
+    glm::mat4 model = transform.GetModelMatrix();
 
     glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
                        glm::value_ptr(model));
@@ -401,13 +403,19 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
         float u1 = g.x1;
         float v1 = g.y1;
 
-        vertices.push_back({{x0, y0, 0.0f}, {u0, v0}});
-        vertices.push_back({{x1, y0, 0.0f}, {u1, v0}});
-        vertices.push_back({{x1, y1, 0.0f}, {u1, v1}});
+        glm::vec3 scale = transform.scale;
+        float scaledX0 = x0 * scale.x;
+        float scaledY0 = y0 * scale.y;
+        float scaledX1 = x1 * scale.x;
+        float scaledY1 = y1 * scale.y;
 
-        vertices.push_back({{x0, y0, 0.0f}, {u0, v0}});
-        vertices.push_back({{x1, y1, 0.0f}, {u1, v1}});
-        vertices.push_back({{x0, y1, 0.0f}, {u0, v1}});
+        vertices.push_back({{scaledX0, scaledY0, 0.0f}, {u0, v0}});
+        vertices.push_back({{scaledX1, scaledY0, 0.0f}, {u1, v0}});
+        vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
+
+        vertices.push_back({{scaledX0, scaledY0, 0.0f}, {u0, v0}});
+        vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
+        vertices.push_back({{scaledX0, scaledY1, 0.0f}, {u0, v1}});
 
         cursor_x += g.advance + kerning;
     }

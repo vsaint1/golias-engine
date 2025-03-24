@@ -119,14 +119,13 @@ void EndDrawing();
    @version 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
-   @param position Position in `pixels` coordinates
+   @param transform The transform 
    @param color Color in RGBA
-   @param scale <optional> Scale factor between 0.0f and 1.0f
    @param kerning <optional> Kerning (spacing between characters)
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale = 1.0f, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text,  Transform& transform, Color color, float kerning = 0.0f);
 
 /*!
 

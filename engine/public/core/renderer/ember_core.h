@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/file_system.h"
+#include "core/component/Transform.h"
 #include <stb_truetype.h>
 
 
@@ -54,7 +55,6 @@ struct Core {
         double target;
     } Time;
 };
-
 
 struct Vertex {
     glm::vec3 position; 

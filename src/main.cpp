@@ -5,7 +5,6 @@
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
-
 Texture tex1;
 Texture tex2;
 Texture tex3;
@@ -13,6 +12,10 @@ Texture tex3;
 Font error_font;
 Font default_font;
 std::vector<Texture> textures;
+
+Transform text_transform;
+Transform text_transform2;
+Transform text_transform3;
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
@@ -35,6 +38,17 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     error_font = LoadFont("fonts/test_unk.ttf", 32);
 
+    text_transform.position = glm::vec3(10.0f, 10.f, 0.f);
+    text_transform.scale    = glm::vec3(1.f);
+    text_transform.rotation = glm::vec3(0.f);
+
+    text_transform2.position = glm::vec3(550.f, 50.f, 0.f);
+    text_transform2.scale    = glm::vec3(1.f);
+    text_transform2.rotation = glm::vec3(0.f);
+
+    text_transform3.position = glm::vec3(10.f, 350.f, 0.f);
+    text_transform3.scale    = glm::vec3(0.6f);
+    text_transform3.rotation = glm::vec3(0.f);
 
     return SDL_APP_CONTINUE;
 }
@@ -53,10 +67,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawText(error_font,"This shouldnt work", {10, 10}, {255, 0, 0, 255});
-    
-    DrawText(default_font, "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 is working? \nNão", {550, 50},
-             {255, 255, 255, 255});
+    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+
+    DrawText(default_font,
+             "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 "
+             "is working? \nNão",
+             text_transform2, {255, 255, 255, 255});
 
     DrawTexture(tex3, {20, 50, tex1.width, tex1.height});
 
@@ -64,7 +80,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
-    // DrawText(default_font, msg, {10, 350}, {255, 0, 0, 255}, 5.f); // this will get clamped
+    DrawText(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
@@ -77,12 +93,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 }
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
-    
+
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
 
-    if(event->type == SDL_EVENT_WINDOW_RESIZED){
+    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         GetRenderer()->OpenGL.viewport[0] = event->window.data1;
         GetRenderer()->OpenGL.viewport[1] = event->window.data2;
         glViewport(0, 0, event->window.data1, event->window.data2);
