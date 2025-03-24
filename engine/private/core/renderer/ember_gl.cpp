@@ -26,21 +26,21 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
     if (!glContext) {
-        LOG_CRITICAL("Failed to create GL context");
+        LOG_CRITICAL("Failed to create GL context, %s", SDL_GetError());
         return nullptr;
     }
 
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
-    if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
-        LOG_CRITICAL("Failed to initialize GLAD (GL_FUNCTIONS)");
+    if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
+        LOG_CRITICAL("Failed to initialize GLAD (GLES_FUNCTIONS)");
         return nullptr;
     }
 
 #else
 
-    if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
-        LOG_CRITICAL("Failed to initialize GLAD (GLES_FUNCTIONS)");
+    if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
+        LOG_CRITICAL("Failed to initialize GLAD (GL_FUNCTIONS)");
         return nullptr;
     }
 
@@ -55,23 +55,29 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
     unsigned int shaderProgram      = CreateShaderProgram();
     _renderer->OpenGL.shaderProgram = shaderProgram;
 
-    // Generate once and reuse xd
-    float vertices[] = {
-        // pos         // tex coords
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    Vertex default_quad[] = {
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
+        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // br
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
+
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
+        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // tl
     };
 
     glGenVertexArrays(1, &_renderer->OpenGL.vao);
     glGenBuffers(1, &_renderer->OpenGL.vbo);
 
-    /* Just a quick note, we create 1 and reuse many times (idk if it's bad or not but the purpose is to be simple) */
     glBindVertexArray(_renderer->OpenGL.vao);
     glBindBuffer(GL_ARRAY_BUFFER, _renderer->OpenGL.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(default_quad), default_quad, GL_DYNAMIC_DRAW);
 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
+    glEnableVertexAttribArray(0);
 
-    // TODO: if window resize, update viewport
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
+    glEnableVertexAttribArray(1);
+
     glViewport(0, 0, view_width, view_height);
 
     renderer = _renderer;
@@ -80,7 +86,6 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
 }
 
 Renderer* GetRenderer() {
-    LOG_INFO("Using backend %s", renderer->type == RendererType::OPENGL ? "OpenGL" : "Metal");
     return renderer;
 }
 
@@ -160,14 +165,39 @@ void EndDrawing() {
     SDL_GL_SwapWindow(renderer->window);
 }
 
+// TODO: create a LoadFile default and refactor LoadTexture/LoadFont to use it
 Texture LoadTexture(const std::string& file_path) {
     int w, h, channels;
 
     stbi_set_flip_vertically_on_load(false);
 
-    auto path = (ASSETS_PATH + file_path);
+    auto path = ASSETS_PATH + file_path;
 
-    unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 4);
+    SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
+    
+    if(!file_rw) {
+        LOG_ERROR("Failed to open file %s", path.c_str());
+        return {};
+    }
+
+    Sint64 size = SDL_GetIOSize(file_rw);
+    if (size <= 0) {
+        LOG_ERROR("Failed to get file size %s", path.c_str());
+        SDL_CloseIO(file_rw);
+        return {};
+    }
+
+    std::vector<char> buffer(size);
+    
+    if (SDL_ReadIO(file_rw, buffer.data(), size) != size) {
+        LOG_ERROR("Failed to read file %s", path.c_str());
+        SDL_CloseIO(file_rw);
+        return {};
+    }
+
+    SDL_CloseIO(file_rw);
+
+    unsigned char* data = stbi_load_from_memory((unsigned char*)buffer.data(), size, &w, &h, &channels, 4);
 
     if (!data) {
         LOG_ERROR("Failed to load texture with path: %s", path.c_str());
@@ -185,6 +215,7 @@ Texture LoadTexture(const std::string& file_path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_NEAREST is better for pixel art style
 
     stbi_image_free(data);
+
     LOG_INFO("Loaded texture with ID: %d, path: %s", texId, path.c_str());
     LOG_INFO(" > Width %d, Height %d", w, h);
     LOG_INFO(" > Num. Channels %d", channels);
@@ -313,7 +344,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
 void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {
 
-    if (text.empty() || font.texture.id == 0) {
+    if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
         std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
@@ -394,10 +425,12 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
 }
 
 
-void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
+void DrawTexture(Texture texture, Rectangle rect, Color color) {
+
 
     if (texture.id == 0) {
         static std::once_flag log_once;
@@ -419,34 +452,33 @@ void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    glm::mat4 projection =
-        glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
                        glm::value_ptr(model));
 
     glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
-    // TODO: change to vertex struct
-    float vertices[] = {
-        // pos         // tex coords
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    Vertex vertices[] = {
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(renderer->OpenGL.vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    glBindVertexArray(0);
 }
 
 
@@ -486,27 +518,29 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
 
     glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
-    // TODO: change to vertex struct
-    float vertices[] = {
-        // pos         // tex coords
-        0.0f, 0.0f, 0.0f, texLeft,  texTop,    1.0f, 0.0f, 0.0f, texRight, texTop,
-        1.0f, 1.0f, 0.0f, texRight, texBottom, 0.0f, 1.0f, 0.0f, texLeft,  texBottom,
+    Vertex vertices[] = {
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
+        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, texTop)},
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, texBottom)},
+        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
     };
 
     glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(renderer->OpenGL.vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glBindVertexArray(0);
 }
 
 
@@ -544,4 +578,5 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
     glLineWidth(thickness);
     glDrawArrays(GL_LINES, 0, 2);
+    glBindVertexArray(0);
 }

@@ -1,0 +1,6 @@
+.cxx
+.idea
+local.properties
+.gradle
+
+app/src/main/assets

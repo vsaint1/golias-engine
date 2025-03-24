@@ -6,7 +6,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     /*!
         @brief Unset some SDL flags and set supported later.
     */
-    if(flags & SDL_WINDOW_HIGH_PIXEL_DENSITY || flags & SDL_WINDOW_OPENGL || flags & SDL_WINDOW_METAL) {
+    if (flags & SDL_WINDOW_HIGH_PIXEL_DENSITY || flags & SDL_WINDOW_OPENGL || flags & SDL_WINDOW_METAL) {
         flags &= ~SDL_WINDOW_HIGH_PIXEL_DENSITY;
         flags &= ~SDL_WINDOW_OPENGL;
         flags &= ~SDL_WINDOW_METAL;
@@ -23,6 +23,9 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         flags |= SDL_WINDOW_OPENGL;
     }
 
+    // TODO: Get orientations
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
         return false;
@@ -35,15 +38,22 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     core.Window.data = display_mode;
 
-    const char* _title  = SDL_strcmp(title, "") == 0 ? title : core.Window.title;
+    const char* _title = SDL_strcmp(title, "") == 0 ? title : core.Window.title;
 
     SDL_Window* _window = SDL_CreateWindow(_title, width, height, flags);
+
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
         return false;
     }
 
-    // TODO: Refactor this to call the correct backend e.g SDL_CreateRenderer 
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+
+    SDL_SetWindowFullscreen(_window, true);
+
+#endif
+
+    // TODO: Refactor this to call the correct backend e.g SDL_CreateRenderer
     renderer = CreateRenderer(_window, width, height);
 
     LOG_INFO("Successfully created window with title: %s", _title);
@@ -52,7 +62,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL" : "Metal");
-    LOG_INFO(" > Viewport Width %d, Viewport Height %d", renderer->OpenGL.viewport[0], renderer->OpenGL.viewport[1]);
+    LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->OpenGL.viewport[0],
+             GetRenderer()->OpenGL.viewport[1]);
 
     core.Window.width  = width;
     core.Window.height = height;
@@ -67,7 +78,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     if (type == RendererType::METAL) {
         // TODO
     }
-    
+
 
     return true;
 }

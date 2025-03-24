@@ -8,6 +8,8 @@ int SCREEN_HEIGHT = 720;
 
 Texture tex1;
 Texture tex2;
+Texture tex3;
+
 Font error_font;
 Font default_font;
 std::vector<Texture> textures;
@@ -22,11 +24,12 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
+    tex3 = LoadTexture("sprites/Tools.png");
 
-    for (int i = 0; i < 32; i++) {
-        auto tex = LoadTexture("sprites/Character_002.png");
-        textures.push_back(tex);
-    }
+    // for (int i = 0; i < 32; i++) {
+    //     auto tex = LoadTexture("sprites/Character_002.png");
+    //     textures.push_back(tex);
+    // }
 
     default_font = LoadFont("fonts/Minecraft.ttf", 32);
 
@@ -50,20 +53,18 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-
     DrawText(error_font,"This shouldnt work", {10, 10}, {255, 0, 0, 255});
     
-    DrawText(default_font, "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =(", {550, 50},
+    DrawText(default_font, "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 is working? \nNão", {550, 50},
              {255, 255, 255, 255});
 
-    DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
+    DrawTexture(tex3, {20, 50, tex1.width, tex1.height});
+
+    DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 100);
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
-
-    DrawText(default_font, msg, {10, 350}, {255, 0, 0, 255}, 5.f); // this will get clamped
-
-    DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 20);
+    // DrawText(default_font, msg, {10, 350}, {255, 0, 0, 255}, 5.f); // this will get clamped
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
@@ -84,7 +85,6 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     if(event->type == SDL_EVENT_WINDOW_RESIZED){
         GetRenderer()->OpenGL.viewport[0] = event->window.data1;
         GetRenderer()->OpenGL.viewport[1] = event->window.data2;
-
         glViewport(0, 0, event->window.data1, event->window.data2);
     }
 
@@ -111,7 +111,10 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     UnloadTexture(tex1);
     UnloadTexture(tex2);
+    UnloadTexture(tex3);
+
     UnloadTexture(default_font.texture);
+
     for (auto& tex : textures) {
         UnloadTexture(tex);
     }

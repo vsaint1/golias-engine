@@ -81,6 +81,12 @@ struct Font {
     float kerning = 0.0f;
     int ascent, descent, line_gap;
     int scale;
+
+    bool IsValid()
+    {
+        return texture.id != 0 && glyphs.size() > 0;
+    }
+    
 };
 
 struct Rectangle {
