@@ -11,7 +11,7 @@ Texture tex2;
 Font mine_font;
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL)) {
+    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_METAL)) {
         return SDL_APP_FAILURE;
     }
 
@@ -19,7 +19,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     tex1      = LoadTexture("sprites/Character_001.png");
     tex2      = LoadTexture("sprites/Character_002.png");
-    mine_font = LoadFont("fonts/Minecraft.ttf", 24);
+    mine_font = LoadFont("fonts/Minecraft.ttf", 32);
 
     return SDL_APP_CONTINUE;
 }
@@ -29,36 +29,29 @@ float angle = 0;
 
 SDL_AppResult SDL_AppIterate(void* app_state) {
 
-    ClearBackground({120, 100, 100, 255});
-    BeginDrawing();
-
-    DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
-
-
-    DrawText(mine_font, "WHATS UP my friend \n test \n it works? \n idk, i think so! \n No emojis =(", {20,100}, {255, 255, 255, 255});
-
-
-    char msg[256];
-    SDL_snprintf(msg, sizeof(msg), "Debug Angle: %.2f", angle);
-    
-    DrawText(mine_font, msg, {100,500}, {255, 0, 0, 255});
-
-    DrawTexture(tex2, {600, 0, tex1.width, tex1.height});
-
     angle += 1.0f;
 
     if (angle > 360.0f) {
         angle = 0.0f;
     }
 
-    // TODO: we can get the scale/origin dynamically
-    DrawTextureEx(tex1, {192, 160, 32, 32}, {800, 350, 128, 128}, {64, 64}, 0.0f);
+    ClearBackground({120, 100, 100, 255});
+    BeginDrawing();
 
-    DrawTextureEx(tex1, {64, 32, 32, 32}, {900, 350, 128, 128}, {64, 64}, 0.0f);
 
+    DrawText(mine_font, "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =(", {550, 50},
+        {255, 255, 255, 255});
+
+    DrawTexture(tex1, {20, 50, tex1.width, tex1.height});
+
+    char msg[256];
+    SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
+
+    DrawText(mine_font, msg, {10, 350}, {255, 0, 0, 255}, 5.f); // this will get clamped
+    
+    DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255},20);  
+    
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
-
-
 
     EndDrawing();
 

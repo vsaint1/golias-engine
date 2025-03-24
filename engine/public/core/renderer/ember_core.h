@@ -22,13 +22,20 @@
 enum RendererType { OPENGL, METAL };
 
 struct Renderer {
-    SDL_Window* window         = nullptr;
-    SDL_GLContext gl_context   = 0;
-    unsigned int shaderProgram = 0;
-    unsigned int vao = 0, vbo = 0, ebo = 0;
-    unsigned int framebuffer = 0;
-    int viewport[2]          = {640, 480};
-    RendererType type        = OPENGL;
+    SDL_Window* window = nullptr;
+
+    struct {
+        SDL_GLContext context   = 0;
+        unsigned int shaderProgram = 0;
+        unsigned int vao = 0, vbo = 0;
+        int viewport[2]          = {480, 270};
+    } OpenGL;
+
+    struct {
+
+    } Metal;
+
+    RendererType type = OPENGL;
 };
 
 struct Core {
@@ -37,6 +44,7 @@ struct Core {
         int width;
         int height;
         const char* title = "[EMBER_ENGINE] - Window";
+        const SDL_DisplayMode*  data = nullptr;
     } Window;
 
     struct {
@@ -45,15 +53,19 @@ struct Core {
         double frame;
         double target;
     } Time;
-
 };
 
+
+struct Vertex {
+    glm::vec3 position; 
+    glm::vec2 texCoord; 
+};
 
 typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
     int height      = 0;
-}Texture,Texture2D ;
+} Texture, Texture2D;
 
 struct Glyph {
     float x0, y0, x1, y1;

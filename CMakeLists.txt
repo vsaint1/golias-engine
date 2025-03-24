@@ -149,14 +149,13 @@ if(APPLE AND BUILD_SHARED_LIBS)
 
     message(STATUS "BUILD MACOS")
     set(RESOURCES "${CMAKE_SOURCE_DIR}/assets")
-    find_library(OPENGL OpenGL REQUIRED)
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     RESOURCE "${RESOURCES}")
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ ${OPENGL})
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework OpenGL" "-framework CoreQuartz" "-framework AppKit" "-framework MetalKit")
 
 
 endif()

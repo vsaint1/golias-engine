@@ -61,6 +61,53 @@ Texture LoadTexture(const std::string& file_path);
 */
 Font LoadFont(const std::string& file_path,  int font_size);
 
+
+/*!
+
+   @brief Unload the Texture from GPU (cleanup)
+
+   @version 0.0.1
+   @param texture The loaded Texture
+   @return void
+
+*/
+void UnloadTexture(Texture texture);
+
+/*!
+
+   @brief Window background color
+
+   @version 0.0.1
+   @param color Color in RGBA
+   @return void
+
+*/
+void ClearBackground(Color color);
+
+/*!
+
+   @brief Starting of the drawing procedure
+    - Clear the background and start drawing
+    - Draw between BeginDrawing and EndDrawing
+    - Orthographic projection
+    - Ordered rendering
+
+   @version 0.0.1
+   @return void
+
+*/
+void BeginDrawing();
+
+/*!
+
+   @brief End of the drawing procedure (swap buffers)
+
+   @version 0.0.1
+   @return void
+
+*/
+void EndDrawing();
+
 /*!
 
    @brief Draw glyphs given a Loaded Font and text
@@ -74,7 +121,7 @@ Font LoadFont(const std::string& file_path,  int font_size);
    @param text The text to draw, can be dynamic
    @param position Position in `pixels` coordinates
    @param color Color in RGBA
-   @param scale <optional> Scale factor
+   @param scale <optional> Scale factor between 0.0f and 1.0f
    @param kerning <optional> Kerning (spacing between characters)
    @return void
 
@@ -114,44 +161,14 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
 
 /*!
 
-   @brief Unload the Texture from GPU (cleanup)
+   @brief Draw Lines between two points
 
    @version 0.0.1
-   @param texture The loaded Texture
-   @return void
-
-*/
-void UnloadTexture(Texture texture);
-
-/*!
-
-   @brief Window background color
-
-   @version 0.0.1
+   @param start vec2 start point
+   @param end vec2 end point
    @param color Color in RGBA
+   @param thickness float Line thickness
    @return void
 
 */
-void ClearBackground(Color color);
-
-/*!
-
-   @brief Starting of the drawing procedure
-    - Clear the background and start drawing
-    - Draw between BeginDrawing and EndDrawing
-
-   @version 0.0.1
-   @return void
-
-*/
-void BeginDrawing();
-
-/*!
-
-   @brief End of the drawing procedure (swap buffers)
-
-   @version 0.0.1
-   @return void
-
-*/
-void EndDrawing();
+void DrawLine(glm::vec2 start,glm::vec2 end, Color color, float thickness = 1.0f);

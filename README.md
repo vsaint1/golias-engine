@@ -15,27 +15,38 @@
   - Web (via WebGL)
 
 - 🎨 **Graphics Backend**:
-  - OpenGL (Windows, Linux, macOS, Android, Web)
-  - Metal (macOS, iOS)
+  - OpenGL/ES (Windows, Linux, macOS, Android, Web)
+  - Metal (macOS, iOS) **(coming soon)**
 
-- 🔄 **Modular Architecture**: Focus on a clean and extensible design.
 - 🛠️ **Lightweight Core**: Minimal dependencies for fast builds and portability.
-- 🎮 **Input, Audio, and Asset Management**: Out-of-the-box components to get your game running quickly.
+- 🎮 **Input, Audio, and Texture Management**:  Simple and 
+  extensible input, audio, and texture management.
 
 ---
 
+### 📦 Dependencies
 
+- [sdl3](https://github.com/libsdl-org/SDL) (Windowing, Events, Input, Audio, etc.)
+- [sdl3_mixer](https://github.com/libsdl-org/SDL_mixer) (Audio mixer)
+- [stb_image](https://github.com/nothings/stb) (Image loader)
+- [stb_truetype](https://github.com/nothings/stb) (TrueType/SDF font loader)
+- [glad](https://github.com/Dav1dde/glad) (OpenGL/ES Loader)
+- [glm](https://github.com/g-truc/glm) (C++ math library)
 
-### 📦 Supported Platforms Overview
+---
+
+### 📱 Supported Platforms Overview
 
 | Platform | Backend        | Status              |
 |----------|----------------|---------------------|
 | Windows  | OpenGL 3.3     | ✅ Fully supported  |
 | Linux    | OpenGL 3.3     | ✅ Fully supported  |
-| macOS    | OpenGL 3.3     | ✅ Fully supported  |
+| MacOS    | OpenGL 3.3     | ✅ Fully supported  |
 | Android  | OpenGL ES 3.0  | ✅ Fully supported  |
 | iOS      | OpenGL ES 3.0  | ✅ Fully supported  |
 | Web      | WebGL 3.0      | ✅ Fully supported  |
+| iOS      | Metal          | 🚧 Coming soon      |
+| MacOS    | Metal          | 🚧 Coming soon      |
 
 > ⚠️ **Note:** Metal backend is planned for future versions.
 
@@ -49,7 +60,7 @@ Documentation and usage examples are coming soon.
 
 ### 🛠️ Build System
 
-Ember Engine uses **CMake** as its build system and supports the following toolchains:
+Ember Engine uses [cmake](https://cmake.org/) as its build system and supports the following toolchains:
 - Visual Studio (Windows)
 - GCC / Clang (Linux / macOS)
 - Android NDK (Android)
