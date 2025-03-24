@@ -52,6 +52,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL" : "Metal");
+    LOG_INFO(" > Viewport Width %d, Viewport Height %d", renderer->OpenGL.viewport[0], renderer->OpenGL.viewport[1]);
 
     core.Window.width  = width;
     core.Window.height = height;
