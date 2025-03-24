@@ -51,6 +51,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     BeginDrawing();
 
 
+    DrawText(error_font,"This shouldnt work", {10, 10}, {255, 0, 0, 255});
+    
     DrawText(default_font, "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =(", {550, 50},
              {255, 255, 255, 255});
 

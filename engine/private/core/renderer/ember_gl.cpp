@@ -198,7 +198,7 @@ void UnloadTexture(Texture texture) {
     if (texture.id == 0) {
         return;
     }
-    
+
     LOG_INFO("Unloading texture with ID: %d", texture.id);
     glDeleteTextures(1, &texture.id);
 }
@@ -321,9 +321,9 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
 
     scale = SDL_clamp(scale, 0.0f, 1.0f);
 
-    glActiveTexture(GL_TEXTURE0 + font.texture.id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), font.texture.id);
+    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -405,9 +405,9 @@ void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
         return;
     }
 
-    glActiveTexture(GL_TEXTURE0 + texture.id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), texture.id);
+    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -458,9 +458,9 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
         return;
     }
 
-    glActiveTexture(GL_TEXTURE0 + texture.id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), texture.id);
+    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
