@@ -56,6 +56,11 @@ struct Core {
 };
 
 
+struct Vertex {
+    glm::vec3 position; 
+    glm::vec2 texCoord; 
+};
+
 typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
