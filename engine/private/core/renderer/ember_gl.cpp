@@ -80,7 +80,7 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
 }
 
 Renderer* GetRenderer() {
-    LOG_INFO("Using backend %s",renderer->type == RendererType::OPENGL ? "OpenGL" : "Metal");
+    LOG_INFO("Using backend %s", renderer->type == RendererType::OPENGL ? "OpenGL" : "Metal");
     return renderer;
 }
 
@@ -149,7 +149,7 @@ void BeginDrawing() {
     core.Time.previous = core.Time.current;
 
     glm::mat4 projection =
-        glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f);
+        glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f, -1.0f, 1.0f);
 
     glUseProgram(renderer->OpenGL.shaderProgram);
     glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Projection"), 1, GL_FALSE,
@@ -194,6 +194,12 @@ Texture LoadTexture(const std::string& file_path) {
 
 
 void UnloadTexture(Texture texture) {
+
+    if (texture.id == 0) {
+        return;
+    }
+    
+    LOG_INFO("Unloading texture with ID: %d", texture.id);
     glDeleteTextures(1, &texture.id);
 }
 
@@ -307,7 +313,9 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
 void DrawText(Font& font, const std::string& text, glm::vec2 position, Color color, float scale, float kerning) {
 
-    if (text.empty()) {
+    if (text.empty() || font.texture.id == 0) {
+        static std::once_flag log_once;
+        std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
     }
 
@@ -385,12 +393,17 @@ void DrawText(Font& font, const std::string& text, glm::vec2 position, Color col
     glBindVertexArray(renderer->OpenGL.vao);
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
-    glBindTexture(GL_TEXTURE_2D, 0);  
-
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
 void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
+
+    if (texture.id == 0) {
+        static std::once_flag log_once;
+        std::call_once(log_once, []() { LOG_WARN("Texture not loaded, skipping draw!!!"); });
+        return;
+    }
 
     glActiveTexture(GL_TEXTURE0 + texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -414,7 +427,7 @@ void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
 
     glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
-     // TODO: change to vertex struct
+    // TODO: change to vertex struct
     float vertices[] = {
         // pos         // tex coords
         0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
@@ -433,12 +446,17 @@ void DrawTexture(Texture2D texture, Rectangle rect, Color color) {
     glBindVertexArray(renderer->OpenGL.vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-    glBindTexture(GL_TEXTURE_2D, 0);  
-
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
 void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation, Color color) {
+
+    if (texture.id == 0) {
+        static std::once_flag log_once;
+        std::call_once(log_once, []() { LOG_WARN("Texture not loaded, skipping draw!!!"); });
+        return;
+    }
 
     glActiveTexture(GL_TEXTURE0 + texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -488,14 +506,13 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
     glBindVertexArray(renderer->OpenGL.vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-    glBindTexture(GL_TEXTURE_2D, 0);  
-
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
-    
-   
+
+
     glm::vec4 norm_color = {
         color.r / 255.0f,
         color.g / 255.0f,
@@ -511,10 +528,8 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
 
 
-    Vertex vertices[2] = {
-        { glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f) },
-        { glm::vec3(end,   0.0f), glm::vec2(0.0f, 0.0f) }  
-    };
+    Vertex vertices[2] = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+                          {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
 
     glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
