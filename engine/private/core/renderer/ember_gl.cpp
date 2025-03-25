@@ -100,7 +100,10 @@ void BeginDrawing() {
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f, -1.0f, 1.0f);
 
+    glm::mat4 view = glm::mat4(1.0f);
+
     GetRenderer()->OpenGL.default_shader.Use();
+    GetRenderer()->OpenGL.default_shader.SetValue("u_View", view);
     GetRenderer()->OpenGL.default_shader.SetValue("u_Projection", projection);
 }
 
@@ -108,7 +111,6 @@ void EndDrawing() {
     SDL_GL_SwapWindow(renderer->window);
 }
 
-// TODO: create a LoadFile default and refactor LoadTexture/LoadFont to use it
 Texture LoadTexture(const std::string& file_path) {
     int w, h, channels;
 
@@ -253,10 +255,6 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
         std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
     }
-
-    // transform.scale.x = SDL_clamp(transform.scale.x, 0.0f, 1.0f);
-    // transform.scale.y = SDL_clamp(transform.scale.y, 0.0f, 1.0f);
-    // transform.scale.z = SDL_clamp(transform.scale.z, 0.0f, 1.0f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
@@ -493,4 +491,14 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     glLineWidth(thickness);
     glDrawArrays(GL_LINES, 0, 2);
     glBindVertexArray(0);
+}
+
+void BeginMode2D(Camera2D& camera){
+    GetRenderer()->OpenGL.default_shader.Use();
+    GetRenderer()->OpenGL.default_shader.SetValue("u_View", camera.GetViewMatrix());
+}
+
+void EndMode2D(){
+    glm::mat4 view = glm::mat4(1.0f);
+    GetRenderer()->OpenGL.default_shader.SetValue("u_View", view);
 }

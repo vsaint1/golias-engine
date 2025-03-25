@@ -3,7 +3,6 @@
 #include "ember_core.h"
 
 
-
 /*!
 
    @brief Load a texture on `GPU` given a file path
@@ -12,7 +11,7 @@
 
    @version 0.0.1
    @param file_path the path to the file in `assets` folder
-   @return Texture 
+   @return Texture
 */
 Texture LoadTexture(const std::string& file_path);
 
@@ -27,7 +26,7 @@ Texture LoadTexture(const std::string& file_path);
    @return Font
 
 */
-Font LoadFont(const std::string& file_path,  int font_size);
+Font LoadFont(const std::string& file_path, int font_size);
 
 
 /*!
@@ -60,6 +59,13 @@ void ClearBackground(Color color);
     - Orthographic projection
     - Ordered rendering
 
+    Usage:
+    BeginDrawing();
+
+    // Draw anything without needing a camera
+
+    EndDrawing();
+
    @version 0.0.1
    @return void
 
@@ -87,13 +93,13 @@ void EndDrawing();
    @version 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
-   @param transform The transform 
+   @param transform The transform
    @param color Color in RGBA
    @param kerning <optional> Kerning (spacing between characters)
    @return void
 
 */
-void DrawText(Font& font, const std::string& text,  Transform& transform, Color color, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning = 0.0f);
 
 /*!
 
@@ -107,7 +113,7 @@ void DrawText(Font& font, const std::string& text,  Transform& transform, Color 
    @return void
 
 */
-void DrawTexture(Texture texture, Rectangle rect, Color color= {255, 255, 255, 255}) ;
+void DrawTexture(Texture texture, Rectangle rect, Color color = {255, 255, 255, 255});
 
 /*!
 
@@ -124,7 +130,8 @@ void DrawTexture(Texture texture, Rectangle rect, Color color= {255, 255, 255, 2
    @return void
 
 */
-void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation, Color color = {255, 255, 255, 255});
+void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation,
+                   Color color = {255, 255, 255, 255});
 
 /*!
 
@@ -138,4 +145,35 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
    @return void
 
 */
-void DrawLine(glm::vec2 start,glm::vec2 end, Color color, float thickness = 1.0f);
+void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0f);
+
+/*!
+
+   @brief Begin 2D mode
+   - Set up the Camera2D component
+
+   Usage:
+   BeginMode2D(camera);
+
+   // Drawing with the camera view_matrix 
+
+   EndMode2D();
+
+   @version 0.0.2
+   @param Camera2D the camera (view_matrix)
+   @return void
+
+*/
+void BeginMode2D(Camera2D& camera);
+
+/*!
+
+   @brief End 2D mode
+   - Restore the default view_matrix
+
+
+   @version 0.0.2
+   @return void
+
+*/
+void EndMode2D();

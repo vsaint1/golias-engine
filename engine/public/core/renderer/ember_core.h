@@ -2,7 +2,7 @@
 
 #include "core/file_system.h"
 #include "core/renderer/shader.h"
-#include "core/component/Transform.h"
+#include "core/component/Camera.h"
 
 #include <stb_truetype.h>
 
