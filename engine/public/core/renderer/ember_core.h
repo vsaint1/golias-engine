@@ -1,6 +1,9 @@
 #pragma once
 
 #include "core/file_system.h"
+#include "core/renderer/shader.h"
+#include "core/component/Camera.h"
+
 #include <stb_truetype.h>
 
 
@@ -26,8 +29,8 @@ struct Renderer {
 
     struct {
         SDL_GLContext context   = 0;
-        unsigned int shaderProgram = 0;
         unsigned int vao = 0, vbo = 0;
+        Shader default_shader{};
         int viewport[2]          = {480, 270};
     } OpenGL;
 
@@ -55,7 +58,6 @@ struct Core {
     } Time;
 };
 
-
 struct Vertex {
     glm::vec3 position; 
     glm::vec2 texCoord; 
@@ -81,6 +83,12 @@ struct Font {
     float kerning = 0.0f;
     int ascent, descent, line_gap;
     int scale;
+
+    bool IsValid()
+    {
+        return texture.id != 0 && glyphs.size() > 0;
+    }
+    
 };
 
 struct Rectangle {
@@ -100,15 +108,30 @@ struct Color {
 
 /*!
     @brief Create a renderer instance
+    - Backend `OpenGL` or `Metal`
+
+    @param window SDL window instance
+    @param view_width Viewport width
+    @param view_height Viewport height
+    @param type Renderer type `OPENGL` or `METAL`
+
+    @version 0.0.1
+    @return Renderer
+*/
+Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height,RendererType type);
+
+/*!
+    @brief Create a renderer instance internally
+    - Backend `OpenGL` 
 
     @param window SDL window instance
     @param view_width Viewport width
     @param view_height Viewport height
 
-    @version 0.0.1
+    @version 0.0.2
     @return Renderer
 */
-Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height);
+Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
 
 /*!
     @brief Get the renderer instance
