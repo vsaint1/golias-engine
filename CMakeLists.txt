@@ -6,7 +6,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE INTERNAL "")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(ember_engine)
+project(game_template)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
@@ -30,17 +30,19 @@ else()
 endif()
 
 if(MSVC)
+    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+
     if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
         add_definitions(/MP)				# parallelize each target, unless Ninja is the generator
     endif()
 endif()
 
-# ENGINE SOURCE
-file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp", "engine/private/*.cpp" "engine/private/*.c")
 
-# GAME SOURCE WILL BE AT SRC
+# RUNTIME SOURCE WILL BE AT SRC
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
 
+# DEPENDENCIES
 add_subdirectory(vendor/glad)
 
 add_subdirectory(vendor/stb_image)
@@ -48,6 +50,16 @@ add_subdirectory(vendor/stb_image)
 add_subdirectory(vendor/stb_truetype)
 
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
+
+set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
+set(GLM_BUILD_TESTS OFF)
+set(GLM_BUILD_TESTS OFF)
+set(GLM_BUILD_TESTS OFF)
+set(GLM_BUILD_TESTS OFF)
+set(GLM_ENABLE_CXX_20 ON)
+set(GLM_TEST_ENABLE OFF)
+add_subdirectory(vendor/glm)
+
 
 # set(SDLTTF_VENDORED ON) # build own deps.
 # add_subdirectory(vendor/SDL_ttf EXCLUDE_FROM_ALL)
@@ -62,14 +74,8 @@ add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 # set(SDLMIXER_FLAC ON)
 # add_subdirectory(vendor/SDL_mixer EXCLUDE_FROM_ALL)
 
-set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_ENABLE_CXX_20 ON)
-set(GLM_TEST_ENABLE OFF)
-add_subdirectory(vendor/glm)
+add_subdirectory(engine)
+
 
 if(EMSCRIPTEN)
 	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
@@ -83,11 +89,10 @@ endif()
 
 
 if(ANDROID)
-
+    set(PROJECT_NAME "ember_engine")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES})
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
-
 endif()
 
 # iOS [simulator/device]
@@ -162,7 +167,7 @@ endif()
 
 # Windows [x86_x64/arm]
 if(MSVC)
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+    add_executable(${PROJECT_NAME} ${SOURCES})
 
  
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
@@ -212,7 +217,7 @@ endif()
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
-
+# USING SDL3 NEW API SDL_MAIN_USE_CALLBACKS HELP'S WITH CROSS PLATFORM SHIPPING
 target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)

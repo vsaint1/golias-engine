@@ -44,8 +44,8 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     text_transform.rotation = glm::vec3(0.f);
     text_transform.scale    = glm::vec3(1.f);
 
-    text_transform2.position = glm::vec3(1500.f, 500.f, 0.f); // ofscreen for testing
-    text_transform2.rotation = glm::vec3(45.f);
+    text_transform2.position = glm::vec3(1500.f, 500.f, 1.f); // ofscreen for testing
+    text_transform2.rotation = glm::vec3(0.f);
     text_transform2.scale    = glm::vec3(1.f);
 
     text_transform3.position = glm::vec3(10.f, 350.f, 0.f);
@@ -69,8 +69,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     if (angle > 360.0f) {
         angle = 0.0f;
     }
-
-    text_transform2.rotation = glm::vec3(angle);
 
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
