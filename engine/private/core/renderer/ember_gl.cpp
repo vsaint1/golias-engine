@@ -171,36 +171,12 @@ Texture LoadTexture(const std::string& file_path) {
 
     stbi_set_flip_vertically_on_load(false);
 
-    auto path = ASSETS_PATH + file_path;
+    const auto buffer = LoadFileIntoMemory(file_path);
 
-    SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
-
-    if (!file_rw) {
-        LOG_ERROR("Failed to open file %s", path.c_str());
-        return {};
-    }
-
-    Sint64 size = SDL_GetIOSize(file_rw);
-    if (size <= 0) {
-        LOG_ERROR("Failed to get file size %s", path.c_str());
-        SDL_CloseIO(file_rw);
-        return {};
-    }
-
-    std::vector<char> buffer(size);
-
-    if (SDL_ReadIO(file_rw, buffer.data(), size) != size) {
-        LOG_ERROR("Failed to read file %s", path.c_str());
-        SDL_CloseIO(file_rw);
-        return {};
-    }
-
-    SDL_CloseIO(file_rw);
-
-    unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), size, &w, &h, &channels, 4);
+    unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &w, &h, &channels, 4);
 
     if (!data) {
-        LOG_ERROR("Failed to load texture with path: %s", path.c_str());
+        LOG_ERROR("Failed to load texture with path: %s", file_path.c_str());
         return {};
     }
 
@@ -216,7 +192,7 @@ Texture LoadTexture(const std::string& file_path) {
 
     stbi_image_free(data);
 
-    LOG_INFO("Loaded texture with ID: %d, path: %s", texId, path.c_str());
+    LOG_INFO("Loaded texture with ID: %d, path: %s", texId, file_path.c_str());
     LOG_INFO(" > Width %d, Height %d", w, h);
     LOG_INFO(" > Num. Channels %d", channels);
 
@@ -238,32 +214,15 @@ void UnloadTexture(Texture texture) {
 Font LoadFont(const std::string& file_path, int font_size) {
     Font font = {};
 
-    auto path = ASSETS_PATH + file_path;
+    const auto font_buffer = LoadFileIntoMemory(file_path);
 
-    SDL_IOStream* file_rw = SDL_IOFromFile(path.c_str(), "rb");
-    if (!file_rw) {
-        LOG_ERROR("Failed to open font file %s", path.c_str());
+    if (font_buffer.empty()) {
+        LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
         return font;
     }
-
-    Sint64 size = SDL_GetIOSize(file_rw);
-    if (size <= 0) {
-        LOG_ERROR("Failed to get file size %s", path.c_str());
-        SDL_CloseIO(file_rw);
-        return font;
-    }
-
-    std::vector<unsigned char> font_buffer(size);
-    if (SDL_ReadIO(file_rw, font_buffer.data(), size) != size) {
-        LOG_ERROR("Failed to read file %s", path.c_str());
-        SDL_CloseIO(file_rw);
-        return font;
-    }
-
-    SDL_CloseIO(file_rw);
 
     stbtt_fontinfo font_info;
-    stbtt_InitFont(&font_info, font_buffer.data(), stbtt_GetFontOffsetForIndex(font_buffer.data(), 0));
+    stbtt_InitFont(&font_info, (unsigned char*)font_buffer.data(), stbtt_GetFontOffsetForIndex((unsigned char*)font_buffer.data(), 0));
 
     float scale = stbtt_ScaleForPixelHeight(&font_info, (float) font_size);
     int ascent, descent, lineGap;
@@ -328,7 +287,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, path.c_str());
+    LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, file_path.c_str());
     LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
     LOG_INFO(" > Num. Glyphs %zu", font.glyphs.size());
 
@@ -343,7 +302,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text,  Transform& transform, Color color, float kerning) {
+void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
@@ -404,10 +363,10 @@ void DrawText(Font& font, const std::string& text,  Transform& transform, Color 
         float v1 = g.y1;
 
         glm::vec3 scale = transform.scale;
-        float scaledX0 = x0 * scale.x;
-        float scaledY0 = y0 * scale.y;
-        float scaledX1 = x1 * scale.x;
-        float scaledY1 = y1 * scale.y;
+        float scaledX0  = x0 * scale.x;
+        float scaledY0  = y0 * scale.y;
+        float scaledX1  = x1 * scale.x;
+        float scaledY1  = y1 * scale.y;
 
         vertices.push_back({{scaledX0, scaledY0, 0.0f}, {u0, v0}});
         vertices.push_back({{scaledX1, scaledY0, 0.0f}, {u1, v0}});
