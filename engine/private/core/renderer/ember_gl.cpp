@@ -47,12 +47,12 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #endif
 
     Renderer* _renderer           = new Renderer; // TODO: use smart ptrs
-    _renderer->OpenGL.viewport[0] = view_width;
-    _renderer->OpenGL.viewport[1] = view_height;
+    _renderer->viewport[0] = view_width;
+    _renderer->viewport[1] = view_height;
     _renderer->window             = window;
-    _renderer->OpenGL.context     = glContext;
+    _renderer->SetContext(glContext);
 
-    _renderer->OpenGL.default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
+    _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
     Vertex default_quad[] = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
@@ -64,11 +64,11 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
         {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // tl
     };
 
-    glGenVertexArrays(1, &_renderer->OpenGL.vao);
-    glGenBuffers(1, &_renderer->OpenGL.vbo);
+    glGenVertexArrays(1, &_renderer->VAO);
+    glGenBuffers(1, &_renderer->VBO);
 
-    glBindVertexArray(_renderer->OpenGL.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, _renderer->OpenGL.vbo);
+    glBindVertexArray(_renderer->VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, _renderer->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(default_quad), default_quad, GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
@@ -98,13 +98,13 @@ void BeginDrawing() {
     core.Time.previous = core.Time.current;
 
     glm::mat4 projection =
-        glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f, -1.0f, 1.0f);
+        glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
     glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->OpenGL.default_shader.Use();
-    GetRenderer()->OpenGL.default_shader.SetValue("u_View", view);
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Projection", projection);
+    GetRenderer()->default_shader.Use();
+    GetRenderer()->default_shader.SetValue("u_View", view);
+    GetRenderer()->default_shader.SetValue("u_Projection", projection);
 }
 
 void EndDrawing() {
@@ -250,6 +250,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
 void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
 
+    static Mesh mesh; 
+
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
         std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
@@ -259,7 +261,7 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("u_Texture", 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -268,11 +270,11 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
         color.a / 255.0f,
     };
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
 
     glm::mat4 model = transform.GetModelMatrix();
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("u_Model", model);
 
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -320,21 +322,13 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
 
         cursor_x += g.advance + kerning;
     }
+    
 
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+    mesh.Update(vertices);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
+    mesh.Draw(GL_TRIANGLES);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(renderer->OpenGL.vao);
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
+   
 }
 
 
@@ -347,10 +341,11 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
         return;
     }
 
+    // TODO: refactor to a Material class
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("u_Texture", 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -362,33 +357,25 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
 
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("u_Model", model);
 
 
-    Vertex vertices[] = {
+    std::vector<Vertex> vertices = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
         {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
         {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
         {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    static Mesh mesh(vertices);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
+    mesh.Update(vertices);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    glEnableVertexAttribArray(1);
+    mesh.Draw(GL_TRIANGLE_FAN);
 
-    glBindVertexArray(renderer->OpenGL.vao);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
 }
 
 
@@ -403,7 +390,7 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("u_Texture", 0);
 
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -420,42 +407,29 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
         color.a / 255.0f,
     };
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
 
     float texLeft   = (float) source.x / texture.width;
     float texRight  = (float) (source.x + source.width) / texture.width;
     float texTop    = (float) source.y / texture.height;
     float texBottom = (float) (source.y + source.height) / texture.height;
 
+    GetRenderer()->default_shader.SetValue("u_Model", model);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
-
-
-    Vertex vertices[] = {
+    std::vector<Vertex> vertices = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
         {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, texTop)},
         {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, texBottom)},
         {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
     };
 
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    static Mesh mesh(vertices);
 
+    mesh.Update(vertices);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
+    mesh.Draw(GL_TRIANGLE_FAN);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(renderer->OpenGL.vao);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glBindVertexArray(0);
 }
-
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
@@ -469,36 +443,33 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
 
-    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("u_Model", model);
 
 
-    Vertex vertices[2] = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                          {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+   std::vector<Vertex> vertices = {
+        {glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}
+    };
 
-    glBindBuffer(GL_ARRAY_BUFFER, renderer->OpenGL.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(renderer->OpenGL.vao);
+    static Mesh mesh(vertices); 
+    mesh.Update(vertices); 
 
     glLineWidth(thickness);
-    glDrawArrays(GL_LINES, 0, 2);
-    glBindVertexArray(0);
+
+    mesh.Draw(GL_LINES);
 }
 
-void BeginMode2D(Camera2D& camera){
-    GetRenderer()->OpenGL.default_shader.Use();
-    GetRenderer()->OpenGL.default_shader.SetValue("u_View", camera.GetViewMatrix());
+void BeginMode2D(Camera2D& camera) {
+    GetRenderer()->default_shader.Use();
+
+    const glm::mat4& view = camera.GetViewMatrix();
+
+    GetRenderer()->default_shader.SetValue("u_View", view);
 }
 
-void EndMode2D(){
+void EndMode2D() {
     glm::mat4 view = glm::mat4(1.0f);
-    GetRenderer()->OpenGL.default_shader.SetValue("u_View", view);
+    GetRenderer()->default_shader.SetValue("u_View", view);
 }

@@ -1,4 +1,4 @@
-#include "core/component/Transform.h"
+#include "core/component/transform.h"
 
 
 glm::mat4 Transform::GetModelMatrix() const {

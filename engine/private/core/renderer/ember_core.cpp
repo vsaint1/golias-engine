@@ -22,6 +22,26 @@ Renderer* GetRenderer() {
     return renderer;
 }
 
+void Renderer::SetContext(const SDL_GLContext& ctx) {
+    context = ctx;
+}
+
+void Renderer::SetContext(/*MTL*/) {
+    // TODO: metal
+}
+
+void Renderer::Destroy() {
+    default_shader.Destroy();
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+
+    SDL_GL_DestroyContext(context);
+
+    SDL_DestroyWindow(window);
+
+    delete this;
+}
 
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
@@ -83,8 +103,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL" : "Metal");
-    LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->OpenGL.viewport[0],
-             GetRenderer()->OpenGL.viewport[1]);
+    LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->viewport[0],
+             GetRenderer()->viewport[1]);
 
     core.Window.width  = width;
     core.Window.height = height;
@@ -119,16 +139,8 @@ void SetTargetFPS(int fps) {
 
 void CloseWindow() {
 
-    GetRenderer()->OpenGL.default_shader.Destroy();
+    renderer->Destroy();
 
-    glDeleteVertexArrays(1, &renderer->OpenGL.vao);
-    glDeleteBuffers(1, &renderer->OpenGL.vbo);
-
-    SDL_GL_DestroyContext(renderer->OpenGL.context);
-
-    SDL_DestroyWindow(renderer->window);
-
-    delete renderer;
 
     SDL_Quit();
 }
