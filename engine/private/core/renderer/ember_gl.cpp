@@ -341,7 +341,8 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
         return;
     }
 
-    // TODO: refactor to a Material class
+    static Mesh mesh;
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
@@ -370,7 +371,6 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
         {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
     };
 
-    static Mesh mesh(vertices);
 
     mesh.Update(vertices);
 
@@ -386,6 +386,8 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
         std::call_once(log_once, []() { LOG_WARN("Texture not loaded, skipping draw!!!"); });
         return;
     }
+
+    static Mesh mesh;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
@@ -423,7 +425,6 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
         {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
     };
 
-    static Mesh mesh(vertices);
 
     mesh.Update(vertices);
 
