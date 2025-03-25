@@ -2,39 +2,7 @@
 
 #include "ember_core.h"
 
-/*!
 
-    @brief GLSL shader header (API `OpenGL`) 
-
-    @version 0.0.1
-*/
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
-#else
-#define SHADER_HEADER "#version 330 core\n"
-#endif
-
-/*!
-
-   @brief API `OpenGL` shader compilation
-   - Compile the shader `FRAGMENT` or `VERTEX`
-
-   @version 0.0.1
-   @param type The shader type, `GL_FRAGMENT_SHADER` or `GL_VERTEX_SHADER` 
-   @param src The shader source
-   @return unsigned int  The compiled shader ID
-*/
-unsigned int CompileShader(unsigned int type, const char* src);
-
-/*!
-
-   @brief API `OpenGL` default shader program
-   - Creates the default shader program
-
-   @version 0.0.1
-   @return unsigned int  The shader program ID
-*/
-unsigned int CreateShaderProgram();
 
 /*!
 

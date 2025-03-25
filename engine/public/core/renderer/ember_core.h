@@ -1,7 +1,9 @@
 #pragma once
 
 #include "core/file_system.h"
+#include "core/renderer/shader.h"
 #include "core/component/Transform.h"
+
 #include <stb_truetype.h>
 
 
@@ -27,8 +29,8 @@ struct Renderer {
 
     struct {
         SDL_GLContext context   = 0;
-        unsigned int shaderProgram = 0;
         unsigned int vao = 0, vbo = 0;
+        Shader default_shader{};
         int viewport[2]          = {480, 270};
     } OpenGL;
 
@@ -114,7 +116,10 @@ struct Color {
     @version 0.0.1
     @return Renderer
 */
-Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height);
+Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height,RendererType type);
+
+Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
+
 
 /*!
     @brief Get the renderer instance

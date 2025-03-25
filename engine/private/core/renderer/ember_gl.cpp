@@ -3,7 +3,7 @@
 #include <stb_image.h>
 
 
-Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
+Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -52,8 +52,7 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
     _renderer->window             = window;
     _renderer->OpenGL.context     = glContext;
 
-    unsigned int shaderProgram      = CreateShaderProgram();
-    _renderer->OpenGL.shaderProgram = shaderProgram;
+    _renderer->OpenGL.default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
     Vertex default_quad[] = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
@@ -85,61 +84,6 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height) {
     return _renderer;
 }
 
-Renderer* GetRenderer() {
-    return renderer;
-}
-
-void CloseWindow() {
-    glDeleteProgram(renderer->OpenGL.shaderProgram);
-    glDeleteVertexArrays(1, &renderer->OpenGL.vao);
-    glDeleteBuffers(1, &renderer->OpenGL.vbo);
-
-    SDL_GL_DestroyContext(renderer->OpenGL.context);
-
-    SDL_DestroyWindow(renderer->window);
-
-    delete renderer;
-}
-
-unsigned int CompileShader(unsigned int type, const char* src) {
-    unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char info_log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, info_log);
-        const char* type_str = type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
-        LOG_CRITICAL("[%s] - Shader compilation failed: %s", type_str, info_log);
-    }
-
-    LOG_INFO("Successfully compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
-
-    return shader;
-}
-
-unsigned int CreateShaderProgram() {
-
-    const auto vertexShaderSrc   = SHADER_HEADER + LoadAssetsFile("shaders/default_vert.glsl");
-    const auto fragmentShaderSrc = SHADER_HEADER + LoadAssetsFile("shaders/default_frag.glsl");
-
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShaderSrc.c_str());
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc.c_str());
-
-    unsigned int program = glCreateProgram();
-
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-
-    // WARN: since our project is simple, we don't need to delete shader's ( it help's with debugging )
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    return program;
-}
-
 void ClearBackground(Color color) {
     glm::vec4 norm_color = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
 
@@ -156,9 +100,8 @@ void BeginDrawing() {
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->OpenGL.viewport[0], (float) renderer->OpenGL.viewport[1], 0.0f, -1.0f, 1.0f);
 
-    glUseProgram(renderer->OpenGL.shaderProgram);
-    glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Projection"), 1, GL_FALSE,
-                       glm::value_ptr(projection));
+    GetRenderer()->OpenGL.default_shader.Use();
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Projection", projection);
 }
 
 void EndDrawing() {
@@ -222,7 +165,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
     }
 
     stbtt_fontinfo font_info;
-    stbtt_InitFont(&font_info, (unsigned char*)font_buffer.data(), stbtt_GetFontOffsetForIndex((unsigned char*)font_buffer.data(), 0));
+    stbtt_InitFont(&font_info, (unsigned char*) font_buffer.data(),
+                   stbtt_GetFontOffsetForIndex((unsigned char*) font_buffer.data(), 0));
 
     float scale = stbtt_ScaleForPixelHeight(&font_info, (float) font_size);
     int ascent, descent, lineGap;
@@ -316,7 +260,8 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
+
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -325,12 +270,11 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
         color.a / 255.0f,
     };
 
-    glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
 
     glm::mat4 model = transform.GetModelMatrix();
 
-    glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
-                       glm::value_ptr(model));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
 
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -407,7 +351,8 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
+
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -419,11 +364,11 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
 
-    glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
-                       glm::value_ptr(model));
 
-    glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
+
 
     Vertex vertices[] = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
@@ -459,7 +404,9 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-    glUniform1i(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Texture"), 0);
+
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Texture", 0);
+
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -475,15 +422,16 @@ void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 
         color.a / 255.0f,
     };
 
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
+
     float texLeft   = (float) source.x / texture.width;
     float texRight  = (float) (source.x + source.width) / texture.width;
     float texTop    = (float) source.y / texture.height;
     float texBottom = (float) (source.y + source.height) / texture.height;
 
-    glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
-                       glm::value_ptr(model));
 
-    glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
+
 
     Vertex vertices[] = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
@@ -523,10 +471,9 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    glUniformMatrix4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Model"), 1, GL_FALSE,
-                       glm::value_ptr(model));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Color", norm_color);
 
-    glUniform4fv(glGetUniformLocation(renderer->OpenGL.shaderProgram, "u_Color"), 1, glm::value_ptr(norm_color));
+    GetRenderer()->OpenGL.default_shader.SetValue("u_Model", model);
 
 
     Vertex vertices[2] = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},

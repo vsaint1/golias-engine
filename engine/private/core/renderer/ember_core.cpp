@@ -1,6 +1,28 @@
 #include "core/renderer/ember_core.h"
 
 
+Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type) {
+
+    if (type == RendererType::OPENGL) {
+        return CreateRendererGL(window, view_width, view_height);
+    }
+
+    if (type == RendererType::METAL) {
+        LOG_ERROR("Metal renderer is not supported yet");
+        return nullptr;
+    }
+
+
+    LOG_CRITICAL("Unknown renderer type");
+
+    return nullptr;
+}
+
+Renderer* GetRenderer() {
+    return renderer;
+}
+
+
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
     /*!
@@ -53,8 +75,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
 #endif
 
-    // TODO: Refactor this to call the correct backend e.g SDL_CreateRenderer
-    renderer = CreateRenderer(_window, width, height);
+    renderer = CreateRenderer(_window, width, height, type);
 
     LOG_INFO("Successfully created window with title: %s", _title);
     LOG_INFO(" > Width %d, Height %d", width, height);
@@ -93,4 +114,21 @@ void SetTargetFPS(int fps) {
     core.Time.previous = SDL_GetTicks() / 1000.f;
 
     LOG_INFO("Target FPS (frames per second) to %02.03f ms", (float) core.Time.target * 1000.f);
+}
+
+
+void CloseWindow() {
+
+    GetRenderer()->OpenGL.default_shader.Destroy();
+
+    glDeleteVertexArrays(1, &renderer->OpenGL.vao);
+    glDeleteBuffers(1, &renderer->OpenGL.vbo);
+
+    SDL_GL_DestroyContext(renderer->OpenGL.context);
+
+    SDL_DestroyWindow(renderer->window);
+
+    delete renderer;
+
+    SDL_Quit();
 }
