@@ -52,7 +52,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     text_transform3.rotation = glm::vec3(0.f);
     text_transform3.scale    = glm::vec3(1.f);
 
-    camera.transform.position = glm::vec3(100.f, 50.f, 0.0f);
+    camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
     camera.transform.rotation = glm::vec3(0.f);
     camera.transform.scale    = glm::vec3(0.5f);
 
@@ -82,6 +82,9 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
              "is working? \nNão",
              text_transform2, {255, 255, 255, 255});
 
+    DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
+
+
     EndMode2D();
 
     DrawTexture(tex3, {20, 50, tex1.width, tex1.height});
@@ -92,7 +95,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
     DrawText(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
 
-    DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
     EndDrawing();
 
@@ -116,6 +118,11 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
     auto pKey = SDL_GetKeyboardState(0);
     
+    if (event->type == SDL_EVENT_MOUSE_WHEEL) {
+        camera.transform.scale.x += event->wheel.y * 0.1f;
+        camera.transform.scale.y += event->wheel.y * 0.1f;
+    }
+
     // TODO: add delta time
     if (pKey[SDL_SCANCODE_D]) {
         camera.transform.position.x += 10.0f;
