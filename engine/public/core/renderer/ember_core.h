@@ -108,18 +108,30 @@ struct Color {
 
 /*!
     @brief Create a renderer instance
+    - Backend `OpenGL` or `Metal`
 
     @param window SDL window instance
     @param view_width Viewport width
     @param view_height Viewport height
+    @param type Renderer type `OPENGL` or `METAL`
 
     @version 0.0.1
     @return Renderer
 */
 Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height,RendererType type);
 
-Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
+/*!
+    @brief Create a renderer instance internally
+    - Backend `OpenGL` 
 
+    @param window SDL window instance
+    @param view_width Viewport width
+    @param view_height Viewport height
+
+    @version 0.0.2
+    @return Renderer
+*/
+Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
 
 /*!
     @brief Get the renderer instance

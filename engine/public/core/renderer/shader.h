@@ -7,7 +7,7 @@
     - Use the shader
     - Send uniforms
 
-    @version 0.0.1
+    @version 0.0.2
     @param string vertex The shader source
     @param string fragment The shader source
 */

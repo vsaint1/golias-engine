@@ -18,7 +18,7 @@ std::string LoadAssetsFile(const std::string& file_path);
    @brief Loads a given file from `assets` folder into memory
    - The file path is relative to `assets` folder
 
-   @version 0.0.1
+   @version 0.0.2
    @param file_path the path to the file in `assets` folder
    @return File content as `vector<char>`
 */
