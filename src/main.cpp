@@ -73,7 +73,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawText(default_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
     
     DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 100);
 
@@ -114,9 +114,10 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     }
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        GetRenderer()->viewport[0] = event->window.data1;
-        GetRenderer()->viewport[1] = event->window.data2;
-        glViewport(0, 0, event->window.data1, event->window.data2);
+        int bbWidth,bbHeight;
+        SDL_GetWindowSizeInPixels(GetRenderer()->window, &bbWidth, &bbHeight);
+
+        glViewport(0, 0, bbWidth,bbHeight);
     }
 
     auto pKey = SDL_GetKeyboardState(0);
