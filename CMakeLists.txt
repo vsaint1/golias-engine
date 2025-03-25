@@ -155,7 +155,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     RESOURCE "${RESOURCES}")
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework OpenGL" "-framework CoreQuartz" "-framework AppKit" "-framework MetalKit")
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit")
 
 
 endif()

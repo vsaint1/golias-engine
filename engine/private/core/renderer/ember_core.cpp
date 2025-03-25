@@ -48,11 +48,12 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     /*!
         @brief Unset some SDL flags and set supported later.
     */
-    if (flags & SDL_WINDOW_HIGH_PIXEL_DENSITY || flags & SDL_WINDOW_OPENGL || flags & SDL_WINDOW_METAL) {
-        flags &= ~SDL_WINDOW_HIGH_PIXEL_DENSITY;
+    if (flags & SDL_WINDOW_OPENGL || flags & SDL_WINDOW_METAL) {
         flags &= ~SDL_WINDOW_OPENGL;
         flags &= ~SDL_WINDOW_METAL;
     }
+
+    flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
     if (type == RendererType::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
@@ -89,13 +90,16 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     }
 
+    int bbWidth,bbHeight;
+    SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
+
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
     SDL_SetWindowFullscreen(_window, true);
 
 #endif
 
-    renderer = CreateRenderer(_window, width, height, type);
+    renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
 
     LOG_INFO("Successfully created window with title: %s", _title);
     LOG_INFO(" > Width %d, Height %d", width, height);

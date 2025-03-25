@@ -73,7 +73,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+    DrawText(default_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
     
     DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 100);
 
