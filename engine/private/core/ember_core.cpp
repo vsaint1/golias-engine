@@ -178,6 +178,12 @@ bool InitAudio() {
     core.Audio.spec.format   = SDL_AUDIO_F32;
     core.Audio.spec.channels = config.channels;
     
+    res = ma_engine_start(&engine);
+
+    if(res != MA_SUCCESS) {
+        LOG_ERROR("Failed to start MA engine backend %d", res);
+        return false;
+    }
 
     ma_engine_set_volume(&engine, core.Audio.global_volume);
 

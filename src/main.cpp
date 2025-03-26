@@ -29,7 +29,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     if (!InitAudio()) {
         return SDL_APP_FAILURE;
     }
-
+    
     SetTargetFPS(60);
 
     mine_music = Mix_LoadMusic("sounds/lullaby.mp3");
