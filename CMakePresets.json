@@ -100,7 +100,9 @@
       "name": "macosx",
       "displayName": "MacOS",
       "description": "MacOS build with xcode",
-      "targets": ["game_template","engine"],
+      "targets": [
+        "ember_engine"
+      ],
       "verbose": true,
       "configurePreset": "mac"
     },
@@ -108,7 +110,9 @@
       "name": "webgl-r",
       "displayName": "WebGL Release",
       "description": "WebGL build with emscripten",
-      "targets": ["game_template","engine"],
+      "targets": [
+        "ember_engine"
+      ],
       "verbose": true,
       "configurePreset": "web"
     },
@@ -116,7 +120,9 @@
       "name": "windows-d",
       "displayName": "Windows x64 Debug",
       "description": "Windows x64 build MSVC",
-      "targets": ["game_template"],
+      "targets": [
+        "ember_engine"
+      ],
       "verbose": true,
       "configurePreset": "debug-windows"
     },
@@ -124,7 +130,9 @@
       "name": "windows-r",
       "displayName": "Windows x64 Release",
       "description": "Windows x64 build MSVC",
-      "targets": ["game_template","engine"],
+      "targets": [
+        "ember_engine"
+      ],
       "verbose": true,
       "configurePreset": "rel-windows"
     },
@@ -132,7 +140,9 @@
       "name": "linux-d",
       "displayName": "Linux Debug",
       "description": "Linux build with cmake",
-      "targets": ["game_template","engine"],
+      "targets": [
+        "ember_engine"
+      ],
       "verbose": true,
       "configurePreset": "linux"
     }

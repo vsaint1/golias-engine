@@ -187,7 +187,7 @@ bool InitAudio() {
 
     ma_engine_set_volume(&engine, core.Audio.global_volume);
 
-    LOG_INFO("Successfully MA engine backend %d", res);
+    LOG_INFO("Successfully MA engine backend");
     return true;
 }
 
@@ -216,7 +216,7 @@ Music* Mix_LoadMusic(const std::string& file_Path) {
     music->volume   = 1.f;
 
     LOG_INFO("Music loaded %s", path.c_str());
-    LOG_INFO(" > Duration %.2f", music->duration / 60.f);
+    LOG_INFO(" > Duration %.2f seconds", music->duration / 60.f);
     LOG_INFO(" > Volume %.2f", music->volume);
 
     musics.emplace(path, music);

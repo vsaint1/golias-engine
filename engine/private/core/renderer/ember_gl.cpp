@@ -120,6 +120,8 @@ Texture LoadTexture(const std::string& file_path) {
 
     unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &w, &h, &channels, 4);
 
+    bool error_texture  = false;
+
     if (!data) {
         LOG_ERROR("Failed to load texture with path: %s", file_path.c_str());
         w    = 128;
@@ -129,7 +131,7 @@ Texture LoadTexture(const std::string& file_path) {
         auto fallback_error_texture = [w, h, data]() {
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {
-                    int i       = (y * w + x) * 4;
+                    int i        = (y * w + x) * 4;
                     bool is_pink = ((x / 8) % 2) == ((y / 8) % 2);
 
                     data[i + 0] = is_pink ? 180 : 0;
@@ -141,6 +143,8 @@ Texture LoadTexture(const std::string& file_path) {
         };
 
         fallback_error_texture();
+        error_texture = true;
+
     }
 
     unsigned int texId;
@@ -155,9 +159,11 @@ Texture LoadTexture(const std::string& file_path) {
 
     stbi_image_free(data);
 
-    LOG_INFO("Loaded texture with ID: %d, path: %s", texId, file_path.c_str());
-    LOG_INFO(" > Width %d, Height %d", w, h);
-    LOG_INFO(" > Num. Channels %d", channels);
+    if (!error_texture) {
+        LOG_INFO("Loaded texture with ID: %d, path: %s", texId, file_path.c_str());
+        LOG_INFO(" > Width %d, Height %d", w, h);
+        LOG_INFO(" > Num. Channels %d", channels);
+    }
 
     return {texId, w, h};
 }
