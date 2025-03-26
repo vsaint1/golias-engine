@@ -248,7 +248,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
+void DrawTextT(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
 
     static Mesh mesh; 
 
@@ -332,7 +332,7 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
 }
 
 
-void DrawTexture(Texture texture, Rectangle rect, Color color) {
+void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 
 
     if (texture.id == 0) {
@@ -379,7 +379,7 @@ void DrawTexture(Texture texture, Rectangle rect, Color color) {
 }
 
 
-void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation, Color color) {
+void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation, Color color) {
 
     if (texture.id == 0) {
         static std::once_flag log_once;

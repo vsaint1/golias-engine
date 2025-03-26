@@ -60,6 +60,7 @@ set(GLM_ENABLE_CXX_20 ON)
 set(GLM_TEST_ENABLE OFF)
 add_subdirectory(vendor/glm)
 
+add_subdirectory(vendor/mini_audio)
 
 # set(SDLTTF_VENDORED ON) # build own deps.
 # add_subdirectory(vendor/SDL_ttf EXCLUDE_FROM_ALL)
@@ -85,6 +86,7 @@ endif()
 # ios/macosx
 if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+    target_link_libraries(${PROJECT_NAME} PRIVATE m pthread dl)
 endif()
 
 

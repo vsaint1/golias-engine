@@ -10,4 +10,4 @@ file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp", "private/*.cpp" "private/*.c")
 
 add_library(engine STATIC ${ENGINE_SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm mini_audio)

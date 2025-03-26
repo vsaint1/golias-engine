@@ -9,8 +9,7 @@ Texture tex1;
 Texture tex2;
 Texture tex3;
 
-Font error_font;
-Font default_font;
+Font error_font, default_font;
 std::vector<Texture> textures;
 
 Transform text_transform;
@@ -19,13 +18,25 @@ Transform text_transform3;
 
 Camera2D camera;
 
+Music* mine_music;
+
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
+    if (!InitAudio()) {
+        return SDL_APP_FAILURE;
+    }
+
     SetTargetFPS(60);
+
+    mine_music = Mix_LoadMusic("sounds/test.flac");
+
+    Mix_PlayMusic(mine_music);
+
+    // Mix_PauseMusic(mine_music);
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
@@ -56,6 +67,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     camera.transform.rotation = glm::vec3(0.f);
     camera.transform.scale    = glm::vec3(1.f);
 
+
     return SDL_APP_CONTINUE;
 }
 
@@ -73,18 +85,18 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
-    
+    DrawTextT(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+
     DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 100);
 
-    DrawText(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale", text_transform, {125, 0, 0, 255});
+    DrawTextT(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale", text_transform, {125, 0, 0, 255});
 
     BeginMode2D(camera);
 
-    DrawText(default_font,
-             "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 "
-             "is working? \nNão",
-             text_transform2, {255, 255, 255, 255});
+    DrawTextT(default_font,
+              "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 "
+              "is working? \nNão",
+              text_transform2, {255, 255, 255, 255});
 
     DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
@@ -96,7 +108,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
-    DrawText(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
+    DrawTextT(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
 
 
     EndDrawing();
@@ -114,10 +126,10 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     }
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        int bbWidth,bbHeight;
+        int bbWidth, bbHeight;
         SDL_GetWindowSizeInPixels(GetRenderer()->window, &bbWidth, &bbHeight);
 
-        glViewport(0, 0, bbWidth,bbHeight);
+        glViewport(0, 0, bbWidth, bbHeight);
     }
 
     auto pKey = SDL_GetKeyboardState(0);
@@ -158,6 +170,8 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
     for (auto& tex : textures) {
         UnloadTexture(tex);
     }
+
+    CloseAudio();
 
     CloseWindow();
 }
