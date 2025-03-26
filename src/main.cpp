@@ -41,7 +41,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     // Mix_PlayMusic(tel_music);
 
     tex1 = LoadTexture("sprites/Character_001.png");
-    tex2 = LoadTexture("sprites/Character_002.png");
+    tex2 = LoadTexture("sprites/Character_002w.png");
     tex3 = LoadTexture("sprites/Tools.png");
 
     // for (int i = 0; i < 32; i++) {

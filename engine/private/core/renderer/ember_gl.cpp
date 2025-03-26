@@ -122,10 +122,27 @@ Texture LoadTexture(const std::string& file_path) {
 
     if (!data) {
         LOG_ERROR("Failed to load texture with path: %s", file_path.c_str());
-        return {};
+        w    = 128;
+        h    = 128;
+        data = new unsigned char[w * h * 4];
+
+        auto fallback_error_texture = [w, h, data]() {
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    int i       = (y * w + x) * 4;
+                    bool is_pink = ((x / 8) % 2) == ((y / 8) % 2);
+
+                    data[i + 0] = is_pink ? 180 : 0;
+                    data[i + 1] = is_pink ? 0 : 0;
+                    data[i + 2] = is_pink ? 180 : 0;
+                    data[i + 3] = 255;
+                }
+            }
+        };
+
+        fallback_error_texture();
     }
 
-    // TODO: we should create a simple texture if failed loading.
     unsigned int texId;
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
@@ -133,7 +150,8 @@ Texture LoadTexture(const std::string& file_path) {
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // GL_NEAREST is better for pixel art style
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+                    GL_NEAREST); // GL_NEAREST is better for pixel art style / Low Resolution
 
     stbi_image_free(data);
 
