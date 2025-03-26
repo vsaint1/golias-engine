@@ -94,7 +94,7 @@ if(ANDROID)
     set(PROJECT_NAME "ember_engine")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES})
-    target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
+    target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl OpenSLES)
 endif()
 
 # iOS [simulator/device]
@@ -113,9 +113,11 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     find_library(CG CoreGraphics REQUIRED)
     find_library(CF CoreFoundation REQUIRED)
     find_library(GL OpenGLES REQUIRED)
+    find_library(CA CoreAudio REQUIRED)
+    find_library(AU AudioToolBox REQUIRED)
     find_library(UKIT UIKit)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT} ${CA} ${AU})
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_ICON_FILE ${ICON_PATH}
@@ -162,7 +164,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     RESOURCE "${RESOURCES}")
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit")
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit")
 
 
 endif()
@@ -194,7 +196,7 @@ if(EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s AUDIO_WORKLET=1 -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
 
 
 endif()

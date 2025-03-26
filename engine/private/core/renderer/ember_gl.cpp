@@ -46,10 +46,10 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
 #endif
 
-    Renderer* _renderer           = new Renderer; // TODO: use smart ptrs
+    Renderer* _renderer    = new Renderer; // TODO: use smart ptrs
     _renderer->viewport[0] = view_width;
     _renderer->viewport[1] = view_height;
-    _renderer->window             = window;
+    _renderer->window      = window;
     _renderer->SetContext(glContext);
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
@@ -248,15 +248,17 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawTextT(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
+void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
 
-    static Mesh mesh; 
+    static Mesh mesh;
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
         std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
     }
+
+    kerning = 0.0f; // TODO: fix kerning
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
@@ -322,13 +324,11 @@ void DrawTextT(Font& font, const std::string& text, Transform& transform, Color 
 
         cursor_x += g.advance + kerning;
     }
-    
+
 
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLES);
-
-   
 }
 
 
@@ -375,11 +375,11 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLE_FAN);
-
 }
 
 
-void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation, Color color) {
+void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation,
+                   Color color) {
 
     if (texture.id == 0) {
         static std::once_flag log_once;
@@ -429,7 +429,6 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLE_FAN);
-
 }
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
@@ -449,13 +448,11 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
 
-   std::vector<Vertex> vertices = {
-        {glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-        {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}
-    };
+    std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+                                    {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
 
-    static Mesh mesh(vertices); 
-    mesh.Update(vertices); 
+    static Mesh mesh(vertices);
+    mesh.Update(vertices);
 
     glLineWidth(thickness);
 

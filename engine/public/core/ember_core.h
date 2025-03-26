@@ -70,6 +70,8 @@ struct Core {
     } Window;
 
     struct {
+        SDL_AudioDeviceID device_id = 0;
+        SDL_AudioSpec spec;
         float global_volume = 5.0f;
     } Audio;
 

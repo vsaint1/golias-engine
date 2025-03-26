@@ -18,7 +18,7 @@ Transform text_transform3;
 
 Camera2D camera;
 
-Music* mine_music;
+Music *mine_music, *tel_music;
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
@@ -32,11 +32,13 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     SetTargetFPS(60);
 
-    mine_music = Mix_LoadMusic("sounds/test.flac");
+    mine_music = Mix_LoadMusic("sounds/lullaby.mp3");
+
+    tel_music = Mix_LoadMusic("sounds/test.flac");
 
     Mix_PlayMusic(mine_music);
 
-    // Mix_PauseMusic(mine_music);
+    // Mix_PlayMusic(tel_music);
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
@@ -85,15 +87,15 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ClearBackground({120, 100, 100, 255});
     BeginDrawing();
 
-    DrawTextT(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
 
     DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 100);
 
-    DrawTextT(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale", text_transform, {125, 0, 0, 255});
+    DrawText(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale", text_transform, {125, 0, 0, 255});
 
     BeginMode2D(camera);
 
-    DrawTextT(default_font,
+    DrawText(default_font,
               "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 "
               "is working? \nNão",
               text_transform2, {255, 255, 255, 255});
@@ -108,7 +110,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     char msg[256];
     SDL_snprintf(msg, sizeof(msg), "Angle: %.2f", angle);
-    DrawTextT(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
+    DrawText(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f); // this will get clamped
 
 
     EndDrawing();
@@ -142,10 +144,12 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     // TODO: add delta time
     if (pKey[SDL_SCANCODE_D]) {
         camera.transform.position.x += 10.0f;
+        Mix_PauseMusic(mine_music);
     }
 
     if (pKey[SDL_SCANCODE_A]) {
         camera.transform.position.x -= 10.0f;
+        Mix_PlayMusic(mine_music);
     }
 
     if (pKey[SDL_SCANCODE_W]) {

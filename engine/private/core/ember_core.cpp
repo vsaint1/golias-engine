@@ -68,7 +68,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         flags |= SDL_WINDOW_OPENGL;
     }
 
-    // TODO: Get orientations
+    // TODO: Get orientations from config
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
@@ -96,6 +96,13 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
 
+    auto hdpi_screen = [display_mode, bbWidth, bbHeight]() {
+        if (display_mode->w == bbWidth && display_mode->h == bbHeight) {
+            return true;
+        }
+        return false;
+    };
+
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
     SDL_SetWindowFullscreen(_window, true);
@@ -108,9 +115,10 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     LOG_INFO(" > Width %d, Height %d", width, height);
     LOG_INFO(" > Display ID %d", display_mode->displayID);
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
+    LOG_INFO(" > High DPI screen (%s), Backbuffer (%dx%d)", hdpi_screen() ? "YES" : "NO", bbWidth, bbHeight);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL" : "Metal");
-    LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->viewport[0], GetRenderer()->viewport[1]);
+    // LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->viewport[0], GetRenderer()->viewport[1]);
 
     core.Window.width  = width;
     core.Window.height = height;
@@ -152,6 +160,8 @@ void CloseWindow() {
 
 
 bool InitAudio() {
+    SDL_AudioDeviceID devId;
+
     ma_engine_config config = ma_engine_config_init();
     config.channels         = 2;
     config.sampleRate       = 48000;
@@ -162,6 +172,13 @@ bool InitAudio() {
         return false;
     }
 
+    SDL_memset(&core.Audio.spec, 0, sizeof(SDL_AudioSpec));
+
+    core.Audio.spec.freq     = config.sampleRate;
+    core.Audio.spec.format   = SDL_AUDIO_F32;
+    core.Audio.spec.channels = config.channels;
+    
+
     ma_engine_set_volume(&engine, core.Audio.global_volume);
 
     LOG_INFO("Successfully MA engine backend %d", res);
@@ -169,7 +186,7 @@ bool InitAudio() {
 }
 
 Music* Mix_LoadMusic(const std::string& file_Path) {
-    Music* music = (Music*)SDL_malloc(sizeof(Music));
+    Music* music = (Music*) SDL_malloc(sizeof(Music));
 
     std::string path = ASSETS_PATH + file_Path;
 
@@ -227,9 +244,9 @@ void Mix_PauseMusic(Music* music) {
 void Mix_UnloadMusic(Music* music) {
 
     Mix_PauseMusic(music);
-    
+
     ma_sound_uninit(&music->sound);
-    
+
     SDL_free(music);
 }
 
@@ -243,4 +260,6 @@ void CloseAudio() {
 
     LOG_INFO("Closing MA engine backend");
     ma_engine_uninit(&engine);
+
+    // SDL_CloseAudioDevice(core.Audio.device_id);
 }
