@@ -194,8 +194,8 @@ Music* Mix_LoadMusic(const std::string& file_Path);
 
     @brief Play music
 
-    @param Music Valid music pointer
-    @param loop Play music in loop
+    @param music Valid Music struct pointer
+    @param loop Play music in `loop` or not
 
     @version 0.0.3
     @return void
@@ -207,7 +207,7 @@ void Mix_PlayMusic(Music* music, bool loop = false);
 
     @brief Pause music and fade out
 
-    @param Music Valid music pointer
+    @param music Valid Music struct pointer
 
     @version 0.0.3
     @return void
@@ -221,7 +221,7 @@ void Mix_PauseMusic(Music* music);
 
     @see CloseAudio
     
-    @param Music Valid music pointer
+    @param music Valid Music struct pointer
 
     @version 0.0.3
     @return void
