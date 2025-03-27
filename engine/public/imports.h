@@ -19,6 +19,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
+#include <miniaudio.h>
+
 
 #if __ANDROID__
 const std::filesystem::path BASE_PATH = "";

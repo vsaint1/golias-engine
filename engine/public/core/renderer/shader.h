@@ -38,9 +38,12 @@ public:
     unsigned int GetID() const {
         return id;
     }
+    
 
 private:
     unsigned int id;
 
+    unsigned int GetUniformLocation(const std::string&name) const;
+    
     unsigned int CompileShader(unsigned int type, const char* source);
 };

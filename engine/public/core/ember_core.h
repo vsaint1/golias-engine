@@ -74,6 +74,7 @@ struct Core {
         SDL_AudioDeviceID device_id = 0;
         SDL_AudioSpec spec;
         float global_volume = 5.0f;
+        Ember_VFS ember_vfs;
     } Audio;
 
 
@@ -201,6 +202,29 @@ void Mix_PlayAudio(Audio* audio, bool loop = false);
     @return void
 */
 void Mix_PauseAudio(Audio* audio);
+
+/*!
+
+    @brief Change the audio volume
+
+    @param audio Valid Audio struct pointer
+    @param volume Audio volume from 0.0 to 1.0
+
+    @version 0.0.3
+    @return void
+*/
+void Mix_SetVolume(Audio* audio, float volume);
+
+/*!
+
+    @brief Change the [audio engine] global volume
+
+    @param volume Audio volume from 0 to 100
+
+    @version 0.0.3
+    @return void
+*/
+void Mix_SetGlobalVolume(float volume);
 
 /*!
 
