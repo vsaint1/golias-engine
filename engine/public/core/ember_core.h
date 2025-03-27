@@ -5,6 +5,7 @@
 #include "core/file_system.h"
 #include "core/renderer/mesh.h"
 #include "core/renderer/shader.h"
+#include "core/time_manager.h"
 
 
 /*!
@@ -75,12 +76,8 @@ struct Core {
         float global_volume = 5.0f;
     } Audio;
 
-    struct {
-        double current;
-        double previous;
-        double frame;
-        double target;
-    } Time;
+
+    TimeManager* Time = nullptr;
 };
 
 
@@ -148,15 +145,6 @@ void CloseWindow();
 */
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
 
-/*!
-
-    @brief Set the target frames per second
-
-    @version 0.0.1
-    @param fps Target frames per second
-    @return void
-*/
-void SetTargetFPS(int fps);
 
 /*!
 
@@ -171,7 +159,7 @@ bool InitAudio();
 /*!
 
     @brief Close Sound Engine and free allocated resources
-    
+
 
     @version 0.0.3
     @return void
@@ -181,58 +169,58 @@ void CloseAudio();
 
 /*!
 
-    @brief Load Music and keep track of it
+    @brief Load Audio and keep track of it
 
-    @param file_Path Path to the music file
-    
+    @param file_Path Path to the audio file
+
     @version 0.0.3
-    @return Music allocated music memory struct
+    @return Audio allocated audio memory struct
 */
-Music* Mix_LoadMusic(const std::string& file_Path);
+Audio* Mix_LoadAudio(const std::string& file_Path);
 
 /*!
 
-    @brief Play music
+    @brief Play audio
 
-    @param music Valid Music struct pointer
-    @param loop Play music in `loop` or not
-
-    @version 0.0.3
-    @return void
-*/
-void Mix_PlayMusic(Music* music, bool loop = false);
-
-
-/*!
-
-    @brief Pause music and fade out
-
-    @param music Valid Music struct pointer
+    @param music Valid Audio struct pointer
+    @param loop Play audio in `loop` or not
 
     @version 0.0.3
     @return void
 */
-void Mix_PauseMusic(Music* music);
+void Mix_PlayAudio(Audio* audio, bool loop = false);
+
 
 /*!
 
-    @brief Unload Music allocated memory
-    - Manually clear allocated music or at the end will be freed automatically 
+    @brief Pause audio and fade out
+
+    @param audio Valid Audio struct pointer
+
+    @version 0.0.3
+    @return void
+*/
+void Mix_PauseAudio(Audio* audio);
+
+/*!
+
+    @brief Unload Audio allocated memory
+    - Manually clear allocated audio or at the end will be freed automatically
 
     @see CloseAudio
-    
-    @param music Valid Music struct pointer
+
+    @param audio Valid Audio struct pointer
 
     @version 0.0.3
     @return void
 */
-void Mix_UnloadMusic(Music* music);
+void Mix_UnloadAudio(Audio* audio);
 
 // TODO: create a Resource Manager
-inline std::unordered_map<std::string, Music*> musics;
+inline std::unordered_map<std::string, Audio*> audios;
 
 static Renderer* renderer = nullptr;
 
 extern ma_engine engine;
 
-static Core core;
+extern Core core;

@@ -12,7 +12,7 @@ struct Vertex {
 };
 
 /*! @brief Mesh class
-    - A mesh is a collection of vertices and indices 
+    - A mesh is a collection of vertices and indices
     - VAO, VBO and EBO related to the mesh
     - Material (SOON)
 
@@ -26,9 +26,17 @@ public:
 
     ~Mesh();
 
+    void Bind() const {
+        glBindVertexArray(VAO);
+    }
+
     void Draw(GLenum mode = GL_TRIANGLES) const;
 
     void Update(const std::vector<Vertex>& newVertices);
+
+    int GetVertexCount() const {
+        return vertices.size();
+    }
 
 private:
     unsigned int VAO, VBO, EBO;
@@ -37,3 +45,4 @@ private:
 
     void Setup();
 };
+

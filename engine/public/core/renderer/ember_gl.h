@@ -99,7 +99,7 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning = 0.0f);
 
 /*!
 
@@ -155,7 +155,7 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0
    Usage:
    BeginMode2D(camera);
 
-   // Drawing with the camera view_matrix 
+   // Drawing with the camera view_matrix
 
    EndMode2D();
 

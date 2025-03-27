@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include <map>
+#include <chrono>
 
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1

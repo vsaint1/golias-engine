@@ -1,5 +1,7 @@
 #include "core/ember_core.h"
 
+
+Core core;
 ma_engine engine;
 
 
@@ -70,6 +72,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     // TODO: Get orientations from config
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "0", SDL_HINT_OVERRIDE);
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -134,26 +137,17 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         // TODO
     }
 
+    core.Time = new TimeManager();
 
     return true;
-}
-
-void SetTargetFPS(int fps) {
-    if (fps < 1) {
-        core.Time.target = 0.0f;
-    } else {
-        core.Time.target = 1.0f / (float) fps;
-    }
-
-    core.Time.previous = SDL_GetTicks() / 1000.f;
-
-    LOG_INFO("Target FPS (frames per second) to %02.03f ms", (float) core.Time.target * 1000.f);
 }
 
 
 void CloseWindow() {
 
     renderer->Destroy();
+
+    delete core.Time;
 
     SDL_Quit();
 }
@@ -177,10 +171,10 @@ bool InitAudio() {
     core.Audio.spec.freq     = config.sampleRate;
     core.Audio.spec.format   = SDL_AUDIO_F32;
     core.Audio.spec.channels = config.channels;
-    
+
     res = ma_engine_start(&engine);
 
-    if(res != MA_SUCCESS) {
+    if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to start MA engine backend %d", res);
         return false;
     }
@@ -191,20 +185,26 @@ bool InitAudio() {
     return true;
 }
 
-Music* Mix_LoadMusic(const std::string& file_Path) {
-    Music* music = (Music*) SDL_malloc(sizeof(Music));
+Audio* Mix_LoadAudio(const std::string& file_Path) {
+
+    Audio* audio = (Audio*) SDL_malloc(sizeof(Audio));
+    
+    if(audio == nullptr){
+        LOG_ERROR("Failed to allocate memory for sound");
+        return nullptr;
+    }
 
     std::string path = ASSETS_PATH + file_Path;
 
-    ma_result res = ma_sound_init_from_file(&engine, path.c_str(), 0, 0, 0, &music->sound);
-
+    ma_result res = ma_sound_init_from_file(&engine, path.c_str(), 0, 0, 0, &audio->sound);
+    
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to load sound file %s, %d", path.c_str(), res);
         return nullptr;
     }
 
     float len = 0.0f;
-    res       = ma_sound_get_length_in_seconds(&music->sound, &len);
+    res       = ma_sound_get_length_in_seconds(&audio->sound, &len);
 
 
     if (res != MA_SUCCESS) {
@@ -212,56 +212,66 @@ Music* Mix_LoadMusic(const std::string& file_Path) {
         return nullptr;
     }
 
-    music->duration = len;
-    music->volume   = 1.f;
+    audio->duration = len;
+    audio->volume   = 1.f;
 
-    LOG_INFO("Music loaded %s", path.c_str());
-    LOG_INFO(" > Duration %.2f seconds", music->duration / 60.f);
-    LOG_INFO(" > Volume %.2f", music->volume);
+    LOG_INFO("Audio loaded %s", file_Path.c_str());
+    LOG_INFO(" > Duration %.2f seconds", audio->duration);
+    LOG_INFO(" > Volume %.2f", audio->volume);
 
-    musics.emplace(path, music);
+    audios.emplace(file_Path, audio);
 
-    return music;
+    return audio;
 }
 
-void Mix_PlayMusic(Music* music, bool loop) {
+void Mix_PlayAudio(Audio* audio, bool loop) {
 
-    if (music == nullptr) {
-        LOG_ERROR("The music wasn't loaded");
+    if (audio == nullptr) {
+        LOG_ERROR("The Audio wasn't loaded");
         return;
     }
 
-    ma_sound_set_looping(&music->sound, loop);
-    ma_sound_set_volume(&music->sound, music->volume);
-    ma_sound_start(&music->sound);
-}
+    ma_result res = ma_sound_start(&audio->sound);
 
-
-void Mix_PauseMusic(Music* music) {
-
-    if (music == nullptr) {
-        LOG_ERROR("The music wasn't loaded");
+    if (res != MA_SUCCESS) {
+        LOG_ERROR("Failed to start Audio playback");
         return;
     }
 
-    ma_sound_stop(&music->sound);
+    ma_sound_set_looping(&audio->sound, loop);
+    ma_sound_set_volume(&audio->sound, audio->volume);
+
+    if (!ma_sound_is_playing(&audio->sound)) {
+        LOG_ERROR("Audio failed to start playing");
+    }
 }
 
-void Mix_UnloadMusic(Music* music) {
 
-    Mix_PauseMusic(music);
+void Mix_PauseAudio(Audio* audio) {
 
-    ma_sound_uninit(&music->sound);
+    if (audio == nullptr) {
+        LOG_ERROR("The Audio wasn't loaded");
+        return;
+    }
 
-    SDL_free(music);
+    ma_sound_stop(&audio->sound);
+}
+
+void Mix_UnloadAudio(Audio* audio) {
+
+    Mix_PauseAudio(audio);
+    
+    ma_sound_uninit(&audio->sound);
+
+    SDL_free(audio);
 }
 
 void CloseAudio() {
 
-    LOG_INFO("Cleaning allocated Musics");
+    LOG_INFO("Cleaning allocated Audios");
 
-    for (auto& [_, music] : musics) {
-        Mix_UnloadMusic(music);
+    for (auto& [_, audio] : audios) {
+        Mix_UnloadAudio(audio);
     }
 
     LOG_INFO("Closing MA engine backend");

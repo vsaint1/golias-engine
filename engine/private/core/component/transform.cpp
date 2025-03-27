@@ -1,7 +1,10 @@
 #include "core/component/transform.h"
 
-
 glm::mat4 Transform::GetModelMatrix() const {
+    return glm::mat4(1.0f);
+}
+
+glm::mat4 Transform::GetModelMatrix2D() const {
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, position);

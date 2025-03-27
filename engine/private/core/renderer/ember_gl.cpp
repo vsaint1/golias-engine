@@ -23,12 +23,14 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
 #endif
 
+
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
     if (!glContext) {
         LOG_CRITICAL("Failed to create GL context, %s", SDL_GetError());
         return nullptr;
     }
+
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -45,6 +47,10 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     }
 
 #endif
+
+    if (!SDL_GL_SetSwapInterval(0)) {
+        LOG_CRITICAL("Failed to set swap interval, %s", SDL_GetError());
+    }
 
     Renderer* _renderer    = new Renderer; // TODO: use smart ptrs
     _renderer->viewport[0] = view_width;
@@ -94,9 +100,6 @@ void ClearBackground(Color color) {
 
 void BeginDrawing() {
 
-    core.Time.current  = SDL_GetTicks() / 1000.f;
-    core.Time.previous = core.Time.current;
-
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
@@ -120,7 +123,7 @@ Texture LoadTexture(const std::string& file_path) {
 
     unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &w, &h, &channels, 4);
 
-    bool error_texture  = false;
+    bool error_texture = false;
 
     if (!data) {
         LOG_ERROR("Failed to load texture with path: %s", file_path.c_str());
@@ -144,7 +147,6 @@ Texture LoadTexture(const std::string& file_path) {
 
         fallback_error_texture();
         error_texture = true;
-
     }
 
     unsigned int texId;
@@ -181,6 +183,7 @@ void UnloadTexture(Texture texture) {
 
 
 Font LoadFont(const std::string& file_path, int font_size) {
+
     Font font = {};
 
     const auto font_buffer = LoadFileIntoMemory(file_path);
@@ -200,7 +203,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
     int atlas_w = 512;
     int atlas_h = 512;
-    std::vector<unsigned char> bitmap(atlas_w * atlas_h, 0);
+
+    unsigned char* bitmap = new unsigned char[atlas_w * atlas_h];
 
     int x = 0, y = 0, max_row_height = 0;
 
@@ -240,7 +244,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
         x += gw;
     }
 
-    std::vector<unsigned char> rgba_buffer(atlas_w * atlas_h * 4);
+    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4];
+
 
     for (int i = 0; i < atlas_w * atlas_h; ++i) {
         unsigned char gray     = bitmap[i];
@@ -250,9 +255,10 @@ Font LoadFont(const std::string& file_path, int font_size) {
         rgba_buffer[i * 4 + 3] = gray; // A
     }
 
+
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -269,18 +275,22 @@ Font LoadFont(const std::string& file_path, int font_size) {
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
 
+    delete bitmap;
+    delete rgba_buffer;
+
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning) {
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning) {
 
-    static Mesh mesh;
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
         std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
     }
+
+    static Mesh mesh;
 
     kerning = 0.0f; // TODO: fix kerning
 
@@ -298,7 +308,7 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
 
     GetRenderer()->default_shader.SetValue("u_Color", norm_color);
 
-    glm::mat4 model = transform.GetModelMatrix();
+    glm::mat4 model = transform.GetModelMatrix2D();
 
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
@@ -349,7 +359,6 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
         cursor_x += g.advance + kerning;
     }
 
-
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLES);
@@ -387,17 +396,19 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
+    if (mesh.GetVertexCount() == 0) {
 
-    std::vector<Vertex> vertices = {
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-    };
+        std::vector<Vertex> vertices = {
+            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
+            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+        };
 
+        mesh.Update(vertices);
+    }
 
-    mesh.Update(vertices);
-
+    
     mesh.Draw(GL_TRIANGLE_FAN);
 }
 
@@ -442,21 +453,24 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
-    std::vector<Vertex> vertices = {
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
-        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, texTop)},
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, texBottom)},
-        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
-    };
+    if (mesh.GetVertexCount() == 0) {
+        std::vector<Vertex> vertices = {
+            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
+            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, texTop)},
+            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, texBottom)},
+            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
+        };
 
 
-    mesh.Update(vertices);
+        mesh.Update(vertices);
+    }
 
     mesh.Draw(GL_TRIANGLE_FAN);
 }
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
+    static Mesh mesh;
 
     glm::vec4 norm_color = {
         color.r / 255.0f,
@@ -472,11 +486,12 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
 
-    std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                                    {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+    if (mesh.GetVertexCount() == 0) {
 
-    static Mesh mesh(vertices);
-    mesh.Update(vertices);
+        std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+                                        {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+        mesh.Update(vertices);
+    }
 
     glLineWidth(thickness);
 
