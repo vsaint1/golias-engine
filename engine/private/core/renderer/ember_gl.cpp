@@ -275,8 +275,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
 
-    delete bitmap;
-    delete rgba_buffer;
+    delete[] bitmap;
+    delete[] rgba_buffer;
 
     return font;
 }
