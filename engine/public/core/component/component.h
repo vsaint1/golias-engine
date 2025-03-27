@@ -2,8 +2,9 @@
 
 #include "imports.h"
 #include <stb_truetype.h>
+#include <miniaudio.h>
 
-// JUST FOR CODE ORGANIZATION, SOME ARE NOT COMPONENTS
+// TODO: ( REFACTOR THIS ) `JUST FOR CODE ORGANIZATION, SOME ARE NOT COMPONENTS`
 
 typedef struct Texture {
     unsigned int id = 0;
@@ -11,12 +12,22 @@ typedef struct Texture {
     int height      = 0;
 } Texture, Texture2D;
 
+// Windows API conflict
+namespace ember {
 
-struct Rectangle {
-    int x;
-    int y;
-    int width;
-    int height;
+    struct Rectangle {
+        int x;
+        int y;
+        int width;
+        int height;
+    };
+    
+}; // namespace ember
+
+struct Audio {
+    ma_sound sound;
+    float volume = 1.0f;
+    float duration = 0.0f;
 };
 
 struct Color {
@@ -44,4 +55,3 @@ struct Font {
 
     bool IsValid() const;
 };
-

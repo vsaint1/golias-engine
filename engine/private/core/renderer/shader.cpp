@@ -31,10 +31,10 @@ Shader::Shader(const std::string& vertex, const std::string& fragment) {
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(program, 512, nullptr, infoLog);
-        LOG_CRITICAL("Shader program linking failed: %s", infoLog);
+        LOG_CRITICAL("SHADER_PROGARM linking failed: %s", infoLog);
     }
 
-    LOG_INFO("Successfully linked shader program %d", program);
+    LOG_INFO("Successfully linked SHADER_PROGARM %d", program);
 
     // WARN: since our project is simple, we don't need to delete shader's ( it help's with debugging )
     glDeleteShader(vs);

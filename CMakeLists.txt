@@ -36,7 +36,7 @@ if(MSVC)
 endif()
 
 # ENGINE SOURCE
-file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp", "engine/private/*.cpp" "engine/private/*.c")
+file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp" "engine/private/*.cpp" "engine/private/*.c")
 
 # GAME SOURCE WILL BE AT SRC
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
@@ -47,20 +47,9 @@ add_subdirectory(vendor/stb_image)
 
 add_subdirectory(vendor/stb_truetype)
 
+add_subdirectory(vendor/mini_audio)
+
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
-
-# set(SDLTTF_VENDORED ON) # build own deps.
-# add_subdirectory(vendor/SDL_ttf EXCLUDE_FROM_ALL)
-
-# set(SDLMIXER_VENDORED ON) # build own deps.
-# set(SDLMIXER_MIDI_NATIVE OFF)  # disabled
-# set(SDLMIXER_GME OFF)
-# set(SDLMIXER_WAVPACK OFF)
-# set(SDLMIXER_MOD OFF)
-# set(SDLMIXER_OPUS OFF)
-# set(SDLMIXER_MP3 ON)
-# set(SDLMIXER_FLAC ON)
-# add_subdirectory(vendor/SDL_mixer EXCLUDE_FROM_ALL)
 
 set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
 set(GLM_BUILD_TESTS OFF)
@@ -72,9 +61,8 @@ set(GLM_TEST_ENABLE OFF)
 add_subdirectory(vendor/glm)
 
 if(EMSCRIPTEN)
-	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 endif()
-
 
 # ios/macosx
 if(APPLE)
@@ -95,7 +83,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
     set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
 
- 
+
     set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
@@ -106,21 +94,23 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     find_library(CG CoreGraphics REQUIRED)
     find_library(CF CoreFoundation REQUIRED)
     find_library(GL OpenGLES REQUIRED)
+    find_library(CA CoreAudio REQUIRED)
+    find_library(AU AudioToolBox REQUIRED)
     find_library(UKIT UIKit)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${CS} ${CT} ${IO} ${CS} ${CG} ${GL} ${UKIT} ${CA} ${AU})
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE_ICON_FILE ${ICON_PATH}
-        MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/templates/ios/Info.plist.in"
-        XCODE_IPHONEOS_DEPLOYMENT_TARGET 12.0
-        XCODE_GENERATE_SCHEME TRUE
-        XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
-        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-        XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.emberengine.app.project"
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.emberengine.app.project"
-        XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
+            MACOSX_BUNDLE_ICON_FILE ${ICON_PATH}
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/templates/ios/Info.plist.in"
+            XCODE_IPHONEOS_DEPLOYMENT_TARGET 12.0
+            XCODE_GENERATE_SCHEME TRUE
+            XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
+            XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+            XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.emberengine.app.project"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.emberengine.app.project"
+            XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
     )
 
     # Ensure assets are copied into the bundle
@@ -131,15 +121,15 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     if(CMAKE_OSX_SYSROOT MATCHES "iphonesimulator")
         message(STATUS "SIMULATOR BUILD")
         set_target_properties(${PROJECT_NAME} PROPERTIES
-            XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
-            XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphonesimulator"
-            XCODE_ATTRIBUTE_ARCHS "x86_64 arm64")
+                XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
+                XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphonesimulator"
+                XCODE_ATTRIBUTE_ARCHS "x86_64 arm64")
     else()
         message(STATUS "REAL DEVICE BUILD")
         set_target_properties(${PROJECT_NAME} PROPERTIES
-            XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
-            XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphoneos"
-            XCODE_ATTRIBUTE_ARCHS "arm64")
+                XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH "NO"
+                XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS "iphoneos"
+                XCODE_ATTRIBUTE_ARCHS "arm64")
     endif()
 endif()
 
@@ -153,24 +143,27 @@ if(APPLE AND BUILD_SHARED_LIBS)
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
-    MACOSX_BUNDLE TRUE
-    RESOURCE "${RESOURCES}")
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework OpenGL" "-framework CoreQuartz" "-framework AppKit" "-framework MetalKit")
+            MACOSX_BUNDLE TRUE
+            RESOURCE "${RESOURCES}")
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit")
 
 
 endif()
 
 # Windows [x86_x64/arm]
 if(MSVC)
+    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+
     add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
 
- 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
-    
+
 endif()
 
 # WASM [emscripten]
@@ -187,7 +180,7 @@ if(EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=20MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
 
 
 endif()
@@ -204,15 +197,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl)
 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
 endif()
 
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm mini_audio)
 
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)

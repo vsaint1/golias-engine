@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ember_core.h"
+#include "core/ember_core.h"
 
 
 /*!
@@ -99,7 +99,7 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, Transform& transform, Color color, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning = 0.0f);
 
 /*!
 
@@ -113,7 +113,7 @@ void DrawText(Font& font, const std::string& text, Transform& transform, Color c
    @return void
 
 */
-void DrawTexture(Texture texture, Rectangle rect, Color color = {255, 255, 255, 255});
+void DrawTexture(Texture texture, ember::Rectangle rect, Color color = {255, 255, 255, 255});
 
 /*!
 
@@ -130,7 +130,7 @@ void DrawTexture(Texture texture, Rectangle rect, Color color = {255, 255, 255, 
    @return void
 
 */
-void DrawTextureEx(Texture texture, Rectangle source, Rectangle dest, glm::vec2 origin, float rotation,
+void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation,
                    Color color = {255, 255, 255, 255});
 
 /*!
@@ -155,7 +155,7 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0
    Usage:
    BeginMode2D(camera);
 
-   // Drawing with the camera view_matrix 
+   // Drawing with the camera view_matrix
 
    EndMode2D();
 

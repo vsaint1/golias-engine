@@ -32,7 +32,7 @@
    @param string c-string with `printf` format specifier
    @returns just print the message
 */
-#define LOG_DEBUG(...)    SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
+#define LOG_DEBUG(...) SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
 
 /*!
 
@@ -41,7 +41,7 @@
    @param string c-string with `printf` format specifier
    @returns just print the message
 */
-#define LOG_VERBOSE(...)  SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
+#define LOG_VERBOSE(...) SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
 
 /*!
 
@@ -50,7 +50,7 @@
    @param string c-string with `printf` format specifier
    @returns just print the message
 */
-#define LOG_WARN(...)     SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
+#define LOG_WARN(...) SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
 
 /*!
 
@@ -59,7 +59,7 @@
    @param string c-string with `printf` format specifier
    @returns just print the message
 */
-#define LOG_TRACE(...)    SDL_LogTrace(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
+#define LOG_TRACE(...) SDL_LogTrace(SDL_LOG_CATEGORY_APPLICATION, TRACE_FILE_LOG __VA_ARGS__);
 
 /*!
 
@@ -97,3 +97,26 @@
             LOG_ERROR("API ERROR_CODE: %d", error); \
         }                                           \
     }
+
+/*!
+
+   @brief Timer macro
+   @version 0.0.4
+   
+*/
+#define EMBER_TIMER_START() auto start = std::chrono::high_resolution_clock::now();
+
+
+/*!
+
+   @brief Timer macro end
+   @version 0.0.4
+   @returns the messsage with the duration in ms
+*/
+#define EMBER_TIMER_END(description)                                                             \
+    do {                                                                                            \
+        auto end = std::chrono::high_resolution_clock::now();                                        \
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count(); \
+        LOG_INFO("%s took %d (µs), %.2f (ms)", description, duration, (float) duration / 1000.f);                             \
+    } while (0)
+
