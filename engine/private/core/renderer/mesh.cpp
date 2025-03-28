@@ -24,6 +24,14 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &EBO);
 }
 
+void Mesh::Bind() const {
+    glBindVertexArray(VAO);
+}
+
+size_t Mesh::GetVertexCount() const {
+    return vertices.size();
+}
+
 void Mesh::Draw(GLenum mode) const {
     glBindVertexArray(VAO);
 

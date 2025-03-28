@@ -24,12 +24,7 @@ namespace ember {
     
 }; // namespace ember
 
-struct Audio {
-    ma_decoder* decoder;
-    ma_sound sound;
-    float volume = 1.0f;
-    float duration = 0.0f;
-};
+
 
 struct Color {
     unsigned char r;

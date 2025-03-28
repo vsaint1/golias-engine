@@ -65,16 +65,41 @@ unsigned int Shader::CompileShader(unsigned int type, const char* source) {
 
 unsigned int Shader::GetUniformLocation(const std::string& name) const {
     unsigned int location = glGetUniformLocation(id, name.c_str());
-    
+
     if (location == -1) {
         LOG_WARN("Uniform %s not found", name.c_str());
     }
 
     return location;
 }
+
+bool Shader::IsValid() const {
+    int status;
+
+    glGetProgramiv(id, GL_VALIDATE_STATUS, &status);
+
+    char infoLog[512];
+    if (!status) {
+        glGetProgramInfoLog(id, 512, nullptr, infoLog);
+        LOG_CRITICAL("SHADER_PROGARM validation failed: %s", infoLog);
+        return false;
+    }
+
+    return true;
+}
+
 void Shader::Use() const {
     glUseProgram(id);
 }
+
+void Shader::Destroy() {
+    glDeleteProgram(id);
+}
+
+unsigned int Shader::GetID() const {
+    return id;
+}
+
 
 void Shader::SetValue(const std::string& name, float value) const {
     unsigned int location = GetUniformLocation(name);

@@ -32,15 +32,12 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     mine_music = Mix_LoadAudio("sounds/lullaby.mp3");
 
-    tel_music = Mix_LoadAudio("sounds/test.flac");
+    tel_music = Mix_LoadAudio("sounds/the_entertainer.ogg");
 
+    
     Mix_PlayAudio(mine_music);
 
-    // Mix_SetVolume(mine_music, 0.1f);
-
-  
-
-    // Mix_PlayAudio(tel_music);
+    Mix_PlayAudio(tel_music);
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
@@ -115,8 +112,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     char msg[256];
-
-
     for (int i = 0; i < texture_count; i++) {
         if (camera.IsVisible({i * 32, 350, 0})) {
 
