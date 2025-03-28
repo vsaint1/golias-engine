@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 project(mini_audio)
 
-add_library(mini_audio)
+add_library(mini_audio src/stb_vorbis.c)
 
 # MA [ios] must be obj-c
 if (APPLE)

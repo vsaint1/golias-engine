@@ -1,8 +1,10 @@
-# Ember Engine [![build](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml)
+# Ember [![build](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yaml)
 
 
 
-**Ember Engine** is a lightweight and modular **2D game engine** written in **C/C++**, designed to be simple yet powerful. It aims to provide developers with a flexible cross-platform solution to build 2D games and applications.
+**Ember** is a lightweight and modular **2D/3D game engine/framework** written in **C/C++**, designed to be simple yet powerful. It aims to provide developers with a flexible cross-platform solution to build 2D/3D games and applications.
+
+> ⚠️ **Note:** Currently has no Editor.
 
 ### ✨ Features
 
@@ -22,14 +24,25 @@
 - 🎮 **Input, Audio, and Texture Management**:  Simple and 
   extensible input, audio, and texture management.
 
+### 📂 File Types
+
+- 📸 **Image**: PNG, JPEG, WEBP, GIF, etc...
+
+- 🔠 **Font**: TTF, SDF, etc... 
+
+- 🔈 **Audio**: WAV, MP3, FLAC, OGG, etc...
+
+- 🟥 **Model**: `TODO`
+
 ---
 
 ### 📦 Dependencies
 
-- [sdl3](https://github.com/libsdl-org/SDL) (Windowing, Events, Input, Audio, etc.)
-- [sdl3_mixer](https://github.com/libsdl-org/SDL_mixer) (Audio mixer)
+- [sdl3](https://github.com/libsdl-org/SDL) (Windowing, Inputs, Events, Audio, ...)
 - [stb_image](https://github.com/nothings/stb) (Image loader)
 - [stb_truetype](https://github.com/nothings/stb) (TrueType/SDF font loader)
+- [stb_vorbis](https://github.com/nothings/stb) (OGG Vorbis audio loader/decoder)
+- [mini_audio](https://github.com/mackron/miniaudio) (Audio Engine backend)
 - [glad](https://github.com/Dav1dde/glad) (OpenGL/ES Loader)
 - [glm](https://github.com/g-truc/glm) (C++ math library)
 
@@ -54,7 +67,8 @@
 
 ### 📚 Documentation & Examples
 
-Documentation and usage examples are coming soon.
+[Documentation](https://vsaint1.github.io/ember_engine)
+[Examples](https://github.com/vsaint1/ember_engine/tree/main/examples)
 
 ---
 

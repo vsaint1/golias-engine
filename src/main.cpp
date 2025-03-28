@@ -31,13 +31,13 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     }
 
     mine_music = Mix_LoadAudio("sounds/lullaby.mp3");
-    mine_music = Mix_LoadAudio("lullaby.mp3");
 
-    tel_music = Mix_LoadAudio("sounds/test.flac");
+    tel_music = Mix_LoadAudio("sounds/the_entertainer.ogg");
 
+    
     Mix_PlayAudio(mine_music);
 
-    // Mix_PlayMusic(tel_music);
+    Mix_PlayAudio(tel_music);
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
@@ -89,7 +89,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
 
 
-    DrawText(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale ( 1 milion textures occluded )",
+    DrawText(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale (1 milion textures occluded)",
              text_transform, {125, 0, 0, 255});
 
     char fps[256];
@@ -112,8 +112,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     char msg[256];
-
-
     for (int i = 0; i < texture_count; i++) {
         if (camera.IsVisible({i * 32, 350, 0})) {
 

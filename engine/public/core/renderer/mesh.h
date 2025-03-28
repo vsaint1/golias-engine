@@ -26,17 +26,13 @@ public:
 
     ~Mesh();
 
-    void Bind() const {
-        glBindVertexArray(VAO);
-    }
+    void Bind() const;
 
     void Draw(GLenum mode = GL_TRIANGLES) const;
 
     void Update(const std::vector<Vertex>& newVertices);
 
-    int GetVertexCount() const {
-        return vertices.size();
-    }
+    size_t GetVertexCount() const;
 
 private:
     unsigned int VAO, VBO, EBO;

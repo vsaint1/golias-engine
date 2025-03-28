@@ -163,6 +163,9 @@ if(MSVC)
             ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
+    
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
 
 endif()
 

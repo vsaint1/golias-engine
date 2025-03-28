@@ -63,31 +63,70 @@ unsigned int Shader::CompileShader(unsigned int type, const char* source) {
     return shader;
 }
 
+unsigned int Shader::GetUniformLocation(const std::string& name) const {
+    unsigned int location = glGetUniformLocation(id, name.c_str());
+
+    if (location == -1) {
+        LOG_WARN("Uniform %s not found", name.c_str());
+    }
+
+    return location;
+}
+
+bool Shader::IsValid() const {
+    int status;
+
+    glGetProgramiv(id, GL_VALIDATE_STATUS, &status);
+
+    char infoLog[512];
+    if (!status) {
+        glGetProgramInfoLog(id, 512, nullptr, infoLog);
+        LOG_CRITICAL("SHADER_PROGARM validation failed: %s", infoLog);
+        return false;
+    }
+
+    return true;
+}
+
 void Shader::Use() const {
     glUseProgram(id);
 }
 
+void Shader::Destroy() {
+    glDeleteProgram(id);
+}
+
+unsigned int Shader::GetID() const {
+    return id;
+}
+
+
+void Shader::SetValue(const std::string& name, float value) const {
+    unsigned int location = GetUniformLocation(name);
+    glUniform1f(location, value);
+}
+
 void Shader::SetValue(const std::string& name, int value) const {
-    unsigned int location = glGetUniformLocation(id, name.c_str());
+    unsigned int location = GetUniformLocation(name);
     glUniform1i(location, value);
 }
 
 void Shader::SetValue(const std::string& name, glm::mat4 value) const {
-    unsigned int location = glGetUniformLocation(id, name.c_str());
+    unsigned int location = GetUniformLocation(name);
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
 void Shader::SetValue(const std::string& name, glm::vec2 value) const {
-    unsigned int location = glGetUniformLocation(id, name.c_str());
+    unsigned int location = GetUniformLocation(name);
     glUniform2fv(location, 1, glm::value_ptr(value));
 }
 
 void Shader::SetValue(const std::string& name, glm::vec3 value) const {
-    unsigned int location = glGetUniformLocation(id, name.c_str());
+    unsigned int location = GetUniformLocation(name);
     glUniform3fv(location, 1, glm::value_ptr(value));
 }
 
 void Shader::SetValue(const std::string& name, glm::vec4 value) const {
-    unsigned int location = glGetUniformLocation(id, name.c_str());
+    unsigned int location = GetUniformLocation(name);
     glUniform4fv(location, 1, glm::value_ptr(value));
 }

@@ -40,3 +40,95 @@ std::vector<char> LoadFileIntoMemory(const std::string& file_path){
 
     return buffer;
 }
+
+static ma_result sdl_vfs_onOpen(ma_vfs* pVFS, const char* pPath, ma_uint32 openMode, ma_vfs_file* pFile) {
+    if (!pVFS || !pPath || !pFile) {
+        return MA_INVALID_ARGS;
+    }
+
+    if (openMode != MA_OPEN_MODE_READ) {
+        return MA_INVALID_ARGS;
+    }
+
+    SDL_IOStream* rw = SDL_IOFromFile(pPath, "rb");
+    if (!rw) {
+        return MA_DOES_NOT_EXIST;
+    }
+
+    SDL_File* file = (SDL_File*) SDL_malloc(sizeof(SDL_File));
+    if (!file) {
+        SDL_CloseIO(rw);
+        return MA_OUT_OF_MEMORY;
+    }
+
+    file->rw = rw;
+    *pFile   = file;
+    return MA_SUCCESS;
+}
+
+static ma_result sdl_vfs_onRead(ma_vfs* pVFS, ma_vfs_file file, void* pBuffer, size_t size, size_t* pBytesRead) {
+    if (!file || !pBuffer || !pBytesRead) {
+        return MA_INVALID_ARGS;
+    }
+
+    SDL_File* sdlFile = (SDL_File*) file;
+    size_t bytesRead  = SDL_ReadIO(sdlFile->rw, pBuffer, size);
+    *pBytesRead       = bytesRead;
+
+    return (bytesRead > 0) ? MA_SUCCESS : MA_AT_END;
+}
+
+static ma_result sdl_vfs_onSeek(ma_vfs* pVFS, ma_vfs_file file, ma_int64 offset, ma_seek_origin origin) {
+    if (!file) {
+        return MA_INVALID_ARGS;
+    }
+
+    SDL_File* sdlFile   = (SDL_File*) file;
+    SDL_IOWhence whence = (origin == ma_seek_origin_start)   ? SDL_IO_SEEK_SET
+                        : (origin == ma_seek_origin_current) ? SDL_IO_SEEK_CUR
+                                                             : SDL_IO_SEEK_END;
+
+    return (SDL_SeekIO(sdlFile->rw, offset, whence) < 0) ? MA_ERROR : MA_SUCCESS;
+}
+
+static ma_result sdl_vfs_onTell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCursor) {
+    if (!file || !pCursor) {
+        return MA_INVALID_ARGS;
+    }
+
+    SDL_File* sdlFile = (SDL_File*) file;
+    ma_int64 pos      = SDL_TellIO(sdlFile->rw);
+    if (pos < 0) {
+        return MA_ERROR;
+    }
+
+    *pCursor = pos;
+    return MA_SUCCESS;
+}
+
+static ma_result sdl_vfs_onClose(ma_vfs* pVFS, ma_vfs_file file) {
+    if (!file) {
+        return MA_INVALID_ARGS;
+    }
+
+    SDL_File* sdlFile = (SDL_File*) file;
+    SDL_CloseIO(sdlFile->rw);
+    SDL_free(sdlFile);
+
+    return MA_SUCCESS;
+}
+
+ma_result Ember_Init_VFS(Ember_VFS* vfs) {
+    if (!vfs) {
+        return MA_INVALID_ARGS;
+    }
+
+    vfs->base.onOpen  = sdl_vfs_onOpen;
+    vfs->base.onRead  = sdl_vfs_onRead;
+    vfs->base.onSeek  = sdl_vfs_onSeek;
+    vfs->base.onTell  = sdl_vfs_onTell;
+    vfs->base.onClose = sdl_vfs_onClose;
+    vfs->base.onWrite = NULL;
+
+    return MA_SUCCESS;
+}

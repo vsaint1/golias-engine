@@ -31,16 +31,16 @@ public:
 
     void SetValue(const std::string& name, glm::vec4 value) const;
 
-    void Destroy() {
-        glDeleteProgram(id);
-    }
+    void Destroy();
 
-    unsigned int GetID() const {
-        return id;
-    }
+    unsigned int GetID() const;
+
+    bool IsValid() const;
 
 private:
     unsigned int id;
+
+    unsigned int GetUniformLocation(const std::string& name) const;
 
     unsigned int CompileShader(unsigned int type, const char* source);
 };

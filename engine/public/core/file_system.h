@@ -23,3 +23,16 @@ std::string LoadAssetsFile(const std::string& file_path);
    @return File content as `vector<char>`
 */
 std::vector<char> LoadFileIntoMemory(const std::string& file_path);
+
+
+struct SDL_File {
+   SDL_IOStream* rw;
+};
+
+struct Ember_VFS
+{
+    ma_vfs_callbacks base;
+};
+
+
+ma_result Ember_Init_VFS(Ember_VFS* vfs);

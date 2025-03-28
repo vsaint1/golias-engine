@@ -2,9 +2,9 @@
 
 #include "imports.h"
 #include <stb_truetype.h>
-#include <miniaudio.h>
 
 // TODO: ( REFACTOR THIS ) `JUST FOR CODE ORGANIZATION, SOME ARE NOT COMPONENTS`
+
 
 typedef struct Texture {
     unsigned int id = 0;
@@ -24,11 +24,7 @@ namespace ember {
     
 }; // namespace ember
 
-struct Audio {
-    ma_sound sound;
-    float volume = 1.0f;
-    float duration = 0.0f;
-};
+
 
 struct Color {
     unsigned char r;
