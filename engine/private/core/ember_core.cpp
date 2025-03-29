@@ -1,8 +1,6 @@
 #include "core/ember_core.h"
 
 
-
-
 Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type) {
 
     if (type == RendererType::OPENGL) {
@@ -32,6 +30,12 @@ void Renderer::SetContext(/*MTL*/) {
     // TODO: metal
 }
 
+void Renderer::Resize(int w, int h)  {
+    viewport[0] = w;
+    viewport[1] = h;
+    glViewport(0, 0, w, h);
+}
+
 void Renderer::Destroy() {
     default_shader.Destroy();
 
@@ -55,7 +59,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         flags &= ~SDL_WINDOW_METAL;
     }
 
-    flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE) 
+    flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
 
     if (type == RendererType::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
@@ -96,8 +100,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
-    
-    core.Window.bbWidth = bbWidth;
+
+    core.Window.bbWidth  = bbWidth;
     core.Window.bbHeight = bbHeight;
 
     auto hdpi_screen = [display_mode, bbWidth, bbHeight]() {
@@ -128,7 +132,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     core.Window.width  = width;
     core.Window.height = height;
     core.Window.title  = _title;
-    renderer->type = type;
+    renderer->type     = type;
 
     if (type == RendererType::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
@@ -153,6 +157,3 @@ void CloseWindow() {
 
     SDL_Quit();
 }
-
-
-

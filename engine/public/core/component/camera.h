@@ -1,9 +1,16 @@
 #pragma once
 #include "transform.h"
 
-/*! @brief Camera2D
-    - Projection `ortho`
-*/
+/*!
+       @brief Construct a new Camera2D object
+       - Projection type `orthographic`
+
+       @param view_width Viewport width
+       @param view_height Viewport height
+       @param zoom Camera zoom between (0.0f - 10.0f)
+
+       @version 0.0.5
+   */
 struct Camera2D {
     Transform transform;
     float zoom = 1.0f; // MAX_ZOOM = 10.0f
@@ -15,30 +22,25 @@ struct Camera2D {
     /*!
         @brief Get the viewport
 
+
         @version 0.0.4
-    */
-    glm::vec4 GetViewport() {
-
-        SDL_clamp(zoom, 1.0f, 10.f); 
         
-        float halfWidth  = width / (2.0f * zoom);
-        float halfHeight = height / (2.0f * zoom);
+        @return glm::vec4 Viewport
 
-        return glm::vec4(transform.position.x - halfWidth, transform.position.y - halfHeight, width / zoom,
-                         height / zoom);
-    }
+    */
+    glm::vec4 GetViewport() const;
 
     /*!
         @brief Check if the position is visible by the camera
 
         @param position Object position Transform (position)
+
         @version 0.0.4
+
+        @return bool
+
     */
-    bool IsVisible(const glm::vec3& position) {
-        glm::vec4 viewport = GetViewport();
-        return position.x > viewport.x && position.x < viewport.x + viewport.z && position.y > viewport.y
-            && position.y < viewport.y + viewport.w;
-    }
+    bool IsVisible(const glm::vec3& position);
 
     /*!
        @brief Resize the camera view
@@ -47,10 +49,29 @@ struct Camera2D {
        @param view_height Viewport height
 
        @version 0.0.4
+
+       @return void
+
    */
-    void Resize(int view_width, int view_height) {
-        width  = view_width;
-        height = view_height;
+    void Resize(int view_width, int view_height);
+
+    /*!
+      @brief Get the projection matrix (orthographic)
+
+
+      @version 0.0.4
+
+      @return glm::mat4 Matrix
+
+  */
+    glm::mat4 GetProjectionMatrix() const;
+
+    int GetHeight() const {
+        return height;
+    }
+
+    int GetWidth() const {
+        return width;
     }
 
 private:

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/component/camera.h"
-#include "core/component/component.h"
+#include "core/engine_structs.h"
 #include "core/renderer/mesh.h"
 #include "core/renderer/shader.h"
 #include "core/audio/ember_audio.h"
@@ -39,6 +39,8 @@ struct Renderer {
 
     int viewport[2]   = {480, 270};
     RendererType type = OPENGL;
+
+    void Resize(int w, int h);
 
     void SetContext(const SDL_GLContext& ctx);
 

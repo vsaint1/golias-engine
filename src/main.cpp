@@ -16,7 +16,7 @@ Transform text_transform;
 Transform text_transform2;
 Transform text_transform3;
 
-Camera2D camera = Camera2D(SCREEN_WIDTH, SCREEN_HEIGHT);
+Camera2D camera = Camera2D(480,270);
 
 Audio *mine_music, *tel_music;
 
@@ -34,8 +34,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     tel_music = Mix_LoadAudio("sounds/the_entertainer.ogg");
 
-    
-    Mix_PlayAudio(mine_music);
+    // Mix_PlayAudio(mine_music);
 
     Mix_PlayAudio(tel_music);
 
@@ -44,11 +43,11 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     tex3 = LoadTexture("sprites/Tools.png");
 
 
-    default_font = LoadFont("fonts/Minecraft.ttf", 32);
+    default_font = LoadFont("fonts/Minecraft.ttf", 16);
 
     error_font = LoadFont("fonts/test_unk.ttf", 32);
 
-    text_transform.position = glm::vec3(20.0f, 50.f, 0.f);
+    text_transform.position = glm::vec3(10.0f, 50.f, 0.f);
     text_transform.rotation = glm::vec3(0.f);
     text_transform.scale    = glm::vec3(1.f);
 
@@ -75,6 +74,28 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     core.Time->Update();
 
+    auto pKey = SDL_GetKeyboardState(0);
+
+    // TODO: add delta time
+    if (pKey[SDL_SCANCODE_D]) {
+        camera.transform.position.x += 10.0f;
+        Mix_PauseAudio(mine_music);
+    }
+
+    if (pKey[SDL_SCANCODE_A]) {
+        camera.transform.position.x -= 10.0f;
+        Mix_PlayAudio(mine_music);
+    }
+
+    if (pKey[SDL_SCANCODE_W]) {
+        camera.transform.position.y -= 10.0f;
+    }
+
+    if (pKey[SDL_SCANCODE_S]) {
+        camera.transform.position.y += 10.0f;
+    }
+
+
     angle += 1.0f;
 
     if (angle > 360.0f) {
@@ -94,6 +115,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     char fps[256];
     SDL_snprintf(fps, sizeof(fps), "FPS: %.2f", core.Time->GetFps());
+
     DrawText(default_font, fps,
              {
                  glm::vec3(20.0f, 200.f, 0.f),
@@ -102,31 +124,22 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
              },
              {255, 255, 255, 255});
 
-    BeginMode2D(camera);
+    DrawRectFilled({150, 150, 64, 64}, {255, 255, 0, 255});
     DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 2);
+
+    BeginMode2D(camera);
+
 
     DrawText(default_font,
              "Hello World \ntest \nit works? \nidk, i think so! \nNo emojis =( \nInternationalization (i18n) or UTF-8 "
              "is working? \nNão",
              text_transform2, {255, 255, 255, 255});
 
+    DrawTextureEx(tex2, {0, 0, 32, 32}, {500, 350, 128, 128}, {64, 64}, angle);
 
-    char msg[256];
-    for (int i = 0; i < texture_count; i++) {
-        if (camera.IsVisible({i * 32, 350, 0})) {
-
-            DrawTextureEx(tex2, {0, 0, 32, 32}, {i * 32, 350, 128, 128}, {64, 64}, angle);
-        }
-    }
-
-    SDL_snprintf(msg, sizeof(msg), "Texture count: %d", texture_count);
-
-    DrawTexture(tex3, {0, 0, tex3.width, tex3.height});
+    DrawTexture(tex3, {0, 0, 256, 256});
 
     EndMode2D();
-
-    DrawText(default_font, msg, text_transform3, {255, 0, 0, 255}, 5.f);
-
 
     EndDrawing();
     // EMBER_TIMER_END("Drawing Procedure");
@@ -146,33 +159,12 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
         int bbWidth, bbHeight;
         SDL_GetWindowSizeInPixels(GetRenderer()->window, &bbWidth, &bbHeight);
 
-        glViewport(0, 0, bbWidth, bbHeight);
-        camera.Resize(bbWidth, bbHeight);
+        core.Resize(bbWidth, bbHeight);
+        GetRenderer()->Resize(bbWidth, bbHeight);
     }
-
-    auto pKey = SDL_GetKeyboardState(0);
 
     if (event->type == SDL_EVENT_MOUSE_WHEEL) {
         camera.zoom += event->wheel.y * 0.1f;
-    }
-
-    // TODO: add delta time
-    if (pKey[SDL_SCANCODE_D]) {
-        camera.transform.position.x += 10.0f;
-        Mix_PauseAudio(mine_music);
-    }
-
-    if (pKey[SDL_SCANCODE_A]) {
-        camera.transform.position.x -= 10.0f;
-        Mix_PlayAudio(mine_music);
-    }
-
-    if (pKey[SDL_SCANCODE_W]) {
-        camera.transform.position.y -= 10.0f;
-    }
-
-    if (pKey[SDL_SCANCODE_S]) {
-        camera.transform.position.y += 10.0f;
     }
 
     return SDL_APP_CONTINUE;
