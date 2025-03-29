@@ -3,9 +3,6 @@
 #include "imports.h"
 #include <stb_truetype.h>
 
-// TODO: ( REFACTOR THIS ) `JUST FOR CODE ORGANIZATION, SOME ARE NOT COMPONENTS`
-
-
 typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
@@ -21,9 +18,8 @@ namespace ember {
         int width;
         int height;
     };
-    
-}; // namespace ember
 
+}; // namespace ember
 
 
 struct Color {
@@ -31,6 +27,8 @@ struct Color {
     unsigned char g;
     unsigned char b;
     unsigned char a;
+
+    glm::vec4 GetNormalizedColor() const;
 };
 
 

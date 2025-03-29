@@ -60,28 +60,31 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
-    Vertex default_quad[] = {
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
-        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // br
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
+    glEnable(GL_DEPTH_TEST);
 
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
-        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // tl
-    };
+    // Vertex default_quad[] = {
+    //     {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
+    //     {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // br
+    //     {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
 
-    glGenVertexArrays(1, &_renderer->VAO);
-    glGenBuffers(1, &_renderer->VBO);
+    //     {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
+    //     {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
+    //     {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // tl
+    // };
 
-    glBindVertexArray(_renderer->VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, _renderer->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(default_quad), default_quad, GL_DYNAMIC_DRAW);
+    // glGenVertexArrays(1, &_renderer->VAO);
+    // glGenBuffers(1, &_renderer->VBO);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
+    // glBindVertexArray(_renderer->VAO);
+    // glBindBuffer(GL_ARRAY_BUFFER, _renderer->VBO);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(default_quad), default_quad, GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    glEnableVertexAttribArray(1);
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
+    // glEnableVertexAttribArray(0);
+
+    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
+    // glEnableVertexAttribArray(1);
+
 
     glViewport(0, 0, view_width, view_height);
 
@@ -117,7 +120,7 @@ void EndDrawing() {
 Texture LoadTexture(const std::string& file_path) {
     int w, h, channels;
 
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(true);
 
     const auto buffer = LoadFileIntoMemory(file_path);
 
@@ -299,14 +302,7 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
 
     GetRenderer()->default_shader.SetValue("u_Texture", 0);
 
-    glm::vec4 norm_color = {
-        color.r / 255.0f,
-        color.g / 255.0f,
-        color.b / 255.0f,
-        color.a / 255.0f,
-    };
-
-    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
 
     glm::mat4 model = transform.GetModelMatrix2D();
 
@@ -381,17 +377,10 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.SetValue("u_Texture", 0);
 
-    glm::vec4 norm_color = {
-        color.r / 255.0f,
-        color.g / 255.0f,
-        color.b / 255.0f,
-        color.a / 255.0f,
-    };
-
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
 
 
     GetRenderer()->default_shader.SetValue("u_Model", model);
@@ -399,16 +388,16 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
     if (mesh.GetVertexCount() == 0) {
 
         std::vector<Vertex> vertices = {
-            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
-            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
+            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
         };
 
         mesh.Update(vertices);
     }
 
-    
+
     mesh.Draw(GL_TRIANGLE_FAN);
 }
 
@@ -437,14 +426,7 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     model           = glm::translate(model, glm::vec3(-origin.x, -origin.y, 0.0f));
     model           = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
 
-    glm::vec4 norm_color = {
-        color.r / 255.0f,
-        color.g / 255.0f,
-        color.b / 255.0f,
-        color.a / 255.0f,
-    };
-
-    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
 
     float texLeft   = (float) source.x / texture.width;
     float texRight  = (float) (source.x + source.width) / texture.width;
@@ -454,11 +436,13 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
     if (mesh.GetVertexCount() == 0) {
+
+        const float flipY            = -1.0f;
         std::vector<Vertex> vertices = {
-            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, texTop)},
-            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, texTop)},
-            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, texBottom)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, texBottom)},
+            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, flipY - texTop)},
+            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, flipY - texTop)},
+            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, flipY - texBottom)},
+            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, flipY - texBottom)},
         };
 
 
@@ -472,16 +456,9 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
     static Mesh mesh;
 
-    glm::vec4 norm_color = {
-        color.r / 255.0f,
-        color.g / 255.0f,
-        color.b / 255.0f,
-        color.a / 255.0f,
-    };
-
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.SetValue("u_Color", norm_color);
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
 
     GetRenderer()->default_shader.SetValue("u_Model", model);
 
@@ -498,13 +475,72 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     mesh.Draw(GL_LINES);
 }
 
-void BeginMode2D(Camera2D& camera) {
+
+void DrawRect(ember::Rectangle rect, Color color, float thickness) {
+    static Mesh mesh;
+
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    GetRenderer()->default_shader.Use();
+
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+
+    GetRenderer()->default_shader.SetValue("u_Model", model);
+
+    if (mesh.GetVertexCount() == 0) {
+        std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                        {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                        {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
+                                        {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
+
+        mesh.Update(vertices);
+    }
+
+    glLineWidth(thickness);
+
+    mesh.Draw(GL_LINE_LOOP);
+}
+
+
+void DrawRectFilled(ember::Rectangle rect, Color color) {
+    static Mesh mesh;
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    GetRenderer()->default_shader.Use();
+
+    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+
+    GetRenderer()->default_shader.SetValue("u_Model", model);
+
+    if (mesh.GetVertexCount() == 0) {
+
+        std::vector<Vertex> vertices = {
+            {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+            {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+            {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+            {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+        };
+
+        mesh.Update(vertices);
+    }
+
+    mesh.Draw(GL_TRIANGLE_FAN);
+}
+
+void BeginMode2D(const Camera2D& camera) {
     GetRenderer()->default_shader.Use();
 
     const glm::mat4& view = camera.GetViewMatrix();
 
+    const glm::mat4& projection = camera.GetProjectionMatrix();
+
     GetRenderer()->default_shader.SetValue("u_View", view);
-}
+    
+    GetRenderer()->default_shader.SetValue("u_Projection", projection);
+
+}   
 
 void EndMode2D() {
     glm::mat4 view = glm::mat4(1.0f);

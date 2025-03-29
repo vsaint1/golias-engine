@@ -147,6 +147,36 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 */
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0f);
 
+
+/*!
+
+   @brief Draw rectangle
+
+   @param rect rectangle source
+   @param color Color in RGBA
+   @param thickness float Line thickness
+   @return void
+
+   @version 0.0.6
+
+*/
+void DrawRect(ember::Rectangle rect, Color color,float thickness = 1.0f);
+
+/*!
+
+   @brief Draw rectangle filled
+
+   
+   @param rect rectangle source
+   @param color Color in RGBA
+   @return void
+
+   @version 0.0.6
+
+
+*/
+void DrawRectFilled(ember::Rectangle rect, Color color);
+
 /*!
 
    @brief Begin 2D mode
@@ -164,7 +194,7 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0
    @return void
 
 */
-void BeginMode2D(Camera2D& camera);
+void BeginMode2D(const Camera2D& camera);
 
 /*!
 
@@ -173,6 +203,7 @@ void BeginMode2D(Camera2D& camera);
 
 
    @version 0.0.2
+   
    @return void
 
 */

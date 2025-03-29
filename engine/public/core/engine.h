@@ -3,6 +3,7 @@
 #include "core/file_system.h"
 #include "core/time_manager.h"
 
+
 struct Core {
 
     struct {
@@ -25,8 +26,9 @@ struct Core {
         Ember_VFS ember_vfs;
     } Audio;
 
-
     TimeManager* Time = nullptr;
+
+    void Resize(int w, int h) const;
 };
 
 extern ma_engine engine;
