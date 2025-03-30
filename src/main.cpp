@@ -22,7 +22,7 @@ Audio *mine_music, *tel_music;
 
 
 const char* gui_text = R"(
-    [CONTROLS] - Desktop
+    [CONTROLS] - Desktop/Web
     
     [ESC] - Exit
     [WASD] - Move the camera
@@ -33,7 +33,7 @@ const char* gui_text = R"(
      [2] - Play The Entertainer
 
     [CONTROLS] - Mobile
-     - TODO: add mobile controls
+     - Finger motion
 
     This sample just show how to load textures, 
     fonts, audio and use them.
@@ -55,6 +55,11 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     mine_music = Mix_LoadAudio("sounds/lullaby.mp3");
 
     tel_music = Mix_LoadAudio("sounds/the_entertainer.ogg");
+
+    if(SystemInfo::IsMobile())
+    {
+        Mix_PlayAudio(mine_music);
+    }
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
@@ -119,7 +124,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     }
 
     ClearBackground({120, 100, 100, 255});
-    EMBER_TIMER_START();
+    // EMBER_TIMER_START();
     BeginDrawing();
 
 
@@ -179,7 +184,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     EndDrawing();
-    EMBER_TIMER_END("Drawing Procedure");
+    // EMBER_TIMER_END("Drawing Procedure");
 
     core.Time->FixedFrameRate(60);
 
@@ -188,11 +193,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
-    if (event->type == SDL_EVENT_QUIT) {
-        return SDL_APP_SUCCESS;
-    }
 
     auto pKey = SDL_GetKeyboardState(0);
+
+    if (pKey[SDL_SCANCODE_ESCAPE] || event->type == SDL_EVENT_QUIT) {
+        return SDL_APP_SUCCESS;
+    }
 
     if (pKey[SDL_SCANCODE_1]) {
         Mix_PauseAudio(tel_music);
@@ -204,12 +210,21 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
         Mix_PlayAudio(tel_music);
     }
 
+    if (event->type == SDL_EVENT_FINGER_DOWN || event->type == SDL_EVENT_FINGER_MOTION) {
+        float dx = event->tfinger.dx * (float)GetRenderer()->viewport[0];
+        float dy = event->tfinger.dy * (float)GetRenderer()->viewport[1];
+
+        camera.transform.position.x -= dx; 
+        camera.transform.position.y -= dy;
+    }
+
+
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         int bbWidth, bbHeight;
         SDL_GetWindowSizeInPixels(GetRenderer()->window, &bbWidth, &bbHeight);
 
-        core.Resize(bbWidth, bbHeight);
-        GetRenderer()->Resize(bbWidth, bbHeight);
+        core.Resize(event->window.data1, event->window.data2); // window
+        GetRenderer()->Resize(bbWidth, bbHeight); // back_buffer
     }
 
     if (event->type == SDL_EVENT_MOUSE_WHEEL) {

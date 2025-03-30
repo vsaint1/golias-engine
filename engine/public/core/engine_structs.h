@@ -45,7 +45,7 @@ struct Font {
     int font_size;
     float kerning = 0.0f;
     int ascent, descent, line_gap;
-    int scale;
+    float scale;
 
     bool IsValid() const;
 };

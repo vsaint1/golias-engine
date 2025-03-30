@@ -5,6 +5,16 @@ std::string SystemInfo::GetPlatform() {
     return std::string(SDL_GetPlatform());
 }
 
+bool SystemInfo::IsMobile() {
+    const char* platform = SDL_GetPlatform();
+
+    if (SDL_strcmp(platform, "Android") == 0 || SDL_strcmp(platform, "iOS") == 0) {
+        return true;
+    }
+    
+    return false;
+}
+
 std::string SystemInfo::GetDeviceType() {
 
     return "UNKNOWN";
