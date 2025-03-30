@@ -117,6 +117,6 @@
     do {                                                                                            \
         auto end = std::chrono::high_resolution_clock::now();                                        \
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count(); \
-        LOG_INFO("%s took %d (µs), %.2f (ms)", description, duration, (float) duration / 1000.f);                             \
+        LOG_INFO("%s took %lld (µs), %.2f (ms)", description, duration, (float) duration / 1000.f);                             \
     } while (0)
 
