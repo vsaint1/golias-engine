@@ -61,6 +61,8 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Vertex default_quad[] = {
     //     {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
@@ -537,12 +539,25 @@ void BeginMode2D(const Camera2D& camera) {
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
     GetRenderer()->default_shader.SetValue("u_View", view);
-    
-    GetRenderer()->default_shader.SetValue("u_Projection", projection);
 
-}   
+    GetRenderer()->default_shader.SetValue("u_Projection", projection);
+}
 
 void EndMode2D() {
     glm::mat4 view = glm::mat4(1.0f);
     GetRenderer()->default_shader.SetValue("u_View", view);
+}
+
+
+void BeginCanvas() {
+    BeginDrawing();
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+
+void EndCanvas() {
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 }
