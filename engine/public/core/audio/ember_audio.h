@@ -2,8 +2,8 @@
 
 #include "core/engine.h"
 
-#define NUM_CHANNELS 2
-#define SAMPLE_RATE 44100
+constexpr int NUM_CHANNELS = 2;
+constexpr int SAMPLE_RATE = 48000;
 
 struct Audio {
     ma_decoder* decoder;

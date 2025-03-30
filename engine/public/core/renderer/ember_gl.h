@@ -160,13 +160,13 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0
    @version 0.0.6
 
 */
-void DrawRect(ember::Rectangle rect, Color color,float thickness = 1.0f);
+void DrawRect(ember::Rectangle rect, Color color, float thickness = 1.0f);
 
 /*!
 
    @brief Draw rectangle filled
 
-   
+
    @param rect rectangle source
    @param color Color in RGBA
    @return void
@@ -203,8 +203,34 @@ void BeginMode2D(const Camera2D& camera);
 
 
    @version 0.0.2
-   
+
    @return void
 
 */
 void EndMode2D();
+
+/*!
+
+   @brief Begin Canvas Procedure
+   - Used for Draw Static `UI`
+
+   @version 0.0.7
+
+   @return void
+
+*/
+void BeginCanvas();
+
+/*!
+
+   @brief End Canvas Procedure
+    - Restore GL state
+
+   @see BeginCanvas
+
+   @version 0.0.7
+
+   @return void
+
+*/
+void EndCanvas();

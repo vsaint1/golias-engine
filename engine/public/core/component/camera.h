@@ -2,7 +2,7 @@
 #include "transform.h"
 
 /*!
-       @brief Construct a new Camera2D object
+       @brief Camera2D component
        - Projection type `orthographic`
 
        @param view_width Viewport width
@@ -13,7 +13,6 @@
    */
 struct Camera2D {
     Transform transform;
-    float zoom = 1.0f; // MAX_ZOOM = 10.0f
 
     Camera2D(int view_width, int view_height, float zoom = 1.0f) : width(view_width), height(view_height), zoom(zoom) {}
 
@@ -24,7 +23,7 @@ struct Camera2D {
 
 
         @version 0.0.4
-        
+
         @return glm::vec4 Viewport
 
     */
@@ -74,6 +73,15 @@ struct Camera2D {
         return width;
     }
 
+    void SetZoom(float zoom) {
+        this->zoom = SDL_clamp(zoom, 0.10f, 10.0f); // ENSURE CAMERA ZOOM NEVER HITS 0
+    }
+
+    float GetZoom() const {
+        return this->zoom;
+    }
+
 private:
     int width = 0, height = 0;
+    float zoom = 1.0f; // MAX_ZOOM = 10.0f
 };
