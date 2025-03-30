@@ -5,7 +5,7 @@
 #include "core/renderer/mesh.h"
 #include "core/renderer/shader.h"
 #include "core/audio/ember_audio.h"
-
+#include "core/system_info.h"
 
 /*!
 

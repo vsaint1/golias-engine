@@ -1,12 +1,13 @@
 #include "core/audio/ember_audio.h"
 
 
+
 bool InitAudio() {
     SDL_AudioDeviceID devId;
 
     ma_engine_config config = ma_engine_config_init();
-    config.channels         = 0; 
-    config.sampleRate       = 0; 
+    config.channels         = 0;
+    config.sampleRate       = 0;
 
     ma_result res           = ma_engine_init(&config, &engine);
 

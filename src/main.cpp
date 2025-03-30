@@ -16,9 +16,31 @@ Transform text_transform;
 Transform text_transform2;
 Transform text_transform3;
 
-Camera2D camera = Camera2D(480,270);
+Camera2D camera = Camera2D(480, 270);
 
 Audio *mine_music, *tel_music;
+
+
+const char* gui_text = R"(
+    [CONTROLS] - Desktop
+    
+    [ESC] - Exit
+    [WASD] - Move the camera
+    [MOUSE_WHEEL] - Zoom (in/out)
+
+    [NUM_KEYS]
+     [1] - Play Lullaby
+     [2] - Play The Entertainer
+
+    [CONTROLS] - Mobile
+     - TODO: add mobile controls
+
+    This sample just show how to load textures, 
+    fonts, audio and use them.
+
+    Version: 0.0.7
+    )";
+
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
@@ -34,10 +56,6 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     tel_music = Mix_LoadAudio("sounds/the_entertainer.ogg");
 
-    // Mix_PlayAudio(mine_music);
-
-    Mix_PlayAudio(tel_music);
-
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
     tex3 = LoadTexture("sprites/Tools.png");
@@ -51,7 +69,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     text_transform.rotation = glm::vec3(0.f);
     text_transform.scale    = glm::vec3(1.f);
 
-    text_transform2.position = glm::vec3(1500.f, 500.f, 1.f); // ofscreen for testing
+    text_transform2.position = glm::vec3(700.f, 400.f, 1.f); // ofscreen for testing
     text_transform2.rotation = glm::vec3(0.f);
     text_transform2.scale    = glm::vec3(1.f);
 
@@ -79,12 +97,10 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     // TODO: add delta time
     if (pKey[SDL_SCANCODE_D]) {
         camera.transform.position.x += 10.0f;
-        Mix_PauseAudio(mine_music);
     }
 
     if (pKey[SDL_SCANCODE_A]) {
         camera.transform.position.x -= 10.0f;
-        Mix_PlayAudio(mine_music);
     }
 
     if (pKey[SDL_SCANCODE_W]) {
@@ -103,29 +119,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     }
 
     ClearBackground({120, 100, 100, 255});
-    // EMBER_TIMER_START();
+    EMBER_TIMER_START();
     BeginDrawing();
 
 
-    DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 255});
+       DrawText(error_font, "This shouldnt draw", text_transform, {255, 0, 0, 150});
 
-
-    DrawText(default_font, "Press [W] [A] [S] [D] to move and Mouse Wheel to scale (1 milion textures occluded)",
-             text_transform, {125, 0, 0, 255});
-
-    char fps[256];
-    SDL_snprintf(fps, sizeof(fps), "FPS: %.2f", core.Time->GetFps());
-
-    DrawText(default_font, fps,
-             {
-                 glm::vec3(20.0f, 200.f, 0.f),
-                 glm::vec3(0.f),
-                 glm::vec3(1.f),
-             },
-             {255, 255, 255, 255});
-
-    DrawRectFilled({150, 150, 64, 64}, {255, 255, 0, 255});
-    DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 2);
 
     BeginMode2D(camera);
 
@@ -141,8 +140,46 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     EndMode2D();
 
+
+    BeginCanvas();
+
+    char platform_text[256];
+    SDL_snprintf(platform_text, sizeof(platform_text), "Platform: %s, Battery Percentage: %d",
+                 SystemInfo::GetPlatform().c_str(), SystemInfo::GetBatteryPercentage());
+
+    DrawText(default_font, platform_text, text_transform, {125, 0, 0, 255});
+
+    char fps[256];
+    SDL_snprintf(fps, sizeof(fps), "FPS: %.2f, Zoom: %.2f", core.Time->GetFps(), camera.GetZoom());
+
+
+    DrawText(default_font, gui_text,
+             {
+                 glm::vec3(20.0f, 100.f, 0.f),
+                 glm::vec3(0.f),
+                 glm::vec3(1.f),
+             },
+             {255, 255, 255, 255});
+
+    DrawText(default_font, fps,
+             {
+                 glm::vec3(20.0f, 410.f, 0.f),
+                 glm::vec3(0.f),
+                 glm::vec3(1.f),
+             },
+             {255, 255, 255, 255});
+
+
+    DrawRectFilled({0, 10, 500, 420}, {0, 0, 0, 50});
+
+
+    DrawLine({100, 600}, {800, 600}, {255, 0, 0, 255}, 2);
+
+    EndCanvas();
+
+
     EndDrawing();
-    // EMBER_TIMER_END("Drawing Procedure");
+    EMBER_TIMER_END("Drawing Procedure");
 
     core.Time->FixedFrameRate(60);
 
@@ -155,6 +192,18 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
         return SDL_APP_SUCCESS;
     }
 
+    auto pKey = SDL_GetKeyboardState(0);
+
+    if (pKey[SDL_SCANCODE_1]) {
+        Mix_PauseAudio(tel_music);
+        Mix_PlayAudio(mine_music);
+    }
+
+    if (pKey[SDL_SCANCODE_2]) {
+        Mix_PauseAudio(mine_music);
+        Mix_PlayAudio(tel_music);
+    }
+
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         int bbWidth, bbHeight;
         SDL_GetWindowSizeInPixels(GetRenderer()->window, &bbWidth, &bbHeight);
@@ -164,7 +213,8 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     }
 
     if (event->type == SDL_EVENT_MOUSE_WHEEL) {
-        camera.zoom += event->wheel.y * 0.1f;
+        float zoom = camera.GetZoom() + event->wheel.y * 0.1f;
+        camera.SetZoom(zoom);
     }
 
     return SDL_APP_CONTINUE;

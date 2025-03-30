@@ -27,7 +27,6 @@ glm::mat4 Camera2D::GetProjectionMatrix() const {
 
 glm::vec4 Camera2D::GetViewport() const{
 
-    SDL_clamp(zoom, 1.0f, 10.f);
 
     float halfWidth  = width / (2.0f * zoom);
     float halfHeight = height / (2.0f * zoom);
