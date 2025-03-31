@@ -16,6 +16,11 @@ set(CMAKE_C_STANDARD 99)
 
 set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/assets)
 
+if(NOT EXISTS ${ASSETS_FOLDER})
+    message(STATUS "Copy the assets default assets folder to ${ASSETS_FOLDER}")
+    message(FATAL_ERROR "Assets folder not found: ${ASSETS_FOLDER}")
+endif()
+
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
 

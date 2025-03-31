@@ -1,23 +1,21 @@
 
 extern "C" {
 
+    const char* DeviceName_Injected() {
+        NSString *deviceName = [[UIDevice currentDevice] name];
+        return [deviceName UTF8String];
+    }
 
-const char* DeviceName_Injected() {
-    
-    return "UNKNOWN_DEVICE_NAME";
- 
-}
+    const char* DeviceModel_Injected(){
+        NSString *deviceModel = [[UIDevice currentDevice] model];
+        return [deviceModel UTF8String];
+    }
 
-const char* DeviceModel_Injected(){
-   
-    return "UNKNOWN_DEVICE";
-    
-}
+    const char* DeviceUniqueIdentifier_Injected() {
+        NSUUID *deviceUUID = [[UIDevice currentDevice] identifierForVendor];
+        NSString *uuidString = [deviceUUID UUIDString];
+        return [uuidString UTF8String];
+    }
 
-const char* DeviceUniqueIdentifier_Injected(){
-   
-    return "UNKNOWN_UUID";
-    
-}
 
 }

@@ -89,7 +89,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     core.Window.data = display_mode;
 
-    const char* _title = SDL_strcmp(title, "") == 0 ? title : core.Window.title;
+    const char* _title = SDL_strcmp(title, "") == 0 ? core.Window.title : title;
 
     SDL_Window* _window = SDL_CreateWindow(_title, width, height, flags);
 
