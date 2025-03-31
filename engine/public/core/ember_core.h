@@ -6,6 +6,7 @@
 #include "core/renderer/shader.h"
 #include "core/audio/ember_audio.h"
 #include "core/system_info.h"
+#include "core/ember_utils.h"
 
 /*!
 
