@@ -37,9 +37,11 @@ endif()
 
 # ENGINE SOURCE
 file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp" "engine/private/*.cpp" "engine/private/*.c")
+list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 
 # GAME SOURCE WILL BE AT SRC
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
+
 
 add_subdirectory(vendor/glad)
 
@@ -73,7 +75,9 @@ endif()
 if(ANDROID)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
-    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES})
+    file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
+
+    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES} ${ANDROID_FILES})
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 
 endif()
@@ -86,7 +90,9 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
 
     set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
 
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
+    file(GLOB_RECURSE IOS_FILES "engine/private/core/platform/ios/*.mm")
+
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
 
     find_library(IO ImageIO REQUIRED)
     find_library(CS CoreServices REQUIRED)
@@ -139,9 +145,9 @@ if(APPLE AND BUILD_SHARED_LIBS)
 
     message(STATUS "BUILD MACOS")
     set(RESOURCES "${CMAKE_SOURCE_DIR}/assets")
-    file(GLOB_RECURSE OBJ_C_FILES "engine/private/core/platform/macos/*.mm")
+    file(GLOB_RECURSE MAC_FILES "engine/private/core/platform/macos/*.mm")
 
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} ${OBJ_C_FILES} )
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} ${MAC_FILES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             MACOSX_BUNDLE TRUE
@@ -158,7 +164,9 @@ if(MSVC)
     # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+    file(GLOB_RECURSE WIN_FILES "engine/private/core/platform/windows/*.c")
+
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES} ${WIN_FILES})
 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -175,7 +183,9 @@ endif()
 if(EMSCRIPTEN)
     set(PROJECT_NAME "index")
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+    file(GLOB_RECURSE WEB_FILES "engine/private/core/platform/web/*.c")
+
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES} ${WEB_FILES})
 
     set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
 
