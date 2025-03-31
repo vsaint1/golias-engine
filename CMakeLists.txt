@@ -139,14 +139,16 @@ if(APPLE AND BUILD_SHARED_LIBS)
 
     message(STATUS "BUILD MACOS")
     set(RESOURCES "${CMAKE_SOURCE_DIR}/assets")
+    file(GLOB_RECURSE OBJ_C_FILES "engine/private/core/platform/macos/*.mm")
 
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} )
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} ${OBJ_C_FILES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             MACOSX_BUNDLE TRUE
             RESOURCE "${RESOURCES}")
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit")
+    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit" "-framework IOKit")
+    target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/engine/public)
 
 
 endif()

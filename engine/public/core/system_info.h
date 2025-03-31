@@ -72,3 +72,13 @@ public:
 private:
     SystemInfo() = default;
 };
+
+
+extern "C" {
+
+    const char* DeviceName_Injected();
+
+    const char* DeviceModel_Injected();
+
+    const char* DeviceUniqueIdentifier_Injected();
+}

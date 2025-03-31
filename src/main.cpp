@@ -26,7 +26,7 @@ const char* gui_text = R"(
     
     [ESC] - Exit
     [WASD] - Move the camera
-    [MOUSE_WHEEL] - Zoom (in/out)
+    [MOUSE_WHEEL/TrackPad] - Zoom (in/out)
 
     [NUM_KEYS]
      [1] - Play Lullaby
@@ -60,6 +60,11 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     {
         Mix_PlayAudio(mine_music);
     }
+    
+    LOG_INFO("Device Name %s",SystemInfo::GetDeviceName().c_str());
+    LOG_INFO("Device Model %s",SystemInfo::GetDeviceModel().c_str());
+    LOG_INFO("Device UniqueIdentifier %s",SystemInfo::GetDeviceUniqueIdentifier().c_str());
+    
 
     tex1 = LoadTexture("sprites/Character_001.png");
     tex2 = LoadTexture("sprites/Character_002.png");
