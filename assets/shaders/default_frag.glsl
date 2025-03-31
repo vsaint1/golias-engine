@@ -1,17 +1,17 @@
 in vec2 TexCoord;
 out vec4 FragColor;
 
-uniform sampler2D u_Texture;
-uniform vec4 u_Color;
+uniform sampler2D Texture;
+uniform vec4 Color;
 
 void main() {
 
     vec4 texColor;
 
     if(TexCoord == vec2(0.0, 0.0)) {
-        texColor = u_Color;
+        texColor = Color;
     } else {
-        texColor = texture(u_Texture, TexCoord) * u_Color;
+        texColor = texture(Texture, TexCoord) * Color;
     }
 
     FragColor = texColor;

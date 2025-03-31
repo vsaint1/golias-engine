@@ -64,30 +64,6 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Vertex default_quad[] = {
-    //     {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
-    //     {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // br
-    //     {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
-
-    //     {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}, // bl
-    //     {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // tr
-    //     {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // tl
-    // };
-
-    // glGenVertexArrays(1, &_renderer->VAO);
-    // glGenBuffers(1, &_renderer->VBO);
-
-    // glBindVertexArray(_renderer->VAO);
-    // glBindBuffer(GL_ARRAY_BUFFER, _renderer->VBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(default_quad), default_quad, GL_DYNAMIC_DRAW);
-
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    // glEnableVertexAttribArray(0);
-
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
-    // glEnableVertexAttribArray(1);
-
-
     glViewport(0, 0, view_width, view_height);
 
     renderer = _renderer;
@@ -111,8 +87,8 @@ void BeginDrawing() {
     glm::mat4 view = glm::mat4(1.0f);
 
     GetRenderer()->default_shader.Use();
-    GetRenderer()->default_shader.SetValue("u_View", view);
-    GetRenderer()->default_shader.SetValue("u_Projection", projection);
+    GetRenderer()->default_shader.SetValue("View", view);
+    GetRenderer()->default_shader.SetValue("Projection", projection);
 }
 
 void EndDrawing() {
@@ -302,13 +278,13 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    GetRenderer()->default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("Texture", 0);
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     glm::mat4 model = transform.GetModelMatrix2D();
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -377,15 +353,15 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("Texture", 0);
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
     if (mesh.GetVertexCount() == 0) {
 
@@ -418,7 +394,7 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->default_shader.SetValue("u_Texture", 0);
+    GetRenderer()->default_shader.SetValue("Texture", 0);
 
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -428,14 +404,14 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     model           = glm::translate(model, glm::vec3(-origin.x, -origin.y, 0.0f));
     model           = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     float texLeft   = (float) source.x / texture.width;
     float texRight  = (float) (source.x + source.width) / texture.width;
     float texTop    = (float) source.y / texture.height;
     float texBottom = (float) (source.y + source.height) / texture.height;
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
     if (mesh.GetVertexCount() == 0) {
 
@@ -460,9 +436,9 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
 
     if (mesh.GetVertexCount() == 0) {
@@ -486,9 +462,9 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness) {
 
     GetRenderer()->default_shader.Use();
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
     if (mesh.GetVertexCount() == 0) {
         std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
@@ -512,9 +488,9 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.Use();
 
-    GetRenderer()->default_shader.SetValue("u_Color", color.GetNormalizedColor());
+    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("u_Model", model);
+    GetRenderer()->default_shader.SetValue("Model", model);
 
     if (mesh.GetVertexCount() == 0) {
 
@@ -538,14 +514,14 @@ void BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    GetRenderer()->default_shader.SetValue("u_View", view);
+    GetRenderer()->default_shader.SetValue("View", view);
 
-    GetRenderer()->default_shader.SetValue("u_Projection", projection);
+    GetRenderer()->default_shader.SetValue("Projection", projection);
 }
 
 void EndMode2D() {
     glm::mat4 view = glm::mat4(1.0f);
-    GetRenderer()->default_shader.SetValue("u_View", view);
+    GetRenderer()->default_shader.SetValue("View", view);
 }
 
 
@@ -572,8 +548,8 @@ void BeginCanvas() {
     glm::mat4 view = glm::mat4(1.0f);
 
     GetRenderer()->default_shader.Use();
-    GetRenderer()->default_shader.SetValue("u_View", view);
-    GetRenderer()->default_shader.SetValue("u_Projection", projection);
+    GetRenderer()->default_shader.SetValue("View", view);
+    GetRenderer()->default_shader.SetValue("Projection", projection);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
