@@ -20,7 +20,7 @@ public:
 
     /*!
 
-        @brief GetPlatform
+        @brief Get the current platform
 
         @details
         - `Windows`, `Linux`, `Mac OS X`, `iOS`, `Android`, `Emscripten`.
@@ -31,6 +31,17 @@ public:
     */
     static std::string GetPlatform();
 
+    
+    /*!
+
+        @brief Check if the app is running on a mobile device
+
+        @return bool
+
+        @version 0.0.7
+    */
+    static bool IsMobile();
+    
     // TODO: implement
     static std::string GetDeviceType();
 
@@ -45,7 +56,7 @@ public:
 
     /*!
 
-        @brief GetBatteryPercentage
+        @brief Get the battery percentage
 
         @details This function checks the battery status of the device.
             If the device does not have a battery, it returns -1.
@@ -61,3 +72,13 @@ public:
 private:
     SystemInfo() = default;
 };
+
+
+extern "C" {
+
+    const char* DeviceName_Injected();
+
+    const char* DeviceModel_Injected();
+
+    const char* DeviceUniqueIdentifier_Injected();
+}

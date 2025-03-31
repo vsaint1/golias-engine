@@ -550,7 +550,30 @@ void EndMode2D() {
 
 
 void BeginCanvas() {
-    BeginDrawing();
+
+    auto calculate_scale_factor = []() -> const float {
+
+        if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
+            return 1.0f;
+        }
+
+        float scale_x =  static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
+        float scale_y =  static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
+
+        float scale_factor = SDL_min(scale_x, scale_y);
+        return scale_factor;
+    };
+    
+    const float scale_factor = calculate_scale_factor();
+
+    glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
+                                      (float) core.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
+
+    glm::mat4 view = glm::mat4(1.0f);
+
+    GetRenderer()->default_shader.Use();
+    GetRenderer()->default_shader.SetValue("u_View", view);
+    GetRenderer()->default_shader.SetValue("u_Projection", projection);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

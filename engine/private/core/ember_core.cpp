@@ -111,12 +111,12 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     };
 
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+// #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
-    SDL_SetWindowFullscreen(_window, true);
-    core.Window.bFullscreen = true;
+// //    SDL_SetWindowFullscreen(_window, true);
+//     core.Window.bFullscreen = true;
 
-#endif
+// #endif
 
     renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
 

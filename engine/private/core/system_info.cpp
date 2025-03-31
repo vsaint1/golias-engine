@@ -1,25 +1,33 @@
 #include "core/system_info.h"
 
+
 std::string SystemInfo::GetPlatform() {
 
     return std::string(SDL_GetPlatform());
 }
 
-std::string SystemInfo::GetDeviceType() {
+bool SystemInfo::IsMobile() {
+    const char* platform = SDL_GetPlatform();
 
-    return "UNKNOWN";
+    if (SDL_strcmp(platform, "Android") == 0 || SDL_strcmp(platform, "iOS") == 0) {
+        return true;
+    }
+
+    return false;
 }
 
+
 std::string SystemInfo::GetDeviceName() {
-    return "UNKNOWN";
+
+    return std::string(DeviceName_Injected());
 }
 
 std::string SystemInfo::GetDeviceModel() {
-    return "UNKNOWN";
+    return std::string(DeviceModel_Injected());
 }
 
 std::string SystemInfo::GetDeviceUniqueIdentifier() {
-    return "UNKNOWN";
+    return std::string(DeviceUniqueIdentifier_Injected());
 }
 
 int SystemInfo::GetBatteryPercentage() {
