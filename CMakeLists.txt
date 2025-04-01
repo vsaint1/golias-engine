@@ -215,7 +215,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES})
+    file(GLOB_RECURSE LINUX_FILES "engine/private/core/platform/linux/*.c")
+
+
+    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES} ${LINUX_FILES})
 
     target_link_libraries(${PROJECT_NAME} PRIVATE pthread dl)
 
