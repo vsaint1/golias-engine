@@ -161,6 +161,6 @@ void CloseWindow() {
 
     delete core.Time;
     delete core.Input;
-    
+
     SDL_Quit();
 }
