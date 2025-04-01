@@ -1,7 +1,7 @@
 #include "core/renderer/ember_gl.h"
 
 #include <stb_image.h>
-
+#include <mutex> // for std::once_flag
 
 Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
