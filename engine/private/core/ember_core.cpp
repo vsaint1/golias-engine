@@ -147,7 +147,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     }
 
     core.Time = new TimeManager();
-    core.Input = new Input();
+    core.Input = new InputManager();
 
     core.Input->SetWindow(_window);
 

@@ -12,7 +12,7 @@ struct TouchPoint {
     glm::vec2 position;
 };
 
-class Input {
+class InputManager {
 
 public:
     void ProcessEvents(const SDL_Event& event);
