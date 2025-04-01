@@ -40,6 +40,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     BeginDrawing();
 
+// TODO: create a canvas component InputText
 #pragma region TEXT_INPUT
 
     ember::Rectangle input_rect = {300, 300, 100, 300};
@@ -65,6 +66,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     }
 
     if (core.Input->IsTextInputActive()) {
+        DrawRect({input_rect.x, input_rect.y, input_rect.width, input_rect.height}, {255, 255, 255, 100}, 4.0f);
+
         text_hold = core.Input->GetTypedText();
 
         std::vector<std::string> lines;
@@ -100,13 +103,14 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         for (size_t i = 0; i < lines.size(); ++i) {
             std::string visible_text = lines[i];
 
-            DrawText(mine_font, visible_text.c_str(),
-                     {
-                         glm::vec3(input_rect.x + 5.f, input_rect.y + mine_font.font_size + i * mine_font.font_size, 1.f),
-                         glm::vec3(0.f),
-                         glm::vec3(1.f),
-                     },
-                     {255, 255, 255, 255}, 0.0f);
+            DrawText(
+                mine_font, visible_text.c_str(),
+                {
+                    glm::vec3(input_rect.x + 5.f, input_rect.y + mine_font.font_size + i * mine_font.font_size, 1.f),
+                    glm::vec3(0.f),
+                    glm::vec3(1.f),
+                },
+                {255, 255, 255, 255}, 0.0f);
         }
     }
 

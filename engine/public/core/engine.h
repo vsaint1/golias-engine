@@ -27,7 +27,7 @@ struct Core {
         float global_volume = 5.0f;
     } Audio;
 
-    Input* Input = nullptr;
+    InputManager* Input = nullptr;
 
     Ember_VFS ember_vfs;
 
