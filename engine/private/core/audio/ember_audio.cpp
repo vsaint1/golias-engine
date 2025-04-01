@@ -39,7 +39,7 @@ bool InitAudio() {
         return false;
     }
 
-    core.Audio.ember_vfs = vfs;
+    core.ember_vfs = vfs;
 
     LOG_INFO("Successfully MA engine backend");
     return true;
@@ -66,7 +66,7 @@ Audio* Mix_LoadAudio(const std::string& file_Path) {
         return nullptr;
     }
 
-    ma_result res = ma_decoder_init_vfs(&core.Audio.ember_vfs, path.c_str(), &decoder_config, decoder);
+    ma_result res = ma_decoder_init_vfs(&core.ember_vfs, path.c_str(), &decoder_config, decoder);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to decode sound file %s, error: %d", path.c_str(), res);
         SDL_free(decoder);

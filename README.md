@@ -45,6 +45,7 @@
 - [mini_audio](https://github.com/mackron/miniaudio) (Audio Engine backend)
 - [glad](https://github.com/Dav1dde/glad) (OpenGL/ES Loader)
 - [glm](https://github.com/g-truc/glm) (C++ math library)
+- [tinyxml2](https://github.com/leethomason/tinyxml2) (XML Parser)
 
 ---
 

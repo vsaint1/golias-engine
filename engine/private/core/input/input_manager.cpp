@@ -1,0 +1,112 @@
+#include "core/input/input_manager.h"
+
+void Input::ProcessEvents(const SDL_Event& event) {
+
+    events.push(event);
+    switch (event.type) {
+    case SDL_EVENT_MOUSE_MOTION:
+        mousePosition = {event.motion.x, event.motion.y};
+        break;
+    case SDL_EVENT_TEXT_INPUT:
+
+        if (isTextInputActive) {
+            textInput += event.text.text;
+        }
+
+        break;
+    case SDL_EVENT_KEY_DOWN:
+        if (isTextInputActive) {
+            switch (event.key.key) {
+            case SDLK_BACKSPACE:
+                if (!textInput.empty()) {
+                    textInput.pop_back();
+                }
+                break;
+            case SDLK_RETURN:
+                textInput += '\n';
+                break;
+            }
+        }else{
+            if(!textInput.empty()){
+                textInput.clear();
+            }
+        }
+        break;
+    case SDL_EVENT_FINGER_DOWN:
+    case SDL_EVENT_FINGER_MOTION:
+    case SDL_EVENT_FINGER_UP:
+        {
+            int fingerID          = event.tfinger.fingerID;
+            glm::vec2 pos         = {event.tfinger.x, event.tfinger.y};
+            touchPoints[fingerID] = {event.type != SDL_EVENT_FINGER_UP, pos};
+            break;
+        }
+    default:
+
+        break;
+    }
+}
+
+void Input::Update() {
+    prevKeyState = keyState;
+
+    while (!events.empty()) {
+        SDL_Event event = events.front();
+        events.pop();
+
+        if (event.type == SDL_EVENT_KEY_DOWN) {
+            keyState[event.key.scancode] = true;
+        } else if (event.type == SDL_EVENT_KEY_UP) {
+            keyState[event.key.scancode] = false;
+        }
+    }
+}
+
+void Input::SetWindow(SDL_Window* window) {
+    _window = window;
+}
+
+void Input::SetTextInputActive(bool active) {
+    if (active && !isTextInputActive) {
+        isTextInputActive = true;
+        SDL_StartTextInput(_window);
+    } else {
+        isTextInputActive = false;
+        SDL_StopTextInput(_window);
+    }
+}
+
+std::string Input::GetTypedText() {
+    return textInput;
+}
+
+bool Input::IsPositionInRect(glm::vec2 position, ember::Rectangle rect) {
+    return position.x > rect.x && position.x < rect.x + rect.width && position.y > rect.y
+        && position.y < rect.y + rect.height;
+}
+
+glm::vec2 Input::GetMousePosition() {
+
+    return mousePosition;
+}
+
+bool Input::IsMouseButtonPressed(Uint8 button) {
+    return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(button);
+}
+
+bool Input::IsMouseButtonReleased(Uint8 button) {
+    return !(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(button));
+}
+
+
+bool Input::IsKeyPressed(SDL_Scancode key) {
+    return keyState[key] && !prevKeyState[key];
+}
+
+bool Input::IsKeyReleased(SDL_Scancode key) {
+    return !keyState[key] && prevKeyState[key];
+}
+
+bool Input::IsKeyHeld(SDL_Scancode key) {
+    return keyState[key];
+}

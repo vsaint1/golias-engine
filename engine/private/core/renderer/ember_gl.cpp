@@ -89,6 +89,7 @@ void BeginDrawing() {
     GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
+
 }
 
 void EndDrawing() {

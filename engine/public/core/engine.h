@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/file_system.h"
+#include "core/input/input_manager.h"
 #include "core/time_manager.h"
 
 
@@ -11,20 +12,24 @@ struct Core {
     } Metrics;
 
     struct {
-        int width = 0;
-        int height= 0;
+        int width                   = 0;
+        int height                  = 0;
         const char* title           = "[EMBER_ENGINE] - Window";
         const SDL_DisplayMode* data = nullptr;
         bool bFullscreen            = false;
-        int bbWidth =0, bbHeight = 0; // backbuffer
+        int bbWidth = 0, bbHeight = 0; // backbuffer
+        SDL_Window* window;
     } Window;
 
     struct {
         SDL_AudioDeviceID device_id = 0;
         SDL_AudioSpec spec;
         float global_volume = 5.0f;
-        Ember_VFS ember_vfs;
     } Audio;
+
+    Input* Input = nullptr;
+
+    Ember_VFS ember_vfs;
 
     TimeManager* Time = nullptr;
 

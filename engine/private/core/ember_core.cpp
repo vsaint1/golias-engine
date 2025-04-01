@@ -30,11 +30,12 @@ void Renderer::SetContext(/*MTL*/) {
     // TODO: metal
 }
 
-void Renderer::Resize(int w, int h)  {
+void Renderer::Resize(int w, int h) {
     viewport[0] = w;
     viewport[1] = h;
     glViewport(0, 0, w, h);
 }
+
 
 void Renderer::Destroy() {
     default_shader.Destroy();
@@ -98,6 +99,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     }
 
+    core.Window.window = _window;
+
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
 
@@ -111,12 +114,12 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     };
 
-// #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+    // #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
-// //    SDL_SetWindowFullscreen(_window, true);
-//     core.Window.bFullscreen = true;
+    // //    SDL_SetWindowFullscreen(_window, true);
+    //     core.Window.bFullscreen = true;
 
-// #endif
+    // #endif
 
     renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
 
@@ -144,6 +147,9 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     }
 
     core.Time = new TimeManager();
+    core.Input = new Input();
+
+    core.Input->SetWindow(_window);
 
     return true;
 }
@@ -154,6 +160,7 @@ void CloseWindow() {
     renderer->Destroy();
 
     delete core.Time;
-
+    delete core.Input;
+    
     SDL_Quit();
 }

@@ -28,23 +28,108 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 }
 
 
+std::string text_hold = "";
+
 SDL_AppResult SDL_AppIterate(void* app_state) {
 
     core.Time->Update();
 
-    auto pKey = SDL_GetKeyboardState(0);
+    core.Input->Update();
 
     ClearBackground({120, 100, 100, 255});
 
     BeginDrawing();
 
-    DrawText(mine_font, TextFormat("Hello %s", SystemInfo::GetDeviceName().c_str()),
+#pragma region TEXT_INPUT
+
+    ember::Rectangle input_rect = {300, 300, 100, 300};
+
+    DrawText(mine_font, "Feedback",
+             {
+                 glm::vec3(300.f, 295.f, 0.f),
+                 glm::vec3(0.f),
+                 glm::vec3(1.f),
+             },
+             {255, 255, 255, 255}, 0.0f);
+
+    DrawRectFilled(input_rect, {0, 0, 0, 100});
+
+    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)
+        && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
+        core.Input->SetTextInputActive(true);
+    }
+
+    else if (!core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)
+             && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
+        core.Input->SetTextInputActive(false);
+    }
+
+    if (core.Input->IsTextInputActive()) {
+        text_hold = core.Input->GetTypedText();
+
+        std::vector<std::string> lines;
+        std::string current_line;
+        size_t max_characters_per_line = input_rect.width / (mine_font.font_size * 0.55f);
+
+        for (char ch : text_hold) {
+
+            if (ch == '\n' || current_line.size() >= max_characters_per_line) {
+                lines.push_back(current_line);
+                current_line.clear();
+            }
+
+            if (ch != '\n') {
+                current_line += ch;
+            }
+        }
+
+        if (!current_line.empty()) {
+            lines.push_back(current_line);
+        }
+
+        size_t max_lines = input_rect.height / mine_font.font_size;
+        
+        if (lines.size() > max_lines) {
+            lines.resize(max_lines);
+        }
+
+        if (lines.size() == max_lines && text_hold.length() > max_characters_per_line * max_lines) {
+            lines[lines.size() - 1] = lines[lines.size() - 1].substr(0, max_characters_per_line - 3) + "...";
+        }
+
+        for (size_t i = 0; i < lines.size(); ++i) {
+            std::string visible_text = lines[i];
+
+            DrawText(mine_font, visible_text.c_str(),
+                     {
+                         glm::vec3(input_rect.x + 5.f, input_rect.y + 10.f + i * mine_font.font_size, 1.f),
+                         glm::vec3(0.f),
+                         glm::vec3(0.8f),
+                     },
+                     {255, 255, 255, 255}, 0.0f);
+        }
+    }
+
+
+#pragma endregion
+
+    DrawText(mine_font, TextFormat("Mouse Position  %s", glm::to_string(core.Input->GetMousePosition()).c_str()),
              {
                  glm::vec3(20.0f, 100.f, 0.f),
                  glm::vec3(0.f),
                  glm::vec3(1.f),
              },
              {255, 255, 255, 255}, 0.0f);
+
+
+    DrawText(mine_font,
+             TextFormat("Mouse Pressed? %s", core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT) ? "TRUE" : "FALSE"),
+             {
+                 glm::vec3(20.0f, 150.f, 0.f),
+                 glm::vec3(0.f),
+                 glm::vec3(2.f),
+             },
+             {255, 255, 255, 255}, 1.0f);
 
     EndDrawing();
 
@@ -55,6 +140,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
+    core.Input->ProcessEvents(*event);
 
     auto pKey = SDL_GetKeyboardState(0);
 
@@ -62,6 +148,12 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
         return SDL_APP_SUCCESS;
     }
 
+
+    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
+        core.Resize(event->window.data1, event->window.data2);
+
+        GetRenderer()->Resize(event->window.data1, event->window.data2);
+    }
 
     return SDL_APP_CONTINUE;
 }
