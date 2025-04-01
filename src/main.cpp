@@ -69,7 +69,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
         std::vector<std::string> lines;
         std::string current_line;
-        size_t max_characters_per_line = input_rect.width / (mine_font.font_size * 0.55f);
+        size_t max_characters_per_line = input_rect.width / (mine_font.font_size * 0.8);
 
         for (char ch : text_hold) {
 
@@ -88,13 +88,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         }
 
         size_t max_lines = input_rect.height / mine_font.font_size;
-        
+
         if (lines.size() > max_lines) {
             lines.resize(max_lines);
         }
 
         if (lines.size() == max_lines && text_hold.length() > max_characters_per_line * max_lines) {
-            lines[lines.size() - 1] = lines[lines.size() - 1].substr(0, max_characters_per_line - 3) + "...";
+            lines[lines.size() - 1] = lines[lines.size() - 1].substr(0, max_characters_per_line) + "...";
         }
 
         for (size_t i = 0; i < lines.size(); ++i) {
@@ -102,9 +102,9 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
             DrawText(mine_font, visible_text.c_str(),
                      {
-                         glm::vec3(input_rect.x + 5.f, input_rect.y + 10.f + i * mine_font.font_size, 1.f),
+                         glm::vec3(input_rect.x + 5.f, input_rect.y + mine_font.font_size + i * mine_font.font_size, 1.f),
                          glm::vec3(0.f),
-                         glm::vec3(0.8f),
+                         glm::vec3(1.f),
                      },
                      {255, 255, 255, 255}, 0.0f);
         }
