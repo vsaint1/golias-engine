@@ -7,6 +7,7 @@ int SCREEN_HEIGHT = 720;
 
 Font mine_font;
 
+
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
     if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
@@ -40,6 +41,37 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     BeginDrawing();
 
+#pragma region BUTTON
+
+
+    std::string button_text = "Save the Game";
+
+    const auto font_size         = 32.f;
+    const auto padding        = 10.f;
+    ember::Rectangle button_rect = {500, 400, 20 + mine_font.GetTextWidth(button_text, font_size), 50};
+    DrawRectFilled(button_rect, {0, 0, 0, 100});
+
+    DrawText(mine_font, button_text,
+             {
+                 glm::vec3(button_rect.x + padding, button_rect.y + (button_rect.height / 2) + padding, 1.f),
+                 glm::vec3(0.f),
+                 glm::vec3(1.f),
+             },
+             {255, 255, 255, 255}, font_size);
+
+    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), button_rect)) {
+        DrawRect(button_rect, {255, 255, 255, 100}, 4.f);
+    }
+
+    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), button_rect)
+        && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
+
+        LOG_INFO("Button Clicked");
+    }
+
+#pragma endregion
+
+
 // TODO: create a canvas component InputText
 #pragma region TEXT_INPUT
 
@@ -54,6 +86,10 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
              {255, 255, 255, 255}, 0.0f);
 
     DrawRectFilled(input_rect, {0, 0, 0, 100});
+
+    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)) {
+        DrawRect(input_rect, {255, 255, 255, 100}, 4.0f);
+    }
 
     if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)
         && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
@@ -110,7 +146,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
                     glm::vec3(0.f),
                     glm::vec3(1.f),
                 },
-                {255, 255, 255, 255}, 0.0f);
+                {255, 255, 255, 255});
         }
     }
 
@@ -123,7 +159,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
                  glm::vec3(0.f),
                  glm::vec3(1.f),
              },
-             {255, 255, 255, 255}, 0.0f);
+             {255, 255, 255, 255});
 
 
     DrawText(mine_font,
@@ -133,7 +169,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
                  glm::vec3(0.f),
                  glm::vec3(2.f),
              },
-             {255, 255, 255, 255}, 1.0f);
+             {255, 255, 255, 255}, 16.f);
 
     EndDrawing();
 

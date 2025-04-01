@@ -99,7 +99,7 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
 
 /*!
 

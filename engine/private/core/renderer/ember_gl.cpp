@@ -89,7 +89,6 @@ void BeginDrawing() {
     GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
-
 }
 
 void EndDrawing() {
@@ -256,6 +255,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     font.font_size      = font_size;
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
+    font.info           = font_info;
 
     delete[] bitmap;
     delete[] rgba_buffer;
@@ -263,7 +263,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning) {
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
 
 
     if (text.empty() || !font.IsValid()) {
@@ -287,6 +287,8 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
+    float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
     float start_x  = cursor_x;
@@ -297,7 +299,7 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
     for (char c : text) {
         if (c == '\n') {
             cursor_x = start_x;
-            cursor_y += font.font_size;
+            cursor_y += font.font_size * scale_factor;
             continue;
         }
 
@@ -307,10 +309,10 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
 
         const Glyph& g = font.glyphs[c];
 
-        float x0 = cursor_x + g.x_offset;
-        float y0 = cursor_y + g.y_offset;
-        float x1 = x0 + g.w;
-        float y1 = y0 + g.h;
+        float x0 = cursor_x + g.x_offset * scale_factor;
+        float y0 = cursor_y + g.y_offset * scale_factor;
+        float x1 = x0 + g.w * scale_factor;
+        float y1 = y0 + g.h * scale_factor;
 
         float u0 = g.x0;
         float v0 = g.y0;
@@ -331,7 +333,7 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
         vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
         vertices.push_back({{scaledX0, scaledY1, 0.0f}, {u0, v1}});
 
-        cursor_x += g.advance + kerning;
+        cursor_x += (g.advance + kerning) * scale_factor;
     }
 
     mesh.Update(vertices);
@@ -467,14 +469,12 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness) {
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
-        std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
+    std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
 
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
     glLineWidth(thickness);
 
@@ -493,17 +493,15 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
 
-        std::vector<Vertex> vertices = {
-            {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-        };
+    std::vector<Vertex> vertices = {
+        {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+    };
 
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLE_FAN);
 }
@@ -529,18 +527,17 @@ void EndMode2D() {
 void BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-
         if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x =  static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
-        float scale_y =  static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
+        float scale_x = static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
+        float scale_y = static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
     };
-    
+
     const float scale_factor = calculate_scale_factor();
 
     glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,

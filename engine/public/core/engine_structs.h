@@ -40,7 +40,8 @@ struct Glyph {
 };
 
 struct Font {
-    std::map<char, Glyph> glyphs;
+    std::map<char, Glyph> glyphs{};
+    stbtt_fontinfo info;
     Texture texture;
     int font_size;
     float kerning = 0.0f;
@@ -48,4 +49,6 @@ struct Font {
     float scale;
 
     bool IsValid() const;
+
+    int GetTextWidth(const std::string& text, float size = 0.0f) const;
 };
