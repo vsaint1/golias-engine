@@ -8,3 +8,5 @@
     @version 0.0.8
 */
 std::string TextFormat(const char* fmt, ...);
+
+int GetMemoryUsage();

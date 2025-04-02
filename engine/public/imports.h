@@ -24,6 +24,9 @@
 #include <miniaudio.h>
 #include <tinyxml2.h>
 
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
+
 #if __ANDROID__
 const std::filesystem::path BASE_PATH = "";
 #define ASSETS_PATH std::string("")

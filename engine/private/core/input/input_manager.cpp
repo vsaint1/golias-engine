@@ -2,6 +2,8 @@
 
 void InputManager::ProcessEvents(const SDL_Event& event) {
 
+    ImGui_ImplSDL3_ProcessEvent(&event);
+
     events.push(event);
     switch (event.type) {
     case SDL_EVENT_MOUSE_MOTION:
@@ -26,8 +28,8 @@ void InputManager::ProcessEvents(const SDL_Event& event) {
                 textInput += '\n';
                 break;
             }
-        }else{
-            if(!textInput.empty()){
+        } else {
+            if (!textInput.empty()) {
                 textInput.clear();
             }
         }
@@ -48,6 +50,13 @@ void InputManager::ProcessEvents(const SDL_Event& event) {
 }
 
 void InputManager::Update() {
+
+    // Saving resources
+    if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MINIMIZED) {
+        SDL_Delay(10);
+        return;
+    }
+
     prevKeyState = keyState;
 
     while (!events.empty()) {

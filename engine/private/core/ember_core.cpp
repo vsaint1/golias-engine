@@ -61,6 +61,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     }
 
     flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
+    flags |= SDL_WINDOW_HIDDEN;
 
     if (type == RendererType::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
@@ -161,6 +162,10 @@ void CloseWindow() {
 
     delete core.Time;
     delete core.Input;
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
 
     SDL_Quit();
 }

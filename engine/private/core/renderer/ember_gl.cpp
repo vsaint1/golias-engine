@@ -8,6 +8,8 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     /* GLES 3.0 -> GLSL: 300 */
+    const char* glsl_version = "#version 300 es";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -15,14 +17,18 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
     /* OPENGL 3.3 -> GLSL: 330*/
+    const char* glsl_version = "#version 330";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
 
 #endif
 
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
@@ -57,14 +63,30 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     _renderer->viewport[1] = view_height;
     _renderer->window      = window;
     _renderer->SetContext(glContext);
+    _renderer->glsl_version = glsl_version;
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
+
+    
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.IniFilename = nullptr;
+
+    ImGui::StyleColorsDark();
+    ImGui_ImplSDL3_InitForOpenGL(window, glContext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glViewport(0, 0, view_width, view_height);
+
+    SDL_ShowWindow(window);
 
     renderer = _renderer;
 
@@ -525,7 +547,9 @@ void EndMode2D() {
 
 
 void BeginCanvas() {
-
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
     auto calculate_scale_factor = []() -> const float {
         if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
             return 1.0f;
@@ -557,4 +581,6 @@ void BeginCanvas() {
 void EndCanvas() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

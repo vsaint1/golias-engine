@@ -24,7 +24,7 @@ struct Core {
     struct {
         SDL_AudioDeviceID device_id = 0;
         SDL_AudioSpec spec;
-        float global_volume = 5.0f;
+        float global_volume = 100.0f;
     } Audio;
 
     InputManager* Input = nullptr;

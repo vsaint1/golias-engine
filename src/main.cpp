@@ -7,10 +7,16 @@ int SCREEN_HEIGHT = 720;
 
 Font mine_font;
 
+Texture player_texture;
+bool bShowMetrics = false;
+
+Color background_color = {120, 100, 100, 255};
+
+Audio *mine_music, *tel_music, *random_music;
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!InitWindow("Window sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!InitWindow("GUI sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
@@ -19,6 +25,13 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     }
 
     mine_font = LoadFont("fonts/Minecraft.ttf", 16);
+
+    player_texture = LoadTexture("sprites/Character_001.png");
+
+    // assets in examples/assets
+    mine_music   = Mix_LoadAudio("sounds/Lullaby.mp3");
+    tel_music    = Mix_LoadAudio("sounds/the_entertainer.ogg");
+    random_music = Mix_LoadAudio("sounds/test.flac");
 
     LOG_INFO("Device Name %s", SystemInfo::GetDeviceName().c_str());
     LOG_INFO("Device Model %s", SystemInfo::GetDeviceModel().c_str());
@@ -29,149 +42,143 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 }
 
 
-std::string text_hold = "";
+Color text_color = {255, 255, 255, 255};
 
 SDL_AppResult SDL_AppIterate(void* app_state) {
 
-    core.Time->Update();
-
     core.Input->Update();
 
-    ClearBackground({120, 100, 100, 255});
+    core.Time->Update();
 
+    ClearBackground(background_color);
     BeginDrawing();
 
-#pragma region BUTTON
+    static float angle         = 0.0f;
+    static glm::ivec3 position = {500.0, 350.0, 0.0};
+
+    static Transform transform = {
+        glm::vec3(500.f, 295.f, 0.f),
+        glm::vec3(0.f),
+        glm::vec3(1.f),
+    };
+    DrawTextureEx(player_texture, {0, 0, 32, 32}, {position.x, position.y, 128, 128}, {64, 64}, angle);
+
+    DrawText(mine_font, "I guess this works", transform, text_color, 0.0f);
+    BeginCanvas();
 
 
-    std::string button_text = "Save the Game";
+    ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
+    ImGui::Begin("[DEMO] - example with GUI", nullptr, ImGuiWindowFlags_NoCollapse);
 
-    const auto font_size         = 32.f;
-    const auto padding        = 10.f;
-    ember::Rectangle button_rect = {500, 400, 20 + mine_font.GetTextWidth(button_text, font_size), 50};
-    DrawRectFilled(button_rect, {0, 0, 0, 100});
 
-    DrawText(mine_font, button_text,
-             {
-                 glm::vec3(button_rect.x + padding, button_rect.y + (button_rect.height / 2) + padding, 1.f),
-                 glm::vec3(0.f),
-                 glm::vec3(1.f),
-             },
-             {255, 255, 255, 255}, font_size);
+    float temp_color[4] = {text_color.r / 255.0f, text_color.g / 255.0f, text_color.b / 255.0f, text_color.a / 255.0f};
 
-    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), button_rect)) {
-        DrawRect(button_rect, {255, 255, 255, 100}, 4.f);
+
+    ImGui::Text("Player");
+    ImGui::SliderInt3("Position##player", &position.x, 0.0f, core.Window.width);
+    ImGui::SliderFloat("Angle##player", &angle, 0.0f, 360.0f, "%.2f");
+
+    ImGui::Text("Text");
+    ImGui::SliderFloat3("Position##text", &transform.position.x, 0.0f, core.Window.width);
+    ImGui::SliderFloat3("Scale##text", &transform.scale.x, 0.0f, 10.0f);
+    ImGui::SliderFloat3("Rotation##text", &transform.rotation.x, 0.0f, 360.0f);
+
+    if (ImGui::ColorEdit4("Text color", temp_color), ImGuiColorEditFlags_NoInputs) {
+        text_color.r = static_cast<uint8_t>(temp_color[0] * 255);
+        text_color.g = static_cast<uint8_t>(temp_color[1] * 255);
+        text_color.b = static_cast<uint8_t>(temp_color[2] * 255);
+        text_color.a = static_cast<uint8_t>(temp_color[3] * 255);
     }
 
-    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), button_rect)
-        && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
 
-        LOG_INFO("Button Clicked");
-    }
+    ImGui::Text("Musics");
 
-#pragma endregion
+    if (!Mix_IsAudioPlaying(mine_music)) {
 
-
-// TODO: create a canvas component InputText
-#pragma region TEXT_INPUT
-
-    ember::Rectangle input_rect = {300, 300, 100, 300};
-
-    DrawText(mine_font, "Feedback",
-             {
-                 glm::vec3(300.f, 295.f, 0.f),
-                 glm::vec3(0.f),
-                 glm::vec3(1.f),
-             },
-             {255, 255, 255, 255}, 0.0f);
-
-    DrawRectFilled(input_rect, {0, 0, 0, 100});
-
-    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)) {
-        DrawRect(input_rect, {255, 255, 255, 100}, 4.0f);
-    }
-
-    if (core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)
-        && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
-        core.Input->SetTextInputActive(true);
-    }
-
-    else if (!core.Input->IsPositionInRect(core.Input->GetMousePosition(), input_rect)
-             && core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
-        core.Input->SetTextInputActive(false);
-    }
-
-    if (core.Input->IsTextInputActive()) {
-        DrawRect({input_rect.x, input_rect.y, input_rect.width, input_rect.height}, {255, 255, 255, 100}, 4.0f);
-
-        text_hold = core.Input->GetTypedText();
-
-        std::vector<std::string> lines;
-        std::string current_line;
-        size_t max_characters_per_line = input_rect.width / (mine_font.font_size * 0.8);
-
-        for (char ch : text_hold) {
-
-            if (ch == '\n' || current_line.size() >= max_characters_per_line) {
-                lines.push_back(current_line);
-                current_line.clear();
-            }
-
-            if (ch != '\n') {
-                current_line += ch;
-            }
+        if (ImGui::Button("Play Lullaby")) {
+            Mix_PlayAudio(mine_music);
         }
 
-        if (!current_line.empty()) {
-            lines.push_back(current_line);
-        }
-
-        size_t max_lines = input_rect.height / mine_font.font_size;
-
-        if (lines.size() > max_lines) {
-            lines.resize(max_lines);
-        }
-
-        if (lines.size() == max_lines && text_hold.length() > max_characters_per_line * max_lines) {
-            lines[lines.size() - 1] = lines[lines.size() - 1].substr(0, max_characters_per_line) + "...";
-        }
-
-        for (size_t i = 0; i < lines.size(); ++i) {
-            std::string visible_text = lines[i];
-
-            DrawText(
-                mine_font, visible_text.c_str(),
-                {
-                    glm::vec3(input_rect.x + 5.f, input_rect.y + mine_font.font_size + i * mine_font.font_size, 1.f),
-                    glm::vec3(0.f),
-                    glm::vec3(1.f),
-                },
-                {255, 255, 255, 255});
+    } else {
+        if (ImGui::Button("Stop Lullaby")) {
+            Mix_PauseAudio(mine_music);
         }
     }
 
+    if (ImGui::SliderFloat("Volume##1", &mine_music->volume, 0.0f, 1.0f)) {
+        Mix_SetVolume(mine_music, mine_music->volume);
+    }
 
-#pragma endregion
+    if (!Mix_IsAudioPlaying(tel_music)) {
 
-    DrawText(mine_font, TextFormat("Mouse Position  %s", glm::to_string(core.Input->GetMousePosition()).c_str()),
-             {
-                 glm::vec3(20.0f, 100.f, 0.f),
-                 glm::vec3(0.f),
-                 glm::vec3(1.f),
-             },
-             {255, 255, 255, 255});
+        if (ImGui::Button("Play The Entertainer")) {
+            Mix_PlayAudio(tel_music);
+        }
+
+    } else {
+        if (ImGui::Button("Stop The Entertainer")) {
+
+            Mix_PauseAudio(tel_music);
+        }
+    }
+
+    if (ImGui::SliderFloat("Volume##2", &tel_music->volume, 0.0f, 1.0f)) {
+        Mix_SetVolume(tel_music, tel_music->volume);
+    }
+
+    if (!Mix_IsAudioPlaying(random_music)) {
+
+        if (ImGui::Button("Play Unknown")) {
+            Mix_PlayAudio(random_music);
+        }
+
+    } else {
+        if (ImGui::Button("Stop The Unknown")) {
+
+            Mix_PauseAudio(random_music);
+        }
+    }
+
+    if (ImGui::SliderFloat("Volume##3", &random_music->volume, 0.0f, 1.0f)) {
+        Mix_SetVolume(random_music, random_music->volume);
+    }
 
 
-    DrawText(mine_font,
-             TextFormat("Mouse Pressed? %s", core.Input->IsMouseButtonPressed(SDL_BUTTON_LEFT) ? "TRUE" : "FALSE"),
-             {
-                 glm::vec3(20.0f, 150.f, 0.f),
-                 glm::vec3(0.f),
-                 glm::vec3(2.f),
-             },
-             {255, 255, 255, 255}, 16.f);
+    ImGui::Text("Engine");
+    if (ImGui::SliderFloat("Musics Volume", &core.Audio.global_volume, 0.0f, 100.0f)) {
+        Mix_SetGlobalVolume(core.Audio.global_volume);
+    }
+
+    ImGui::Checkbox("Metrics", &bShowMetrics);
+
+    ImGui::End();
+
+
+    if (bShowMetrics) {
+        ImGui::Begin("Metrics", &bShowMetrics);
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::Text("Application average: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Delta Time: %f", core.Time->GetDeltaTime());
+        ImGui::Text("Elapsed Time: %.3f", core.Time->GetElapsedTime());
+        ImGui::Text("Frame count: %d", core.Time->GetFrameCount());
+
+        ImGui::Text("RAM Usage: %d MB", GetMemoryUsage());
+
+
+        if (ImGui::Button("Close Me")) {
+            bShowMetrics = false;
+        }
+
+        ImGui::End();
+    }
+
+
+    EndCanvas();
+
 
     EndDrawing();
+
 
     core.Time->FixedFrameRate(60);
 
@@ -201,6 +208,7 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     UnloadTexture(mine_font.texture);
+    UnloadTexture(player_texture);
 
     CloseAudio();
 
