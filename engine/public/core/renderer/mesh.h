@@ -40,5 +40,7 @@ private:
     std::vector<unsigned int> indices;
 
     void Setup();
+
+    bool bIsDirty = false;
 };
 

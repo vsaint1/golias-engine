@@ -67,7 +67,7 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
-    
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -102,7 +102,9 @@ void ClearBackground(Color color) {
 
 
 void BeginDrawing() {
-
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
@@ -114,6 +116,8 @@ void BeginDrawing() {
 }
 
 void EndDrawing() {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(renderer->window);
 }
 
@@ -285,8 +289,9 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
 
+void DrawTextInternal(Font& font, const std::string& text, Transform transform, Color color, float font_size,
+                      float kerning) {
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
@@ -361,6 +366,19 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLES);
+}
+
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
+    const Color shadow_color   = Color(0, 0, 0, color.a);
+    Transform shadow_transform = transform;
+    float scale_factor         = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+
+    float shadow_offset = 2.0f * scale_factor;
+
+    shadow_transform.position.x += shadow_offset;
+    shadow_transform.position.y += shadow_offset;
+    DrawTextInternal(font, text, transform, color, font_size, kerning);
+    DrawTextInternal(font, text, shadow_transform, shadow_color, font_size, kerning);
 }
 
 
@@ -438,19 +456,17 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
 
-        const float flipY            = -1.0f;
-        std::vector<Vertex> vertices = {
-            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, flipY - texTop)},
-            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, flipY - texTop)},
-            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, flipY - texBottom)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, flipY - texBottom)},
-        };
+    const float flipY            = -1.0f;
+    std::vector<Vertex> vertices = {
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, flipY - texTop)},
+        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, flipY - texTop)},
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, flipY - texBottom)},
+        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, flipY - texBottom)},
+    };
 
 
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLE_FAN);
 }
@@ -515,7 +531,6 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-
     std::vector<Vertex> vertices = {
         {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
         {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
@@ -547,9 +562,7 @@ void EndMode2D() {
 
 
 void BeginCanvas() {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
+
     auto calculate_scale_factor = []() -> const float {
         if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
             return 1.0f;
@@ -581,6 +594,4 @@ void BeginCanvas() {
 void EndCanvas() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

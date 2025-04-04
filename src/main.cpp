@@ -1,4 +1,4 @@
-#include "core/renderer/ember_gl.h"
+﻿#include "core/renderer/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
 
@@ -13,6 +13,7 @@ bool bShowMetrics = false;
 Color background_color = {120, 100, 100, 255};
 
 Audio *mine_music, *tel_music, *random_music;
+Camera2D camera = Camera2D(480, 270);
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
@@ -23,6 +24,10 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     if (!InitAudio()) {
         return SDL_APP_FAILURE;
     }
+
+    camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
+    camera.transform.rotation = glm::vec3(0.f);
+
 
     mine_font = LoadFont("fonts/Minecraft.ttf", 16);
 
@@ -41,8 +46,18 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     return SDL_APP_CONTINUE;
 }
 
+const char* gui_text = R"(
+Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
+when an unknown printer took a galley of type and scrambled it to make a type specimen book.
+It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.
+It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
+and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
 
-Color text_color = {255, 255, 255, 255};
+)";
+Color text_color     = {255, 255, 255, 255};
+
+int entities = 0;
 
 SDL_AppResult SDL_AppIterate(void* app_state) {
 
@@ -54,28 +69,36 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     BeginDrawing();
 
     static float angle         = 0.0f;
-    static glm::ivec3 position = {500.0, 350.0, 0.0};
+    static glm::ivec3 position = {200, 300, 0};
 
     static Transform transform = {
         glm::vec3(500.f, 295.f, 0.f),
         glm::vec3(0.f),
         glm::vec3(1.f),
     };
+
+    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+
+    BeginMode2D(camera);
+
+
     DrawTextureEx(player_texture, {0, 0, 32, 32}, {position.x, position.y, 128, 128}, {64, 64}, angle);
 
-    DrawText(mine_font, "I guess this works", transform, text_color, 0.0f);
+    EndMode2D();
+
     BeginCanvas();
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
     ImGui::Begin("[DEMO] - example with GUI", nullptr, ImGuiWindowFlags_NoCollapse);
 
+    ImGui::InputInt("Create Entity", &entities, 10);
 
     float temp_color[4] = {text_color.r / 255.0f, text_color.g / 255.0f, text_color.b / 255.0f, text_color.a / 255.0f};
 
 
     ImGui::Text("Player");
-    ImGui::SliderInt3("Position##player", &position.x, 0.0f, core.Window.width);
+    ImGui::DragInt3("Position##player", &position.x, 1);
     ImGui::SliderFloat("Angle##player", &angle, 0.0f, 360.0f, "%.2f");
 
     ImGui::Text("Text");
@@ -83,12 +106,18 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ImGui::SliderFloat3("Scale##text", &transform.scale.x, 0.0f, 10.0f);
     ImGui::SliderFloat3("Rotation##text", &transform.rotation.x, 0.0f, 360.0f);
 
+
     if (ImGui::ColorEdit4("Text color", temp_color), ImGuiColorEditFlags_NoInputs) {
         text_color.r = static_cast<uint8_t>(temp_color[0] * 255);
         text_color.g = static_cast<uint8_t>(temp_color[1] * 255);
         text_color.b = static_cast<uint8_t>(temp_color[2] * 255);
         text_color.a = static_cast<uint8_t>(temp_color[3] * 255);
     }
+
+
+    ImGui::Text("Camera");
+    ImGui::DragFloat3("Position##Camera", &camera.transform.position.x, 1.0f);
+    ImGui::DragFloat("Zoom##Camera", &camera.zoom, 0.1f, 0.01f, 10.0f);
 
 
     ImGui::Text("Musics");
@@ -175,7 +204,6 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     EndCanvas();
-
 
     EndDrawing();
 
