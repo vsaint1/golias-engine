@@ -42,7 +42,6 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     LOG_INFO("Device Model %s", SystemInfo::GetDeviceModel().c_str());
     LOG_INFO("Device UniqueIdentifier %s", SystemInfo::GetDeviceUniqueIdentifier().c_str());
 
-
     return SDL_APP_CONTINUE;
 }
 
@@ -78,11 +77,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     };
 
     DrawText(mine_font, gui_text, transform, text_color, 0.0f);
-
+    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
     BeginMode2D(camera);
 
 
-    DrawTextureEx(player_texture, {0, 0, 32, 32}, {position.x, position.y, 128, 128}, {64, 64}, angle);
+    for (int i = 0; i < entities; i++) {
+        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 128, 128}, {64, 64}, angle);
+    }
 
     EndMode2D();
 
@@ -235,7 +236,7 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
-    UnloadTexture(mine_font.texture);
+    UnloadFont(mine_font);
     UnloadTexture(player_texture);
 
     CloseAudio();

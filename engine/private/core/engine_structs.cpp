@@ -38,3 +38,7 @@ glm::vec4 Color::GetNormalizedColor() const {
 
     return norm_color;
 }
+
+bool Color::operator==(const Color& other) const {
+    return r == other.r && g == other.g && b == other.b && a == other.a;
+}

@@ -160,11 +160,10 @@ Texture LoadTexture(const std::string& file_path) {
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
+    glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                    GL_NEAREST); // GL_NEAREST is better for pixel art style / Low Resolution
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     stbi_image_free(data);
 
@@ -177,8 +176,11 @@ Texture LoadTexture(const std::string& file_path) {
     return {texId, w, h};
 }
 
+void UnloadFont(Font& font) {
+    UnloadTexture(font.texture);
+}
 
-void UnloadTexture(Texture texture) {
+void UnloadTexture(Texture& texture) {
 
     if (texture.id == 0) {
         return;
@@ -306,8 +308,6 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    GetRenderer()->default_shader.SetValue("Texture", 0);
-
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     glm::mat4 model = transform.GetModelMatrix2D();
@@ -396,8 +396,6 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->default_shader.SetValue("Texture", 0);
-
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
@@ -432,13 +430,12 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
         return;
     }
 
-    static Mesh mesh;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->default_shader.SetValue("Texture", 0);
 
+    GetRenderer()->default_shader.SetValue("Texture", 0);
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -459,16 +456,20 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     const float flipY            = -1.0f;
     std::vector<Vertex> vertices = {
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, flipY - texTop)},
-        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, flipY - texTop)},
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, flipY - texBottom)},
-        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, flipY - texBottom)},
+        {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
+        {{1.0f, 0.0f, 0.0f}, {texRight, flipY - texTop}},
+        {{1.0f, 1.0f, 0.0f}, {texRight, flipY - texBottom}},
+        {{0.0f, 1.0f, 0.0f}, {texLeft, flipY - texBottom}},
     };
 
+    std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
-    mesh.Update(vertices);
+    static Mesh mesh(vertices, indices);
 
-    mesh.Draw(GL_TRIANGLE_FAN);
+    static std::once_flag log_once;
+    std::call_once(log_once, [vertices]() { mesh.Update(vertices); });
+
+    mesh.Draw();
 }
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
@@ -482,12 +483,9 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     GetRenderer()->default_shader.SetValue("Model", model);
 
 
-    if (mesh.GetVertexCount() == 0) {
-
-        std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                                        {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
-        mesh.Update(vertices);
-    }
+    std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+                                    {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+    mesh.Update(vertices);
 
     glLineWidth(thickness);
 
@@ -501,7 +499,6 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
@@ -525,7 +522,6 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
@@ -544,7 +540,6 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 }
 
 void BeginMode2D(const Camera2D& camera) {
-    GetRenderer()->default_shader.Use();
 
     const glm::mat4& view = camera.GetViewMatrix();
 
@@ -582,7 +577,6 @@ void BeginCanvas() {
 
     glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
     glDisable(GL_DEPTH_TEST);

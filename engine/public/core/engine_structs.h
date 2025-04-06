@@ -29,6 +29,8 @@ struct Color {
     unsigned char a;
 
     glm::vec4 GetNormalizedColor() const;
+
+    bool operator==(const Color& other) const;
 };
 
 

@@ -20,18 +20,7 @@ std::string TextFormat(const char* fmt, ...) {
     return buffer;
 }
 
-#if defined(_WIN32)
-#include <windows.h>
-int GetMemoryUsage() {
-    MEMORYSTATUSEX memInfo;
-    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-    GlobalMemoryStatusEx(&memInfo);
-
-    DWORDLONG usedMemory = memInfo.ullTotalPhys - memInfo.ullAvailPhys;
-    return static_cast<int>(usedMemory) / (1024.0f * 1024.0f);
-}
-#else
+// TODO: implement
 int GetMemoryUsage() {
     return 0;
 }
-#endif

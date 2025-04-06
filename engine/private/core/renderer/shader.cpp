@@ -64,12 +64,17 @@ unsigned int Shader::CompileShader(unsigned int type, const char* source) {
 }
 
 unsigned int Shader::GetUniformLocation(const std::string& name) const {
+    if (uniforms.find(name) != uniforms.end()) {
+        return uniforms[name];
+    }
+
     unsigned int location = glGetUniformLocation(id, name.c_str());
 
     if (location == -1) {
         LOG_WARN("Uniform %s not found", name.c_str());
     }
 
+    uniforms[name] = location;
     return location;
 }
 
