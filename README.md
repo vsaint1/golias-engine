@@ -84,6 +84,18 @@ Ember Engine uses [cmake](https://cmake.org/) as its build system and supports t
 
 ---
 
+### 🏗️ Building
+```bash
+git clone https://github.com/vsaint1/ember_engine.git && cd ember_engine
+git submodule update --init --recursive
+
+mkdir build
+cd build
+
+# or Release if you want release builds
+cmake -DCMAKE_BUILD_TYPE=Debug -S ../ -B .
+cmake --build .
+```
 ### ⚠️ Disclaimer
 
 This project was created for educational and personal purposes. It is **not** intended for commercial use.
