@@ -8,6 +8,8 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     /* GLES 3.0 -> GLSL: 300 */
+    const char* glsl_version = "#version 300 es";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -15,14 +17,18 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
     /* OPENGL 3.3 -> GLSL: 330*/
+    const char* glsl_version = "#version 330";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
 
 #endif
 
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
@@ -57,14 +63,30 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     _renderer->viewport[1] = view_height;
     _renderer->window      = window;
     _renderer->SetContext(glContext);
+    _renderer->glsl_version = glsl_version;
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
+
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.IniFilename = nullptr;
+
+    ImGui::StyleColorsDark();
+    ImGui_ImplSDL3_InitForOpenGL(window, glContext);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glViewport(0, 0, view_width, view_height);
+
+    SDL_ShowWindow(window);
 
     renderer = _renderer;
 
@@ -80,7 +102,9 @@ void ClearBackground(Color color) {
 
 
 void BeginDrawing() {
-
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
     glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
@@ -89,10 +113,11 @@ void BeginDrawing() {
     GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
-
 }
 
 void EndDrawing() {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(renderer->window);
 }
 
@@ -135,11 +160,10 @@ Texture LoadTexture(const std::string& file_path) {
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
+    glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-                    GL_NEAREST); // GL_NEAREST is better for pixel art style / Low Resolution
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     stbi_image_free(data);
 
@@ -152,8 +176,11 @@ Texture LoadTexture(const std::string& file_path) {
     return {texId, w, h};
 }
 
+void UnloadFont(Font& font) {
+    UnloadTexture(font.texture);
+}
 
-void UnloadTexture(Texture texture) {
+void UnloadTexture(Texture& texture) {
 
     if (texture.id == 0) {
         return;
@@ -256,6 +283,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     font.font_size      = font_size;
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
+    font.info           = font_info;
 
     delete[] bitmap;
     delete[] rgba_buffer;
@@ -263,8 +291,9 @@ Font LoadFont(const std::string& file_path, int font_size) {
     return font;
 }
 
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning) {
 
+void DrawTextInternal(Font& font, const std::string& text, Transform transform, Color color, float font_size,
+                      float kerning) {
 
     if (text.empty() || !font.IsValid()) {
         static std::once_flag log_once;
@@ -279,13 +308,13 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    GetRenderer()->default_shader.SetValue("Texture", 0);
-
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     glm::mat4 model = transform.GetModelMatrix2D();
 
     GetRenderer()->default_shader.SetValue("Model", model);
+
+    float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
 
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -297,7 +326,7 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
     for (char c : text) {
         if (c == '\n') {
             cursor_x = start_x;
-            cursor_y += font.font_size;
+            cursor_y += font.font_size * scale_factor;
             continue;
         }
 
@@ -307,10 +336,10 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
 
         const Glyph& g = font.glyphs[c];
 
-        float x0 = cursor_x + g.x_offset;
-        float y0 = cursor_y + g.y_offset;
-        float x1 = x0 + g.w;
-        float y1 = y0 + g.h;
+        float x0 = cursor_x + g.x_offset * scale_factor;
+        float y0 = cursor_y + g.y_offset * scale_factor;
+        float x1 = x0 + g.w * scale_factor;
+        float y1 = y0 + g.h * scale_factor;
 
         float u0 = g.x0;
         float v0 = g.y0;
@@ -331,12 +360,25 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
         vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
         vertices.push_back({{scaledX0, scaledY1, 0.0f}, {u0, v1}});
 
-        cursor_x += g.advance + kerning;
+        cursor_x += (g.advance + kerning) * scale_factor;
     }
 
     mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLES);
+}
+
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
+    const Color shadow_color   = Color(0, 0, 0, color.a);
+    Transform shadow_transform = transform;
+    float scale_factor         = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+
+    float shadow_offset = 2.0f * scale_factor;
+
+    shadow_transform.position.x += shadow_offset;
+    shadow_transform.position.y += shadow_offset;
+    DrawTextInternal(font, text, transform, color, font_size, kerning);
+    DrawTextInternal(font, text, shadow_transform, shadow_color, font_size, kerning);
 }
 
 
@@ -353,8 +395,6 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
-
-    GetRenderer()->default_shader.SetValue("Texture", 0);
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
     model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
@@ -390,13 +430,12 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
         return;
     }
 
-    static Mesh mesh;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    GetRenderer()->default_shader.SetValue("Texture", 0);
 
+    GetRenderer()->default_shader.SetValue("Texture", 0);
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -414,21 +453,23 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
 
-        const float flipY            = -1.0f;
-        std::vector<Vertex> vertices = {
-            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(texLeft, flipY - texTop)},
-            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(texRight, flipY - texTop)},
-            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(texRight, flipY - texBottom)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(texLeft, flipY - texBottom)},
-        };
+    const float flipY            = -1.0f;
+    std::vector<Vertex> vertices = {
+        {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
+        {{1.0f, 0.0f, 0.0f}, {texRight, flipY - texTop}},
+        {{1.0f, 1.0f, 0.0f}, {texRight, flipY - texBottom}},
+        {{0.0f, 1.0f, 0.0f}, {texLeft, flipY - texBottom}},
+    };
 
+    std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
-        mesh.Update(vertices);
-    }
+    static Mesh mesh(vertices, indices);
 
-    mesh.Draw(GL_TRIANGLE_FAN);
+    static std::once_flag log_once;
+    std::call_once(log_once, [vertices]() { mesh.Update(vertices); });
+
+    mesh.Draw();
 }
 
 void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
@@ -442,12 +483,9 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
     GetRenderer()->default_shader.SetValue("Model", model);
 
 
-    if (mesh.GetVertexCount() == 0) {
-
-        std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                                        {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
-        mesh.Update(vertices);
-    }
+    std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+                                    {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+    mesh.Update(vertices);
 
     glLineWidth(thickness);
 
@@ -461,20 +499,17 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
-        std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
-                                        {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
+    std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
+                                    {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
 
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
     glLineWidth(thickness);
 
@@ -487,29 +522,24 @@ void DrawRectFilled(ember::Rectangle rect, Color color) {
 
     glm::mat4 model = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
+    std::vector<Vertex> vertices = {
+        {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+        {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
+    };
 
-        std::vector<Vertex> vertices = {
-            {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-            {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-        };
-
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
     mesh.Draw(GL_TRIANGLE_FAN);
 }
 
 void BeginMode2D(const Camera2D& camera) {
-    GetRenderer()->default_shader.Use();
 
     const glm::mat4& view = camera.GetViewMatrix();
 
@@ -529,18 +559,17 @@ void EndMode2D() {
 void BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-
         if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x =  static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
-        float scale_y =  static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
+        float scale_x = static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
+        float scale_y = static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
     };
-    
+
     const float scale_factor = calculate_scale_factor();
 
     glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
@@ -548,7 +577,6 @@ void BeginCanvas() {
 
     glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
     glDisable(GL_DEPTH_TEST);

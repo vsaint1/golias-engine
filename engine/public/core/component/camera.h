@@ -81,7 +81,7 @@ struct Camera2D {
         return this->zoom;
     }
 
+    float zoom = 1.0f; // MAX_ZOOM = 10.0f
 private:
     int width = 0, height = 0;
-    float zoom = 1.0f; // MAX_ZOOM = 10.0f
 };

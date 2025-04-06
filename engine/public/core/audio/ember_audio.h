@@ -106,6 +106,7 @@ void Mix_SetGlobalVolume(float volume);
 */
 void Mix_UnloadAudio(Audio* audio);
 
+bool Mix_IsAudioPlaying(Audio* audio);
 
 extern ma_engine engine;
 

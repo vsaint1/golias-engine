@@ -47,6 +47,11 @@ struct Renderer {
 
     void SetContext(/*MTL*/);
 
+    const char* glsl_version = "#version 330";
+    SDL_GLContext GetContext() {
+		return context;
+    }
+
     void Destroy();
 
 private:

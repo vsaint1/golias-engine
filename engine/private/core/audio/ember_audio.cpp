@@ -1,7 +1,6 @@
 #include "core/audio/ember_audio.h"
 
 
-
 bool InitAudio() {
     SDL_AudioDeviceID devId;
 
@@ -9,7 +8,7 @@ bool InitAudio() {
     config.channels         = 0;
     config.sampleRate       = 0;
 
-    ma_result res           = ma_engine_init(&config, &engine);
+    ma_result res = ma_engine_init(&config, &engine);
 
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engine backend %d", res);
@@ -167,12 +166,17 @@ void Mix_SetGlobalVolume(float volume) {
     ma_engine_set_volume(&engine, volume);
 }
 
+bool Mix_IsAudioPlaying(Audio* audio) {
+
+    return ma_sound_is_playing(&audio->sound);
+}
+
 void Mix_UnloadAudio(Audio* audio) {
 
     Mix_PauseAudio(audio);
 
     ma_sound_uninit(&audio->sound);
-    
+
     SDL_free(audio->decoder);
     SDL_free(audio);
 }

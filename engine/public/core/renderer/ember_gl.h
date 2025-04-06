@@ -28,6 +28,16 @@ Texture LoadTexture(const std::string& file_path);
 */
 Font LoadFont(const std::string& file_path, int font_size);
 
+/*!
+
+   @brief Unload the Font from CPU/GPU (cleanup)
+
+   @version 0.0.9
+   @param font The loaded Font
+   @return void
+
+*/
+void UnloadFont(Font& font);
 
 /*!
 
@@ -38,7 +48,7 @@ Font LoadFont(const std::string& file_path, int font_size);
    @return void
 
 */
-void UnloadTexture(Texture texture);
+void UnloadTexture(Texture& texture);
 
 /*!
 
@@ -99,7 +109,7 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float kerning = 0.0f);
+void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
 
 /*!
 

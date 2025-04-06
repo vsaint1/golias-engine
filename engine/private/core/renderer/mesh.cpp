@@ -5,7 +5,7 @@ Mesh::Mesh() {
     glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW); 
+    glBufferData(GL_ARRAY_BUFFER, 0, nullptr, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(1);
@@ -14,14 +14,16 @@ Mesh::Mesh() {
 }
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
-    : vertices(vertices), indices(indices) {
+    : vertices(vertices), indices(indices), bIsDirty(true) {
     Setup();
 }
 
 Mesh::~Mesh() {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    if (EBO) {
+        glDeleteBuffers(1, &EBO);
+    }
 }
 
 void Mesh::Bind() const {
@@ -45,11 +47,17 @@ void Mesh::Draw(GLenum mode) const {
 }
 
 void Mesh::Update(const std::vector<Vertex>& newVertices) {
-    vertices = newVertices;
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-}
+    if (newVertices.size() != vertices.size()) {
+        vertices = newVertices;
+        bIsDirty = true;
+    }
 
+    if (bIsDirty) {
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+        bIsDirty = false;
+    }
+}
 
 void Mesh::Setup() {
     glGenVertexArrays(1, &VAO);
@@ -57,7 +65,6 @@ void Mesh::Setup() {
     glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
 
@@ -68,7 +75,6 @@ void Mesh::Setup() {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
-
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, texCoord));
     glEnableVertexAttribArray(1);
 
