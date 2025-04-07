@@ -33,7 +33,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     player_texture = LoadTexture("sprites/Character_001.png");
 
     // assets in examples/assets
-    mine_music   = Mix_LoadAudio("sounds/Lullaby.mp3");
+    mine_music   = Mix_LoadAudio("sounds/lullaby.mp3");
     tel_music    = Mix_LoadAudio("sounds/the_entertainer.ogg");
     random_music = Mix_LoadAudio("sounds/test.flac");
 
@@ -191,7 +191,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         ImGui::Text("Application average: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Text("Delta Time: %f", core.Time->GetDeltaTime());
         ImGui::Text("Elapsed Time: %.3f", core.Time->GetElapsedTime());
-        ImGui::Text("Frame count: %d", core.Time->GetFrameCount());
+        ImGui::Text("Frame count: %llu", core.Time->GetFrameCount());
 
         ImGui::Text("RAM Usage: %d MB", GetMemoryUsage());
 

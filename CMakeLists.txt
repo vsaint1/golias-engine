@@ -40,12 +40,9 @@ if(MSVC)
     endif()
 endif()
 
-# ENGINE SOURCE
-file(GLOB_RECURSE ENGINE_SOURCES "engine/private/*.cpp" "engine/private/*.cpp" "engine/private/*.c")
-list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 
-# GAME SOURCE WILL BE AT SRC
-file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.c")
+
+file(GLOB_RECURSE SOURCES "game/*.cpp" "game/*.c")
 
 
 add_subdirectory(vendor/glad)
@@ -72,6 +69,8 @@ set(GLM_BUILD_TESTS OFF)
 set(GLM_ENABLE_CXX_20 ON)
 set(GLM_TEST_ENABLE OFF)
 add_subdirectory(vendor/glm)
+
+add_subdirectory(engine)
 
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
@@ -234,7 +233,6 @@ endif()
 # WARNING: HERE WE LINK ALL DEPENDENCIES, `MUST BE CROSS-PLATFORM AND NOT PLATFORM SPECIFIC`
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm mini_audio tinyxml imgui)
-
+target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
