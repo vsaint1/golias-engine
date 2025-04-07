@@ -7,7 +7,7 @@ class Text {
 public:
     Text() = default;
 
-    Text(Font& font, const std::string& text, Transform transform, float font_size);
+    Text(Font& font, const std::string& text, Transform transform, float font_size, Color color_ = {255,255,255,255});
 
     void Draw();
 

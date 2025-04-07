@@ -48,10 +48,7 @@ Audio* Mix_LoadAudio(const std::string& file_Path) {
 
     Audio* audio = (Audio*) SDL_malloc(sizeof(Audio));
 
-    if (!audio) {
-        LOG_ERROR("Failed to allocate memory for sound");
-        return nullptr;
-    }
+    SDL_assert(audio != nullptr);
 
     std::string path = ASSETS_PATH + file_Path;
 
@@ -108,10 +105,7 @@ Audio* Mix_LoadAudio(const std::string& file_Path) {
 
 void Mix_PlayAudio(Audio* audio, bool loop) {
 
-    if (audio == nullptr) {
-        LOG_ERROR("The Audio wasn't loaded");
-        return;
-    }
+    SDL_assert(audio != nullptr);
 
     ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
 
@@ -136,20 +130,14 @@ void Mix_PlayAudio(Audio* audio, bool loop) {
 
 void Mix_PauseAudio(Audio* audio) {
 
-    if (audio == nullptr) {
-        LOG_ERROR("The Audio wasn't loaded");
-        return;
-    }
+    SDL_assert(audio != nullptr);
 
     ma_sound_stop(&audio->sound);
 }
 
 void Mix_SetVolume(Audio* audio, float volume) {
 
-    if (audio == nullptr) {
-        LOG_ERROR("The Audio wasn't loaded");
-        return;
-    }
+    SDL_assert(audio != nullptr);
 
     volume = SDL_clamp(volume, 0.0f, 1.0f);
 
@@ -167,6 +155,8 @@ void Mix_SetGlobalVolume(float volume) {
 }
 
 bool Mix_IsAudioPlaying(Audio* audio) {
+
+    SDL_assert(audio != nullptr);
 
     return ma_sound_is_playing(&audio->sound);
 }

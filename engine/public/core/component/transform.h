@@ -25,3 +25,4 @@ struct Transform {
     */
     glm::mat4 GetModelMatrix() const;
 };
+

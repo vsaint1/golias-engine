@@ -40,10 +40,13 @@ void Renderer::Resize(int w, int h) {
 void Renderer::Destroy() {
     default_shader.Destroy();
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    if (type == RendererType::OPENGL) {
 
-    SDL_GL_DestroyContext(context);
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+
+        SDL_GL_DestroyContext(context);
+    }
 
     SDL_DestroyWindow(window);
 
@@ -87,7 +90,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     /*!
         @brief Can have more than one display, but for now we will just use the first one
     */
-    const SDL_DisplayMode* display_mode = SDL_GetDesktopDisplayMode(1);
+    const SDL_DisplayID displayID       = SDL_GetPrimaryDisplay();
+    const SDL_DisplayMode* display_mode = SDL_GetDesktopDisplayMode(displayID);
 
     core.Window.data = display_mode;
 
@@ -97,6 +101,13 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
+        return false;
+    }
+    
+    const std::string gamepad_mappings = LoadAssetsFile("controller_db");
+
+    if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
+        LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
         return false;
     }
 
@@ -147,7 +158,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         // TODO
     }
 
-    core.Time = new TimeManager();
+    core.Time  = new TimeManager();
     core.Input = new InputManager();
 
     core.Input->SetWindow(_window);

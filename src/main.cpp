@@ -1,7 +1,6 @@
 ﻿#include "core/renderer/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
-
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
@@ -37,6 +36,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     mine_music   = Mix_LoadAudio("sounds/Lullaby.mp3");
     tel_music    = Mix_LoadAudio("sounds/the_entertainer.ogg");
     random_music = Mix_LoadAudio("sounds/test.flac");
+
 
     LOG_INFO("Device Name %s", SystemInfo::GetDeviceName().c_str());
     LOG_INFO("Device Model %s", SystemInfo::GetDeviceModel().c_str());

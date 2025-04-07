@@ -1,10 +1,10 @@
 #include "core/canvas/Text.h"
 
-Text::Text(Font& font, const std::string& text, Transform transform, float font_size) {
+Text::Text(Font& font, const std::string& text, Transform transform, float font_size, Color color_) {
     this->font      = font;
     this->text      = text;
     this->transform = transform;
-    this->color     = color;
+    this->color     = color_;
     this->font_size = font_size;
 }
 
