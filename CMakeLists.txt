@@ -26,9 +26,9 @@ include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
 add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
 
-# ios and web
+# [iOs/Emscripten] - disable shared libs
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
-    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")    # Disable shared builds on platforms where it does not make sense to use them
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")   
     set(SDL_SHARED OFF)
 else()
     set(SDL_SHARED ON)
@@ -36,12 +36,12 @@ endif()
 
 if(MSVC)
     if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
-        add_definitions(/MP)				# parallelize each target, unless Ninja is the generator
+        add_definitions(/MP)				
     endif()
 endif()
 
 
-
+# [SOURCE_FILES] - add all game source files
 file(GLOB_RECURSE SOURCES "game/*.cpp" "game/*.c")
 
 
@@ -59,8 +59,6 @@ add_subdirectory(vendor/tinyxml)
 
 add_subdirectory(vendor/imgui)
 
-
-
 set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
 set(GLM_BUILD_TESTS OFF)
 set(GLM_BUILD_TESTS OFF)
@@ -72,19 +70,18 @@ add_subdirectory(vendor/glm)
 
 add_subdirectory(engine)
 
-if(EMSCRIPTEN)
-    set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
+# [iOS/macOS/Android/Linux] - commons
+if(UNIX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 endif()
 
-# ios/macosx
-if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 endif()
 
 
 if(ANDROID)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
     file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
 
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES} ${ANDROID_FILES})
@@ -171,8 +168,11 @@ endif()
 
 # Windows [x86_x64/arm]
 if(MSVC)
-    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+    endif()
 
     file(GLOB_RECURSE WIN_FILES "engine/private/core/platform/windows/*.c")
 
@@ -212,10 +212,6 @@ endif()
 
 # Linux [x86_x64/arm]
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
-    message(STATUS "BUILD LINUX")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
     file(GLOB_RECURSE LINUX_FILES "engine/private/core/platform/linux/*.c")
 
