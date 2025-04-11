@@ -1,6 +1,9 @@
 #pragma once
 #include "core/file_system.h"
 
+
+
+
 // TODO: create OpenGL shader
 
 /*!
@@ -51,6 +54,29 @@ private:
     unsigned int CompileShader(unsigned int type, const char* source);
 
     mutable std::unordered_map<std::string, unsigned int> uniforms;
+};
+
+// Default shader only
+struct ShaderEffect {
+    struct Shadow_t {
+        bool enabled = false;
+        glm::vec4 color{};
+        glm::vec2 offset{};
+    };
+
+    struct Outline_t {
+        bool enabled = false;
+        glm::vec4 color{};
+        float thickness = 1.0f;
+    };
+
+    struct Glow_t {
+        bool enabled = false;
+        glm::vec4 color{};
+        float strength = 1.0f;
+        float radius = 1.0f;
+    };
+
 };
 
 template <typename T>

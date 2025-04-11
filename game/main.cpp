@@ -76,18 +76,25 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
-    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
-    BeginMode2D(camera);
-
+    DrawText(mine_font, "Hi there !", transform, text_color, 0.0f);
 
     for (int i = 0; i < entities; i++) {
-        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 128, 128}, {64, 64}, angle);
+        DrawText(mine_font, gui_text, transform, text_color, 0.0f);
     }
+
+    // DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+
+    BeginMode2D(camera);
+
+    DrawTextureEx(player_texture, {0, 0, 32, 32}, {0, 0, 64, 64}, {32, 32}, angle, {255, 255, 255, 255});
 
     EndMode2D();
 
     BeginCanvas();
+
+    for (int i = 0; i < entities; i++) {
+        DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+    }
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);

@@ -1,7 +1,6 @@
 #include "core/renderer/ember_gl.h"
 
 #include <stb_image.h>
-#include <mutex> // for std::once_flag
 
 Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
@@ -58,12 +57,11 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
         LOG_CRITICAL("Failed to set swap interval, %s", SDL_GetError());
     }
 
-    Renderer* _renderer    = new Renderer; // TODO: use smart ptrs
+    Renderer* _renderer    = new Renderer;
     _renderer->viewport[0] = view_width;
     _renderer->viewport[1] = view_height;
     _renderer->window      = window;
     _renderer->SetContext(glContext);
-    _renderer->glsl_version = glsl_version;
 
     _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
@@ -94,7 +92,7 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 }
 
 void ClearBackground(Color color) {
-    glm::vec4 norm_color = {color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f};
+    const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -269,8 +267,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, file_path.c_str());
     LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
@@ -301,7 +299,6 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
         return;
     }
 
-    static Mesh mesh;
 
     kerning = 0.0f; // TODO: fix kerning
 
@@ -313,7 +310,6 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
     glm::mat4 model = transform.GetModelMatrix2D();
 
     GetRenderer()->default_shader.SetValue("Model", model);
-
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
 
     float cursor_x = 0.0f;
@@ -321,7 +317,9 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
     float start_x  = cursor_x;
 
     std::vector<Vertex> vertices;
-    vertices.reserve(text.size() * 6);
+    std::vector<uint32_t> indices;
+
+    uint32_t index_offset = 0;
 
     for (char c : text) {
         if (c == '\n') {
@@ -352,16 +350,25 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
         float scaledX1  = x1 * scale.x;
         float scaledY1  = y1 * scale.y;
 
-        vertices.push_back({{scaledX0, scaledY0, 0.0f}, {u0, v0}});
-        vertices.push_back({{scaledX1, scaledY0, 0.0f}, {u1, v0}});
-        vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
+        vertices.push_back({glm::vec3(x0, y0, 0.0f), glm::vec2(u0, v0)}); // TL
+        vertices.push_back({glm::vec3(x1, y0, 0.0f), glm::vec2(u1, v0)}); // TR
+        vertices.push_back({glm::vec3(x1, y1, 0.0f), glm::vec2(u1, v1)}); // BR
+        vertices.push_back({glm::vec3(x0, y1, 0.0f), glm::vec2(u0, v1)}); // TL
 
-        vertices.push_back({{scaledX0, scaledY0, 0.0f}, {u0, v0}});
-        vertices.push_back({{scaledX1, scaledY1, 0.0f}, {u1, v1}});
-        vertices.push_back({{scaledX0, scaledY1, 0.0f}, {u0, v1}});
+        indices.push_back(index_offset + 0);
+        indices.push_back(index_offset + 1);
+        indices.push_back(index_offset + 2);
 
+        indices.push_back(index_offset + 0);
+        indices.push_back(index_offset + 2);
+        indices.push_back(index_offset + 3);
+
+        index_offset += 4;
         cursor_x += (g.advance + kerning) * scale_factor;
     }
+
+
+    static Mesh mesh(vertices, indices);
 
     mesh.Update(vertices);
 
@@ -369,16 +376,15 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
 }
 
 void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
-    const Color shadow_color   = Color(0, 0, 0, color.a);
-    Transform shadow_transform = transform;
-    float scale_factor         = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+    // const Color shadow_color   = Color(0, 0, 0, color.a);
+    //  Transform shadow_transform = transform;
+    // float scale_factor         = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
 
-    float shadow_offset = 2.0f * scale_factor;
+    // float shadow_offset = 2.0f * scale_factor;
 
-    shadow_transform.position.x += shadow_offset;
-    shadow_transform.position.y += shadow_offset;
+    // shadow_transform.position.x += shadow_offset;
+    // shadow_transform.position.y += shadow_offset;
     DrawTextInternal(font, text, transform, color, font_size, kerning);
-    DrawTextInternal(font, text, shadow_transform, shadow_color, font_size, kerning);
 }
 
 
@@ -404,17 +410,14 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-    if (mesh.GetVertexCount() == 0) {
+    std::vector<Vertex> vertices = {
+        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
+        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
+        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
+        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
+    };
 
-        std::vector<Vertex> vertices = {
-            {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-            {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-            {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-        };
-
-        mesh.Update(vertices);
-    }
+    mesh.Update(vertices);
 
 
     mesh.Draw(GL_TRIANGLE_FAN);
@@ -453,7 +456,6 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
-
     const float flipY            = -1.0f;
     std::vector<Vertex> vertices = {
         {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
@@ -466,8 +468,7 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
 
     static Mesh mesh(vertices, indices);
 
-    static std::once_flag log_once;
-    std::call_once(log_once, [vertices]() { mesh.Update(vertices); });
+    mesh.Update(vertices);
 
     mesh.Draw();
 }
@@ -551,7 +552,7 @@ void BeginMode2D(const Camera2D& camera) {
 }
 
 void EndMode2D() {
-    glm::mat4 view = glm::mat4(1.0f);
+    const glm::mat4 view = glm::mat4(1.0f);
     GetRenderer()->default_shader.SetValue("View", view);
 }
 
