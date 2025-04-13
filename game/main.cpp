@@ -1,4 +1,4 @@
-﻿#include "core/renderer/ember_gl.h"
+﻿#include "core/renderer/opengl/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
 int SCREEN_WIDTH  = 1280;
@@ -76,25 +76,23 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    DrawText(mine_font, "Hi there !", transform, text_color, 0.0f);
+    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+
 
     for (int i = 0; i < entities; i++) {
-        DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255, 255});
     }
 
-    // DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
     BeginMode2D(camera);
 
-    DrawTextureEx(player_texture, {0, 0, 32, 32}, {0, 0, 64, 64}, {32, 32}, angle, {255, 255, 255, 255});
+    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
     EndMode2D();
 
     BeginCanvas();
 
-    for (int i = 0; i < entities; i++) {
-        DrawText(mine_font, gui_text, transform, text_color, 0.0f);
-    }
+    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
