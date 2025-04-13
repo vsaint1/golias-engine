@@ -35,9 +35,9 @@ uniform Glow_t Glow;
 vec4 apply_shadow() {
     if (!Shadow.enabled) return vec4(0.0);
 
-    vec4 sample = texture(Texture, TexCoord + Shadow.offset * TexelSize);
-    if (sample.a > THRESHOLD)
-        return Shadow.color * sample.a;
+    vec4 tex_ = texture(Texture, TexCoord + Shadow.offset * TexelSize);
+    if (tex_.a > THRESHOLD)
+        return Shadow.color * tex_.a;
 
     return vec4(0.0);
 }
