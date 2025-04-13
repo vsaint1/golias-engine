@@ -7,11 +7,10 @@
   },
   "configurePresets": [
     {
-      "name": "linux",
-      "displayName": "Linux - cmake",
-      "description": "Linux build with cmake",
+      "name": "linux-debug",
+      "displayName": "Linux Debug [gcc/clang]",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build/linux",
+      "binaryDir": "${sourceDir}/build/linux/debug",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
         "BUILD_SHARED_LIBS": "ON",
@@ -19,21 +18,43 @@
       }
     },
     {
-      "name": "mac",
-      "displayName": "OSX [intel/arm] - xcode",
-      "description": "MacOS build with xcode",
+      "name": "linux-release",
+      "displayName": "Linux Release [gcc/clang]",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/linux/release",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Linux",
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "mac-debug",
+      "displayName": "macOS Debug [Xcode]",
       "generator": "Xcode",
-      "binaryDir": "${sourceDir}/build/macos",
+      "binaryDir": "${sourceDir}/build/macos/debug",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Darwin",
         "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      }
+    },
+    {
+      "name": "mac-release",
+      "displayName": "macOS Release [Xcode]",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/macos/release",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Darwin",
+        "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
     },
     {
       "name": "ios-device",
-      "displayName": "iOS Device - xcode",
-      "description": "iOS build with xcode",
+      "displayName": "iOS Device - Release",
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build/ios",
       "cacheVariables": {
@@ -44,22 +65,21 @@
     },
     {
       "name": "ios-simulator",
-      "displayName": "iOS Simulator - xcode",
-      "description": "iOS build for Simulator with Xcode",
+      "displayName": "iOS Simulator - Debug",
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build/ios-simulator",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "iOS",
         "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64",
         "BUILD_SHARED_LIBS": "OFF",
-        "CMAKE_OSX_SYSROOT": "iphonesimulator"
+        "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "web",
-      "displayName": "Wasm [emscripten] - emcmake",
-      "description": "WebGL build with emscripten",
-      "binaryDir": "${sourceDir}/build/webgl",
+      "name": "web-debug",
+      "displayName": "WebGL Debug [Emscripten]",
+      "binaryDir": "${sourceDir}/build/webgl/debug",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Emscripten",
@@ -67,84 +87,92 @@
       }
     },
     {
-      "name": "default-windows",
-      "displayName": "Windows x64",
-      "description": "Windows x64 build MSVC",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/windows",
-      "architecture": "x64"
-    },
-    {
-      "name": "debug-windows",
-      "inherits": "default-windows",
-      "displayName": "Windows x64 Debug",
-      "description": "Windows x64 build MSVC",
+      "name": "web-release",
+      "displayName": "WebGL Release [Emscripten]",
+      "binaryDir": "${sourceDir}/build/webgl/release",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_SYSTEM_NAME": "Windows"
+        "CMAKE_SYSTEM_NAME": "Emscripten",
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "rel-windows",
-      "inherits": "default-windows",
-      "displayName": "Windows x64 Release",
-      "description": "Windows x64 build MSVC",
+      "name": "windows-debug",
+      "displayName": "Windows Debug [MSVC]",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/windows/debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_SYSTEM_NAME": "Windows"
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release [MSVC]",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/windows/release",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "macosx",
-      "displayName": "MacOS",
-      "description": "MacOS build with xcode",
-      "targets": [
-        "ember_engine"
-      ],
-      "verbose": true,
-      "configurePreset": "mac"
+      "name": "mac-debug-build",
+      "displayName": "macOS Debug Build",
+      "configurePreset": "mac-debug",
+      "targets": [ "ember_engine" ],
+      "verbose": true
     },
     {
-      "name": "webgl-r",
-      "displayName": "WebGL Release",
-      "description": "WebGL build with emscripten",
-      "targets": [
-        "ember_engine"
-      ],
-      "verbose": true,
-      "configurePreset": "web"
+      "name": "mac-release-build",
+      "displayName": "macOS Release Build",
+      "configurePreset": "mac-release",
+      "targets": [ "ember_engine" ],
+      "verbose": true
     },
     {
-      "name": "windows-d",
-      "displayName": "Windows x64 Debug",
-      "description": "Windows x64 build MSVC",
-      "targets": [
-        "ember_engine"
-      ],
-      "verbose": true,
-      "configurePreset": "debug-windows"
+      "name": "linux-debug-build",
+      "displayName": "Linux Debug Build",
+      "configurePreset": "linux-debug",
+      "targets": [ "ember_engine" ],
+      "verbose": true
     },
     {
-      "name": "windows-r",
-      "displayName": "Windows x64 Release",
-      "description": "Windows x64 build MSVC",
-      "targets": [
-        "ember_engine"
-      ],
-      "verbose": true,
-      "configurePreset": "rel-windows"
+      "name": "linux-release-build",
+      "displayName": "Linux Release Build",
+      "configurePreset": "linux-release",
+      "targets": [ "ember_engine" ],
+      "verbose": true
     },
     {
-      "name": "linux-d",
-      "displayName": "Linux Debug",
-      "description": "Linux build with cmake",
-      "targets": [
-        "ember_engine"
-      ],
-      "verbose": true,
-      "configurePreset": "linux"
+      "name": "windows-debug-build",
+      "displayName": "Windows Debug Build",
+      "configurePreset": "windows-debug",
+      "targets": [ "ember_engine" ],
+      "verbose": true
+    },
+    {
+      "name": "windows-release-build",
+      "displayName": "Windows Release Build",
+      "configurePreset": "windows-release",
+      "targets": [ "ember_engine" ],
+      "verbose": true
+    },
+    {
+      "name": "webgl-debug-build",
+      "displayName": "WebGL Debug Build",
+      "configurePreset": "web-debug",
+      "targets": [ "ember_engine" ],
+      "verbose": true
+    },
+    {
+      "name": "webgl-release-build",
+      "displayName": "WebGL Release Build",
+      "configurePreset": "web-release",
+      "targets": [ "ember_engine" ],
+      "verbose": true
     }
   ]
 }

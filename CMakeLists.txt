@@ -53,6 +53,9 @@ add_subdirectory(vendor/stb_truetype)
 
 add_subdirectory(vendor/mini_audio)
 
+# [SDL] - removing unused modules
+set(SDL_RENDER OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/tinyxml)
