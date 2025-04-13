@@ -28,9 +28,9 @@ public:
 
     void Bind() const;
 
-    void Draw(GLenum mode = GL_TRIANGLES) const;
+    void Draw(unsigned int mode = GL_TRIANGLES) const;
 
-    void Update(const std::vector<Vertex>& newVertices);
+    void Update(const std::vector<Vertex>& new_vertices);
 
     size_t GetVertexCount() const;
 

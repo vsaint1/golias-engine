@@ -3,6 +3,11 @@
 #include "imports.h"
 #include <stb_truetype.h>
 
+
+// Core struct (engine stuff) - 0.0.1
+
+
+
 typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
@@ -41,6 +46,7 @@ struct Glyph {
     int advance;
 };
 
+
 struct Font {
     std::map<char, Glyph> glyphs{};
     stbtt_fontinfo info;
@@ -52,5 +58,6 @@ struct Font {
 
     bool IsValid() const;
 
-    int GetTextWidth(const std::string& text, float size = 0.0f) const;
 };
+
+std::tuple<int,int> CalcTextSize(const std::string& text, const Font& font, float font_size = 0.0f);

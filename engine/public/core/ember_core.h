@@ -2,11 +2,23 @@
 
 #include "core/component/camera.h"
 #include "core/engine_structs.h"
+
+#pragma region OPENGL/ES
+
+#include "core/renderer/opengl/shader_gl.h"
 #include "core/renderer/mesh.h"
-#include "core/renderer/shader.h"
+
+#pragma endregion
+
+#pragma region METAL
+
+
+
+#pragma endregion
+
 #include "core/audio/ember_audio.h"
-#include "core/system_info.h"
 #include "core/ember_utils.h"
+#include "core/system_info.h"
 
 /*!
 
@@ -36,7 +48,7 @@ struct Renderer {
 
     unsigned int VAO, VBO, EBO;
 
-    Shader default_shader{};
+    OpenglShader default_shader{};
 
     int viewport[2]   = {480, 270};
     RendererType type = OPENGL;
@@ -45,23 +57,21 @@ struct Renderer {
 
     void SetContext(const SDL_GLContext& ctx);
 
-    void SetContext(/*MTL*/);
+    void SetContext(/*const MTLDevice& ctx*/);
 
-    SDL_GLContext GetContext() {
-		return context;
-    }
+    /*
+        @brief Get the current context
+        - Cast to `SDL_GLContext` or `MTLDevice`
+    */
+    void* GetContext() const;
 
     void Destroy();
 
 private:
     SDL_GLContext context = 0;
+    /*MTLDevice context = 0;*/
 };
 
-/*!
-    @brief Core struct (engine stuff)
-
-    @version 0.0.1
-*/
 
 
 
@@ -130,5 +140,3 @@ void CloseWindow();
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
 
 static Renderer* renderer = nullptr;
-
-

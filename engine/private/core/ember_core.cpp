@@ -22,6 +22,14 @@ Renderer* GetRenderer() {
     return renderer;
 }
 
+void* Renderer::GetContext() const {
+    if(type == RendererType::OPENGL){
+        return (void*)context;
+    }
+
+    return context;
+}
+
 void Renderer::SetContext(const SDL_GLContext& ctx) {
     context = ctx;
 }

@@ -34,7 +34,7 @@ size_t Mesh::GetVertexCount() const {
     return vertices.size();
 }
 
-void Mesh::Draw(GLenum mode) const {
+void Mesh::Draw(unsigned int mode) const {
     glBindVertexArray(VAO);
 
     if (!indices.empty()) {
@@ -46,9 +46,9 @@ void Mesh::Draw(GLenum mode) const {
     glBindVertexArray(0);
 }
 
-void Mesh::Update(const std::vector<Vertex>& newVertices) {
-    if (newVertices.size() != vertices.size()) {
-        vertices = newVertices;
+void Mesh::Update(const std::vector<Vertex>& new_vertices) {
+    if (new_vertices.size() != vertices.size()) {
+        vertices = new_vertices;
         bIsDirty = true;
     }
 

@@ -37,7 +37,7 @@ Font LoadFont(const std::string& file_path, int font_size);
    @return void
 
 */
-void UnloadFont(Font& font);
+void UnloadFont(const Font& font);
 
 /*!
 
@@ -48,7 +48,7 @@ void UnloadFont(Font& font);
    @return void
 
 */
-void UnloadTexture(Texture& texture);
+void UnloadTexture(const Texture& texture);
 
 /*!
 
@@ -59,7 +59,7 @@ void UnloadTexture(Texture& texture);
    @return void
 
 */
-void ClearBackground(Color color);
+void ClearBackground(const Color& color);
 
 /*!
 
@@ -109,7 +109,7 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
+void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
 
 /*!
 
@@ -123,7 +123,7 @@ void DrawText(Font& font, const std::string& text, Transform transform, Color co
    @return void
 
 */
-void DrawTexture(Texture texture, ember::Rectangle rect, Color color = {255, 255, 255, 255});
+void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {255, 255, 255, 255});
 
 /*!
 
@@ -140,8 +140,8 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color = {255, 255
    @return void
 
 */
-void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation,
-                   Color color = {255, 255, 255, 255});
+void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin, float rotation,
+                   const Color& color = {255, 255, 255, 255});
 
 /*!
 
@@ -155,7 +155,7 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
    @return void
 
 */
-void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0f);
+void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness = 1.0f);
 
 
 /*!
@@ -170,7 +170,7 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness = 1.0
    @version 0.0.6
 
 */
-void DrawRect(ember::Rectangle rect, Color color, float thickness = 1.0f);
+void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness = 1.0f);
 
 /*!
 
@@ -185,7 +185,7 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness = 1.0f);
 
 
 */
-void DrawRectFilled(ember::Rectangle rect, Color color);
+void DrawRectFilled(const ember::Rectangle& rect, const Color& color);
 
 /*!
 

@@ -1,4 +1,4 @@
-#include "core/renderer/ember_gl.h"
+#include "core/renderer/opengl/ember_gl.h"
 
 #include <stb_image.h>
 
@@ -57,13 +57,13 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
         LOG_CRITICAL("Failed to set swap interval, %s", SDL_GetError());
     }
 
-    Renderer* _renderer    = new Renderer;
-    _renderer->viewport[0] = view_width;
-    _renderer->viewport[1] = view_height;
-    _renderer->window      = window;
-    _renderer->SetContext(glContext);
+    Renderer* glRenderer    = new Renderer;
+    glRenderer->viewport[0] = view_width;
+    glRenderer->viewport[1] = view_height;
+    glRenderer->window      = window;
+    glRenderer->SetContext(glContext);
 
-    _renderer->default_shader = Shader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
+    glRenderer->default_shader = OpenglShader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
 
 
     IMGUI_CHECKVERSION();
@@ -86,12 +86,12 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
     SDL_ShowWindow(window);
 
-    renderer = _renderer;
+    renderer = glRenderer;
 
-    return _renderer;
+    return renderer;
 }
 
-void ClearBackground(Color color) {
+void ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
@@ -103,10 +103,11 @@ void BeginDrawing() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
-    glm::mat4 projection =
+    
+    const glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
-    glm::mat4 view = glm::mat4(1.0f);
+    const glm::mat4 view = glm::mat4(1.0f);
 
     GetRenderer()->default_shader.Use();
     GetRenderer()->default_shader.SetValue("View", view);
@@ -174,11 +175,11 @@ Texture LoadTexture(const std::string& file_path) {
     return {texId, w, h};
 }
 
-void UnloadFont(Font& font) {
+void UnloadFont(const Font& font) {
     UnloadTexture(font.texture);
 }
 
-void UnloadTexture(Texture& texture) {
+void UnloadTexture(const Texture& texture) {
 
     if (texture.id == 0) {
         return;
@@ -214,7 +215,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     unsigned char* bitmap = new unsigned char[atlas_w * atlas_h];
 
     int x = 0, y = 0, max_row_height = 0;
-
+    // ASCII range 32-126
     for (char c = 32; c < 127; ++c) {
         int ax, lsb;
         stbtt_GetCodepointHMetrics(&font_info, c, &ax, &lsb);
@@ -267,8 +268,11 @@ Font LoadFont(const std::string& file_path, int font_size) {
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, file_path.c_str());
     LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
@@ -290,12 +294,10 @@ Font LoadFont(const std::string& file_path, int font_size) {
 }
 
 
-void DrawTextInternal(Font& font, const std::string& text, Transform transform, Color color, float font_size,
+void DrawTextInternal(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
                       float kerning) {
 
     if (text.empty() || !font.IsValid()) {
-        static std::once_flag log_once;
-        std::call_once(log_once, []() { LOG_WARN("Font not loaded, skipping draw!!!"); });
         return;
     }
 
@@ -307,7 +309,7 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    glm::mat4 model = transform.GetModelMatrix2D();
+    const glm::mat4 model = transform.GetModelMatrix2D();
 
     GetRenderer()->default_shader.SetValue("Model", model);
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
@@ -322,6 +324,7 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
     uint32_t index_offset = 0;
 
     for (char c : text) {
+
         if (c == '\n') {
             cursor_x = start_x;
             cursor_y += font.font_size * scale_factor;
@@ -332,7 +335,7 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
             continue;
         }
 
-        const Glyph& g = font.glyphs[c];
+        const Glyph& g = font.glyphs.at(c);
 
         float x0 = cursor_x + g.x_offset * scale_factor;
         float y0 = cursor_y + g.y_offset * scale_factor;
@@ -375,25 +378,15 @@ void DrawTextInternal(Font& font, const std::string& text, Transform transform, 
     mesh.Draw(GL_TRIANGLES);
 }
 
-void DrawText(Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
-    // const Color shadow_color   = Color(0, 0, 0, color.a);
-    //  Transform shadow_transform = transform;
-    // float scale_factor         = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
 
-    // float shadow_offset = 2.0f * scale_factor;
-
-    // shadow_transform.position.x += shadow_offset;
-    // shadow_transform.position.y += shadow_offset;
     DrawTextInternal(font, text, transform, color, font_size, kerning);
 }
 
 
-void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
-
+void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
 
     if (texture.id == 0) {
-        static std::once_flag log_once;
-        std::call_once(log_once, []() { LOG_WARN("Texture not loaded, skipping draw!!!"); });
         return;
     }
 
@@ -402,11 +395,13 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(rect.x, rect.y, 0.0f));
-    model           = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
+    model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
-
 
     GetRenderer()->default_shader.SetValue("Model", model);
 
@@ -424,12 +419,10 @@ void DrawTexture(Texture texture, ember::Rectangle rect, Color color) {
 }
 
 
-void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle dest, glm::vec2 origin, float rotation,
-                   Color color) {
+void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+                   float rotation, const Color& color) {
 
     if (texture.id == 0) {
-        static std::once_flag log_once;
-        std::call_once(log_once, []() { LOG_WARN("Texture not loaded, skipping draw!!!"); });
         return;
     }
 
@@ -473,16 +466,13 @@ void DrawTextureEx(Texture texture, ember::Rectangle source, ember::Rectangle de
     mesh.Draw();
 }
 
-void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
+void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) {
 
     static Mesh mesh;
 
-    glm::mat4 model = glm::mat4(1.0f);
-
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", model);
-
+    GetRenderer()->default_shader.SetValue("Model", glm::mat4(1.0f));
 
     std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
                                     {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
@@ -494,16 +484,12 @@ void DrawLine(glm::vec2 start, glm::vec2 end, Color color, float thickness) {
 }
 
 
-void DrawRect(ember::Rectangle rect, Color color, float thickness) {
+void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
-
-
-    glm::mat4 model = glm::mat4(1.0f);
-
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", model);
+    GetRenderer()->default_shader.SetValue("Model", glm::mat4(1.0f));
 
     std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
                                     {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
@@ -518,10 +504,10 @@ void DrawRect(ember::Rectangle rect, Color color, float thickness) {
 }
 
 
-void DrawRectFilled(ember::Rectangle rect, Color color) {
+void DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
     static Mesh mesh;
 
-    glm::mat4 model = glm::mat4(1.0f);
+    const glm::mat4 model = glm::mat4(1.0f);
 
 
     GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
@@ -573,10 +559,10 @@ void BeginCanvas() {
 
     const float scale_factor = calculate_scale_factor();
 
-    glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
-                                      (float) core.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
+                                            (float) core.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
 
-    glm::mat4 view = glm::mat4(1.0f);
+    const glm::mat4 view = glm::mat4(1.0f);
 
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
