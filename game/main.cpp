@@ -76,7 +76,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
     for (int i = 0; i < entities; i++) {
@@ -86,7 +86,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     BeginMode2D(camera);
 
-    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
     EndMode2D();
 
@@ -180,7 +180,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     ImGui::Text("Engine");
-    if (ImGui::SliderFloat("Musics Volume", &core.Audio.global_volume, 0.0f, 100.0f)) {
+    if (ImGui::SliderFloat("Musics Volume", &core.Audio.global_volume, 0.0f, 1.0f)) {
         Mix_SetGlobalVolume(core.Audio.global_volume);
     }
 

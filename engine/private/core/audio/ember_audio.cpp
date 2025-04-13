@@ -2,13 +2,28 @@
 
 
 bool InitAudio() {
-    SDL_AudioDeviceID devId;
+    ma_device_config* device_config = (ma_device_config*)SDL_malloc(sizeof(ma_device_config));
+
+    if(!device_config) {
+        LOG_ERROR("Failed to allocate memory for device config");
+        return false;
+    }
+    
+    *device_config = ma_device_config_init(ma_device_type_playback);
+
+    device_config->playback.format   = ma_format_f32;
+    device_config->playback.channels = 2;
+    device_config->sampleRate        = 48000;
+    device_config->dataCallback      = 0; 
+    device_config->periodSizeInFrames = 0; 
+    device_config->periods = 0;            
+    device_config->performanceProfile = ma_performance_profile_low_latency;
 
     ma_engine_config config = ma_engine_config_init();
-    config.channels         = 0;
-    config.sampleRate       = 0;
 
     ma_result res = ma_engine_init(&config, &engine);
+
+    SDL_free(device_config); 
 
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engine backend %d", res);
@@ -16,13 +31,12 @@ bool InitAudio() {
     }
 
     SDL_memset(&core.Audio.spec, 0, sizeof(SDL_AudioSpec));
-
     core.Audio.spec.format   = SDL_AUDIO_F32;
-    core.Audio.spec.freq     = SAMPLE_RATE;
-    core.Audio.spec.channels = NUM_CHANNELS;
+    core.Audio.spec.freq     = 48000;
+    core.Audio.spec.channels = 2;
+    
 
     res = ma_engine_start(&engine);
-
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to start MA engine backend %d", res);
         return false;
@@ -31,7 +45,6 @@ bool InitAudio() {
     ma_engine_set_volume(&engine, core.Audio.global_volume);
 
     Ember_VFS vfs;
-
     res = Ember_Init_VFS(&vfs);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engineVFS %d", res);
