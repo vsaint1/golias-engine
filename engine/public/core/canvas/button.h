@@ -1,5 +1,5 @@
 #pragma once
-#include "Text.h"
+#include "text.h"
 #include "core/engine.h"
 
 class Button {
@@ -49,11 +49,13 @@ public:
 
 private:
     void CalcSize() {
-        if (rect.width > text.GetTextWidth()) {
+        auto[text_width, text_height] = CalcTextSize(text.GetText(), text.GetFont(), text.GetFontSize());
+
+        if (rect.width > text_width) {
             return;
         }
 
-        rect.width = text.GetTextWidth() + padding;
+        rect.width = text_width + padding;
     }
 
 

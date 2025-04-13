@@ -1,4 +1,4 @@
-#include "core/canvas/Button.h"
+#include "core/canvas/button.h"
 
 
 Button::Button(Font& font, const std::string& label, ember::Rectangle rect, float font_size) : rect(rect) {
@@ -21,7 +21,6 @@ Button::Button(Font& font, const std::string& label, ember::Rectangle rect, floa
     CalcSize();
 
 
-    LOG_INFO("Text size %d", text.GetTextWidth());
 }
 
 
