@@ -10,6 +10,12 @@ project(ember_engine)
 
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
+# [CONFIGURATION]
+set(APP_NAME "Ember")
+set(APP_VERSION "1.0")
+set(APP_IDENTIFIER "com.emberengine.app.project")
+# [ORIENTATION] - "LandscapeLeft" - "LandscapeRight" - "Portrait" - "PortraitUpsideDown"
+set(APP_ORIENTATION "LandscapeLeft")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
@@ -85,8 +91,14 @@ endif()
 
 if(ANDROID)
 
-    file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
+    set(CMAKE_ANDROID_PACKAGE_NAME ${APP_IDENTIFIER})
+    set(CMAKE_ANDROID_VERSION_NAME ${APP_VERSION})
+    set(CMAKE_ANDROID_VERSION_CODE 1)
 
+    file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
+    
+    # configure_file("${CMAKE_SOURCE_DIR}/templates/config/AndroidManifest.xml.in" "${CMAKE_BINARY_DIR}/templates/android/app/src/main/AndroidManifest.xml" @ONLY)
+   
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES} ${ANDROID_FILES})
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 
@@ -124,8 +136,8 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
             XCODE_GENERATE_SCHEME TRUE
             XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
             XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-            XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.emberengine.app.project"
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.emberengine.app.project"
+            # XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER ${APP_IDENTIFIER}
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER ${APP_IDENTIFIER}
             XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
     )
 

@@ -23,8 +23,8 @@ Renderer* GetRenderer() {
 }
 
 void* Renderer::GetContext() const {
-    if(type == RendererType::OPENGL){
-        return (void*)context;
+    if (type == RendererType::OPENGL) {
+        return (void*) context;
     }
 
     return context;
@@ -85,9 +85,14 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         flags |= SDL_WINDOW_OPENGL;
     }
 
-    // TODO: Get orientations from config
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    
+#pragma region APP_METADATA
+    // TODO: Get Metadata from config file
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft");
     SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "0", SDL_HINT_OVERRIDE);
+    SDL_SetAppMetadata("Ember Engine", "1.0", "com.ember.engine");
+
+#pragma endregion
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -111,7 +116,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
         return false;
     }
-    
+
     const std::string gamepad_mappings = LoadAssetsFile("controller_db");
 
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
@@ -134,23 +139,31 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     };
 
-    // #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
-    // //    SDL_SetWindowFullscreen(_window, true);
-    //     core.Window.bFullscreen = true;
+    SDL_SetWindowFullscreen(_window, true);
+    core.Window.bFullscreen = true;
 
-    // #endif
+#endif
 
     renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
+    
+    if(!renderer) {
+        LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
+        return false;
+    }
+
+    SDL_Rect view_bounds = {};
+    SDL_GetDisplayUsableBounds(displayID, &view_bounds);
 
     LOG_INFO("Successfully created window with title: %s", _title);
     LOG_INFO(" > Width %d, Height %d", width, height);
     LOG_INFO(" > Display ID %d", display_mode->displayID);
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
     LOG_INFO(" > High DPI screen (%s), Backbuffer (%dx%d)", hdpi_screen() ? "YES" : "NO", bbWidth, bbHeight);
+    LOG_INFO(" > Usable Bounds (%d, %d, %d, %d)", view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL/ES" : "Metal");
-    // LOG_INFO(" > Viewport Width %d, Viewport Height %d", GetRenderer()->viewport[0], GetRenderer()->viewport[1]);
 
     core.Window.width  = width;
     core.Window.height = height;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/file_system.h"
+#include "core/io/file_system.h"
 #include "core/input/input_manager.h"
 #include "core/time_manager.h"
 
@@ -24,7 +24,7 @@ struct Core {
     struct {
         SDL_AudioDeviceID device_id = 0;
         SDL_AudioSpec spec;
-        float global_volume = 100.0f;
+        float global_volume = 1.f;
     } Audio;
 
     InputManager* Input = nullptr;

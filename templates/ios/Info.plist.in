@@ -27,7 +27,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © $(CURRENTYEAR) unk_engine. All rights reserved.</string>
+	<string>Copyright © $(CURRENTYEAR) ember_engine. All rights reserved.</string>
 	<key>NSSupportsAutomaticTermination</key>
 	<true/>
 	<key>NSSupportsSuddenTermination</key>
@@ -38,9 +38,9 @@
     <true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-	    <string>UIInterfaceOrientationPortrait</string>
 
-		<!-- <string>UIInterfaceOrientationLandscapeLeft</string> -->
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+	    <!-- <string>UIInterfaceOrientationPortrait</string> -->
 		<!-- <string>UIInterfaceOrientationLandscapeRight</string> -->
 	</array>
 </dict>
