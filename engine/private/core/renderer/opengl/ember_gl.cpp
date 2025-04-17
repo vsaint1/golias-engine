@@ -103,13 +103,13 @@ void BeginDrawing() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
-    
+
     const glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
     const glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Use();
+    GetRenderer()->default_shader.Bind();
     GetRenderer()->default_shader.SetValue("View", view);
     GetRenderer()->default_shader.SetValue("Projection", projection);
 }
@@ -215,7 +215,10 @@ Font LoadFont(const std::string& file_path, int font_size) {
     unsigned char* bitmap = new unsigned char[atlas_w * atlas_h];
 
     int x = 0, y = 0, max_row_height = 0;
+    
     // ASCII range 32-126
+    Glyph glyph;
+
     for (char c = 32; c < 127; ++c) {
         int ax, lsb;
         stbtt_GetCodepointHMetrics(&font_info, c, &ax, &lsb);
@@ -236,7 +239,6 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
         stbtt_MakeCodepointBitmap(&font_info, &bitmap[y * atlas_w + x], gw, gh, atlas_w, scale, scale, c);
 
-        Glyph glyph;
         glyph.x0       = (float) x / atlas_w;
         glyph.y0       = (float) y / atlas_h;
         glyph.x1       = (float) (x + gw) / atlas_w;
@@ -378,7 +380,8 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     mesh.Draw(GL_TRIANGLES);
 }
 
-void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size, float kerning) {
+void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
+              float kerning) {
 
     DrawTextInternal(font, text, transform, color, font_size, kerning);
 }
@@ -419,8 +422,8 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
 }
 
 
-void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
-                   float rotation, const Color& color) {
+void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                   glm::vec2 origin, float rotation, const Color& color) {
 
     if (texture.id == 0) {
         return;

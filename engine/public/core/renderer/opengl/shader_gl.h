@@ -25,7 +25,7 @@ public:
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
-    void Use() const;
+    void Bind() const;
 
     void SetValue(const std::string& name, float value) const;
 

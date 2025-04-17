@@ -5,7 +5,7 @@
 
     @brief Shader Abstract class
     - Compile the shader
-    - Use the shader
+    - Bind the shader
     - Send uniforms
 
     @version 0.0.2
@@ -16,7 +16,7 @@ class Shader {
 public:
     Shader() = default;
 
-    virtual void Use() const = 0;
+    virtual void Bind() const = 0;
 
     virtual void Destroy() = 0;
 

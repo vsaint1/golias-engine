@@ -31,17 +31,17 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(program, 512, nullptr, infoLog);
-        LOG_CRITICAL("SHADER_PROGARM linking failed: %s", infoLog);
+        LOG_CRITICAL("SHADER_PROGRAM linking failed: %s", infoLog);
     }
 
-    LOG_INFO("Successfully linked SHADER_PROGARM %d", program);
+    LOG_INFO("Successfully linked SHADER_PROGRAM %d", program);
 
     // WARN: since our project is simple, we don't need to delete shader's ( it help's with debugging )
     glDeleteShader(vs);
     glDeleteShader(fs);
 
     this->id = program;
-    LOG_INFO("Successfully created SHADER_PROGARM %d", id);
+    LOG_INFO("Successfully created SHADER_PROGRAM %d", id);
 }
 
 unsigned int OpenglShader::CompileShader(unsigned int type, const char* source) {
@@ -93,7 +93,7 @@ bool OpenglShader::IsValid() const {
     return true;
 }
 
-void OpenglShader::Use() const {
+void OpenglShader::Bind() const {
     glUseProgram(id);
 }
 
