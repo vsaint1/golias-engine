@@ -1,7 +1,8 @@
 #include "core/input/input_manager.h"
 
-void InputManager::ProcessEvents(const SDL_Event& event) {
+void InputManager::ProcessEvents(const SDL_Event* pEvent) {
 
+    const SDL_Event& event = *pEvent;
     ImGui_ImplSDL3_ProcessEvent(&event);
 
     events.push(event);
@@ -11,26 +12,26 @@ void InputManager::ProcessEvents(const SDL_Event& event) {
         break;
     case SDL_EVENT_TEXT_INPUT:
 
-        if (isTextInputActive) {
-            textInput += event.text.text;
+        if (textInputEvt.bIsActive) {
+            textInputEvt.text += event.text.text;
         }
 
         break;
     case SDL_EVENT_KEY_DOWN:
-        if (isTextInputActive) {
+        if (textInputEvt.bIsActive) {
             switch (event.key.key) {
             case SDLK_BACKSPACE:
-                if (!textInput.empty()) {
-                    textInput.pop_back();
+                if (!textInputEvt.text.empty()) {
+                    textInputEvt.text.pop_back();
                 }
                 break;
             case SDLK_RETURN:
-                textInput += '\n';
+                textInputEvt.text += '\n';
                 break;
             }
         } else {
-            if (!textInput.empty()) {
-                textInput.clear();
+            if (!textInputEvt.text.empty()) {
+                textInputEvt.text.clear();
             }
         }
         break;
@@ -51,7 +52,7 @@ void InputManager::ProcessEvents(const SDL_Event& event) {
 
 void InputManager::Update() {
 
-    // Saving resources
+    // Saving resources 
     if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MINIMIZED) {
         SDL_Delay(10);
         return;
@@ -71,22 +72,22 @@ void InputManager::Update() {
     }
 }
 
-void InputManager::SetWindow(SDL_Window* window) {
-    _window = window;
-}
-
 void InputManager::SetTextInputActive(bool active) {
-    if (active && !isTextInputActive) {
-        isTextInputActive = true;
+    if (active && !textInputEvt.bIsActive) {
+        textInputEvt.bIsActive = true;
         SDL_StartTextInput(_window);
     } else {
-        isTextInputActive = false;
+        textInputEvt.bIsActive = false;
         SDL_StopTextInput(_window);
     }
 }
 
+bool InputManager::IsTextInputActive() {
+    return textInputEvt.bIsActive;
+}
+
 std::string InputManager::GetTypedText() {
-    return textInput;
+    return textInputEvt.text;
 }
 
 bool InputManager::IsPositionInRect(glm::vec2 position, ember::Rectangle rect) {

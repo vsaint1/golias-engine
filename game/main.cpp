@@ -221,7 +221,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
-    core.Input->ProcessEvents(*event);
+    core.Input->ProcessEvents(event);
 
     auto pKey = SDL_GetKeyboardState(0);
 
@@ -231,7 +231,7 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        core.Resize(event->window.data1, event->window.data2);
+        core.ResizeWindow(event->window.data1, event->window.data2);
 
         GetRenderer()->Resize(event->window.data1, event->window.data2);
     }

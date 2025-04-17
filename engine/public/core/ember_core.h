@@ -102,6 +102,12 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, Re
 */
 Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
 
+/*
+    @brief Create a renderer instance internally
+    - Backend `Metal`
+*/
+Renderer* CreateRendererMTL(SDL_Window* window, int view_width, int view_height);
+
 /*!
     @brief Get the renderer instance
 

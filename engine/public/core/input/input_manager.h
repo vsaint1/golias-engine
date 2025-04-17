@@ -12,10 +12,19 @@ struct TouchPoint {
     glm::vec2 position;
 };
 
+struct TextInputEvent {
+    std::string text = "";
+    bool bIsActive   = false;
+};
+
 class InputManager {
 
 public:
-    void ProcessEvents(const SDL_Event& event);
+    InputManager() = default;
+
+    InputManager(SDL_Window* window) : _window(window) {}
+
+    void ProcessEvents(const SDL_Event* pEvent);
 
     void Update();
 
@@ -35,13 +44,9 @@ public:
 
     std::string GetTypedText();
 
-    void SetWindow(SDL_Window* window);
-
     void SetTextInputActive(bool status);
 
-    bool IsTextInputActive() {
-        return isTextInputActive;
-    }
+    bool IsTextInputActive();
 
 private:
     SDL_Window* _window;
@@ -49,6 +54,7 @@ private:
     std::queue<SDL_Event> events;
 
     std::unordered_map<SDL_Scancode, bool> keyState;
+
     std::unordered_map<SDL_Scancode, bool> prevKeyState;
 
     glm::vec2 mousePosition;
@@ -59,8 +65,5 @@ private:
 
     std::unordered_map<int, TouchPoint> touchPoints;
 
-    std::string textInput = "";
-
-
-    bool isTextInputActive;
+    TextInputEvent textInputEvt;
 };
