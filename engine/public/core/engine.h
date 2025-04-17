@@ -7,9 +7,6 @@
 
 struct Core {
 
-    struct {
-        bool bDevelopmentLogging = true;
-    } Metrics;
 
     struct {
         int width                   = 0;
@@ -27,13 +24,12 @@ struct Core {
         float global_volume = 1.f;
     } Audio;
 
-    InputManager* Input = nullptr;
-
     Ember_VFS ember_vfs;
-
+    
+    InputManager* Input = nullptr;
     TimeManager* Time = nullptr;
 
-    void Resize(int w, int h) const;
+    void ResizeWindow(int w, int h) const;
 };
 
 extern ma_engine engine;
