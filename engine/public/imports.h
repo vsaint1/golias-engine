@@ -7,6 +7,7 @@
 #include <chrono>
 #include <queue>
 #include <unordered_map>
+#include <sstream>
 
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1

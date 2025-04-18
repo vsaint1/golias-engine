@@ -63,6 +63,7 @@ void Renderer::Destroy() {
 
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
+    LOG_INFO("Initializing %s, version %s",ENGINE_NAME, ENGINE_VERSION_STR);
     /*!
         @brief Unset some SDL flags and set supported later.
     */
@@ -85,7 +86,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         flags |= SDL_WINDOW_OPENGL;
     }
 
-    
+
 #pragma region APP_METADATA
     // TODO: Get Metadata from config file
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft");
@@ -93,6 +94,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     SDL_SetAppMetadata("Ember Engine", "1.0", "com.ember.engine");
 
 #pragma endregion
+
+    Debug::Start();
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -147,8 +150,8 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 #endif
 
     renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
-    
-    if(!renderer) {
+
+    if (!renderer) {
         LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
         return false;
     }
@@ -180,9 +183,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     }
 
     core.Time  = new TimeManager();
-    core.Input = new InputManager();
-
-    core.Input->SetWindow(_window);
+    core.Input = new InputManager(_window);
 
     return true;
 }
@@ -198,6 +199,8 @@ void CloseWindow() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+
+    Debug::Destroy();
 
     SDL_Quit();
 }
