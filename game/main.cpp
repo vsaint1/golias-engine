@@ -24,19 +24,22 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
         return SDL_APP_FAILURE;
     }
 
+
     camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
     camera.transform.rotation = glm::vec3(0.f);
 
-
+    // assets in examples/assets
     mine_font = LoadFont("fonts/Minecraft.ttf", 16);
 
     player_texture = LoadTexture("sprites/Character_001.png");
 
-    // assets in examples/assets
-    mine_music   = Mix_LoadAudio("sounds/lullaby.mp3");
-    tel_music    = Mix_LoadAudio("sounds/the_entertainer.ogg");
-    random_music = Mix_LoadAudio("sounds/test.flac");
 
+    mine_music   = Audio::Load("sounds/lullaby.mp3");
+    tel_music    = Audio::Load("sounds/the_entertainer.ogg");
+    random_music = Audio::Load("sounds/test.flac");
+
+
+    mine_music->Play();
 
     LOG_INFO("Device Name %s", SystemInfo::GetDeviceName().c_str());
     LOG_INFO("Device Model %s", SystemInfo::GetDeviceModel().c_str());
@@ -128,54 +131,54 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     ImGui::Text("Musics");
 
-    if (!Mix_IsAudioPlaying(mine_music)) {
+    if (!mine_music->IsPlaying()) {
 
         if (ImGui::Button("Play Lullaby")) {
-            Mix_PlayAudio(mine_music);
+            mine_music->Play();
         }
 
     } else {
         if (ImGui::Button("Stop Lullaby")) {
-            Mix_PauseAudio(mine_music);
+            mine_music->Pause();
         }
     }
 
     if (ImGui::SliderFloat("Volume##1", &mine_music->volume, 0.0f, 1.0f)) {
-        Mix_SetVolume(mine_music, mine_music->volume);
+        mine_music->SetVolume(mine_music->volume);
     }
 
-    if (!Mix_IsAudioPlaying(tel_music)) {
+    if (!tel_music->IsPlaying()) {
 
         if (ImGui::Button("Play The Entertainer")) {
-            Mix_PlayAudio(tel_music);
+            tel_music->Play();
         }
 
     } else {
         if (ImGui::Button("Stop The Entertainer")) {
 
-            Mix_PauseAudio(tel_music);
+            tel_music->Pause();
         }
     }
 
     if (ImGui::SliderFloat("Volume##2", &tel_music->volume, 0.0f, 1.0f)) {
-        Mix_SetVolume(tel_music, tel_music->volume);
+        tel_music->SetVolume(tel_music->volume);
     }
 
-    if (!Mix_IsAudioPlaying(random_music)) {
+    if (!random_music->IsPlaying()) {
 
         if (ImGui::Button("Play Unknown")) {
-            Mix_PlayAudio(random_music);
+            random_music->Play();
         }
 
     } else {
         if (ImGui::Button("Stop The Unknown")) {
 
-            Mix_PauseAudio(random_music);
+            random_music->Pause();
         }
     }
 
     if (ImGui::SliderFloat("Volume##3", &random_music->volume, 0.0f, 1.0f)) {
-        Mix_SetVolume(random_music, random_music->volume);
+        random_music->SetVolume(random_music->volume);
     }
 
 
