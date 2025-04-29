@@ -57,7 +57,7 @@ bool InitAudio() {
     return true;
 }
 
-Audio* Mix_LoadAudio(const std::string& file_Path) {
+Audio* Audio::Load(const std::string& file_Path) {
 
     Audio* audio = (Audio*) SDL_malloc(sizeof(Audio));
 
@@ -116,47 +116,58 @@ Audio* Mix_LoadAudio(const std::string& file_Path) {
     return audio;
 }
 
-void Mix_PlayAudio(Audio* audio, bool loop) {
+void Audio::SetVolume(float vol) {
+    vol = SDL_clamp(vol, 0.0f, 1.0f);
+    ma_sound_set_volume(&sound, vol);
+    this->volume = vol;
+}
 
-    SDL_assert(audio != nullptr);
+void Audio::Pause() {
+    SDL_assert(this != nullptr);
+
+    ma_sound_stop(&this->sound);
+}
+
+void Audio::Play(bool loop) {
+    SDL_assert(this != nullptr);
 
     ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
 
-    ma_sound_set_fade_start_in_milliseconds(&audio->sound, 0.0f, audio->volume, 1000, time);
+    ma_sound_set_fade_start_in_milliseconds(&this->sound, 0.0f, this->volume, 1000, time);
 
-    ma_sound_set_looping(&audio->sound, loop);
+    ma_sound_set_looping(&this->sound, loop);
 
-    ma_sound_set_volume(&audio->sound, audio->volume);
+    ma_sound_set_volume(&this->sound, this->volume);
 
-    ma_result res = ma_sound_start(&audio->sound);
+    ma_result res = ma_sound_start(&this->sound);
 
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to start Audio playback");
         return;
     }
 
-    if (!ma_sound_is_playing(&audio->sound)) {
+    if (!ma_sound_is_playing(&this->sound)) {
         LOG_ERROR("Audio failed to start playing");
     }
 }
 
-
-void Mix_PauseAudio(Audio* audio) {
-
-    SDL_assert(audio != nullptr);
-
-    ma_sound_stop(&audio->sound);
+bool Audio::IsPlaying() {
+    return ma_sound_is_playing(&sound);
 }
 
-void Mix_SetVolume(Audio* audio, float volume) {
+void Audio::SetLoop(bool loop) {
+    ma_sound_set_looping(&sound, loop);
+}
 
-    SDL_assert(audio != nullptr);
+void Audio::Destroy() {
+    SDL_assert(this != nullptr);
 
-    volume = SDL_clamp(volume, 0.0f, 1.0f);
+    ma_sound_stop(&this->sound);
 
-    ma_sound_set_volume(&audio->sound, volume);
+    ma_sound_uninit(&this->sound);
 
-    audio->volume = volume;
+    SDL_free(this->decoder);
+    SDL_free(this);
 }
 
 void Mix_SetGlobalVolume(float volume) {
@@ -167,29 +178,14 @@ void Mix_SetGlobalVolume(float volume) {
     ma_engine_set_volume(&engine, volume);
 }
 
-bool Mix_IsAudioPlaying(Audio* audio) {
 
-    SDL_assert(audio != nullptr);
-
-    return ma_sound_is_playing(&audio->sound);
-}
-
-void Mix_UnloadAudio(Audio* audio) {
-
-    Mix_PauseAudio(audio);
-
-    ma_sound_uninit(&audio->sound);
-
-    SDL_free(audio->decoder);
-    SDL_free(audio);
-}
 
 void CloseAudio() {
 
     LOG_INFO("Cleaning allocated Audios");
 
     for (auto& [_, audio] : audios) {
-        Mix_UnloadAudio(audio);
+        audio->Destroy();
     }
 
     LOG_INFO("Closing MA engine backend");
