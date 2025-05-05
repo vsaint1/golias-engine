@@ -5,13 +5,12 @@
 
 #pragma region OPENGL/ES
 
-#include "core/renderer/opengl/shader_gl.h"
 #include "core/renderer/mesh.h"
+#include "core/renderer/opengl/shader_gl.h"
 
 #pragma endregion
 
 #pragma region METAL
-
 
 
 #pragma endregion
@@ -44,34 +43,36 @@ enum RendererType { OPENGL, METAL };
 */
 struct Renderer {
 
+    Renderer() = default;
+
     SDL_Window* window = nullptr;
 
-    unsigned int VAO, VBO, EBO;
+    int viewport[2] = {480, 270};
 
-    OpenglShader default_shader{};
-
-    int viewport[2]   = {480, 270};
     RendererType type = OPENGL;
 
-    void Resize(int w, int h);
+    virtual Shader* GetShader() = 0;
 
-    void SetContext(const SDL_GLContext& ctx);
+    virtual void SetShader(Shader* shader) = 0;
 
-    void SetContext(/*const MTLDevice& ctx*/);
+    virtual void Resize(int view_width, int view_height) = 0;
+    
+    /*
+        @brief Set the current context 
+        - Opengl `SDL_GLContext`
+        - Metal `MTLDevice`
+        
+    */
+    virtual void SetContext(const void* ctx) = 0;
 
     /*
         @brief Get the current context
-        - Cast to `SDL_GLContext` or `MTLDevice`
+        - dynamic Cast to `SDL_GLContext` or `MTLDevice`
     */
-    void* GetContext() const;
+    virtual void* GetContext() = 0;
 
-    void Destroy();
-
-private:
-    SDL_GLContext context = 0;
-    /*MTLDevice context = 0;*/
+    virtual void Destroy() = 0;
 };
-
 
 
 

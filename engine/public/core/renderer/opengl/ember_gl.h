@@ -3,6 +3,32 @@
 #include "core/ember_core.h"
 
 
+class OpenglRenderer : public Renderer {
+public:
+    OpenglRenderer() = default;
+
+    OpenglShader* GetShader() override;
+
+    void Resize(int view_width, int view_height) override;
+
+    void SetContext(const void* ctx) override;
+
+    void SetShader(Shader* shader) override;
+
+    void* GetContext() override;
+
+    void Destroy() override;
+
+private:
+    unsigned int VAO, VBO, EBO;
+
+    SDL_GLContext context = 0;
+
+    OpenglShader* default_shader = nullptr;
+
+};
+
+
 /*!
 
    @brief Load a texture on `GPU` given a file path
@@ -109,7 +135,8 @@ void EndDrawing();
    @return void
 
 */
-void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
+void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f,
+              float kerning = 0.0f);
 
 /*!
 
@@ -140,8 +167,8 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {2
    @return void
 
 */
-void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin, float rotation,
-                   const Color& color = {255, 255, 255, 255});
+void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                   glm::vec2 origin, float rotation, const Color& color = {255, 255, 255, 255});
 
 /*!
 

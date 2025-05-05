@@ -2,6 +2,46 @@
 
 #include <stb_image.h>
 
+
+OpenglShader* OpenglRenderer::GetShader() {
+    return default_shader;
+}
+
+void OpenglRenderer::Resize(int view_width, int view_height) {
+    viewport[0] = view_width;
+    viewport[1] = view_height;
+    glViewport(0, 0, view_width, view_height);
+}
+
+void OpenglRenderer::SetShader(Shader* shader) {
+    default_shader = static_cast<OpenglShader*>(shader);
+    
+}
+
+void OpenglRenderer::SetContext(const void* ctx) {
+    context = static_cast<SDL_GLContext>(const_cast<void*>(ctx));
+}
+
+void* OpenglRenderer::GetContext() {
+    return (void*) context;
+}
+
+void OpenglRenderer::Destroy() {
+    default_shader->Destroy();
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+
+    SDL_GL_DestroyContext(context);
+
+    SDL_DestroyWindow(window);
+    
+    delete default_shader;
+
+    delete this;
+}
+
+
 Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -54,16 +94,15 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 #endif
 
     if (!SDL_GL_SetSwapInterval(0)) {
-        LOG_CRITICAL("Failed to set swap interval, %s", SDL_GetError());
+        LOG_CRITICAL("Failed to disable VSYNC, %s", SDL_GetError());
     }
 
-    Renderer* glRenderer    = new Renderer;
-    glRenderer->viewport[0] = view_width;
-    glRenderer->viewport[1] = view_height;
-    glRenderer->window      = window;
+    OpenglRenderer* glRenderer = new OpenglRenderer();
+    glRenderer->viewport[0]    = view_width;
+    glRenderer->viewport[1]    = view_height;
+    glRenderer->window         = window;
     glRenderer->SetContext(glContext);
-
-    glRenderer->default_shader = OpenglShader("shaders/default_vert.glsl", "shaders/default_frag.glsl");
+    glRenderer->SetShader(new OpenglShader("shaders/default_vert.glsl", "shaders/default_frag.glsl"));
 
 
     IMGUI_CHECKVERSION();
@@ -109,9 +148,10 @@ void BeginDrawing() {
 
     const glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.Bind();
-    GetRenderer()->default_shader.SetValue("View", view);
-    GetRenderer()->default_shader.SetValue("Projection", projection);
+    OpenglShader* shader = static_cast<OpenglShader*>(renderer->GetShader());
+    shader->Bind();
+    shader->SetValue("View", view);
+    shader->SetValue("Projection", projection);
 }
 
 void EndDrawing() {
@@ -215,7 +255,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
     unsigned char* bitmap = new unsigned char[atlas_w * atlas_h];
 
     int x = 0, y = 0, max_row_height = 0;
-    
+
     // ASCII range 32-126
     Glyph glyph;
 
@@ -309,11 +349,13 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    OpenglShader* shader = static_cast<OpenglShader*>(renderer->GetShader());
+
+    shader->SetValue("Color", color.GetNormalizedColor());
 
     const glm::mat4 model = transform.GetModelMatrix2D();
 
-    GetRenderer()->default_shader.SetValue("Model", model);
+    shader->SetValue("Model", model);
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
 
     float cursor_x = 0.0f;
@@ -404,9 +446,10 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
     model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", model);
+    shader->SetValue("Model", model);
 
     std::vector<Vertex> vertices = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
@@ -433,8 +476,8 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-
-    GetRenderer()->default_shader.SetValue("Texture", 0);
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("Texture", 0);
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -443,14 +486,14 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
     model           = glm::translate(model, glm::vec3(-origin.x, -origin.y, 0.0f));
     model           = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    shader->SetValue("Color", color.GetNormalizedColor());
 
     float texLeft   = (float) source.x / texture.width;
     float texRight  = (float) (source.x + source.width) / texture.width;
     float texTop    = (float) source.y / texture.height;
     float texBottom = (float) (source.y + source.height) / texture.height;
 
-    GetRenderer()->default_shader.SetValue("Model", model);
+    shader->SetValue("Model", model);
 
     const float flipY            = -1.0f;
     std::vector<Vertex> vertices = {
@@ -473,9 +516,10 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 
     static Mesh mesh;
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", glm::mat4(1.0f));
+    shader->SetValue("Model", glm::mat4(1.0f));
 
     std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
                                     {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
@@ -490,9 +534,10 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", glm::mat4(1.0f));
+    shader->SetValue("Model", glm::mat4(1.0f));
 
     std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
                                     {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
@@ -512,10 +557,11 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
 
     const glm::mat4 model = glm::mat4(1.0f);
 
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
 
-    GetRenderer()->default_shader.SetValue("Color", color.GetNormalizedColor());
+    shader->SetValue("Color", color.GetNormalizedColor());
 
-    GetRenderer()->default_shader.SetValue("Model", model);
+    shader->SetValue("Model", model);
 
     std::vector<Vertex> vertices = {
         {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
@@ -535,14 +581,16 @@ void BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    GetRenderer()->default_shader.SetValue("View", view);
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("View", view);
 
-    GetRenderer()->default_shader.SetValue("Projection", projection);
+    shader->SetValue("Projection", projection);
 }
 
 void EndMode2D() {
     const glm::mat4 view = glm::mat4(1.0f);
-    GetRenderer()->default_shader.SetValue("View", view);
+    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("View", view);
 }
 
 
@@ -567,8 +615,9 @@ void BeginCanvas() {
 
     const glm::mat4 view = glm::mat4(1.0f);
 
-    GetRenderer()->default_shader.SetValue("View", view);
-    GetRenderer()->default_shader.SetValue("Projection", projection);
+    OpenglShader* shader = dynamic_cast<OpenglShader*>(GetRenderer()->GetShader());
+    shader->SetValue("View", view);
+    shader->SetValue("Projection", projection);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

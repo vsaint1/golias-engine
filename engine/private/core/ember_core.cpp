@@ -22,44 +22,6 @@ Renderer* GetRenderer() {
     return renderer;
 }
 
-void* Renderer::GetContext() const {
-    if (type == RendererType::OPENGL) {
-        return (void*) context;
-    }
-
-    return context;
-}
-
-void Renderer::SetContext(const SDL_GLContext& ctx) {
-    context = ctx;
-}
-
-void Renderer::SetContext(/*MTL*/) {
-    // TODO: metal
-}
-
-void Renderer::Resize(int w, int h) {
-    viewport[0] = w;
-    viewport[1] = h;
-    glViewport(0, 0, w, h);
-}
-
-
-void Renderer::Destroy() {
-    default_shader.Destroy();
-
-    if (type == RendererType::OPENGL) {
-
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-
-        SDL_GL_DestroyContext(context);
-    }
-
-    SDL_DestroyWindow(window);
-
-    delete this;
-}
 
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
