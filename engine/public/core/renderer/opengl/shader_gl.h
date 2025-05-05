@@ -25,30 +25,32 @@ public:
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
-    void Bind() const;
+    void Bind() const override;
 
-    void SetValue(const std::string& name, float value) const;
+    void SetValue(const std::string& name, float value);
 
-    void SetValue(const std::string& name, int value) const;
+    void SetValue(const std::string& name, int value);
 
-    void SetValue(const std::string& name, glm::mat4 value) const;
+    void SetValue(const std::string& name, glm::mat4 value);
 
-    void SetValue(const std::string& name, glm::vec2 value) const;
+    void SetValue(const std::string& name, glm::vec2 value);
 
-    void SetValue(const std::string& name, glm::vec3 value) const;
+    void SetValue(const std::string& name, glm::vec3 value);
 
-    void SetValue(const std::string& name, glm::vec4 value) const;
+    void SetValue(const std::string& name, glm::vec4 value);
 
-    void Destroy();
+    void Destroy() override;
 
-    unsigned int GetID() const;
+    unsigned int GetID() const override;
 
-    bool IsValid() const;
+    bool IsValid() const override;
 
 private:
-    unsigned int GetUniformLocation(const std::string& name) const;
+    unsigned int GetUniformLocation(const std::string& name);
 
     unsigned int CompileShader(unsigned int type, const char* source);
+
+    
 };
 
 // Default shader only

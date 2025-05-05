@@ -47,10 +47,6 @@ public:
         return this->fps;
     }
 
-    std::string GetFpsText() {
-        return std::to_string(this->fps);
-    }
-
     bool IsPaused() {
         return this->bIsPaused;
     }

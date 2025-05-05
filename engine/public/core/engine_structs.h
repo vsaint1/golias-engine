@@ -12,6 +12,7 @@ typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
     int height      = 0;
+
 } Texture, Texture2D;
 
 // Windows API conflict

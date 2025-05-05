@@ -15,7 +15,7 @@
 class Shader {
 public:
     Shader() = default;
-
+    
     virtual void Bind() const = 0;
 
     virtual void Destroy() = 0;
@@ -27,5 +27,5 @@ public:
 protected:
     unsigned int id;
 
-    mutable std::unordered_map<std::string, unsigned int> uniforms;
+    std::unordered_map<std::string, unsigned int> uniforms;
 };
