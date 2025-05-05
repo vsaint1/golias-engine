@@ -15,14 +15,29 @@
 class Shader {
 public:
     Shader() = default;
-    
+
+    virtual ~Shader() = default;
+
     virtual void Bind() const = 0;
+
+    virtual void SetValue(const std::string& name, float value) = 0;
+
+    virtual void SetValue(const std::string& name, int value) = 0;
+
+    virtual void SetValue(const std::string& name, glm::mat4 value) = 0;
+
+    virtual void SetValue(const std::string& name, glm::vec2 value) = 0;
+
+    virtual void SetValue(const std::string& name, glm::vec3 value) = 0;
+
+    virtual void SetValue(const std::string& name, glm::vec4 value) = 0;
 
     virtual void Destroy() = 0;
 
     virtual unsigned int GetID() const = 0;
 
     virtual bool IsValid() const = 0;
+
 
 protected:
     unsigned int id;
