@@ -2,12 +2,16 @@
 
 #include "core/ember_core.h"
 
-
+/*
+   @brief Opengl Renderer implementation
+   - Opengl 3.3
+   - Opengl ES 3.0
+*/
 class OpenglRenderer : public Renderer {
 public:
     OpenglRenderer() = default;
 
-    OpenglShader* GetShader() override;
+    OpenglShader* GetDefaultShader() override;
 
     void Resize(int view_width, int view_height) override;
 
@@ -25,7 +29,6 @@ private:
     SDL_GLContext context = 0;
 
     OpenglShader* default_shader = nullptr;
-
 };
 
 

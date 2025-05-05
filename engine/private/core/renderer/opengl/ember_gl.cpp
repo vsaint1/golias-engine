@@ -3,7 +3,7 @@
 #include <stb_image.h>
 
 
-OpenglShader* OpenglRenderer::GetShader() {
+OpenglShader* OpenglRenderer::GetDefaultShader() {
     return default_shader;
 }
 
@@ -148,7 +148,8 @@ void BeginDrawing() {
 
     const glm::mat4 view = glm::mat4(1.0f);
 
-    OpenglShader* shader = static_cast<OpenglShader*>(renderer->GetShader());
+    
+    Shader* shader = GetRenderer()->GetDefaultShader();
     shader->Bind();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
@@ -349,7 +350,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    OpenglShader* shader = static_cast<OpenglShader*>(renderer->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -446,7 +447,7 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
     model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
     shader->SetValue("Color", color.GetNormalizedColor());
 
     shader->SetValue("Model", model);
@@ -476,7 +477,8 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
+
     shader->SetValue("Texture", 0);
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -516,7 +518,8 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 
     static Mesh mesh;
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
+
     shader->SetValue("Color", color.GetNormalizedColor());
 
     shader->SetValue("Model", glm::mat4(1.0f));
@@ -534,7 +537,8 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
+
     shader->SetValue("Color", color.GetNormalizedColor());
 
     shader->SetValue("Model", glm::mat4(1.0f));
@@ -557,7 +561,8 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
 
     const glm::mat4 model = glm::mat4(1.0f);
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
+
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -581,7 +586,7 @@ void BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
     shader->SetValue("Projection", projection);
@@ -589,7 +594,7 @@ void BeginMode2D(const Camera2D& camera) {
 
 void EndMode2D() {
     const glm::mat4 view = glm::mat4(1.0f);
-    OpenglShader* shader = static_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 }
 
@@ -615,7 +620,7 @@ void BeginCanvas() {
 
     const glm::mat4 view = glm::mat4(1.0f);
 
-    OpenglShader* shader = dynamic_cast<OpenglShader*>(GetRenderer()->GetShader());
+    Shader* shader = GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
     glDisable(GL_DEPTH_TEST);

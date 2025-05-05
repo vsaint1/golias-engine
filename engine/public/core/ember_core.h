@@ -51,7 +51,7 @@ struct Renderer {
 
     RendererType type = OPENGL;
 
-    virtual Shader* GetShader() = 0;
+    virtual Shader* GetDefaultShader() = 0;
 
     virtual void SetShader(Shader* shader) = 0;
 
