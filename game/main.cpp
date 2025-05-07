@@ -79,23 +79,24 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+    // DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
-    for (int i = 0; i < entities; i++) {
-        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255, 255});
-    }
+    // for (int i = 0; i < entities; i++) {
+    //     DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255,
+    //     255});
+    // }
 
 
-    BeginMode2D(camera);
+    // BeginMode2D(camera);
 
-    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+    // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
-    EndMode2D();
+    // EndMode2D();
 
-    BeginCanvas();
+    // BeginCanvas();
 
-    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+    // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
@@ -184,7 +185,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     ImGui::Text("Engine");
     if (ImGui::SliderFloat("Musics Volume", &core.Audio.global_volume, 0.0f, 1.0f)) {
-        Mix_SetGlobalVolume(core.Audio.global_volume);
+        Audio_SetMasterVolume(core.Audio.global_volume);
     }
 
     ImGui::Checkbox("Metrics", &bShowMetrics);
@@ -196,7 +197,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         ImGui::Begin("Metrics", &bShowMetrics);
 
         ImGuiIO& io = ImGui::GetIO();
-        ImGui::Text("Application average: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Application average: %2.03f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Text("Delta Time: %f", core.Time->GetDeltaTime());
         ImGui::Text("Elapsed Time: %.3f", core.Time->GetElapsedTime());
         ImGui::Text("Frame count: %llu", core.Time->GetFrameCount());
@@ -212,12 +213,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     }
 
 
-    EndCanvas();
+    // EndCanvas();
 
     EndDrawing();
 
 
-    core.Time->FixedFrameRate(60);
+    core.Time->FixedFrameRate();
 
     return SDL_APP_CONTINUE;
 }
