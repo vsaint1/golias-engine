@@ -89,6 +89,8 @@ private:
     ma_sound sound;
 };
 
+
+
 /*!
 
     @brief Initialize Sound Engine
@@ -109,17 +111,17 @@ bool InitAudio();
 */
 void CloseAudio();
 
-
-/*!
+    /*!
 
     @brief Change the [audio engine] global volume
 
-    @param volume Audio volume from 0 to 100
+    @param volume Audio volume from [0.0f -> 1.f] 
 
     @version 0.0.3
     @return void
 */
-void Mix_SetGlobalVolume(float volume);
+void Audio_SetMasterVolume(float volume);
+
 
 extern ma_engine engine;
 

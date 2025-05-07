@@ -170,9 +170,9 @@ void Audio::Destroy() {
     SDL_free(this);
 }
 
-void Mix_SetGlobalVolume(float volume) {
+void Audio_SetMasterVolume(float volume) {
 
-    volume = SDL_clamp(volume, 0.0f, 100.f);
+    volume = SDL_clamp(volume, 0.0f, 1.f);
 
     core.Audio.global_volume = volume;
     ma_engine_set_volume(&engine, volume);
