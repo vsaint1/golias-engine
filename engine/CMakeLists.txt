@@ -5,7 +5,7 @@ project(engine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
-file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp", "private/*.cpp" "private/*.c")
+file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp" "private/*.c")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 
 add_library(engine STATIC ${ENGINE_SOURCES})
