@@ -102,7 +102,7 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     glRenderer->viewport[1]    = view_height;
     glRenderer->window         = window;
     glRenderer->SetContext(glContext);
-    glRenderer->SetShader(new OpenglShader("shaders/default_vert.glsl", "shaders/default_frag.glsl"));
+    glRenderer->SetShader(new OpenglShader("shaders/default.vert", "shaders/default.frag"));
 
 
     IMGUI_CHECKVERSION();
