@@ -57,8 +57,8 @@ public:
 
     void Update();
 
-    /* MAX_FPS = 1 -> UNLIMITED */
-    void FixedFrameRate(Uint32 MAX_FPS = 60);
+    /* max_fps = 1 -> UNLIMITED */
+    void FixedFrameRate(Uint32 max_fps = 60);
 };
 
 
