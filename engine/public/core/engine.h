@@ -15,12 +15,12 @@ struct Core {
         const SDL_DisplayMode* data = nullptr;
         bool bFullscreen            = false;
         int bbWidth = 0, bbHeight = 0; // backbuffer
-        SDL_Window* window;
+        SDL_Window* window{};
     } Window;
 
     struct {
         SDL_AudioDeviceID device_id = 0;
-        SDL_AudioSpec spec;
+        SDL_AudioSpec spec{};
         float global_volume = 1.f;
     } Audio;
 

@@ -79,7 +79,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    // DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
     // for (int i = 0; i < entities; i++) {
@@ -90,11 +90,11 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     // BeginMode2D(camera);
 
-    // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
     // EndMode2D();
 
     // BeginCanvas();
+    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
     // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 

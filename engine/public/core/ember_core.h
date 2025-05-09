@@ -42,6 +42,7 @@ enum RendererType { OPENGL, METAL };
     @version 0.0.1
 */
 struct Renderer {
+    virtual ~Renderer() = default;
 
     Renderer() = default;
 
@@ -53,7 +54,7 @@ struct Renderer {
 
     virtual Shader* GetDefaultShader() = 0;
 
-    virtual void SetShader(Shader* shader) = 0;
+    virtual Shader* GetTextShader() = 0;
 
     virtual void Resize(int view_width, int view_height) = 0;
     

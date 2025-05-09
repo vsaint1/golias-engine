@@ -1,7 +1,8 @@
 #pragma once
 
 #include "imports.h"
-#include <stb_truetype.h>
+#include <freetype/freetype.h>
+#include  <freetype/ftstroke.h>
 
 
 // Core struct (engine stuff) - 0.0.1
@@ -50,7 +51,6 @@ struct Glyph {
 
 struct Font {
     std::map<char, Glyph> glyphs{};
-    stbtt_fontinfo info;
     Texture texture;
     int font_size;
     float kerning = 0.0f;

@@ -7,28 +7,32 @@
    - Opengl 3.3
    - Opengl ES 3.0
 */
-class OpenglRenderer : public Renderer {
+class OpenglRenderer final : public Renderer {
 public:
     OpenglRenderer() = default;
 
     OpenglShader* GetDefaultShader() override;
 
+    OpenglShader* GetTextShader() override;
+
     void Resize(int view_width, int view_height) override;
 
     void SetContext(const void* ctx) override;
-
-    void SetShader(Shader* shader) override;
 
     void* GetContext() override;
 
     void Destroy() override;
 
-private:
-    unsigned int VAO, VBO, EBO;
-
-    SDL_GLContext context = 0;
-
     OpenglShader* default_shader = nullptr;
+
+    OpenglShader* text_shader = nullptr;
+
+private:
+    unsigned int VAO = 0, VBO = 0, EBO = 0;
+
+    SDL_GLContext context = nullptr;
+
+
 };
 
 
@@ -38,7 +42,11 @@ private:
    - Create a texture on `GPU`
    @see Texture
 
-   @version 0.0.1
+   @version
+
+ * *
+
+ * * 0.0.1
    @param file_path the path to the file in `assets` folder
    @return Texture
 */
@@ -51,7 +59,11 @@ Texture LoadTexture(const std::string& file_path);
 
 
    @version 0.0.1
-   @param file_path the path to the file in `assets` folder
+   @param
+
+
+ * * *
+ * file_path the path to the file in `assets` folder
    @return Font
 
 */
@@ -63,7 +75,11 @@ Font LoadFont(const std::string& file_path, int font_size);
 
    @version 0.0.9
    @param font The loaded Font
-   @return void
+   @return
+ *
+
+ * *
+ * void
 
 */
 void UnloadFont(const Font& font);
@@ -74,7 +90,11 @@ void UnloadFont(const Font& font);
 
    @version 0.0.1
    @param texture The loaded Texture
-   @return void
+ @return
+
+
+
+ * * * * void
 
 */
 void UnloadTexture(const Texture& texture);
@@ -94,14 +114,22 @@ void ClearBackground(const Color& color);
 
    @brief Starting of the drawing procedure
     - Clear the background and start drawing
-    - Draw between BeginDrawing and EndDrawing
+    - Draw between
+ *
+ *
+
+ * * BeginDrawing and EndDrawing
     - Orthographic projection
     - Ordered rendering
 
     Usage:
-    BeginDrawing();
+ BeginDrawing();
 
-    // Draw anything without needing a camera
+
+
+
+
+ * * * * // Draw anything without needing a camera
 
     EndDrawing();
 
@@ -129,13 +157,25 @@ void EndDrawing();
    @see Font
    @see Glyph
 
-   @version 0.0.1
+   @version
+ *
+
+
+ * * * 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
-   @param transform The transform
+   @param transform
+ * The
+
+ * *
+ * transform
    @param color Color in RGBA
-   @param kerning <optional> Kerning (spacing between characters)
-   @return void
+   @param kerning <optional> Kerning (spacing between
+ * characters)
+
+ * @return
+
+ * * void
 
 */
 void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f,
@@ -147,7 +187,11 @@ void DrawText(const Font& font, const std::string& text, Transform transform, Co
    - Draw the texture
 
    @version 0.0.1
-   @param texture The loaded Texture
+   @param texture
+
+
+ * * *
+ * The loaded Texture
    @param rect The source rectangle
    @param color Color in RGBA
    @return void
@@ -160,12 +204,24 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {2
    @brief Draw Texture quad extended
    - Draw the texture with extended parameters, ex: spritesheet's
 
-   @version 0.0.1
+
+ * @version
+
+
+ * * * 0.0.1
    @param texture The loaded Texture
    @param rect The source Rectangle
-   @param dest The destination Rectangle
+   @param dest The
+ * destination
+ *
+
+ * * Rectangle
    @param origin The origin point (texture origin e.g center)
-   @param rotation The rotation angle (radians)
+   @param rotation The
+ * rotation angle
+ *
+ *
+ * (radians)
    @param color Color in RGBA
    @return void
 
@@ -179,7 +235,11 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
 
    @version 0.0.1
    @param start vec2 start point
-   @param end vec2 end point
+   @param end vec2
+ *
+ * end
+
+ * * point
    @param color Color in RGBA
    @param thickness float Line thickness
    @return void
@@ -194,7 +254,11 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 
    @param rect rectangle source
    @param color Color in RGBA
-   @param thickness float Line thickness
+   @param thickness
+ * float
+
+
+ * * * Line thickness
    @return void
 
    @version 0.0.6
@@ -209,9 +273,13 @@ void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness 
 
    @param rect rectangle source
    @param color Color in RGBA
-   @return void
+   @return
+ * void
 
-   @version 0.0.6
+
+
+
+ * * * @version 0.0.6
 
 
 */
@@ -225,13 +293,21 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color);
    Usage:
    BeginMode2D(camera);
 
-   // Drawing with the camera view_matrix
+   // Drawing
+ * with
+
+
+ * * * the camera view_matrix
 
    EndMode2D();
 
    @version 0.0.2
    @param Camera2D the camera (view_matrix)
-   @return void
+
+ * @return
+
+
+ * * * void
 
 */
 void BeginMode2D(const Camera2D& camera);

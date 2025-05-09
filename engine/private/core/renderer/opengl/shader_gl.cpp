@@ -14,6 +14,8 @@
 
 OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragment) {
 
+    LOG_INFO("Compiling Shaders Vertex (%s) | Fragment(%s)",vertex.c_str(),fragment.c_str());
+
     const auto vertexShaderSrc   = SHADER_HEADER + LoadAssetsFile(vertex);
     const auto fragmentShaderSrc = SHADER_HEADER + LoadAssetsFile(fragment);
 

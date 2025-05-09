@@ -25,7 +25,8 @@ Renderer* GetRenderer() {
 
 bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
-    LOG_INFO("Initializing %s, version %s",ENGINE_NAME, ENGINE_VERSION_STR);
+    LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
+
     /*!
         @brief Unset some SDL flags and set supported later.
     */
@@ -37,6 +38,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
     flags |= SDL_WINDOW_HIDDEN;
 
+    // TODO: check if metal is supported and create MTLDevice, if fail create OPENGL/ES
     if (type == RendererType::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
 

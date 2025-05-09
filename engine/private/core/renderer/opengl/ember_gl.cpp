@@ -7,15 +7,14 @@ OpenglShader* OpenglRenderer::GetDefaultShader() {
     return default_shader;
 }
 
+OpenglShader* OpenglRenderer::GetTextShader() {
+    return text_shader;
+}
+
 void OpenglRenderer::Resize(int view_width, int view_height) {
     viewport[0] = view_width;
     viewport[1] = view_height;
     glViewport(0, 0, view_width, view_height);
-}
-
-void OpenglRenderer::SetShader(Shader* shader) {
-    default_shader = static_cast<OpenglShader*>(shader);
-    
 }
 
 void OpenglRenderer::SetContext(const void* ctx) {
@@ -35,8 +34,10 @@ void OpenglRenderer::Destroy() {
     SDL_GL_DestroyContext(context);
 
     SDL_DestroyWindow(window);
-    
+
     delete default_shader;
+
+    delete text_shader;
 
     delete this;
 }
@@ -102,7 +103,9 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     glRenderer->viewport[1]    = view_height;
     glRenderer->window         = window;
     glRenderer->SetContext(glContext);
-    glRenderer->SetShader(new OpenglShader("shaders/default.vert", "shaders/default.frag"));
+
+    glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
+    glRenderer->text_shader = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
 
 
     IMGUI_CHECKVERSION();
@@ -146,13 +149,18 @@ void BeginDrawing() {
     const glm::mat4 projection =
         glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
-    const glm::mat4 view = glm::mat4(1.0f);
+    constexpr glm::mat4 view = glm::mat4(1.0f);
 
-    
+
     Shader* shader = GetRenderer()->GetDefaultShader();
     shader->Bind();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
+
+    Shader* text_shader = GetRenderer()->GetTextShader();
+    text_shader->Bind();
+    text_shader->SetValue("View", view);
+    text_shader->SetValue("Projection", projection);
 }
 
 void EndDrawing() {
@@ -230,45 +238,53 @@ void UnloadTexture(const Texture& texture) {
     glDeleteTextures(1, &texture.id);
 }
 
-
+// https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype
 Font LoadFont(const std::string& file_path, int font_size) {
-
     Font font = {};
 
     const auto font_buffer = LoadFileIntoMemory(file_path);
-
     if (font_buffer.empty()) {
         LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
         return font;
     }
 
-    stbtt_fontinfo font_info;
-    stbtt_InitFont(&font_info, (unsigned char*) font_buffer.data(),
-                   stbtt_GetFontOffsetForIndex((unsigned char*) font_buffer.data(), 0));
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft)) {
+        LOG_ERROR("Failed to initialize FreeType.");
+        return font;
+    }
 
-    float scale = stbtt_ScaleForPixelHeight(&font_info, (float) font_size);
-    int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&font_info, &ascent, &descent, &lineGap);
+    FT_Face face;
+    if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
+        LOG_ERROR("Failed to load font face.");
+        return font;
+    }
+
+    FT_Set_Pixel_Sizes(face, 0, font_size);
 
     int atlas_w = 512;
     int atlas_h = 512;
-
-    unsigned char* bitmap = new unsigned char[atlas_w * atlas_h];
-
+    unsigned char* red_buffer = new unsigned char[atlas_w * atlas_h]();
     int x = 0, y = 0, max_row_height = 0;
 
-    // ASCII range 32-126
-    Glyph glyph;
-
     for (char c = 32; c < 127; ++c) {
-        int ax, lsb;
-        stbtt_GetCodepointHMetrics(&font_info, c, &ax, &lsb);
+        if (FT_Load_Char(face, c, FT_LOAD_DEFAULT)) {
+            LOG_WARN("Failed to load character %c", c);
+            continue;
+        }
 
-        int x0, y0, x1, y1;
-        stbtt_GetCodepointBitmapBox(&font_info, c, scale, scale, &x0, &y0, &x1, &y1);
+        FT_Glyph glyph;
+        if (FT_Get_Glyph(face->glyph, &glyph)) continue;
 
-        int gw = x1 - x0;
-        int gh = y1 - y0;
+        if (FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_SDF, nullptr, 1)) {
+            FT_Done_Glyph(glyph);
+            continue;
+        }
+
+        FT_BitmapGlyph bmp_glyph = (FT_BitmapGlyph)glyph;
+        FT_Bitmap& bmp = bmp_glyph->bitmap;
+        int gw = bmp.width;
+        int gh = bmp.rows;
 
         if (x + gw >= atlas_w) {
             x = 0;
@@ -278,63 +294,60 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
         max_row_height = SDL_max(max_row_height, gh);
 
-        stbtt_MakeCodepointBitmap(&font_info, &bitmap[y * atlas_w + x], gw, gh, atlas_w, scale, scale, c);
+        for (int row = 0; row < gh; ++row) {
+            for (int col = 0; col < gw; ++col) {
+                int src_idx = col + row * bmp.pitch;
+                int dst_idx = (x + col) + (y + row) * atlas_w;
+                red_buffer[dst_idx] = bmp.buffer[src_idx];
+            }
+        }
 
-        glyph.x0       = (float) x / atlas_w;
-        glyph.y0       = (float) y / atlas_h;
-        glyph.x1       = (float) (x + gw) / atlas_w;
-        glyph.y1       = (float) (y + gh) / atlas_h;
-        glyph.w        = gw;
-        glyph.h        = gh;
-        glyph.x_offset = x0;
-        glyph.y_offset = y0;
-        glyph.advance  = (int) (ax * scale);
+        Glyph g = {};
+        g.x0 = (float)x / atlas_w;
+        g.y0 = (float)y / atlas_h;
+        g.x1 = (float)(x + gw) / atlas_w;
+        g.y1 = (float)(y + gh) / atlas_h;
+        g.w = gw;
+        g.h = gh;
+        g.x_offset = bmp_glyph->left;
+        g.y_offset = -bmp_glyph->top;
+        g.advance = face->glyph->advance.x >> 6;
 
-        font.glyphs[c] = glyph;
-
+        font.glyphs[c] = g;
         x += gw;
+
+        FT_Done_Glyph(glyph);
     }
-
-    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4];
-
-
-    for (int i = 0; i < atlas_w * atlas_h; ++i) {
-        unsigned char gray     = bitmap[i];
-        rgba_buffer[i * 4 + 0] = gray; // R
-        rgba_buffer[i * 4 + 1] = gray; // G
-        rgba_buffer[i * 4 + 2] = gray; // B
-        rgba_buffer[i * 4 + 3] = gray; // A
-    }
-
 
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas_w, atlas_h, 0, GL_RED, GL_UNSIGNED_BYTE, red_buffer);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    constexpr GLint RGBA_MASK[] = { GL_RED, GL_RED, GL_RED, GL_RED };
+    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, RGBA_MASK);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    LOG_INFO("Loaded font with ID: %d, path: %s", font.texture.id, file_path.c_str());
-    LOG_INFO(" > Width %d, Height %d", atlas_w, atlas_h);
-    LOG_INFO(" > Num. Glyphs %zu", font.glyphs.size());
-
-    font.ascent         = ascent;
-    font.descent        = descent;
-    font.line_gap       = lineGap;
-    font.scale          = scale;
+    font.ascent         = face->size->metrics.ascender >> 6;
+    font.descent        = face->size->metrics.descender >> 6;
+    font.line_gap       = (face->size->metrics.height >> 6) - font.ascent + font.descent;
+    font.scale          = 1.0f;
     font.font_size      = font_size;
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
-    font.info           = font_info;
 
-    delete[] bitmap;
-    delete[] rgba_buffer;
+    LOG_INFO("Loaded Font. Texture ID: %d, path: %s", font.texture.id, file_path.c_str());
+
+    delete[] red_buffer;
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
 
     return font;
 }
+
 
 
 void DrawTextInternal(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
@@ -350,7 +363,9 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+
+    Shader* shader = GetRenderer()->GetTextShader();
+    shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -358,6 +373,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
 
     shader->SetValue("Model", model);
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+
 
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -416,11 +432,14 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     }
 
 
-    static Mesh mesh(vertices, indices);
+    Mesh mesh(vertices, indices);
 
     mesh.Update(vertices);
 
+    glDepthMask(GL_FALSE);
     mesh.Draw(GL_TRIANGLES);
+    glDepthMask(GL_TRUE);
+
 }
 
 void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
@@ -448,11 +467,13 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
     Shader* shader = GetRenderer()->GetDefaultShader();
+    shader->Bind();
+
     shader->SetValue("Color", color.GetNormalizedColor());
 
     shader->SetValue("Model", model);
 
-    std::vector<Vertex> vertices = {
+    const std::vector<Vertex> vertices = {
         {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
         {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
         {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
@@ -590,12 +611,20 @@ void BeginMode2D(const Camera2D& camera) {
     shader->SetValue("View", view);
 
     shader->SetValue("Projection", projection);
+
+    Shader* text_shader = GetRenderer()->GetTextShader();
+    text_shader->SetValue("View", view);
+
+    text_shader->SetValue("Projection", projection);
 }
 
 void EndMode2D() {
-    const glm::mat4 view = glm::mat4(1.0f);
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    constexpr glm::mat4 view = glm::mat4(1.0f);
+    Shader* shader       = GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
+
+    Shader* text_shader = GetRenderer()->GetTextShader();
+    text_shader->SetValue("View", view);
 }
 
 
@@ -618,11 +647,16 @@ void BeginCanvas() {
     const glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
                                             (float) core.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
 
-    const glm::mat4 view = glm::mat4(1.0f);
+    constexpr glm::mat4 view = glm::mat4(1.0f);
 
     Shader* shader = GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
+
+    Shader* text_shader = GetRenderer()->GetDefaultShader();
+    text_shader->SetValue("View", view);
+    text_shader->SetValue("Projection", projection);
+
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
