@@ -1,4 +1,3 @@
-
 in vec2 TexCoord;
 out vec4 FragColor;
 
@@ -6,13 +5,11 @@ uniform sampler2D Texture;
 uniform vec4 Color;
 
 void main() {
-    bool invalid_uv = TexCoord == vec2(0.0);
 
-    vec4 texColor = invalid_uv ? vec4(1.0) : texture(Texture, TexCoord);
-    vec4 base = texColor * Color;
+    vec4 tex_color  = texture(Texture, TexCoord) * Color;
 
-    if (invalid_uv && Color.a < 0.05)
+    FragColor = tex_color;
+
+    if(FragColor.a < 0.1)
         discard;
-
-    FragColor = base;
 }

@@ -82,10 +82,10 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
-    // for (int i = 0; i < entities; i++) {
-    //     DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255,
-    //     255});
-    // }
+    for (int i = 0; i < entities; i++) {
+        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255,
+        255});
+    }
 
 
     // BeginMode2D(camera);

@@ -500,8 +500,6 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
 
     Shader* shader = GetRenderer()->GetDefaultShader();
 
-    shader->SetValue("Texture", 0);
-
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
     model           = glm::translate(model, glm::vec3(origin.x, origin.y, 0.0f));
@@ -526,7 +524,7 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
         {{0.0f, 1.0f, 0.0f}, {texLeft, flipY - texBottom}},
     };
 
-    std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+    const std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
     static Mesh mesh(vertices, indices);
 
