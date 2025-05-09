@@ -123,13 +123,11 @@ void Audio::SetVolume(float vol) {
 }
 
 void Audio::Pause() {
-    SDL_assert(this != nullptr);
 
     ma_sound_stop(&this->sound);
 }
 
 void Audio::Play(bool loop) {
-    SDL_assert(this != nullptr);
 
     ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
 
@@ -160,7 +158,6 @@ void Audio::SetLoop(bool loop) {
 }
 
 void Audio::Destroy() {
-    SDL_assert(this != nullptr);
 
     ma_sound_stop(&this->sound);
 
