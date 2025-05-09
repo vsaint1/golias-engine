@@ -55,9 +55,9 @@ add_subdirectory(vendor/glad)
 
 add_subdirectory(vendor/stb_image)
 
-add_subdirectory(vendor/stb_truetype)
-
 add_subdirectory(vendor/mini_audio)
+
+add_subdirectory(vendor/freetype)
 
 # [SDL] - removing unused modules
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)

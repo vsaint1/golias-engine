@@ -10,4 +10,4 @@ list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 
 add_library(engine STATIC ${ENGINE_SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image stb_truetype glm::glm mini_audio tinyxml imgui)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image glm::glm mini_audio tinyxml imgui freetype)
