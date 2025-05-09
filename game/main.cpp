@@ -16,22 +16,17 @@ Camera2D camera = Camera2D(480, 270);
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!InitWindow("GUI sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!Engine::Initialize("GUI sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
-
-    if (!InitAudio()) {
-        return SDL_APP_FAILURE;
-    }
-
 
     camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
     camera.transform.rotation = glm::vec3(0.f);
 
     // assets in examples/assets
-    mine_font = LoadFont("fonts/Minecraft.ttf", 16);
+    mine_font = Engine::GetRenderer()->LoadFont("fonts/Minecraft.ttf", 16);
 
-    player_texture = LoadTexture("sprites/Character_001.png");
+    player_texture = Engine::GetRenderer()->LoadTexture("sprites/Character_001.png");
 
 
     mine_music   = Audio::Load("sounds/lullaby.mp3");
@@ -67,8 +62,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     core.Time->Update();
 
-    ClearBackground(background_color);
-    BeginDrawing();
+    Engine::GetRenderer()->ClearBackground(background_color);
+    Engine::GetRenderer()->BeginDrawing();
 
     static float angle         = 0.0f;
     static glm::ivec3 position = {200, 300, 0};
@@ -79,11 +74,11 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+   Engine::GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
     for (int i = 0; i < entities; i++) {
-        DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255,
+        Engine::GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle, {255, 255, 255,
         255});
     }
 
@@ -94,7 +89,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     // EndMode2D();
 
     // BeginCanvas();
-    DrawText(mine_font, gui_text, transform, text_color, 64.f);
+    Engine::GetRenderer()->DrawText(mine_font, gui_text, transform, text_color);
 
     // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
@@ -215,7 +210,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     // EndCanvas();
 
-    EndDrawing();
+    Engine::GetRenderer()->EndDrawing();
 
 
     core.Time->FixedFrameRate();
@@ -237,7 +232,7 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         core.ResizeWindow(event->window.data1, event->window.data2);
 
-        GetRenderer()->Resize(event->window.data1, event->window.data2);
+        Engine::GetRenderer()->Resize(event->window.data1, event->window.data2);
     }
 
     return SDL_APP_CONTINUE;
@@ -245,10 +240,10 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
-    UnloadFont(mine_font);
-    UnloadTexture(player_texture);
+    Engine::GetRenderer()->UnloadFont(mine_font);
 
-    CloseAudio();
+    Engine::GetRenderer()->UnloadTexture(player_texture);
 
-    CloseWindow();
+
+    Engine::Shutdown();
 }

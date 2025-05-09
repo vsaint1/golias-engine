@@ -7,7 +7,7 @@
    - Opengl 3.3
    - Opengl ES 3.0
 */
-class OpenglRenderer final : public Renderer {
+class OpenglRenderer final : public Engine::Renderer {
 public:
     OpenglRenderer() = default;
 
@@ -23,16 +23,48 @@ public:
 
     void Destroy() override;
 
+    Texture LoadTexture(const std::string& file_path) override;
+
+    Font LoadFont(const std::string& file_path, int font_size) override;
+
+    void UnloadFont(const Font& font) override;
+
+    void UnloadTexture(const Texture& texture) override;
+
+    void ClearBackground(const Color& color) override;
+
+    void BeginDrawing() override;
+
+    void EndDrawing() override;
+
+    void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
+                  float kerning) override;
+
+    void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) override;
+
+    void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                       glm::vec2 origin, float rotation, const Color& color) override;
+
+    void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) override;
+
+    void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) override;
+
+    void DrawRectFilled(const ember::Rectangle& rect, const Color& color) override;
+
+    void BeginMode2D(const Camera2D& camera) override;
+
+    void EndMode2D() override;
+
+    void BeginCanvas() override;
+
+    void EndCanvas() override;
+
     OpenglShader* default_shader = nullptr;
-
     OpenglShader* text_shader = nullptr;
-
 private:
     unsigned int VAO = 0, VBO = 0, EBO = 0;
 
     SDL_GLContext context = nullptr;
-
-
 };
 
 
@@ -44,6 +76,7 @@ private:
 
    @version
 
+ *
  * *
 
  * * 0.0.1
@@ -62,7 +95,8 @@ Texture LoadTexture(const std::string& file_path);
    @param
 
 
- * * *
+
+ * * * *
  * file_path the path to the file in `assets` folder
    @return Font
 
@@ -78,7 +112,8 @@ Font LoadFont(const std::string& file_path, int font_size);
    @return
  *
 
- * *
+
+ * * *
  * void
 
 */
@@ -90,7 +125,8 @@ void UnloadFont(const Font& font);
 
    @version 0.0.1
    @param texture The loaded Texture
- @return
+
+ * @return
 
 
 
@@ -118,12 +154,14 @@ void ClearBackground(const Color& color);
  *
  *
 
- * * BeginDrawing and EndDrawing
+
+ * * * BeginDrawing and EndDrawing
     - Orthographic projection
     - Ordered rendering
 
     Usage:
- BeginDrawing();
+
+ * BeginDrawing();
 
 
 
@@ -134,7 +172,8 @@ void ClearBackground(const Color& color);
     EndDrawing();
 
    @version 0.0.1
-   @return void
+
+ * @return void
 
 */
 void BeginDrawing();
@@ -158,19 +197,23 @@ void EndDrawing();
    @see Glyph
 
    @version
- *
+
+ * *
 
 
  * * * 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
-   @param transform
+   @param
+ * transform
  * The
 
  * *
  * transform
    @param color Color in RGBA
-   @param kerning <optional> Kerning (spacing between
+   @param font_size
+   @param kerning <optional>
+ * Kerning (spacing between
  * characters)
 
  * @return
@@ -190,7 +233,8 @@ void DrawText(const Font& font, const std::string& text, Transform transform, Co
    @param texture
 
 
- * * *
+
+ * * * *
  * The loaded Texture
    @param rect The source rectangle
    @param color Color in RGBA
@@ -205,6 +249,7 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {2
    - Draw the texture with extended parameters, ex: spritesheet's
 
 
+ *
  * @version
 
 
@@ -212,12 +257,14 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {2
    @param texture The loaded Texture
    @param rect The source Rectangle
    @param dest The
- * destination
+
+ * * destination
  *
 
  * * Rectangle
    @param origin The origin point (texture origin e.g center)
-   @param rotation The
+   @param rotation
+ * The
  * rotation angle
  *
  *
@@ -237,7 +284,8 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
    @param start vec2 start point
    @param end vec2
  *
- * end
+
+ * * end
 
  * * point
    @param color Color in RGBA
@@ -255,6 +303,7 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
    @param rect rectangle source
    @param color Color in RGBA
    @param thickness
+ *
  * float
 
 
@@ -274,6 +323,7 @@ void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness 
    @param rect rectangle source
    @param color Color in RGBA
    @return
+ *
  * void
 
 
@@ -294,6 +344,7 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color);
    BeginMode2D(camera);
 
    // Drawing
+ *
  * with
 
 
@@ -302,7 +353,8 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color);
    EndMode2D();
 
    @version 0.0.2
-   @param Camera2D the camera (view_matrix)
+   @param Camera2D the camera
+ * (view_matrix)
 
  * @return
 

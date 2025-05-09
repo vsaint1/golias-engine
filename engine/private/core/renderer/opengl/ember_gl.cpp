@@ -43,7 +43,7 @@ void OpenglRenderer::Destroy() {
 }
 
 
-Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
+Engine::Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -105,7 +105,7 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
     glRenderer->SetContext(glContext);
 
     glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    glRenderer->text_shader = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+    glRenderer->text_shader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
 
 
     IMGUI_CHECKVERSION();
@@ -128,12 +128,12 @@ Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height) 
 
     SDL_ShowWindow(window);
 
-    renderer = glRenderer;
+    Engine::renderer = glRenderer;
 
-    return renderer;
+    return Engine::renderer;
 }
 
-void ClearBackground(const Color& color) {
+void OpenglRenderer::ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
@@ -141,35 +141,35 @@ void ClearBackground(const Color& color) {
 }
 
 
-void BeginDrawing() {
+void OpenglRenderer::BeginDrawing() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
     const glm::mat4 projection =
-        glm::ortho(0.0f, (float) renderer->viewport[0], (float) renderer->viewport[1], 0.0f, -1.0f, 1.0f);
+        glm::ortho(0.0f, (float) Engine::renderer->viewport[0], (float) Engine::renderer->viewport[1], 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
     shader->Bind();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GetRenderer()->GetTextShader();
+    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
     text_shader->Bind();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
 }
 
-void EndDrawing() {
+void OpenglRenderer::EndDrawing() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(renderer->window);
+    SDL_GL_SwapWindow(Engine::renderer->window);
 }
 
-Texture LoadTexture(const std::string& file_path) {
+Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     int w, h, channels;
 
     stbi_set_flip_vertically_on_load(true);
@@ -224,27 +224,10 @@ Texture LoadTexture(const std::string& file_path) {
     return {texId, w, h};
 }
 
-void UnloadFont(const Font& font) {
-
-    // FT_Done_Face(font.face);
-
-    UnloadTexture(font.texture);
-}
-
-void UnloadTexture(const Texture& texture) {
-
-    if (texture.id == 0) {
-        return;
-    }
-
-    LOG_INFO("Unloading texture with ID: %d", texture.id);
-    glDeleteTextures(1, &texture.id);
-}
-
 // https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype
-Font LoadFont(const std::string& file_path, int font_size) {
+Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size) {
 
-      Font font = {};
+    Font font = {};
 
     const auto font_buffer = LoadFileIntoMemory(file_path);
     if (font_buffer.empty()) {
@@ -259,16 +242,17 @@ Font LoadFont(const std::string& file_path, int font_size) {
     }
 
     FT_Face face;
-    if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
+    if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()),
+                           static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
         LOG_ERROR("Failed to load font face.");
         return font;
     }
 
     FT_Set_Pixel_Sizes(face, 0, font_size);
 
-    int atlas_w = 512;
-    int atlas_h = 512;
-    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
+    int atlas_w                  = 512;
+    int atlas_h                  = 512;
+    unsigned char* bitmap_buffer = new unsigned char[atlas_w * atlas_h]();
     int x = 0, y = 0, max_row_height = 0;
 
     for (char c = 32; c < 127; ++c) {
@@ -278,17 +262,19 @@ Font LoadFont(const std::string& file_path, int font_size) {
         }
 
         FT_Glyph glyph;
-        if (FT_Get_Glyph(face->glyph, &glyph)) continue;
+        if (FT_Get_Glyph(face->glyph, &glyph)) {
+            continue;
+        }
 
         if (FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_SDF, nullptr, 1)) {
             FT_Done_Glyph(glyph);
             continue;
         }
 
-        FT_BitmapGlyph bmp_glyph = (FT_BitmapGlyph)glyph;
-        FT_Bitmap& bmp = bmp_glyph->bitmap;
-        int gw = bmp.width;
-        int gh = bmp.rows;
+        FT_BitmapGlyph bmp_glyph = (FT_BitmapGlyph) glyph;
+        FT_Bitmap& bmp           = bmp_glyph->bitmap;
+        int gw                   = bmp.width;
+        int gh                   = bmp.rows;
 
         if (x + gw >= atlas_w) {
             x = 0;
@@ -299,33 +285,37 @@ Font LoadFont(const std::string& file_path, int font_size) {
         max_row_height = SDL_max(max_row_height, gh);
 
         for (int row = 0; row < gh; ++row) {
-            for (int col = 0; col < gw; ++col) {
-                int src_idx = col + row * bmp.pitch;
-                int dst_idx = ((y + row) * atlas_w + (x + col)) * 4;
-
-                uint8_t value = bmp.buffer[src_idx];
-                rgba_buffer[dst_idx + 0] = value;
-                rgba_buffer[dst_idx + 1] = value;
-                rgba_buffer[dst_idx + 2] = value;
-                rgba_buffer[dst_idx + 3] = value;
-            }
+            unsigned char* src = bmp.buffer + row * bmp.pitch;
+            unsigned char* dst = bitmap_buffer + (x + (y + row) * atlas_w);
+            SDL_memcpy(dst, src, gw);
         }
 
-        Glyph g = {};
-        g.x0 = (float)x / atlas_w;
-        g.y0 = (float)y / atlas_h;
-        g.x1 = (float)(x + gw) / atlas_w;
-        g.y1 = (float)(y + gh) / atlas_h;
-        g.w = gw;
-        g.h = gh;
+
+        Glyph g    = {};
+        g.x0       = (float) x / atlas_w;
+        g.y0       = (float) y / atlas_h;
+        g.x1       = (float) (x + gw) / atlas_w;
+        g.y1       = (float) (y + gh) / atlas_h;
+        g.w        = gw;
+        g.h        = gh;
         g.x_offset = bmp_glyph->left;
         g.y_offset = -bmp_glyph->top;
-        g.advance = face->glyph->advance.x >> 6;
+        g.advance  = face->glyph->advance.x >> 6;
 
         font.glyphs[c] = g;
         x += gw;
 
         FT_Done_Glyph(glyph);
+    }
+
+    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
+
+    for (int i = 0; i < atlas_w * atlas_h; i++) {
+        unsigned char value    = bitmap_buffer[i];
+        rgba_buffer[i * 4 + 0] = value;
+        rgba_buffer[i * 4 + 1] = value;
+        rgba_buffer[i * 4 + 2] = value;
+        rgba_buffer[i * 4 + 3] = value;
     }
 
     glGenTextures(1, &font.texture.id);
@@ -349,13 +339,13 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
     LOG_INFO("Loaded Font. Texture ID: %d, path: %s", font.texture.id, file_path.c_str());
 
+    delete[] bitmap_buffer;
     delete[] rgba_buffer;
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
     return font;
 }
-
 
 
 void DrawTextInternal(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
@@ -372,7 +362,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
 
-    Shader* shader = GetRenderer()->GetTextShader();
+    Shader* shader = Engine::GetRenderer()->GetTextShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -382,7 +372,6 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     shader->SetValue("Model", model);
 
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
-
 
 
     float cursor_x = 0.0f;
@@ -442,24 +431,23 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     }
 
 
-    Mesh mesh(vertices, indices);
+    static Mesh mesh(vertices, indices);
 
     mesh.Update(vertices);
 
     glDepthMask(GL_FALSE);
     mesh.Draw(GL_TRIANGLES);
     glDepthMask(GL_TRUE);
-
 }
 
-void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
-              float kerning) {
+void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
+                              float font_size, float kerning) {
 
     DrawTextInternal(font, text, transform, color, font_size, kerning);
 }
 
 
-void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
+void OpenglRenderer::DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
 
     if (texture.id == 0) {
         return;
@@ -476,7 +464,7 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
     model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -497,8 +485,8 @@ void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
 }
 
 
-void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                   glm::vec2 origin, float rotation, const Color& color) {
+void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                                   glm::vec2 origin, float rotation, const Color& color) {
 
     if (texture.id == 0) {
         return;
@@ -508,7 +496,7 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -543,11 +531,11 @@ void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const
     mesh.Draw();
 }
 
-void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) {
+void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) {
 
     static Mesh mesh;
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -563,10 +551,10 @@ void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thicknes
 }
 
 
-void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
+void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -585,12 +573,12 @@ void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness)
 }
 
 
-void DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
+void OpenglRenderer::DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
     static Mesh mesh;
 
     const glm::mat4 model = glm::mat4(1.0f);
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
 
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -609,42 +597,42 @@ void DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
     mesh.Draw(GL_TRIANGLE_FAN);
 }
 
-void BeginMode2D(const Camera2D& camera) {
+void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& view = camera.GetViewMatrix();
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GetRenderer()->GetTextShader();
+    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 
     text_shader->SetValue("Projection", projection);
 }
 
-void EndMode2D() {
+void OpenglRenderer::EndMode2D() {
     constexpr glm::mat4 view = glm::mat4(1.0f);
-    Shader* shader       = GetRenderer()->GetDefaultShader();
+    Shader* shader           = Engine::GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
-    Shader* text_shader = GetRenderer()->GetTextShader();
+    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 }
 
 
-void BeginCanvas() {
+void OpenglRenderer::BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-        if (renderer->viewport[0] == 0 || renderer->viewport[1] == 0) {
+        if (Engine::renderer->viewport[0] == 0 ||Engine::renderer->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x = static_cast<float>(renderer->viewport[0]) / static_cast<float>(core.Window.width);
-        float scale_y = static_cast<float>(renderer->viewport[1]) / static_cast<float>(core.Window.height);
+        float scale_x = static_cast<float>(Engine::renderer->viewport[0]) / static_cast<float>(core.Window.width);
+        float scale_y = static_cast<float>(Engine::renderer->viewport[1]) / static_cast<float>(core.Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
@@ -657,11 +645,11 @@ void BeginCanvas() {
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
-    Shader* shader = GetRenderer()->GetDefaultShader();
+    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GetRenderer()->GetDefaultShader();
+    Shader* text_shader = Engine::GetRenderer()->GetDefaultShader();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
 
@@ -671,7 +659,22 @@ void BeginCanvas() {
 }
 
 
-void EndCanvas() {
+void OpenglRenderer::EndCanvas() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+}
+
+void OpenglRenderer::UnloadFont(const Font& font) {
+
+    UnloadTexture(font.texture);
+}
+
+void OpenglRenderer::UnloadTexture(const Texture& texture) {
+
+    if (texture.id == 0) {
+        return;
+    }
+
+    LOG_INFO("Unloading texture with ID: %d", texture.id);
+    glDeleteTextures(1, &texture.id);
 }

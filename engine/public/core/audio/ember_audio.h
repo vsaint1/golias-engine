@@ -34,8 +34,7 @@ public:
 
     @brief Change the audio volume
 
-    @param audio Valid Audio struct pointer
-    @param volume Audio volume from 0.0 to 1.0
+    @param vol Audio volume from 0.0 to 1.0
 
     @version 0.0.3
     @return void
@@ -46,8 +45,6 @@ public:
 
         @brief Pause audio and fade out
 
-        @param audio Valid Audio struct pointer
-
         @version 0.0.3
         @return void
     */
@@ -57,7 +54,6 @@ public:
 
     @brief Play audio
 
-    @param music Valid Audio struct pointer
     @param loop Play audio in `loop` or not
 
     @version 0.0.3
@@ -77,7 +73,6 @@ public:
 
     @see CloseAudio
 
-    @param audio Valid Audio struct pointer
 
     @version 0.0.3
     @return void
@@ -85,8 +80,9 @@ public:
     void Destroy();
 
 private:
-    ma_decoder* decoder;
-    ma_sound sound;
+
+    ma_decoder* decoder = nullptr;
+    ma_sound sound{};
 };
 
 
@@ -123,9 +119,9 @@ void CloseAudio();
 void Audio_SetMasterVolume(float volume);
 
 
-extern ma_engine engine;
-
-extern Core core;
+// extern ma_engine* engine;
+//
+// extern Core core;
 
 // TODO: create a Resource Manager
 inline std::unordered_map<std::string, Audio*> audios;

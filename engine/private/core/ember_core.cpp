@@ -1,10 +1,10 @@
 #include "core/ember_core.h"
 
 
-Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type) {
+Engine::Renderer* Engine::CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type) {
 
     if (type == RendererType::OPENGL) {
-        return CreateRendererGL(window, view_width, view_height);
+        return Engine::CreateRendererGL(window, view_width, view_height);
     }
 
     if (type == RendererType::METAL) {
@@ -18,12 +18,12 @@ Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, Re
     return nullptr;
 }
 
-Renderer* GetRenderer() {
+Engine::Renderer* Engine::GetRenderer() {
     return renderer;
 }
 
 
-bool InitWindow(const char* title, int width, int height, RendererType type, Uint64 flags) {
+bool Engine::Initialize(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
@@ -84,6 +84,14 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
         return false;
     }
 
+    if (!InitAudio()) {
+        LOG_CRITICAL("Failed to initialize Audio Engine");
+        return false;
+    }
+
+    LOG_INFO("Initialized Audio Engine");
+
+
     const std::string gamepad_mappings = LoadAssetsFile("controller_db");
 
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
@@ -113,9 +121,9 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 
 #endif
 
-    renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
+    Engine::renderer = Engine::CreateRenderer(_window, bbWidth, bbHeight, type);
 
-    if (!renderer) {
+    if (!Engine::renderer) {
         LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
         return false;
     }
@@ -135,7 +143,7 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
     core.Window.width  = width;
     core.Window.height = height;
     core.Window.title  = _title;
-    renderer->type     = type;
+    Engine::renderer->type     = type;
 
     if (type == RendererType::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
@@ -153,9 +161,9 @@ bool InitWindow(const char* title, int width, int height, RendererType type, Uin
 }
 
 
-void CloseWindow() {
+void Engine::Shutdown() {
 
-    renderer->Destroy();
+    Engine::renderer->Destroy();
 
     delete core.Time;
     delete core.Input;
@@ -165,6 +173,8 @@ void CloseWindow() {
     ImGui::DestroyContext();
 
     Debug::Destroy();
+
+    CloseAudio();
 
     SDL_Quit();
 }

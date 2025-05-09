@@ -24,7 +24,7 @@ struct Core {
         float global_volume = 1.f;
     } Audio;
 
-    Ember_VFS ember_vfs;
+    Ember_VFS ember_vfs{};
     
     InputManager* Input = nullptr;
     TimeManager* Time = nullptr;
@@ -32,6 +32,8 @@ struct Core {
     void ResizeWindow(int w, int h) const;
 };
 
-extern ma_engine engine;
+
 
 extern Core core;
+
+extern ma_engine engine;

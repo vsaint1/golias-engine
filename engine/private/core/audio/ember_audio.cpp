@@ -1,6 +1,7 @@
 #include "core/audio/ember_audio.h"
 
 
+
 bool InitAudio() {
     ma_device_config* device_config = (ma_device_config*)SDL_malloc(sizeof(ma_device_config));
 
@@ -51,7 +52,9 @@ bool InitAudio() {
         return false;
     }
 
-    core.ember_vfs = vfs;
+   core.ember_vfs = vfs;
+
+    // core.Audio.bInitialized = true;
 
     LOG_INFO("Successfully MA engine backend");
     return true;
@@ -117,6 +120,7 @@ Audio* Audio::Load(const std::string& file_Path) {
 }
 
 void Audio::SetVolume(float vol) {
+
     vol = SDL_clamp(vol, 0.0f, 1.0f);
     ma_sound_set_volume(&sound, vol);
     this->volume = vol;
@@ -129,7 +133,9 @@ void Audio::Pause() {
 
 void Audio::Play(bool loop) {
 
-    ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
+
+
+    const ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
 
     ma_sound_set_fade_start_in_milliseconds(&this->sound, 0.0f, this->volume, 1000, time);
 
@@ -159,6 +165,8 @@ void Audio::SetLoop(bool loop) {
 
 void Audio::Destroy() {
 
+
+
     ma_sound_stop(&this->sound);
 
     ma_sound_uninit(&this->sound);
@@ -169,6 +177,7 @@ void Audio::Destroy() {
 
 void Audio_SetMasterVolume(float volume) {
 
+
     volume = SDL_clamp(volume, 0.0f, 1.f);
 
     core.Audio.global_volume = volume;
@@ -178,6 +187,7 @@ void Audio_SetMasterVolume(float volume) {
 
 
 void CloseAudio() {
+
 
     LOG_INFO("Cleaning allocated Audios");
 
