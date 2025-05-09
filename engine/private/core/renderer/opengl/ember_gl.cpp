@@ -225,6 +225,9 @@ Texture LoadTexture(const std::string& file_path) {
 }
 
 void UnloadFont(const Font& font) {
+
+    // FT_Done_Face(font.face);
+
     UnloadTexture(font.texture);
 }
 
@@ -240,7 +243,8 @@ void UnloadTexture(const Texture& texture) {
 
 // https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype
 Font LoadFont(const std::string& file_path, int font_size) {
-    Font font = {};
+
+      Font font = {};
 
     const auto font_buffer = LoadFileIntoMemory(file_path);
     if (font_buffer.empty()) {
@@ -264,7 +268,7 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
     int atlas_w = 512;
     int atlas_h = 512;
-    unsigned char* red_buffer = new unsigned char[atlas_w * atlas_h]();
+    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
     int x = 0, y = 0, max_row_height = 0;
 
     for (char c = 32; c < 127; ++c) {
@@ -297,8 +301,13 @@ Font LoadFont(const std::string& file_path, int font_size) {
         for (int row = 0; row < gh; ++row) {
             for (int col = 0; col < gw; ++col) {
                 int src_idx = col + row * bmp.pitch;
-                int dst_idx = (x + col) + (y + row) * atlas_w;
-                red_buffer[dst_idx] = bmp.buffer[src_idx];
+                int dst_idx = ((y + row) * atlas_w + (x + col)) * 4;
+
+                uint8_t value = bmp.buffer[src_idx];
+                rgba_buffer[dst_idx + 0] = value;
+                rgba_buffer[dst_idx + 1] = value;
+                rgba_buffer[dst_idx + 2] = value;
+                rgba_buffer[dst_idx + 3] = value;
             }
         }
 
@@ -321,10 +330,8 @@ Font LoadFont(const std::string& file_path, int font_size) {
 
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, atlas_w, atlas_h, 0, GL_RED, GL_UNSIGNED_BYTE, red_buffer);
 
-    constexpr GLint RGBA_MASK[] = { GL_RED, GL_RED, GL_RED, GL_RED };
-    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, RGBA_MASK);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -338,10 +345,11 @@ Font LoadFont(const std::string& file_path, int font_size) {
     font.font_size      = font_size;
     font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
+    // font.face = face;
 
     LOG_INFO("Loaded Font. Texture ID: %d, path: %s", font.texture.id, file_path.c_str());
 
-    delete[] red_buffer;
+    delete[] rgba_buffer;
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
 
@@ -372,7 +380,9 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     const glm::mat4 model = transform.GetModelMatrix2D();
 
     shader->SetValue("Model", model);
+
     float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
+
 
 
     float cursor_x = 0.0f;

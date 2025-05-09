@@ -94,7 +94,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     // EndMode2D();
 
     // BeginCanvas();
-    DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+    DrawText(mine_font, gui_text, transform, text_color, 64.f);
 
     // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
