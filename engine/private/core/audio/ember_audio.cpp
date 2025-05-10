@@ -22,7 +22,7 @@ bool InitAudio() {
 
     ma_engine_config config = ma_engine_config_init();
 
-    ma_result res = ma_engine_init(&config, &engine);
+    ma_result res = ma_engine_init(&config, &audio_engine);
 
     SDL_free(device_config); 
 
@@ -31,19 +31,19 @@ bool InitAudio() {
         return false;
     }
 
-    SDL_memset(&core.Audio.spec, 0, sizeof(SDL_AudioSpec));
-    core.Audio.spec.format   = SDL_AUDIO_F32;
-    core.Audio.spec.freq     = 48000;
-    core.Audio.spec.channels = 2;
+    SDL_memset(&GEngine.Audio.spec, 0, sizeof(SDL_AudioSpec));
+    GEngine.Audio.spec.format   = SDL_AUDIO_F32;
+    GEngine.Audio.spec.freq     = 48000;
+    GEngine.Audio.spec.channels = 2;
     
 
-    res = ma_engine_start(&engine);
+    res = ma_engine_start(&audio_engine);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to start MA engine backend %d", res);
         return false;
     }
 
-    ma_engine_set_volume(&engine, core.Audio.global_volume);
+    ma_engine_set_volume(&audio_engine, GEngine.Audio.global_volume);
 
     Ember_VFS vfs;
     res = Ember_Init_VFS(&vfs);
@@ -52,7 +52,7 @@ bool InitAudio() {
         return false;
     }
 
-   core.ember_vfs = vfs;
+   GEngine.ember_vfs = vfs;
 
     // core.Audio.bInitialized = true;
 
@@ -78,7 +78,7 @@ Audio* Audio::Load(const std::string& file_Path) {
         return nullptr;
     }
 
-    ma_result res = ma_decoder_init_vfs(&core.ember_vfs, path.c_str(), &decoder_config, decoder);
+    ma_result res = ma_decoder_init_vfs(&GEngine.ember_vfs, path.c_str(), &decoder_config, decoder);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to decode sound file %s, error: %d", path.c_str(), res);
         SDL_free(decoder);
@@ -86,7 +86,7 @@ Audio* Audio::Load(const std::string& file_Path) {
         return nullptr;
     }
 
-    res = ma_sound_init_from_data_source(&engine, decoder, 0, 0, &audio->sound);
+    res = ma_sound_init_from_data_source(&audio_engine, decoder, 0, 0, &audio->sound);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to load sound file %s, error: %d", path.c_str(), res);
         ma_decoder_uninit(decoder);
@@ -135,7 +135,7 @@ void Audio::Play(bool loop) {
 
 
 
-    const ma_uint64 time = ma_engine_get_time_in_milliseconds(&engine);
+    const ma_uint64 time = ma_engine_get_time_in_milliseconds(&audio_engine);
 
     ma_sound_set_fade_start_in_milliseconds(&this->sound, 0.0f, this->volume, 1000, time);
 
@@ -180,8 +180,8 @@ void Audio_SetMasterVolume(float volume) {
 
     volume = SDL_clamp(volume, 0.0f, 1.f);
 
-    core.Audio.global_volume = volume;
-    ma_engine_set_volume(&engine, volume);
+    GEngine.Audio.global_volume = volume;
+    ma_engine_set_volume(&audio_engine, volume);
 }
 
 
@@ -197,7 +197,7 @@ void CloseAudio() {
 
     LOG_INFO("Closing MA engine backend");
 
-    ma_engine_uninit(&engine);
+    ma_engine_uninit(&audio_engine);
 
 
     // SDL_CloseAudioDevice(core.Audio.device_id);
