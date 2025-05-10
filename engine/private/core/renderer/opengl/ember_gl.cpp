@@ -43,96 +43,6 @@ void OpenglRenderer::Destroy() {
 }
 
 
-Engine::Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
-
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
-
-    /* GLES 3.0 -> GLSL: 300 */
-    const char* glsl_version = "#version 300 es";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-
-#elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
-
-    /* OPENGL 3.3 -> GLSL: 330*/
-    const char* glsl_version = "#version 330";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-
-#endif
-
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-    SDL_GLContext glContext = SDL_GL_CreateContext(window);
-
-    if (!glContext) {
-        LOG_CRITICAL("Failed to create GL context, %s", SDL_GetError());
-        return nullptr;
-    }
-
-
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
-
-    if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
-        LOG_CRITICAL("Failed to initialize GLAD (GLES_FUNCTIONS)");
-        return nullptr;
-    }
-
-#else
-
-    if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress)) {
-        LOG_CRITICAL("Failed to initialize GLAD (GL_FUNCTIONS)");
-        return nullptr;
-    }
-
-#endif
-
-    if (!SDL_GL_SetSwapInterval(0)) {
-        LOG_CRITICAL("Failed to disable VSYNC, %s", SDL_GetError());
-    }
-
-    OpenglRenderer* glRenderer = new OpenglRenderer();
-    glRenderer->viewport[0]    = view_width;
-    glRenderer->viewport[1]    = view_height;
-    glRenderer->window         = window;
-    glRenderer->SetContext(glContext);
-
-    glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    glRenderer->text_shader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
-
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void) io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.IniFilename = nullptr;
-
-    ImGui::StyleColorsDark();
-    ImGui_ImplSDL3_InitForOpenGL(window, glContext);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glViewport(0, 0, view_width, view_height);
-
-    SDL_ShowWindow(window);
-
-    Engine::renderer = glRenderer;
-
-    return Engine::renderer;
-}
-
 void OpenglRenderer::ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
@@ -147,17 +57,17 @@ void OpenglRenderer::BeginDrawing() {
     ImGui::NewFrame();
 
     const glm::mat4 projection =
-        glm::ortho(0.0f, (float) Engine::renderer->viewport[0], (float) Engine::renderer->viewport[1], 0.0f, -1.0f, 1.0f);
+        glm::ortho(0.0f, (float) GEngine.GetRenderer()->viewport[0], (float) GEngine.GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
     shader->Bind();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
     text_shader->Bind();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
@@ -166,7 +76,7 @@ void OpenglRenderer::BeginDrawing() {
 void OpenglRenderer::EndDrawing() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(Engine::renderer->window);
+    SDL_GL_SwapWindow(GEngine.GetRenderer()->window);
 }
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
@@ -362,7 +272,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
 
-    Shader* shader = Engine::GetRenderer()->GetTextShader();
+    Shader* shader = GEngine.GetRenderer()->GetTextShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -464,7 +374,7 @@ void OpenglRenderer::DrawTexture(const Texture& texture, ember::Rectangle rect, 
     model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -496,7 +406,7 @@ void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangl
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -535,7 +445,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
 
     static Mesh mesh;
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -554,7 +464,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
 void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -578,7 +488,7 @@ void OpenglRenderer::DrawRectFilled(const ember::Rectangle& rect, const Color& c
 
     const glm::mat4 model = glm::mat4(1.0f);
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
 
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -603,12 +513,12 @@ void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 
     text_shader->SetValue("Projection", projection);
@@ -616,10 +526,10 @@ void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
 
 void OpenglRenderer::EndMode2D() {
     constexpr glm::mat4 view = glm::mat4(1.0f);
-    Shader* shader           = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader           = GEngine.GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
-    Shader* text_shader = Engine::GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 }
 
@@ -627,12 +537,12 @@ void OpenglRenderer::EndMode2D() {
 void OpenglRenderer::BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-        if (Engine::renderer->viewport[0] == 0 ||Engine::renderer->viewport[1] == 0) {
+        if (GEngine.GetRenderer()->viewport[0] == 0 ||GEngine.GetRenderer()->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x = static_cast<float>(Engine::renderer->viewport[0]) / static_cast<float>(core.Window.width);
-        float scale_y = static_cast<float>(Engine::renderer->viewport[1]) / static_cast<float>(core.Window.height);
+        float scale_x = static_cast<float>(GEngine.GetRenderer()->viewport[0]) / static_cast<float>(GEngine.Window.width);
+        float scale_y = static_cast<float>(GEngine.GetRenderer()->viewport[1]) / static_cast<float>(GEngine.Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
@@ -640,16 +550,16 @@ void OpenglRenderer::BeginCanvas() {
 
     const float scale_factor = calculate_scale_factor();
 
-    const glm::mat4 projection = glm::ortho(0.0f, (float) core.Window.width * scale_factor,
-                                            (float) core.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine.Window.width * scale_factor,
+                                            (float) GEngine.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
-    Shader* shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = Engine::GetRenderer()->GetDefaultShader();
+    Shader* text_shader = GEngine.GetRenderer()->GetDefaultShader();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
 
