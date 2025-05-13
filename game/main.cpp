@@ -189,7 +189,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     if (bShowMetrics) {
         ImGui::Begin("Metrics", &bShowMetrics);
 
-        ImGuiIO& io = ImGui::GetIO();
+        const ImGuiIO& io = ImGui::GetIO();
         ImGui::Text("Application average: %2.03f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Text("Delta Time: %f", GEngine->GetTimeManager()->GetDeltaTime());
         ImGui::Text("Elapsed Time: %.3f", GEngine->GetTimeManager()->GetElapsedTime());
