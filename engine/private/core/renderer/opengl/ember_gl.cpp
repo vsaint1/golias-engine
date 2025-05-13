@@ -80,6 +80,7 @@ void OpenglRenderer::EndDrawing() {
 }
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
+    Texture texture{};
     int w, h, channels;
 
     stbi_set_flip_vertically_on_load(true);
@@ -131,7 +132,10 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
         LOG_INFO(" > Num. Channels %d", channels);
     }
 
-    return {texId, w, h};
+    texture.id  = texId;
+    texture.width = w;
+    texture.height = h;
+    return texture;
 }
 
 // https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype

@@ -14,7 +14,6 @@ typedef struct Texture {
     int width       = 0;
     int height      = 0;
 
-    Texture(const Texture&) = delete;
 
     Texture() = default;
 } Texture, Texture2D;
@@ -62,7 +61,6 @@ struct Font {
 
     bool IsValid() const;
 
-    Font(const Font&) = delete;
     Font() = default;
 
 };
