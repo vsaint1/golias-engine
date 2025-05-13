@@ -16,7 +16,7 @@ Camera2D camera = Camera2D(480, 270);
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!GEngine.Initialize("GUI sample", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->Initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
@@ -24,15 +24,13 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     camera.transform.rotation = glm::vec3(0.f);
 
     // assets in examples/assets
-    mine_font = GEngine.GetRenderer()->LoadFont("fonts/Minecraft.ttf", 16);
+    mine_font = GEngine->GetRenderer()->LoadFont("fonts/Minecraft.ttf", 16);
 
-    player_texture = GEngine.GetRenderer()->LoadTexture("sprites/Character_001.png");
-
+    player_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_001.png");
 
     mine_music   = Audio::Load("sounds/lullaby.mp3");
     tel_music    = Audio::Load("sounds/the_entertainer.ogg");
     random_music = Audio::Load("sounds/test.flac");
-
 
     mine_music->Play();
 
@@ -58,12 +56,12 @@ int entities = 0;
 
 SDL_AppResult SDL_AppIterate(void* app_state) {
 
-    GEngine.GetInputManager()->Update();
+    GEngine->GetInputManager()->Update();
 
-    GEngine.GetTimeManager()->Update();
+    GEngine->GetTimeManager()->Update();
 
-    GEngine.GetRenderer()->ClearBackground(background_color);
-    GEngine.GetRenderer()->BeginDrawing();
+    GEngine->GetRenderer()->ClearBackground(background_color);
+    GEngine->GetRenderer()->BeginDrawing();
 
     static float angle         = 0.0f;
     static glm::ivec3 position = {200, 300, 0};
@@ -74,12 +72,12 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         glm::vec3(1.f),
     };
 
-    GEngine.GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+    GEngine->GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
 
 
     for (int i = 0; i < entities; i++) {
-        GEngine.GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
-                                             {255, 255, 255, 255});
+        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
+                                              {255, 255, 255, 255});
     }
 
 
@@ -89,13 +87,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     // EndMode2D();
 
     // BeginCanvas();
-    GEngine.GetRenderer()->DrawText(mine_font, gui_text, transform, text_color);
+    GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, text_color);
 
     // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
-    ImGui::Begin("[DEMO] - example with GUI", nullptr, ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("[DEMO] - new API", nullptr, ImGuiWindowFlags_NoCollapse);
 
     ImGui::InputInt("Create Entity", &entities, 10);
 
@@ -107,7 +105,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     ImGui::SliderFloat("Angle##player", &angle, 0.0f, 360.0f, "%.2f");
 
     ImGui::Text("Text");
-    ImGui::SliderFloat3("Position##text", &transform.position.x, 0.0f, GEngine.Window.width);
+    ImGui::SliderFloat3("Position##text", &transform.position.x, 0.0f, GEngine->Window.width);
     ImGui::SliderFloat3("Scale##text", &transform.scale.x, 0.0f, 10.0f);
     ImGui::SliderFloat3("Rotation##text", &transform.rotation.x, 0.0f, 360.0f);
 
@@ -179,8 +177,8 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     ImGui::Text("Engine");
-    if (ImGui::SliderFloat("Musics Volume", &GEngine.Audio.global_volume, 0.0f, 1.0f)) {
-        Audio_SetMasterVolume(GEngine.Audio.global_volume);
+    if (ImGui::SliderFloat("Musics Volume", &GEngine->Audio.global_volume, 0.0f, 1.0f)) {
+        Audio_SetMasterVolume(GEngine->Audio.global_volume);
     }
 
     ImGui::Checkbox("Metrics", &bShowMetrics);
@@ -193,9 +191,9 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
         ImGuiIO& io = ImGui::GetIO();
         ImGui::Text("Application average: %2.03f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta Time: %f", GEngine.GetTimeManager()->GetDeltaTime());
-        ImGui::Text("Elapsed Time: %.3f", GEngine.GetTimeManager()->GetElapsedTime());
-        ImGui::Text("Frame count: %llu", GEngine.GetTimeManager()->GetFrameCount());
+        ImGui::Text("Delta Time: %f", GEngine->GetTimeManager()->GetDeltaTime());
+        ImGui::Text("Elapsed Time: %.3f", GEngine->GetTimeManager()->GetElapsedTime());
+        ImGui::Text("Frame count: %llu", GEngine->GetTimeManager()->GetFrameCount());
 
         ImGui::Text("RAM Usage: %d MB", GetMemoryUsage());
 
@@ -210,17 +208,17 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     // EndCanvas();
 
-    GEngine.GetRenderer()->EndDrawing();
+    GEngine->GetRenderer()->EndDrawing();
 
 
-    GEngine.GetTimeManager()->FixedFrameRate();
+    GEngine->GetTimeManager()->FixedFrameRate();
 
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
-    GEngine.GetInputManager()->ProcessEvents(event);
+    GEngine->GetInputManager()->ProcessEvents(event);
 
     auto pKey = SDL_GetKeyboardState(0);
 
@@ -230,9 +228,9 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        GEngine.ResizeWindow(event->window.data1, event->window.data2);
+        GEngine->ResizeWindow(event->window.data1, event->window.data2);
 
-        GEngine.GetRenderer()->Resize(event->window.data1, event->window.data2);
+        GEngine->GetRenderer()->Resize(event->window.data1, event->window.data2);
     }
 
     return SDL_APP_CONTINUE;
@@ -240,9 +238,9 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
 void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
-    GEngine.GetRenderer()->UnloadFont(mine_font);
+    GEngine->GetRenderer()->UnloadFont(mine_font);
 
-    GEngine.GetRenderer()->UnloadTexture(player_texture);
+    GEngine->GetRenderer()->UnloadTexture(player_texture);
 
-    GEngine.Shutdown();
+    GEngine->Shutdown();
 }

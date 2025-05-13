@@ -10,7 +10,7 @@ Text::Text(const Font& font, const std::string& text, const Transform& transform
 
 
 void Text::Draw() const{
-    GEngine.GetRenderer()->DrawText(font, text, transform, color, font_size);
+    GEngine->GetRenderer()->DrawText(font, text, transform, color, font_size);
 }
 
 void Text::SetFont(const Font& font) {

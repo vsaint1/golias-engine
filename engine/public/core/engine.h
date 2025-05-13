@@ -29,8 +29,9 @@ class Renderer;
 class OpenglShader;
 class OpenglRenderer;
 
-struct Engine {
+class Engine {
 
+    public:
 
     struct {
         int width                   = 0;
@@ -151,6 +152,6 @@ private:
 };
 
 
-extern Engine GEngine;
+extern std::unique_ptr<Engine> GEngine;
 
 extern ma_engine audio_engine;

@@ -6,7 +6,7 @@
 
 // 💀
 
-Engine GEngine;
+std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
@@ -80,9 +80,9 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
     const SDL_DisplayID displayID       = SDL_GetPrimaryDisplay();
     const SDL_DisplayMode* display_mode = SDL_GetDesktopDisplayMode(displayID);
 
-    GEngine.Window.data = display_mode;
+    GEngine->Window.data = display_mode;
 
-    const char* _title = SDL_strcmp(title, "") == 0 ? GEngine.Window.title : title;
+    const char* _title = SDL_strcmp(title, "") == 0 ? GEngine->Window.title : title;
 
     SDL_Window* _window = SDL_CreateWindow(_title, width, height, flags);
 
@@ -106,13 +106,13 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
         return false;
     }
 
-    GEngine.Window.window = _window;
+    GEngine->Window.window = _window;
 
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
 
-    GEngine.Window.bbWidth  = bbWidth;
-    GEngine.Window.bbHeight = bbHeight;
+    GEngine->Window.bbWidth  = bbWidth;
+    GEngine->Window.bbHeight = bbHeight;
 
     auto hdpi_screen = [display_mode, bbWidth, bbHeight]() {
         if (display_mode->w == bbWidth && display_mode->h == bbHeight) {
@@ -190,8 +190,8 @@ void Engine::Shutdown() {
 void Engine::ResizeWindow(int w, int h) const {
     SDL_assert(w > 0 && h > 0);
     
-    GEngine.Window.width= w;
-    GEngine.Window.height = h;
+    GEngine->Window.width= w;
+    GEngine->Window.height = h;
 }
 
 Renderer* Engine::GetRenderer() const {

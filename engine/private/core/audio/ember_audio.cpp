@@ -31,10 +31,10 @@ bool InitAudio() {
         return false;
     }
 
-    SDL_memset(&GEngine.Audio.spec, 0, sizeof(SDL_AudioSpec));
-    GEngine.Audio.spec.format   = SDL_AUDIO_F32;
-    GEngine.Audio.spec.freq     = 48000;
-    GEngine.Audio.spec.channels = 2;
+    SDL_memset(&GEngine->Audio.spec, 0, sizeof(SDL_AudioSpec));
+    GEngine->Audio.spec.format   = SDL_AUDIO_F32;
+    GEngine->Audio.spec.freq     = 48000;
+    GEngine->Audio.spec.channels = 2;
     
 
     res = ma_engine_start(&audio_engine);
@@ -43,16 +43,13 @@ bool InitAudio() {
         return false;
     }
 
-    ma_engine_set_volume(&audio_engine, GEngine.Audio.global_volume);
+    ma_engine_set_volume(&audio_engine, GEngine->Audio.global_volume);
 
-    Ember_VFS vfs;
-    res = Ember_Init_VFS(&vfs);
+    res = Ember_Init_VFS(&GEngine->ember_vfs);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engineVFS %d", res);
         return false;
     }
-
-   GEngine.ember_vfs = vfs;
 
     // core.Audio.bInitialized = true;
 
@@ -78,7 +75,7 @@ Audio* Audio::Load(const std::string& file_Path) {
         return nullptr;
     }
 
-    ma_result res = ma_decoder_init_vfs(&GEngine.ember_vfs, path.c_str(), &decoder_config, decoder);
+    ma_result res = ma_decoder_init_vfs(&GEngine->ember_vfs, path.c_str(), &decoder_config, decoder);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to decode sound file %s, error: %d", path.c_str(), res);
         SDL_free(decoder);
@@ -180,7 +177,7 @@ void Audio_SetMasterVolume(float volume) {
 
     volume = SDL_clamp(volume, 0.0f, 1.f);
 
-    GEngine.Audio.global_volume = volume;
+    GEngine->Audio.global_volume = volume;
     ma_engine_set_volume(&audio_engine, volume);
 }
 

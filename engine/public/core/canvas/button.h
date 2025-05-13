@@ -40,13 +40,13 @@ public:
     }
 
     bool IsHovered() const {
-        InputManager* input_manager = GEngine.GetInputManager();
+        InputManager* input_manager = GEngine->GetInputManager();
 
         return input_manager->IsPositionInRect(input_manager->GetMousePosition(), rect);
     }
 
     bool WasClicked() const {
-        return IsHovered() && GEngine.GetInputManager()->IsMouseButtonPressed(SDL_BUTTON_LEFT);
+        return IsHovered() && GEngine->GetInputManager()->IsMouseButtonPressed(SDL_BUTTON_LEFT);
     }
 
 private:

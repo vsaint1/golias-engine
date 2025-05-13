@@ -29,9 +29,9 @@ void Button::Draw() {
 
     text.Draw();
 
-    GEngine.GetRenderer()->DrawRectFilled(rect, color);
+    GEngine->GetRenderer()->DrawRectFilled(rect, color);
 
     if (IsHovered()) {
-        GEngine.GetRenderer()->DrawRect(rect, {255, 255, 255, 100}, 4.f);
+        GEngine->GetRenderer()->DrawRect(rect, {255, 255, 255, 100}, 4.f);
     }
 }

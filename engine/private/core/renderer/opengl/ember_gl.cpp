@@ -57,17 +57,17 @@ void OpenglRenderer::BeginDrawing() {
     ImGui::NewFrame();
 
     const glm::mat4 projection =
-        glm::ortho(0.0f, (float) GEngine.GetRenderer()->viewport[0], (float) GEngine.GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
+        glm::ortho(0.0f, (float) GEngine->GetRenderer()->viewport[0], (float) GEngine->GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
     shader->Bind();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
     text_shader->Bind();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
@@ -76,7 +76,7 @@ void OpenglRenderer::BeginDrawing() {
 void OpenglRenderer::EndDrawing() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    SDL_GL_SwapWindow(GEngine.GetRenderer()->window);
+    SDL_GL_SwapWindow(GEngine->GetRenderer()->window);
 }
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
@@ -272,7 +272,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
 
-    Shader* shader = GEngine.GetRenderer()->GetTextShader();
+    Shader* shader = GEngine->GetRenderer()->GetTextShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -374,7 +374,7 @@ void OpenglRenderer::DrawTexture(const Texture& texture, ember::Rectangle rect, 
     model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
     model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -406,7 +406,7 @@ void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangl
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
 
     glm::mat4 model = glm::mat4(1.0f);
     model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
@@ -445,7 +445,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
 
     static Mesh mesh;
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -464,7 +464,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
 void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
     static Mesh mesh;
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
 
     shader->SetValue("Color", color.GetNormalizedColor());
 
@@ -488,7 +488,7 @@ void OpenglRenderer::DrawRectFilled(const ember::Rectangle& rect, const Color& c
 
     const glm::mat4 model = glm::mat4(1.0f);
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
 
 
     shader->SetValue("Color", color.GetNormalizedColor());
@@ -513,12 +513,12 @@ void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
 
     const glm::mat4& projection = camera.GetProjectionMatrix();
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 
     text_shader->SetValue("Projection", projection);
@@ -526,10 +526,10 @@ void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
 
 void OpenglRenderer::EndMode2D() {
     constexpr glm::mat4 view = glm::mat4(1.0f);
-    Shader* shader           = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader           = GEngine->GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
 
-    Shader* text_shader = GEngine.GetRenderer()->GetTextShader();
+    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
     text_shader->SetValue("View", view);
 }
 
@@ -537,12 +537,12 @@ void OpenglRenderer::EndMode2D() {
 void OpenglRenderer::BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-        if (GEngine.GetRenderer()->viewport[0] == 0 ||GEngine.GetRenderer()->viewport[1] == 0) {
+        if (GEngine->GetRenderer()->viewport[0] == 0 ||GEngine->GetRenderer()->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x = static_cast<float>(GEngine.GetRenderer()->viewport[0]) / static_cast<float>(GEngine.Window.width);
-        float scale_y = static_cast<float>(GEngine.GetRenderer()->viewport[1]) / static_cast<float>(GEngine.Window.height);
+        float scale_x = static_cast<float>(GEngine->GetRenderer()->viewport[0]) / static_cast<float>(GEngine->Window.width);
+        float scale_y = static_cast<float>(GEngine->GetRenderer()->viewport[1]) / static_cast<float>(GEngine->Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
@@ -550,16 +550,16 @@ void OpenglRenderer::BeginCanvas() {
 
     const float scale_factor = calculate_scale_factor();
 
-    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine.Window.width * scale_factor,
-                                            (float) GEngine.Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine->Window.width * scale_factor,
+                                            (float) GEngine->Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
-    Shader* shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
     shader->SetValue("View", view);
     shader->SetValue("Projection", projection);
 
-    Shader* text_shader = GEngine.GetRenderer()->GetDefaultShader();
+    Shader* text_shader = GEngine->GetRenderer()->GetDefaultShader();
     text_shader->SetValue("View", view);
     text_shader->SetValue("Projection", projection);
 

@@ -25,7 +25,9 @@ public:
     @param file_Path Path to the audio file
 
     @version 0.0.3
-    @return Audio allocated audio memory struct
+
+
+     * * @return Audio allocated audio memory struct
     */
     static Audio* Load(const std::string& file_Path);
 
@@ -37,11 +39,13 @@ public:
     @param vol Audio volume from 0.0 to 1.0
 
     @version 0.0.3
-    @return void
+ @return
+
+     * * void
     */
     void SetVolume(float vol);
 
-        /*!
+    /*!
 
         @brief Pause audio and fade out
 
@@ -69,7 +73,9 @@ public:
     /*!
 
     @brief Unload Audio allocated memory
-    - Manually clear allocated audio or at the end will be freed automatically
+    - Manually clear allocated audio or at the end will be freed
+
+     * * automatically
 
     @see CloseAudio
 
@@ -79,12 +85,14 @@ public:
     */
     void Destroy();
 
-private:
+    Audio(const Audio&)      = delete;
+    Audio& operator=(Audio&) = delete;
+    Audio(Audio&&)           = delete;
 
+private:
     ma_decoder* decoder = nullptr;
     ma_sound sound{};
 };
-
 
 
 /*!
@@ -107,13 +115,15 @@ bool InitAudio();
 */
 void CloseAudio();
 
-    /*!
+/*!
 
     @brief Change the [audio engine] global volume
 
     @param volume Audio volume from [0.0f -> 1.f] 
 
-    @version 0.0.3
+ @version
+
+ * * 0.0.3
     @return void
 */
 void Audio_SetMasterVolume(float volume);
