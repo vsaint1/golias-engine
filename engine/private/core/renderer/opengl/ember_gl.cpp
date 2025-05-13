@@ -56,8 +56,8 @@ void OpenglRenderer::BeginDrawing() {
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    const glm::mat4 projection =
-        glm::ortho(0.0f, (float) GEngine->GetRenderer()->viewport[0], (float) GEngine->GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine->GetRenderer()->viewport[0],
+                                            (float) GEngine->GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
@@ -132,8 +132,8 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
         LOG_INFO(" > Num. Channels %d", channels);
     }
 
-    texture.id  = texId;
-    texture.width = w;
+    texture.id     = texId;
+    texture.width  = w;
     texture.height = h;
     return texture;
 }
@@ -262,8 +262,9 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
 }
 
 
-void DrawTextInternal(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
-                      float kerning) {
+void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
+                              float font_size, float kerning) {
+
 
     if (text.empty() || !font.IsValid()) {
         return;
@@ -275,11 +276,20 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
+    // TODO: get the parameters dynamically
+
+    glm::vec2 pixel_offset = glm::vec2(0.f);
+    glm::vec2 uv_offset    = pixel_offset / glm::vec2(font.texture.width, font.texture.height);
 
     Shader* shader = GEngine->GetRenderer()->GetTextShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
+    shader->SetValue("ShadowColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    shader->SetValue("ShadowOffset", uv_offset);
+
+    shader->SetValue("OutlineColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    shader->SetValue("OutlineThickness", 0.0f);
 
     const glm::mat4 model = transform.GetModelMatrix2D();
 
@@ -305,7 +315,7 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
             continue;
         }
 
-        if (font.glyphs.find(c) == font.glyphs.end()) {
+        if (!font.glyphs.contains(c)) {
             continue;
         }
 
@@ -352,12 +362,6 @@ void DrawTextInternal(const Font& font, const std::string& text, Transform trans
     glDepthMask(GL_FALSE);
     mesh.Draw(GL_TRIANGLES);
     glDepthMask(GL_TRUE);
-}
-
-void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
-                              float font_size, float kerning) {
-
-    DrawTextInternal(font, text, transform, color, font_size, kerning);
 }
 
 
@@ -541,12 +545,14 @@ void OpenglRenderer::EndMode2D() {
 void OpenglRenderer::BeginCanvas() {
 
     auto calculate_scale_factor = []() -> const float {
-        if (GEngine->GetRenderer()->viewport[0] == 0 ||GEngine->GetRenderer()->viewport[1] == 0) {
+        if (GEngine->GetRenderer()->viewport[0] == 0 || GEngine->GetRenderer()->viewport[1] == 0) {
             return 1.0f;
         }
 
-        float scale_x = static_cast<float>(GEngine->GetRenderer()->viewport[0]) / static_cast<float>(GEngine->Window.width);
-        float scale_y = static_cast<float>(GEngine->GetRenderer()->viewport[1]) / static_cast<float>(GEngine->Window.height);
+        float scale_x =
+            static_cast<float>(GEngine->GetRenderer()->viewport[0]) / static_cast<float>(GEngine->Window.width);
+        float scale_y =
+            static_cast<float>(GEngine->GetRenderer()->viewport[1]) / static_cast<float>(GEngine->Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;

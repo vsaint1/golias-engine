@@ -24,7 +24,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     camera.transform.rotation = glm::vec3(0.f);
 
     // assets in examples/assets
-    mine_font = GEngine->GetRenderer()->LoadFont("fonts/Minecraft.ttf", 16);
+    mine_font = GEngine->GetRenderer()->LoadFont("fonts/Minecraft.ttf", 32);
 
     player_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_001.png");
 
@@ -220,7 +220,7 @@ SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
 
     GEngine->GetInputManager()->ProcessEvents(event);
 
-    auto pKey = SDL_GetKeyboardState(0);
+    auto pKey = SDL_GetKeyboardState(nullptr);
 
     if (pKey[SDL_SCANCODE_ESCAPE] || event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
