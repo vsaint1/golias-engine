@@ -124,7 +124,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
 
     SDL_SetWindowFullscreen(_window, true);
-    core.Window.bFullscreen = true;
+    GEngine->Window.bFullscreen = true;
 
 #endif
 
@@ -149,7 +149,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
     this->Window.width  = width;
     this->Window.height = height;
-   this->Window.title  = _title;
+    this->Window.title  = _title;
     this->renderer_->type = type;
 
     if (type == RendererType::OPENGL) {
