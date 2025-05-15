@@ -16,7 +16,8 @@ Camera2D camera = Camera2D(480, 270);
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
-    if (!GEngine->Initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->Initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL,
+                             SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
@@ -67,6 +68,18 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     static glm::ivec3 position = {200, 300, 0};
 
     static Transform transform = {
+        glm::vec3(300.f, 100.f, 0.f),
+        glm::vec3(0.f),
+        glm::vec3(1.f),
+    };
+
+    static Transform transform2 = {
+        glm::vec3(650.f, 350.f, 0.f),
+        glm::vec3(0.f),
+        glm::vec3(1.f),
+    };
+
+    static Transform transform3 = {
         glm::vec3(500.f, 295.f, 0.f),
         glm::vec3(0.f),
         glm::vec3(1.f),
@@ -80,16 +93,26 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
                                               {255, 255, 255, 255});
     }
 
+    GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, {0, 0, 0, 255}, 16.f, {});
 
-    // BeginMode2D(camera);
+    GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform2,
+                                     {255, 255, 255, 255}, 20.f,
+                                     {.Outline = {
+                                          .bEnabled  = true,
+                                          .color     = Color(255, 0, 0, 255).GetNormalizedColor(),
+                                          .thickness = 0.35f,
+                                      }});
 
+    GEngine->GetRenderer()->DrawText(mine_font, "Hello world", transform3, text_color, 32.f,
+                                     {
+                                         .Shadow =
+                                             {
+                                                 .bEnabled     = true,
+                                                 .color        = Color(255, 0, 0, 255).GetNormalizedColor(),
+                                                 .pixel_offset = glm::vec2(-2.f, -4.f),
 
-    // EndMode2D();
-
-    // BeginCanvas();
-    GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, text_color);
-
-    // DrawText(mine_font, gui_text, transform, text_color, 0.0f);
+                                             },
+                                     });
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
@@ -205,11 +228,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         ImGui::End();
     }
 
-
-    // EndCanvas();
-
     GEngine->GetRenderer()->EndDrawing();
-
 
     GEngine->GetTimeManager()->FixedFrameRate();
 
