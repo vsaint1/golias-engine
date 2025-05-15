@@ -53,27 +53,6 @@ private:
     
 };
 
-// Default shader only
-struct ShaderEffect {
-    struct Shadow_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        glm::vec2 offset{};
-    };
-
-    struct Outline_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        float thickness = 1.0f;
-    };
-
-    struct Glow_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        float strength = 1.0f;
-        float radius   = 1.0f;
-    };
-};
 
 template <typename T>
 inline T OpenglShader::GetValue(const std::string& name) {

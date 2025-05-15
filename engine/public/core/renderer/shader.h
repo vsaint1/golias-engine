@@ -1,6 +1,27 @@
 #pragma once
 #include "core/io/file_system.h"
 
+
+class ShaderEffect {
+public:
+    struct {
+        bool bEnabled = false;
+        glm::vec4 color = glm::vec4(1.0f);
+        float thickness = 0.0f;
+    } Outline;
+
+    struct {
+        bool bEnabled = false;
+        glm::vec4 color        = glm::vec4(1.0f);
+        glm::vec2 pixel_offset = glm::vec2(0.0f);
+    } Shadow;
+
+    struct {
+        bool bEnabled = false;
+    } Glow;
+};
+
+
 /*!
 
     @brief Shader Abstract class
@@ -8,7 +29,10 @@
     - Bind the shader
     - Send uniforms
 
-    @version 0.0.2
+    @version
+
+
+ * * * 0.0.2
     @param string vertex The shader source
     @param string fragment The shader source
 */
