@@ -20,8 +20,6 @@
 #include "core/system_info.h"
 
 
-
-
 /*!
     @brief Renderer struct
 
@@ -49,6 +47,7 @@ struct Renderer {
    @see Texture
 
 
+     *
      * @version
 
 
@@ -57,9 +56,10 @@ struct Renderer {
  * * 0.0.1
    @param file_path the path to the file in `assets` folder
    @return
+     *
      * Texture
 */
-   virtual Texture LoadTexture(const std::string& file_path) = 0;
+    virtual Texture LoadTexture(const std::string& file_path) = 0;
 
     /*!
 
@@ -70,7 +70,8 @@ struct Renderer {
    @version 0.0.1
 
      *
-     * @param
+
+     * * @param
 
 
  * * *
@@ -86,10 +87,11 @@ struct Renderer {
 
    @version 0.0.9
    @param font The loaded Font
-   @return
+ @return
 
 
-     * * *
+
+     * * * *
 
  * *
  * void
@@ -104,8 +106,9 @@ struct Renderer {
    @version 0.0.1
    @param texture The loaded Texture
 
-     *
-     * @return
+ *
+
+     * * @return
 
 
 
@@ -131,7 +134,8 @@ struct Renderer {
     - Clear the background and start drawing
     - Draw between
 
-     * *
+
+     * * *
 
      * *
 
@@ -139,10 +143,11 @@ struct Renderer {
     - Orthographic projection
     - Ordered rendering
 
-    Usage:
+ Usage:
 
 
-     * * BeginDrawing();
+
+     * * * BeginDrawing();
 
 
 
@@ -152,7 +157,8 @@ struct Renderer {
 
     EndDrawing();
 
-   @version 0.0.1
+   @version
+     * 0.0.1
 
 
      * * @return void
@@ -181,13 +187,16 @@ struct Renderer {
  @version
 
 
-     * * *
+
+     * * * *
 
 
  * * * 0.0.1
    @param font The loaded Font `TTF`
    @param text The text to draw, can be dynamic
    @param transform
+ @param
+     * transform
  @param
 
      * * transform
@@ -197,7 +206,9 @@ struct Renderer {
  * transform
    @param color Color in RGBA
    @param font_size
-   @param kerning
+   @param shader_effect add glow/outline/shadow effects to the text
+   @param kerning spacing between
+     * letters
      *
      * <optional> Kerning (spacing between
  * characters)
@@ -207,8 +218,8 @@ struct Renderer {
  * * void
 
 */
-    virtual void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f,
-                  float kerning = 0.0f) = 0;
+    virtual void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
+                          ShaderEffect shader_effect, float kerning = 0.0f) = 0;
 
     /*!
 
@@ -217,8 +228,9 @@ struct Renderer {
 
    @version 0.0.1
    @param
-     *
-     * texture
+ *
+
+     * * texture
 
 
  * * *
@@ -226,7 +238,8 @@ struct Renderer {
    @param texture
    @param rect The source rectangle
    @param color
-     * Color in RGBA
+
+     * * Color in RGBA
  @return
      * void
 
@@ -241,20 +254,23 @@ struct Renderer {
 
  *
 
-     * * @version
+
+     * * * @version
 
 
  * * * 0.0.1
    @param texture The loaded Texture
    @param rect The source Rectangle
    @param
-     * dest
+
+     * * dest
      * The
  * destination
  *
 
  * * Rectangle
-   @param origin The origin point (texture origin e.g center)
+   @param origin The origin point (texture origin e.g
+     * center)
 
      * @param rotation
    @param
@@ -263,7 +279,8 @@ struct Renderer {
  *
  *
  * (radians)
-   @param color Color in RGBA
+   @param
+     * color Color in RGBA
 
      * @return void
 
@@ -278,7 +295,8 @@ struct Renderer {
    @version 0.0.1
    @param start vec2 start point
    @param end
-     * vec2
+
+     * * vec2
 
      * *
  * end
@@ -286,7 +304,8 @@ struct Renderer {
  * * point
    @param color Color in RGBA
    @param thickness float Line thickness
- @return
+
+     * @return
      * void
 
 */
@@ -300,7 +319,8 @@ struct Renderer {
    @param rect rectangle source
    @param color Color in RGBA
    @param thickness
- *
+
+     * *
 
      * * float
 
@@ -323,7 +343,8 @@ struct Renderer {
    @return
  *
 
-     * * void
+
+     * * * void
 
 
 
@@ -344,7 +365,8 @@ struct Renderer {
 
    // Drawing
 
-     * *
+
+     * * *
      * with
 
 
@@ -353,7 +375,8 @@ struct Renderer {
    EndMode2D();
 
    @version 0.0.2
-   @param camera the camera 2D
+   @param camera the camera
+     * 2D
 
      * * (view_matrix)
 
@@ -401,7 +424,8 @@ struct Renderer {
 
    @return
 
-     * * void
+ * *
+     * void
 
 */
     virtual void EndCanvas() = 0;
@@ -424,9 +448,3 @@ struct Renderer {
 
     virtual void Destroy() = 0;
 };
-
-
-
-
-
-

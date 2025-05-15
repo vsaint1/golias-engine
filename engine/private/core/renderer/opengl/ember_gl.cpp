@@ -261,9 +261,8 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
     return font;
 }
 
-
 void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
-                              float font_size, float kerning) {
+                              float font_size, ShaderEffect shader_effect, float kerning) {
 
 
     if (text.empty() || !font.IsValid()) {
@@ -271,25 +270,39 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
     }
 
 
-    kerning = 0.0f; // TODO: fix kerning
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
     // TODO: get the parameters dynamically
 
-    glm::vec2 pixel_offset = glm::vec2(0.f);
-    glm::vec2 uv_offset    = pixel_offset / glm::vec2(font.texture.width, font.texture.height);
 
     Shader* shader = GEngine->GetRenderer()->GetTextShader();
     shader->Bind();
 
     shader->SetValue("Color", color.GetNormalizedColor());
-    shader->SetValue("ShadowColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    shader->SetValue("ShadowOffset", uv_offset);
 
-    shader->SetValue("OutlineColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    shader->SetValue("OutlineThickness", 0.0f);
+    if (shader_effect.Shadow.bEnabled) {
+
+        glm::vec2 uv_offset = shader_effect.Shadow.pixel_offset / glm::vec2(font.texture.width, font.texture.height);
+        shader->SetValue("shadow.enabled", shader_effect.Shadow.bEnabled);
+        shader->SetValue("shadow.color", shader_effect.Shadow.color);
+        shader->SetValue("shadow.uv_offset", uv_offset);
+    }else {
+        shader->SetValue("shadow.enabled", false);
+    }
+
+    if (shader_effect.Outline.bEnabled) {
+
+        shader->SetValue("outline.enabled", shader_effect.Outline.bEnabled);
+        shader->SetValue("outline.color", shader_effect.Outline.color);
+        shader->SetValue("outline.thickness", shader_effect.Outline.thickness);
+    } else {
+        shader->SetValue("outline.enabled", false);
+    }
+
+    // TODO: add glow effect
+    if (shader_effect.Glow.bEnabled) {
+    }
 
     const glm::mat4 model = transform.GetModelMatrix2D();
 
