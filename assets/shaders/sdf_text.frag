@@ -16,7 +16,8 @@ struct Outline {
     float thickness;
 };
 
-struct Glow{
+// TODO: implement
+struct Glow {
     bool enabled;
 };
 
