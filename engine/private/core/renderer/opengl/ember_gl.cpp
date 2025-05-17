@@ -81,7 +81,7 @@ void OpenglRenderer::EndDrawing() {
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     Texture texture{};
-    int w, h, channels;
+    int w = 0, h = 0, channels = 4;
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -104,7 +104,7 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
                     bool is_pink = ((x / 8) % 2) == ((y / 8) % 2);
 
                     data[i + 0] = is_pink ? 180 : 0;
-                    data[i + 1] = is_pink ? 0 : 0;
+                    data[i + 1] = 0;
                     data[i + 2] = is_pink ? 180 : 0;
                     data[i + 3] = 255;
                 }
@@ -225,7 +225,7 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
     unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
 
     for (int i = 0; i < atlas_w * atlas_h; i++) {
-        unsigned char value    = bitmap_buffer[i];
+        const unsigned char value    = bitmap_buffer[i];
         rgba_buffer[i * 4 + 0] = value;
         rgba_buffer[i * 4 + 1] = value;
         rgba_buffer[i * 4 + 2] = value;
@@ -269,12 +269,8 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
         return;
     }
 
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-
-    // TODO: get the parameters dynamically
-
 
     Shader* shader = GEngine->GetRenderer()->GetTextShader();
     shader->Bind();
@@ -316,7 +312,7 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
     float start_x  = cursor_x;
 
     std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::vector<Uint32> indices;
 
     uint32_t index_offset = 0;
 
@@ -343,12 +339,6 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
         float v0 = g.y0;
         float u1 = g.x1;
         float v1 = g.y1;
-
-        glm::vec3 scale = transform.scale;
-        float scaledX0  = x0 * scale.x;
-        float scaledY0  = y0 * scale.y;
-        float scaledX1  = x1 * scale.x;
-        float scaledY1  = y1 * scale.y;
 
         vertices.push_back({glm::vec3(x0, y0, 0.0f), glm::vec2(u0, v0)}); // TL
         vertices.push_back({glm::vec3(x1, y0, 0.0f), glm::vec2(u1, v0)}); // TR
@@ -446,7 +436,8 @@ void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangl
     shader->SetValue("Model", model);
 
     const float flipY            = -1.0f;
-    std::vector<Vertex> vertices = {
+
+    const std::vector<Vertex> vertices = {
         {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
         {{1.0f, 0.0f, 0.0f}, {texRight, flipY - texTop}},
         {{1.0f, 1.0f, 0.0f}, {texRight, flipY - texBottom}},
@@ -472,7 +463,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
 
     shader->SetValue("Model", glm::mat4(1.0f));
 
-    std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
+    const std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
                                     {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
     mesh.Update(vertices);
 
@@ -491,7 +482,7 @@ void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, 
 
     shader->SetValue("Model", glm::mat4(1.0f));
 
-    std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
+    const std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
                                     {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
                                     {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
                                     {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
@@ -511,12 +502,11 @@ void OpenglRenderer::DrawRectFilled(const ember::Rectangle& rect, const Color& c
 
     Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
 
-
     shader->SetValue("Color", color.GetNormalizedColor());
 
     shader->SetValue("Model", model);
 
-    std::vector<Vertex> vertices = {
+    const std::vector<Vertex> vertices = {
         {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
         {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
         {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
@@ -557,7 +547,7 @@ void OpenglRenderer::EndMode2D() {
 
 void OpenglRenderer::BeginCanvas() {
 
-    auto calculate_scale_factor = []() -> const float {
+    auto calculate_scale_factor = []() ->  float {
         if (GEngine->GetRenderer()->viewport[0] == 0 || GEngine->GetRenderer()->viewport[1] == 0) {
             return 1.0f;
         }
@@ -573,8 +563,8 @@ void OpenglRenderer::BeginCanvas() {
 
     const float scale_factor = calculate_scale_factor();
 
-    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine->Window.width * scale_factor,
-                                            (float) GEngine->Window.height * scale_factor, 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->Window.width) * scale_factor,
+                                            static_cast<float>(GEngine->Window.height) * scale_factor, 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
