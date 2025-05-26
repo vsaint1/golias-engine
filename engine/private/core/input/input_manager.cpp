@@ -2,6 +2,12 @@
 
 void InputManager::ProcessEvents(const SDL_Event* pEvent) {
 
+
+    // Simple check but this may never fail
+    if (!pEvent ) {
+        return;
+    }
+
     const SDL_Event& event = *pEvent;
     ImGui_ImplSDL3_ProcessEvent(&event);
 
@@ -28,6 +34,7 @@ void InputManager::ProcessEvents(const SDL_Event* pEvent) {
             case SDLK_RETURN:
                 textInputEvt.text += '\n';
                 break;
+            default:;
             }
         } else {
             if (!textInputEvt.text.empty()) {

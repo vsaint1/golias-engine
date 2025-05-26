@@ -547,6 +547,7 @@ void OpenglRenderer::EndMode2D() {
 
 void OpenglRenderer::BeginCanvas() {
 
+    // TODO: refactor this fn
     auto calculate_scale_factor = []() ->  float {
         if (GEngine->GetRenderer()->viewport[0] == 0 || GEngine->GetRenderer()->viewport[1] == 0) {
             return 1.0f;
