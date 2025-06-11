@@ -313,7 +313,6 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
 
     std::vector<Vertex> vertices;
     std::vector<Uint32> indices;
-
     uint32_t index_offset = 0;
 
     for (char c : text) {
@@ -360,7 +359,7 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
 
     static Mesh mesh(vertices, indices);
 
-    mesh.Update(vertices);
+    mesh.Update(vertices,indices);
 
     glDepthMask(GL_FALSE);
     mesh.Draw(GL_TRIANGLES);
