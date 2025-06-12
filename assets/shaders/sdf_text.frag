@@ -4,6 +4,24 @@ out vec4 FragColor;
 uniform sampler2D Texture;
 uniform vec4 Color;
 
+// TODO: instead of changing 1 by 1 send the UBO instead
+layout(std140) uniform TextEffect {
+    // SHADOW
+    int  shadow_enabled;
+    vec4 shadow_color;
+    vec2 shadow_uv_offset;
+
+    // OUTLINE
+    int outline_enabled;
+    vec4 outline_color;
+    float outline_thickness;
+
+    // GLOW
+    int glow_enabled;
+    vec4 glow_color;
+    vec2 glow_uv_offset;
+};
+
 struct Shadow {
     bool enabled;
     vec4 color;
