@@ -66,7 +66,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
 #pragma endregion
 
-    Debug::Start();
+    Logger::Start();
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -128,9 +128,9 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
 #endif
 
-    this->renderer_ = CreateRenderer(_window, bbWidth, bbHeight, type);
+    this->_renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
 
-    if (!this->renderer_) {
+    if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
         return false;
     }
@@ -150,7 +150,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
     this->Window.width  = width;
     this->Window.height = height;
     this->Window.title  = _title;
-    this->renderer_->type = type;
+    this->_renderer->type = type;
 
     if (type == RendererType::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
@@ -161,8 +161,8 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
         // TODO
     }
 
-    this->time_manager_  = new TimeManager();
-    this->input_manager_ = new InputManager(_window);
+    this->_time_manager  = new TimeManager();
+    this->_input_manager = new InputManager(_window);
 
     return true;
 }
@@ -170,16 +170,17 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
 void Engine::Shutdown() {
 
-    this->renderer_->Destroy();
+    this->_renderer->Destroy();
 
-    delete this->input_manager_;
-    delete this->time_manager_;
+    delete this->_input_manager;
+
+    delete this->_time_manager;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    Debug::Destroy();
+    Logger::Destroy();
 
     CloseAudio();
 
@@ -195,14 +196,14 @@ void Engine::ResizeWindow(int w, int h) const {
 }
 
 Renderer* Engine::GetRenderer() const {
-    return renderer_;
+    return _renderer;
 }
 InputManager* Engine::GetInputManager() const {
-    return input_manager_;
+    return _input_manager;
 }
 
 TimeManager* Engine::GetTimeManager() const {
-    return time_manager_;
+    return _time_manager;
 }
 Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
@@ -289,7 +290,7 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
 
     SDL_ShowWindow(window);
 
-    this->renderer_ = glRenderer;
+    this->_renderer = glRenderer;
 
-    return this->renderer_;
+    return this->_renderer;
 }

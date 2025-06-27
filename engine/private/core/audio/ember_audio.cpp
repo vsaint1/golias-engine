@@ -45,7 +45,7 @@ bool InitAudio() {
 
     ma_engine_set_volume(&audio_engine, GEngine->Audio.global_volume);
 
-    res = Ember_Init_VFS(&GEngine->ember_vfs);
+    res = Ember_Init_VFS(&GEngine->VirtualFileSystem);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engineVFS %d", res);
         return false;
@@ -75,7 +75,8 @@ Audio* Audio::Load(const std::string& file_Path) {
         return nullptr;
     }
 
-    ma_result res = ma_decoder_init_vfs(&GEngine->ember_vfs, path.c_str(), &decoder_config, decoder);
+
+    ma_result res = ma_decoder_init_vfs(&GEngine->VirtualFileSystem, path.c_str(), &decoder_config, decoder);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to decode sound file %s, error: %d", path.c_str(), res);
         SDL_free(decoder);

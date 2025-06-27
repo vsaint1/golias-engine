@@ -49,7 +49,7 @@ class Engine {
         float global_volume = 1.f;
     } Audio;
 
-    Ember_VFS ember_vfs{};
+    Ember_VFS VirtualFileSystem{};
 
     void ResizeWindow(int w, int h) const;
 
@@ -120,10 +120,11 @@ class Engine {
 */
     Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type);
 
+
 private:
-    Renderer* renderer_ = nullptr;
-    InputManager* input_manager_ = nullptr;
-    TimeManager* time_manager_   = nullptr;
+    Renderer* _renderer = nullptr;
+    InputManager* _input_manager = nullptr;
+    TimeManager* _time_manager   = nullptr;
 
     /*!
         @brief Create a renderer instance internally
