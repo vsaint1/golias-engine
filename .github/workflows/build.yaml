@@ -37,28 +37,28 @@ jobs:
       - name: Configure emscripten and run preset
         run: |
           source emsdk/emsdk_env.sh
-          emcmake cmake --preset=web
+          emcmake cmake --preset=web-debug
 
       - name: Build emscripten
         run: |
           source emsdk/emsdk_env.sh
-          emmake cmake --build build/webgl
+          emmake cmake --build build/webgl/debug
 
 
-  # windows-msvc:
-  #   runs-on: windows-2022
-  #   needs: linux-webgl
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v3
+  windows-msvc:
+     runs-on: windows-2022
+     needs: linux-webgl
+     steps:
+       - name: Checkout repository
+         uses: actions/checkout@v3
 
-  #     - name: Configure MSVC
-  #       uses: ilammy/msvc-dev-cmd@v1
+       - name: Configure MSVC
+         uses: ilammy/msvc-dev-cmd@v1
 
-  #     - name: Run preset
-  #       run: cmake --preset=rel-windows
+       - name: Run preset
+         run: cmake --preset=windows-debug
 
-  #     - name: Build (Windows)
-  #       run: cmake --build build/windows --config Release
+       - name: Build windows
+         run: cmake --build build/windows/debug --config Release
 
   
