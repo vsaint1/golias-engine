@@ -47,13 +47,15 @@ jobs:
 
   windows-msvc:
      runs-on: windows-2022
-     needs: linux-webgl
      steps:
        - name: Checkout repository
          uses: actions/checkout@v3
 
        - name: Configure MSVC
          uses: ilammy/msvc-dev-cmd@v1
+
+       - name: Update submodules
+         run:  git submodule update --init --recursive
 
        - name: Run preset
          run: cmake --preset=windows-debug
