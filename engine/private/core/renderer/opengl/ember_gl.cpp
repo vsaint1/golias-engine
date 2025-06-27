@@ -36,10 +36,13 @@ void OpenglRenderer::Destroy() {
     SDL_DestroyWindow(window);
 
     delete default_shader;
+    default_shader = nullptr;
 
     delete text_shader;
+    text_shader = nullptr;
 
     delete this;
+   
 }
 
 
@@ -78,6 +81,7 @@ void OpenglRenderer::EndDrawing() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     SDL_GL_SwapWindow(GEngine->GetRenderer()->window);
 }
+
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     Texture texture{};
@@ -121,8 +125,11 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
     glGenerateMipmap(GL_TEXTURE_2D);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     stbi_image_free(data);
 
@@ -225,11 +232,11 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
     unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
 
     for (int i = 0; i < atlas_w * atlas_h; i++) {
-        const unsigned char value    = bitmap_buffer[i];
-        rgba_buffer[i * 4 + 0] = value;
-        rgba_buffer[i * 4 + 1] = value;
-        rgba_buffer[i * 4 + 2] = value;
-        rgba_buffer[i * 4 + 3] = value;
+        const unsigned char value = bitmap_buffer[i];
+        rgba_buffer[i * 4 + 0]    = value;
+        rgba_buffer[i * 4 + 1]    = value;
+        rgba_buffer[i * 4 + 2]    = value;
+        rgba_buffer[i * 4 + 3]    = value;
     }
 
     glGenTextures(1, &font.texture.id);
@@ -262,7 +269,7 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
 }
 
 void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
-                              float font_size, ShaderEffect shader_effect, float kerning) {
+                              float font_size, const ShaderEffect& shader_effect, float kerning) {
 
 
     if (text.empty() || !font.IsValid()) {
@@ -283,7 +290,7 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
         shader->SetValue("shadow.enabled", shader_effect.Shadow.bEnabled);
         shader->SetValue("shadow.color", shader_effect.Shadow.color);
         shader->SetValue("shadow.uv_offset", uv_offset);
-    }else {
+    } else {
         shader->SetValue("shadow.enabled", false);
     }
 
@@ -313,6 +320,10 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
 
     std::vector<Vertex> vertices;
     std::vector<Uint32> indices;
+   
+    vertices.clear();
+    indices.clear();
+
     uint32_t index_offset = 0;
 
     for (char c : text) {
@@ -359,7 +370,7 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
 
     static Mesh mesh(vertices, indices);
 
-    mesh.Update(vertices,indices);
+    mesh.Update(vertices, indices);
 
     glDepthMask(GL_FALSE);
     mesh.Draw(GL_TRIANGLES);
@@ -434,7 +445,7 @@ void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangl
 
     shader->SetValue("Model", model);
 
-    const float flipY            = -1.0f;
+    const float flipY = -1.0f;
 
     const std::vector<Vertex> vertices = {
         {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
@@ -463,7 +474,7 @@ void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color
     shader->SetValue("Model", glm::mat4(1.0f));
 
     const std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                                    {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
+                                          {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
     mesh.Update(vertices);
 
     glLineWidth(thickness);
@@ -482,9 +493,9 @@ void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, 
     shader->SetValue("Model", glm::mat4(1.0f));
 
     const std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                    {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                    {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
-                                    {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
+                                          {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
+                                          {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
+                                          {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
 
     mesh.Update(vertices);
 
@@ -547,7 +558,7 @@ void OpenglRenderer::EndMode2D() {
 void OpenglRenderer::BeginCanvas() {
 
     // TODO: refactor this fn
-    auto calculate_scale_factor = []() ->  float {
+    auto calculate_scale_factor = []() -> float {
         if (GEngine->GetRenderer()->viewport[0] == 0 || GEngine->GetRenderer()->viewport[1] == 0) {
             return 1.0f;
         }
@@ -563,8 +574,9 @@ void OpenglRenderer::BeginCanvas() {
 
     const float scale_factor = calculate_scale_factor();
 
-    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->Window.width) * scale_factor,
-                                            static_cast<float>(GEngine->Window.height) * scale_factor, 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection =
+        glm::ortho(0.0f, static_cast<float>(GEngine->Window.width) * scale_factor,
+                   static_cast<float>(GEngine->Window.height) * scale_factor, 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 

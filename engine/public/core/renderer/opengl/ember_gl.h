@@ -37,7 +37,7 @@ public:
 
     void EndDrawing() override;
 
-    void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size, ShaderEffect shader_effect = {},
+    void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size, const ShaderEffect& shader_effect = {},
                   float kerning = 0.0f) override;
 
     void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) override;
