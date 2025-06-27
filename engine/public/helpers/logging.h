@@ -23,10 +23,10 @@
    @version 0.0.9
 
 */
-class Debug {
+class Logger {
 public:
-    static Debug& Get() {
-        static Debug instance;
+    static Logger& Get() {
+        static Logger instance;
         return instance;
     }
 
@@ -37,8 +37,8 @@ public:
     static void Destroy();
 
 private:
-    Debug()  = default;
-    ~Debug() = default;
+    Logger()  = default;
+    ~Logger() = default;
 
     void LogThread();
 
@@ -64,7 +64,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -79,7 +79,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -94,7 +94,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -109,7 +109,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);       \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -124,7 +124,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -139,7 +139,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -154,7 +154,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);      \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!

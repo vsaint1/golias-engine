@@ -1,6 +1,6 @@
 #include "helpers/logging.h"
 
-void Debug::Start() {
+void Logger::Start() {
     auto& debug = Get();
 
     if (debug.log_thread) {
@@ -8,7 +8,7 @@ void Debug::Start() {
     }
 
     auto fn_thread = [](void* data) -> int {
-        static_cast<Debug*>(data)->LogThread();
+        static_cast<Logger*>(data)->LogThread();
         return 0;
     };
 
@@ -16,14 +16,14 @@ void Debug::Start() {
     debug.log_thread = SDL_CreateThread(fn_thread, "LogThread", &debug);
 }
 
-void Debug::Push(const std::string& formatted_log) {
+void Logger::Push(const std::string& formatted_log) {
 
     std::lock_guard<std::mutex> lock(mutex);
     log_queue.push_back(formatted_log);
     cond.notify_all();
 }
 
-void Debug::Destroy() {
+void Logger::Destroy() {
     auto& debug = Get();
 
     debug.mutex.lock();
@@ -40,7 +40,7 @@ void Debug::Destroy() {
 }
 
 
-void Debug::LogThread() {
+void Logger::LogThread() {
 
     // TODO: Get from config file
     char* pref_path = SDL_GetPrefPath("Ember", "com.emberengine.app");
