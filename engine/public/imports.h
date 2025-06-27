@@ -30,6 +30,9 @@
 
 #include <mutex>
 
+#include <condition_variable>
+#include <atomic>
+
 #if __ANDROID__
 const std::filesystem::path BASE_PATH = "";
 #define ASSETS_PATH std::string("")
