@@ -16,10 +16,12 @@ Camera2D camera = Camera2D(480, 270);
 
 SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
 
+
     if (!GEngine->Initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL,
                              SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
+
 
     camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
     camera.transform.rotation = glm::vec3(0.f);
@@ -47,10 +49,11 @@ Lorem Ipsum is simply dummy text of the printing and typesetting industry.
 Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
 when an unknown printer took a galley of type and scrambled it to make a type specimen book.
 It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.
-It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
+It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages,
 and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
 
 )";
+
 Color text_color     = {255, 255, 255, 255};
 
 int entities = 0;
@@ -86,15 +89,15 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     };
 
     GEngine->GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
-
-
-    for (int i = 0; i < entities; i++) {
-        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
-                                              {255, 255, 255, 255});
-    }
-
+    //
+    //
+    // for (int i = 0; i < entities; i++) {
+    //     GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
+    //                                           {255, 255, 255, 255});
+    // }
+    //
     GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, {0, 0, 0, 255}, 16.f, {});
-
+    //
     GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform2,
                                      {255, 255, 255, 255}, 20.f,
                                      {.Outline = {
@@ -102,17 +105,17 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
                                           .color     = Color(255, 0, 0, 255).GetNormalizedColor(),
                                           .thickness = 0.35f,
                                       }});
-
-    GEngine->GetRenderer()->DrawText(mine_font, "Hello world", transform3, text_color, 32.f,
-                                     {
-                                         .Shadow =
-                                             {
-                                                 .bEnabled     = true,
-                                                 .color        = Color(255, 0, 0, 255).GetNormalizedColor(),
-                                                 .pixel_offset = glm::vec2(-2.f, -4.f),
-
-                                             },
-                                     });
+    //
+    // GEngine->GetRenderer()->DrawText(mine_font, "Hello world", transform3, text_color, 32.f,
+    //                                  {
+    //                                      .Shadow =
+    //                                          {
+    //                                              .bEnabled     = true,
+    //                                              .color        = Color(255, 0, 0, 255).GetNormalizedColor(),
+    //                                              .pixel_offset = glm::vec2(-2.f, -4.f),
+    //
+    //                                          },
+    //                                  });
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
@@ -230,7 +233,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     GEngine->GetRenderer()->EndDrawing();
 
-    GEngine->GetTimeManager()->FixedFrameRate();
+    // GEngine->GetTimeManager()->FixedFrameRate();
 
     return SDL_APP_CONTINUE;
 }

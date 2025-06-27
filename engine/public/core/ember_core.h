@@ -219,7 +219,7 @@ struct Renderer {
 
 */
     virtual void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
-                          ShaderEffect shader_effect, float kerning = 0.0f) = 0;
+                          const ShaderEffect& shader_effect, float kerning = 0.0f) = 0;
 
     /*!
 

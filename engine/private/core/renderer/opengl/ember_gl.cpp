@@ -275,7 +275,6 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
     if (text.empty() || !font.IsValid()) {
         return;
     }
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
@@ -320,7 +319,7 @@ void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transfo
 
     std::vector<Vertex> vertices;
     std::vector<Uint32> indices;
-   
+
     vertices.clear();
     indices.clear();
 
