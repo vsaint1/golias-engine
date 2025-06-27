@@ -89,15 +89,15 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     };
 
     GEngine->GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
-    //
-    //
-    // for (int i = 0; i < entities; i++) {
-    //     GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
-    //                                           {255, 255, 255, 255});
-    // }
-    //
+
+
+    for (int i = 0; i < entities; i++) {
+        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
+                                              {255, 255, 255, 255});
+    }
+
     GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, {0, 0, 0, 255}, 16.f, {});
-    //
+
     GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform2,
                                      {255, 255, 255, 255}, 20.f,
                                      {.Outline = {

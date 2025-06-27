@@ -4,6 +4,8 @@ out vec4 FragColor;
 uniform sampler2D Texture;
 uniform vec4 Color;
 
+
+
 // TODO: instead of changing 1 by 1 send the UBO instead
 layout(std140) uniform TextEffect {
     // SHADOW
@@ -23,20 +25,20 @@ layout(std140) uniform TextEffect {
 };
 
 struct Shadow {
-    bool enabled;
+    int enabled;
     vec4 color;
     vec2 uv_offset;
 };
 
 struct Outline {
-    bool enabled;
+    int enabled;
     vec4 color;
     float thickness;
 };
 
 // TODO: implement
 struct Glow {
-    bool enabled;
+    int enabled;
 };
 
 uniform Shadow shadow;
@@ -53,12 +55,13 @@ void main() {
 
     float alpha_outline = 0.0;
 
-    if (outline.enabled){
+    if (outline.enabled != 0){
         alpha_outline = smoothstep(0.5 - sdf_step - outline.thickness, 0.5 - sdf_step, distance);
     }
 
     float alpha_shadow = 0.0f;
-    if (shadow.enabled){
+
+    if (shadow.enabled != 0){
         float shadow_distance = texture(Texture, TexCoord + shadow.uv_offset).r;
         alpha_shadow = smoothstep(0.5 - sdf_step, 0.5 + sdf_step, shadow_distance);
     }
