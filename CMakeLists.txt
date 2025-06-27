@@ -55,13 +55,14 @@ add_subdirectory(vendor/glad)
 
 add_subdirectory(vendor/stb_image)
 
-add_subdirectory(vendor/stb_truetype)
-
 add_subdirectory(vendor/mini_audio)
+
+add_subdirectory(vendor/freetype)
 
 # [SDL] - removing unused modules
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+set(SDL_DIRECTX OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/tinyxml)
@@ -184,10 +185,7 @@ endif()
 # Windows [x86_x64/arm]
 if(MSVC)
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
-    endif()
+#   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
     file(GLOB_RECURSE WIN_FILES "engine/private/core/platform/windows/*.c")
 

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "imports.h"
-#include <stb_truetype.h>
+#include <freetype/freetype.h>
+#include  <freetype/ftstroke.h>
 
 
 // Core struct (engine stuff) - 0.0.1
@@ -12,6 +13,9 @@ typedef struct Texture {
     unsigned int id = 0;
     int width       = 0;
     int height      = 0;
+
+
+    Texture() = default;
 } Texture, Texture2D;
 
 // Windows API conflict
@@ -49,7 +53,6 @@ struct Glyph {
 
 struct Font {
     std::map<char, Glyph> glyphs{};
-    stbtt_fontinfo info;
     Texture texture;
     int font_size;
     float kerning = 0.0f;
@@ -57,6 +60,8 @@ struct Font {
     float scale;
 
     bool IsValid() const;
+
+    Font() = default;
 
 };
 

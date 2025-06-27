@@ -1,6 +1,6 @@
 #include "core/renderer/mesh.h"
 
-Mesh::Mesh() {
+Mesh::Mesh() : VAO(0), VBO(0), EBO(0) {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
@@ -13,7 +13,7 @@ Mesh::Mesh() {
     glBindVertexArray(0);
 }
 
-Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices)
+Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Uint32>& indices)
     : vertices(vertices), indices(indices), bIsDirty(true) {
     Setup();
 }
@@ -46,17 +46,32 @@ void Mesh::Draw(unsigned int mode) const {
     glBindVertexArray(0);
 }
 
-void Mesh::Update(const std::vector<Vertex>& new_vertices) {
-    if (new_vertices.size() != vertices.size()) {
+void Mesh::Update(const std::vector<Vertex>& new_vertices, const std::vector<Uint32>& new_indices) {
+    bool vertex_changed = (new_vertices.size() != vertices.size());
+    bool index_changed = (new_indices.size() != indices.size());
+
+    if (vertex_changed) {
         vertices = new_vertices;
-        bIsDirty = true;
     }
 
-    if (bIsDirty) {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-        bIsDirty = false;
+    if (index_changed) {
+        indices = new_indices;
     }
+
+    if (vertex_changed) {
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+    }
+
+    if (index_changed && !indices.empty()) {
+        if (EBO == 0) {
+            glGenBuffers(1, &EBO);
+        }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
+    }
+
+    bIsDirty = false;
 }
 
 void Mesh::Setup() {
@@ -70,7 +85,7 @@ void Mesh::Setup() {
 
     if (!indices.empty()) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
     }
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));

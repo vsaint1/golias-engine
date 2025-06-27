@@ -2,245 +2,68 @@
 
 #include "core/ember_core.h"
 
-
-/*!
-
-   @brief Load a texture on `GPU` given a file path
-   - Create a texture on `GPU`
-   @see Texture
-
-   @version 0.0.1
-   @param file_path the path to the file in `assets` folder
-   @return Texture
+/*
+   @brief Opengl Renderer implementation
+   - Opengl 3.3
+   - Opengl ES 3.0
 */
-Texture LoadTexture(const std::string& file_path);
+class OpenglRenderer final : public Renderer {
+public:
+    OpenglRenderer() = default;
 
-/*!
+    OpenglShader* GetDefaultShader() override;
 
-   @brief Load a `TTF` font on `GPU` given a file path
-   - Bake the font on `GPU`
+    OpenglShader* GetTextShader() override;
 
+    void Resize(int view_width, int view_height) override;
 
-   @version 0.0.1
-   @param file_path the path to the file in `assets` folder
-   @return Font
+    void SetContext(const void* ctx) override;
 
-*/
-Font LoadFont(const std::string& file_path, int font_size);
+    void* GetContext() override;
 
-/*!
+    void Destroy() override;
 
-   @brief Unload the Font from CPU/GPU (cleanup)
+    Texture LoadTexture(const std::string& file_path) override;
 
-   @version 0.0.9
-   @param font The loaded Font
-   @return void
+    Font LoadFont(const std::string& file_path, int font_size) override;
 
-*/
-void UnloadFont(const Font& font);
+    void UnloadFont(const Font& font) override;
 
-/*!
+    void UnloadTexture(const Texture& texture) override;
 
-   @brief Unload the Texture from GPU (cleanup)
+    void ClearBackground(const Color& color) override;
 
-   @version 0.0.1
-   @param texture The loaded Texture
-   @return void
+    void BeginDrawing() override;
 
-*/
-void UnloadTexture(const Texture& texture);
+    void EndDrawing() override;
 
-/*!
+    void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size, const ShaderEffect& shader_effect = {},
+                  float kerning = 0.0f) override;
 
-   @brief Window background color
+    void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) override;
 
-   @version 0.0.1
-   @param color Color in RGBA
-   @return void
+    void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                       glm::vec2 origin, float rotation, const Color& color) override;
 
-*/
-void ClearBackground(const Color& color);
+    void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) override;
 
-/*!
+    void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) override;
 
-   @brief Starting of the drawing procedure
-    - Clear the background and start drawing
-    - Draw between BeginDrawing and EndDrawing
-    - Orthographic projection
-    - Ordered rendering
+    void DrawRectFilled(const ember::Rectangle& rect, const Color& color) override;
 
-    Usage:
-    BeginDrawing();
+    void BeginMode2D(const Camera2D& camera) override;
 
-    // Draw anything without needing a camera
+    void EndMode2D() override;
 
-    EndDrawing();
+    void BeginCanvas() override;
 
-   @version 0.0.1
-   @return void
+    void EndCanvas() override;
 
-*/
-void BeginDrawing();
+    OpenglShader* default_shader = nullptr;
+    OpenglShader* text_shader = nullptr;
+private:
+    unsigned int VAO = 0, VBO = 0, EBO = 0;
 
-/*!
+    SDL_GLContext context = nullptr;
+};
 
-   @brief End of the drawing procedure (swap buffers)
-
-   @version 0.0.1
-   @return void
-
-*/
-void EndDrawing();
-
-/*!
-
-   @brief Draw glyphs given a Loaded Font and text
-   - Draw the text
-
-   @see Font
-   @see Glyph
-
-   @version 0.0.1
-   @param font The loaded Font `TTF`
-   @param text The text to draw, can be dynamic
-   @param transform The transform
-   @param color Color in RGBA
-   @param kerning <optional> Kerning (spacing between characters)
-   @return void
-
-*/
-void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size = 0.0f, float kerning = 0.0f);
-
-/*!
-
-   @brief Draw Texture quad at given Rectangle source
-   - Draw the texture
-
-   @version 0.0.1
-   @param texture The loaded Texture
-   @param rect The source rectangle
-   @param color Color in RGBA
-   @return void
-
-*/
-void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {255, 255, 255, 255});
-
-/*!
-
-   @brief Draw Texture quad extended
-   - Draw the texture with extended parameters, ex: spritesheet's
-
-   @version 0.0.1
-   @param texture The loaded Texture
-   @param rect The source Rectangle
-   @param dest The destination Rectangle
-   @param origin The origin point (texture origin e.g center)
-   @param rotation The rotation angle (radians)
-   @param color Color in RGBA
-   @return void
-
-*/
-void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin, float rotation,
-                   const Color& color = {255, 255, 255, 255});
-
-/*!
-
-   @brief Draw Lines between two points
-
-   @version 0.0.1
-   @param start vec2 start point
-   @param end vec2 end point
-   @param color Color in RGBA
-   @param thickness float Line thickness
-   @return void
-
-*/
-void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness = 1.0f);
-
-
-/*!
-
-   @brief Draw rectangle
-
-   @param rect rectangle source
-   @param color Color in RGBA
-   @param thickness float Line thickness
-   @return void
-
-   @version 0.0.6
-
-*/
-void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness = 1.0f);
-
-/*!
-
-   @brief Draw rectangle filled
-
-
-   @param rect rectangle source
-   @param color Color in RGBA
-   @return void
-
-   @version 0.0.6
-
-
-*/
-void DrawRectFilled(const ember::Rectangle& rect, const Color& color);
-
-/*!
-
-   @brief Begin 2D mode
-   - Set up the Camera2D component
-
-   Usage:
-   BeginMode2D(camera);
-
-   // Drawing with the camera view_matrix
-
-   EndMode2D();
-
-   @version 0.0.2
-   @param Camera2D the camera (view_matrix)
-   @return void
-
-*/
-void BeginMode2D(const Camera2D& camera);
-
-/*!
-
-   @brief End 2D mode
-   - Restore the default view_matrix
-
-
-   @version 0.0.2
-
-   @return void
-
-*/
-void EndMode2D();
-
-/*!
-
-   @brief Begin Canvas Procedure
-   - Used for Draw Static `UI`
-
-   @version 0.0.7
-
-   @return void
-
-*/
-void BeginCanvas();
-
-/*!
-
-   @brief End Canvas Procedure
-    - Restore GL state
-
-   @see BeginCanvas
-
-   @version 0.0.7
-
-   @return void
-
-*/
-void EndCanvas();

@@ -1,46 +1,46 @@
 #include "helpers/logging.h"
 
-void Debug::Start() {
+void Logger::Start() {
     auto& debug = Get();
 
-    if (debug.log_thread) {
+    if (debug._log_thread) {
         return;
     }
 
     auto fn_thread = [](void* data) -> int {
-        static_cast<Debug*>(data)->LogThread();
+        static_cast<Logger*>(data)->LogThread();
         return 0;
     };
 
-    debug.running    = true;
-    debug.log_thread = SDL_CreateThread(fn_thread, "LogThread", &debug);
+    debug._bIsRunning    = true;
+    debug._log_thread = SDL_CreateThread(fn_thread, "LogThread", &debug);
 }
 
-void Debug::Push(const std::string& formatted_log) {
+void Logger::Push(const std::string& formatted_log) {
 
-    std::lock_guard<std::mutex> lock(mutex);
-    log_queue.push_back(formatted_log);
-    cond.notify_all();
+    std::lock_guard<std::mutex> lock(_mutex);
+    _log_queue.push_back(formatted_log);
+    _condition.notify_all();
 }
 
-void Debug::Destroy() {
+void Logger::Destroy() {
     auto& debug = Get();
 
-    debug.mutex.lock();
+    debug._mutex.lock();
 
-    debug.running = false;
+    debug._bIsRunning = false;
 
-    debug.mutex.unlock();
+    debug._mutex.unlock();
 
-    debug.cond.notify_all();
+    debug._condition.notify_all();
 
     int status = 0;
-    SDL_WaitThread(debug.log_thread, &status);
+    SDL_WaitThread(debug._log_thread, &status);
 
 }
 
 
-void Debug::LogThread() {
+void Logger::LogThread() {
 
     // TODO: Get from config file
     char* pref_path = SDL_GetPrefPath("Ember", "com.emberengine.app");
@@ -62,14 +62,14 @@ void Debug::LogThread() {
         return;
     }
 
-    std::unique_lock<std::mutex> lock(mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
-    while (running || !log_queue.empty()) {
-        cond.wait(lock, [this]() { return !log_queue.empty() || !running; });
+    while (_bIsRunning || !_log_queue.empty()) {
+        _condition.wait(lock, [this]() { return !_log_queue.empty() || !_bIsRunning; });
 
-        while (!log_queue.empty()) {
-            std::string msg = log_queue.front();
-            log_queue.pop_front();
+        while (!_log_queue.empty()) {
+            std::string msg = _log_queue.front();
+            _log_queue.pop_front();
 
             lock.unlock();
 

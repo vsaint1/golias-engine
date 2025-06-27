@@ -25,53 +25,34 @@ public:
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
-    void Bind() const;
+    void Bind() const override;
 
-    void SetValue(const std::string& name, float value) const;
+    void SetValue(const std::string& name, float value) override;
 
-    void SetValue(const std::string& name, int value) const;
+    void SetValue(const std::string& name, int value) override;
 
-    void SetValue(const std::string& name, glm::mat4 value) const;
+    void SetValue(const std::string& name, glm::mat4 value) override;
 
-    void SetValue(const std::string& name, glm::vec2 value) const;
+    void SetValue(const std::string& name, glm::vec2 value) override;
 
-    void SetValue(const std::string& name, glm::vec3 value) const;
+    void SetValue(const std::string& name, glm::vec3 value) override;
 
-    void SetValue(const std::string& name, glm::vec4 value) const;
+    void SetValue(const std::string& name, glm::vec4 value) override;
 
-    void Destroy();
+    void Destroy() override;
 
-    unsigned int GetID() const;
+    unsigned int GetID() const override;
 
-    bool IsValid() const;
+    bool IsValid() const override;
 
 private:
-    unsigned int GetUniformLocation(const std::string& name) const;
+    unsigned int GetUniformLocation(const std::string& name);
 
     unsigned int CompileShader(unsigned int type, const char* source);
+
+    
 };
 
-// Default shader only
-struct ShaderEffect {
-    struct Shadow_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        glm::vec2 offset{};
-    };
-
-    struct Outline_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        float thickness = 1.0f;
-    };
-
-    struct Glow_t {
-        bool enabled = false;
-        glm::vec4 color{};
-        float strength = 1.0f;
-        float radius   = 1.0f;
-    };
-};
 
 template <typename T>
 inline T OpenglShader::GetValue(const std::string& name) {

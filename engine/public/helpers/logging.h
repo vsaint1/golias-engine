@@ -4,7 +4,7 @@
 
 #define STRINGIFY(x)   #x
 #define TO_STRING(x)   STRINGIFY(x)
-#define TRACE_FILE_LOG "[" __TIME__ "]" "[EMBER_ENGINE - " __FILE__ ":" TO_STRING(__LINE__) " - " __FUNCTION__ "] - "
+#define TRACE_FILE_LOG "[" __TIME__ "]" "[EMBER_ENGINE - " __FILE__ ":" TO_STRING(__LINE__)"] - "
 
 /*
    @brief Class for logging, tracing and debugging
@@ -23,10 +23,10 @@
    @version 0.0.9
 
 */
-class Debug {
+class Logger {
 public:
-    static Debug& Get() {
-        static Debug instance;
+    static Logger& Get() {
+        static Logger instance;
         return instance;
     }
 
@@ -37,18 +37,16 @@ public:
     static void Destroy();
 
 private:
-    Debug()  = default;
-    ~Debug() = default;
+    Logger()  = default;
+    ~Logger() = default;
 
     void LogThread();
 
-
-    std::mutex mutex;
-    SDL_Thread* log_thread = nullptr;
-    std::condition_variable cond;
-    std::atomic<bool> running = false;
-
-    std::deque<std::string> log_queue;
+    std::mutex _mutex = std::mutex();
+    SDL_Thread* _log_thread = nullptr;
+    std::condition_variable _condition = std::condition_variable();
+    std::atomic<bool> _bIsRunning = false;
+    std::deque<std::string> _log_queue = std::deque<std::string>();
 };
 
 
@@ -64,7 +62,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -79,7 +77,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -94,7 +92,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -109,7 +107,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);       \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -124,7 +122,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -139,7 +137,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
@@ -154,7 +152,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);      \
-        Debug::Get().Push(buffer);                                        \
+        Logger::Get().Push(buffer);                                        \
     } while (0)
 
 /*!
