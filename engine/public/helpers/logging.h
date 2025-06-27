@@ -42,13 +42,11 @@ private:
 
     void LogThread();
 
-
-    std::mutex mutex;
-    SDL_Thread* log_thread = nullptr;
-    std::condition_variable cond;
-    std::atomic<bool> running = false;
-
-    std::deque<std::string> log_queue;
+    std::mutex _mutex = std::mutex();
+    SDL_Thread* _log_thread = nullptr;
+    std::condition_variable _condition = std::condition_variable();
+    std::atomic<bool> _bIsRunning = false;
+    std::deque<std::string> _log_queue = std::deque<std::string>();
 };
 
 
