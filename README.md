@@ -5,11 +5,11 @@
 **Ember** is a lightweight and modular **2D/3D game engine/framework** written in **C/C++**, designed to be simple yet powerful. It aims to provide developers with a flexible **_cross-platform_** solution to build 2D/3D games and applications.
 
 
-> ⚠️ **Note:** Currently has no Editor.
+> ⚠️ **Note:** Currently has no `Editor` and probably never will.
 
 ### ✨ Features
 
-- 🚀 **Cross-Platform**: 
+- 📱 **Cross-Platform**: 
   - Windows
   - Linux
   - macOS
@@ -92,7 +92,10 @@ Ember Engine uses [cmake](https://cmake.org/) as its build system and supports t
 ```bash
 
 
-git clone https://github.com/vsaint1/ember_engine.git && cd ember_engine
+git clone https://github.com/vsaint1/ember_engine.git 
+
+cd ember_engine
+
 git submodule update --init --recursive
 
 cmake --list-presets
@@ -100,6 +103,8 @@ cmake --list-presets
 emcmake cmake --preset=web-release
 
 emmake cmake --build build/webgl/release
+
+python3 -m http.server -b 0.0.0.0 8000
 
 ```
 ### ⚠️ Disclaimer
