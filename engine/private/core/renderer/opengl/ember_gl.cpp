@@ -90,7 +90,6 @@ void OpenglRenderer::Destroy() {
     delete text_shader;
     text_shader = nullptr;
 
-    delete this;
 }
 
 

@@ -172,9 +172,14 @@ void Engine::Shutdown() {
 
     this->_renderer->Destroy();
 
+    delete this->_renderer;
+    this->_renderer = nullptr;
+
     delete this->_input_manager;
+    this->_input_manager = nullptr;
 
     delete this->_time_manager;
+    this->_time_manager = nullptr;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
@@ -205,6 +210,7 @@ InputManager* Engine::GetInputManager() const {
 TimeManager* Engine::GetTimeManager() const {
     return _time_manager;
 }
+
 Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
