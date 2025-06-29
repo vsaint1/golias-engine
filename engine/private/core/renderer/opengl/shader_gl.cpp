@@ -13,17 +13,39 @@
 #endif
 
 OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragment) {
+    LOG_INFO("Compiling Shaders Vertex (%s) | Fragment (%s)", vertex.c_str(), fragment.c_str());
 
-    LOG_INFO("Compiling Shaders Vertex (%s) | Fragment (%s)",vertex.c_str(),fragment.c_str());
+    const auto bake_shader = [](const std::string& source) -> std::string {
+        std::string header;
 
-    const auto vertexShaderSrc   = SHADER_HEADER + LoadAssetsFile(vertex);
-    const auto fragmentShaderSrc = SHADER_HEADER + LoadAssetsFile(fragment);
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+        header += "#version 300 es\n";
+        header += "precision mediump float;\n";
+#else
+        header += "#version 330 core\n";
+#endif
+
+        const std::vector<std::string> defines = {"USE_TEXTURE_ARRAY"};
+
+        for (const auto& def : defines) {
+            header += "#define " + def + "\n";
+        }
+
+        header += "\n";
+
+        return header + source;
+    };
+
+    const std::string vertexSource   = LoadAssetsFile(vertex);
+    const std::string fragmentSource = LoadAssetsFile(fragment);
+
+    const std::string vertexShaderSrc   = bake_shader(vertexSource);
+    const std::string fragmentShaderSrc = bake_shader(fragmentSource);
 
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShaderSrc.c_str());
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc.c_str());
 
     unsigned int program = glCreateProgram();
-
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
@@ -34,11 +56,13 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     if (!success) {
         glGetProgramInfoLog(program, 512, nullptr, infoLog);
         LOG_CRITICAL("SHADER_PROGRAM linking failed: %s", infoLog);
+        exit(EXIT_FAILURE);
     }
+
+    SDL_assert(success == GL_TRUE);
 
     LOG_INFO("Successfully linked SHADER_PROGRAM %d", program);
 
-    // WARN: since our project is simple, we don't need to delete shader's ( it help's with debugging )
     glDeleteShader(vs);
     glDeleteShader(fs);
 
