@@ -71,6 +71,12 @@ void InputManager::Update() {
         SDL_Event event = events.front();
         events.pop();
 
+        if (event.type == SDL_EVENT_QUIT) {
+
+            // SHUTDOWN AND RELEASE RESOURCES
+
+        }
+
         if (event.type == SDL_EVENT_KEY_DOWN) {
             keyState[event.key.scancode] = true;
         } else if (event.type == SDL_EVENT_KEY_UP) {
