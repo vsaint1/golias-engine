@@ -3,11 +3,11 @@
 #include <stb_image.h>
 
 
-OpenglShader *OpenglRenderer::GetDefaultShader() {
+OpenglShader* OpenglRenderer::GetDefaultShader() {
     return default_shader;
 }
 
-OpenglShader *OpenglRenderer::GetTextShader() {
+OpenglShader* OpenglRenderer::GetTextShader() {
     return text_shader;
 }
 
@@ -34,20 +34,16 @@ void OpenglRenderer::Initialize() {
         offset += 4;
     }
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(),
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STREAM_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *) offsetof(Vertex, Position));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *) offsetof(Vertex, Color));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Color));
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, UV));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, UV));
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *) offsetof(Vertex, TextureIndex));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, TextureIndex));
 
 
     glUseProgram(default_shader->GetID());
@@ -58,11 +54,10 @@ void OpenglRenderer::Initialize() {
         samplers[i] = i;
     }
 
-    glUniform1iv(glGetUniformLocation(default_shader->GetID(), "uTextures"), MAX_TEXTURE_SLOTS,
-                 samplers);
+    glUniform1iv(glGetUniformLocation(default_shader->GetID(), "uTextures"), MAX_TEXTURE_SLOTS, samplers);
 
     _textureCount = 0;
-    _quadCount = 0;
+    _quadCount    = 0;
 }
 
 void OpenglRenderer::Resize(int view_width, int view_height) {
@@ -71,12 +66,12 @@ void OpenglRenderer::Resize(int view_width, int view_height) {
     glViewport(0, 0, view_width, view_height);
 }
 
-void OpenglRenderer::SetContext(const void *ctx) {
-    context = static_cast<SDL_GLContext>(const_cast<void *>(ctx));
+void OpenglRenderer::SetContext(const void* ctx) {
+    context = static_cast<SDL_GLContext>(const_cast<void*>(ctx));
 }
 
-void *OpenglRenderer::GetContext() {
-    return (void *) context;
+void* OpenglRenderer::GetContext() {
+    return (void*) context;
 }
 
 void OpenglRenderer::Destroy() {
@@ -99,7 +94,7 @@ void OpenglRenderer::Destroy() {
 }
 
 
-void OpenglRenderer::ClearBackground(const Color &color) {
+void OpenglRenderer::ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
@@ -107,41 +102,41 @@ void OpenglRenderer::ClearBackground(const Color &color) {
 }
 
 
-void OpenglRenderer::BeginDrawing(const glm::mat4 &view_projection) {
+void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    const glm::mat4 projection = glm::ortho(0.0f,
-                                            static_cast<float>(GEngine->GetRenderer()->viewport[0]),
-                                            static_cast<float>(GEngine->GetRenderer()->viewport[1]),
-                                            0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->GetRenderer()->viewport[0]),
+                                            static_cast<float>(GEngine->GetRenderer()->viewport[1]), 0.0f, -1.0f, 1.0f);
 
 
-    Shader *_default = this->GetDefaultShader();
+    Shader* _default = this->GetDefaultShader();
     _default->Bind();
     _default->SetValue("ViewProjection", projection);
 
     glBindVertexArray(VAO);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-    _buffer = static_cast<Vertex *>(glMapBufferRange(GL_ARRAY_BUFFER, 0,
-                                                     MAX_VERTICES * sizeof(Vertex),
-                                                     GL_MAP_WRITE_BIT |
-                                                     GL_MAP_INVALIDATE_BUFFER_BIT));
+    _buffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
+                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
 #else
-    _buffer       = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+    _buffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 #endif
 
+    if (!_buffer) {
+        LOG_CRITICAL("The buffer is EMPTY (?)");
+    }
 
-    _indexCount = 0;
+
+    _indexCount   = 0;
     _textureCount = 0;
-    _quadCount = 0;
+    _quadCount    = 0;
 }
 
 void OpenglRenderer::EndDrawing() {
 
-    this->Flush();
+    Flush();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -149,26 +144,26 @@ void OpenglRenderer::EndDrawing() {
     SDL_GL_SwapWindow(GEngine->GetRenderer()->window);
 }
 
-Texture OpenglRenderer::LoadTexture(const std::string &file_path) {
+Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     Texture texture{};
     int w = 0, h = 0, channels = 4;
 
     stbi_set_flip_vertically_on_load(true);
-    const auto buffer = LoadFileIntoMemory(file_path);
-    unsigned char *data = stbi_load_from_memory((unsigned char *)buffer.data(), buffer.size(), &w, &h, &channels, 4);
+    const auto buffer   = LoadFileIntoMemory(file_path);
+    unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &w, &h, &channels, 4);
 
     bool error_texture = false;
 
     if (!data) {
         LOG_ERROR("Failed to load texture: %s", file_path.c_str());
-        w = 128;
-        h = 128;
+        w    = 128;
+        h    = 128;
         data = new unsigned char[w * h * 4];
 
         for (int y = 0; y < h; ++y) {
             for (int x = 0; x < w; ++x) {
-                int i = (y * w + x) * 4;
-                bool pink = ((x / 8) % 2) == ((y / 8) % 2);
+                int i       = (y * w + x) * 4;
+                bool pink   = ((x / 8) % 2) == ((y / 8) % 2);
                 data[i + 0] = pink ? 180 : 0;
                 data[i + 1] = 0;
                 data[i + 2] = pink ? 180 : 0;
@@ -201,7 +196,7 @@ Texture OpenglRenderer::LoadTexture(const std::string &file_path) {
     glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    texture.id = layer; 
+    texture.id = layer;
 
 #else
     unsigned int texId;
@@ -228,7 +223,7 @@ Texture OpenglRenderer::LoadTexture(const std::string &file_path) {
 
     stbi_image_free(data);
 
-    texture.width = w;
+    texture.width  = w;
     texture.height = h;
 
     return texture;
@@ -236,7 +231,7 @@ Texture OpenglRenderer::LoadTexture(const std::string &file_path) {
 
 
 // https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype
-Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size) {
+Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size) {
 
     Font font = {};
 
@@ -253,7 +248,7 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
     }
 
     FT_Face face;
-    if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte *>(font_buffer.data()),
+    if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()),
                            static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
         LOG_ERROR("Failed to load font face.");
         return font;
@@ -261,9 +256,9 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
 
     FT_Set_Pixel_Sizes(face, 0, font_size);
 
-    int atlas_w = 512;
-    int atlas_h = 512;
-    unsigned char *bitmap_buffer = new unsigned char[atlas_w * atlas_h]();
+    int atlas_w                  = 512;
+    int atlas_h                  = 512;
+    unsigned char* bitmap_buffer = new unsigned char[atlas_w * atlas_h]();
     int x = 0, y = 0, max_row_height = 0;
 
     for (char c = 32; c < 127; ++c) {
@@ -283,9 +278,9 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
         }
 
         FT_BitmapGlyph bmp_glyph = (FT_BitmapGlyph) glyph;
-        FT_Bitmap &bmp = bmp_glyph->bitmap;
-        int gw = bmp.width;
-        int gh = bmp.rows;
+        FT_Bitmap& bmp           = bmp_glyph->bitmap;
+        int gw                   = bmp.width;
+        int gh                   = bmp.rows;
 
         if (x + gw >= atlas_w) {
             x = 0;
@@ -296,22 +291,22 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
         max_row_height = SDL_max(max_row_height, gh);
 
         for (int row = 0; row < gh; ++row) {
-            unsigned char *src = bmp.buffer + row * bmp.pitch;
-            unsigned char *dst = bitmap_buffer + (x + (y + row) * atlas_w);
+            unsigned char* src = bmp.buffer + row * bmp.pitch;
+            unsigned char* dst = bitmap_buffer + (x + (y + row) * atlas_w);
             SDL_memcpy(dst, src, gw);
         }
 
 
-        Glyph g = {};
-        g.x0 = (float) x / atlas_w;
-        g.y0 = (float) y / atlas_h;
-        g.x1 = (float) (x + gw) / atlas_w;
-        g.y1 = (float) (y + gh) / atlas_h;
-        g.w = gw;
-        g.h = gh;
+        Glyph g    = {};
+        g.x0       = (float) x / atlas_w;
+        g.y0       = (float) y / atlas_h;
+        g.x1       = (float) (x + gw) / atlas_w;
+        g.y1       = (float) (y + gh) / atlas_h;
+        g.w        = gw;
+        g.h        = gh;
         g.x_offset = bmp_glyph->left;
         g.y_offset = -bmp_glyph->top;
-        g.advance = face->glyph->advance.x >> 6;
+        g.advance  = face->glyph->advance.x >> 6;
 
         font.glyphs[c] = g;
         x += gw;
@@ -319,33 +314,32 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
         FT_Done_Glyph(glyph);
     }
 
-    unsigned char *rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
+    unsigned char* rgba_buffer = new unsigned char[atlas_w * atlas_h * 4]();
 
     for (int i = 0; i < atlas_w * atlas_h; i++) {
         const unsigned char value = bitmap_buffer[i];
-        rgba_buffer[i * 4 + 0] = value;
-        rgba_buffer[i * 4 + 1] = value;
-        rgba_buffer[i * 4 + 2] = value;
-        rgba_buffer[i * 4 + 3] = value;
+        rgba_buffer[i * 4 + 0]    = value;
+        rgba_buffer[i * 4 + 1]    = value;
+        rgba_buffer[i * 4 + 2]    = value;
+        rgba_buffer[i * 4 + 3]    = value;
     }
 
     glGenTextures(1, &font.texture.id);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 rgba_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    font.ascent = face->size->metrics.ascender >> 6;
-    font.descent = face->size->metrics.descender >> 6;
-    font.line_gap = (face->size->metrics.height >> 6) - font.ascent + font.descent;
-    font.scale = 1.0f;
-    font.font_size = font_size;
-    font.texture.width = atlas_w;
+    font.ascent         = face->size->metrics.ascender >> 6;
+    font.descent        = face->size->metrics.descender >> 6;
+    font.line_gap       = (face->size->metrics.height >> 6) - font.ascent + font.descent;
+    font.scale          = 1.0f;
+    font.font_size      = font_size;
+    font.texture.width  = atlas_w;
     font.texture.height = atlas_h;
     // font.face = face;
 
@@ -359,9 +353,8 @@ Font OpenglRenderer::LoadFont(const std::string &file_path, const int font_size)
     return font;
 }
 
-void OpenglRenderer::DrawText(const Font &font, const std::string &text, Transform transform,
-                              Color color,
-                              float font_size, const ShaderEffect &shader_effect, float kerning) {}
+void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
+                              float font_size, const ShaderEffect& shader_effect, float kerning) {}
 
 // TODO: fix me
 void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
@@ -371,19 +364,15 @@ void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& tran
 }
 
 
-void OpenglRenderer::DrawTextureEx(const Texture &texture, const ember::Rectangle &source,
-                                   const ember::Rectangle &dest,
-                                   glm::vec2 origin, float rotation, float zIndex,
-                                   const Color &color) {
+void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+                                   glm::vec2 origin, float rotation, float zIndex, const Color& color) {
 
     const float texIndex = BindTexture(texture.id);
 
 
-    glm::vec2 uv0 = {source.x / (float) texture.width, 1.0f - (source.y + source.height) / (float)
-            texture.height};
+    glm::vec2 uv0 = {source.x / (float) texture.width, 1.0f - (source.y + source.height) / (float) texture.height};
     glm::vec2 uv1 = {(source.x + source.width) / static_cast<float>(texture.width),
-                     1.0f - source.y /
-                            static_cast<float>(texture.height)};
+                     1.0f - source.y / static_cast<float>(texture.height)};
 
     glm::vec2 pivot = {origin.x * dest.width, origin.y * dest.height};
 
@@ -398,19 +387,19 @@ void OpenglRenderer::DrawTextureEx(const Texture &texture, const ember::Rectangl
     model = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
 
     glm::vec4 corners[4] = {
-            model * glm::vec4(0, 0, 0, 1), // TL
-            model * glm::vec4(1, 0, 0, 1), // TR
-            model * glm::vec4(1, 1, 0, 1), // BR
-            model * glm::vec4(0, 1, 0, 1), // BL
+        model * glm::vec4(0, 0, 0, 1), // TL
+        model * glm::vec4(1, 0, 0, 1), // TR
+        model * glm::vec4(1, 1, 0, 1), // BR
+        model * glm::vec4(0, 1, 0, 1), // BL
     };
 
     const glm::vec4 normalized_color = color.GetNormalizedColor();
 
     Vertex quad[4] = {
-            {corners[0], normalized_color, {uv0.x, uv0.y}, texIndex},
-            {corners[1], normalized_color, {uv1.x, uv0.y}, texIndex},
-            {corners[2], normalized_color, {uv1.x, uv1.y}, texIndex},
-            {corners[3], normalized_color, {uv0.x, uv1.y}, texIndex},
+        {corners[0], normalized_color, {uv0.x, uv0.y}, texIndex},
+        {corners[1], normalized_color, {uv1.x, uv0.y}, texIndex},
+        {corners[2], normalized_color, {uv1.x, uv1.y}, texIndex},
+        {corners[3], normalized_color, {uv0.x, uv1.y}, texIndex},
     };
 
     for (int i = 0; i < 4; ++i) {
@@ -423,26 +412,23 @@ void OpenglRenderer::DrawTextureEx(const Texture &texture, const ember::Rectangl
     if (_indexCount >= MAX_INDICES) {
         Flush();
     }
-
-
 }
 
-void OpenglRenderer::DrawLine(glm::vec3 start, glm::vec3 end, const Color &color, float thickness) {
+void OpenglRenderer::DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) {
     const glm::vec2 dir = end - start;
-    float len = glm::length(dir);
-    const float angle = atan2(dir.y, dir.x);
+    float len           = glm::length(dir);
+    const float angle   = atan2(dir.y, dir.x);
 
     Transform2D t;
     t.Position = start;
     t.Rotation = angle;
-    t.Scale = {len, thickness};
+    t.Scale    = {len, thickness};
 
     Submit(t, {1, 1}, color.GetNormalizedColor());
 }
 
 
-void OpenglRenderer::DrawRect(const Transform2D &transform, glm::vec2 size, const Color &color,
-                              float thickness) {
+void OpenglRenderer::DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) {
     glm::vec3 p0 = {0, 0, 0};
     glm::vec3 p1 = {size.x, 0, 0};
     glm::vec3 p2 = {size.x, size.y, 0};
@@ -459,17 +445,14 @@ void OpenglRenderer::DrawRect(const Transform2D &transform, glm::vec2 size, cons
     DrawLine(p1, p2, color, thickness);
     DrawLine(p2, p3, color, thickness);
     DrawLine(p3, p0, color, thickness);
-
 }
 
 
-void
-OpenglRenderer::DrawRectFilled(const Transform2D &transform, glm::vec2 size, const Color &color,
-                               float thickness) {
+void OpenglRenderer::DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) {
     Submit(transform, size, color.GetNormalizedColor());
 }
 
-void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color &color) {
+void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
 
     float texIndex = 0.0f;
 
@@ -486,12 +469,10 @@ void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, cons
     if (_indexCount >= MAX_INDICES) {
         Flush();
     }
-
 }
 
 
-void
-OpenglRenderer::DrawCircle(glm::vec3 position, float radius, const Color &color, int segments) {
+void OpenglRenderer::DrawCircle(glm::vec3 position, float radius, const Color& color, int segments) {
     for (int i = 0; i < segments; ++i) {
         float theta0 = static_cast<float>(i) / segments * 2.0f * M_PI;
         float theta1 = static_cast<float>(i + 1) / segments * 2.0f * M_PI;
@@ -504,10 +485,9 @@ OpenglRenderer::DrawCircle(glm::vec3 position, float radius, const Color &color,
 }
 
 
-void OpenglRenderer::DrawCircleFilled(glm::vec3 position, float radius, const Color &color,
-                                      int segments) {
+void OpenglRenderer::DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments) {
     glm::vec3 start = position + glm::vec3(radius, 0.0f, 0.0f);
-    glm::vec3 prev = start;
+    glm::vec3 prev  = start;
 
     for (int i = 1; i < segments; ++i) {
         float theta = static_cast<float>(i) / segments * 2.0f * M_PI;
@@ -523,7 +503,7 @@ void OpenglRenderer::DrawCircleFilled(glm::vec3 position, float radius, const Co
 }
 
 
-void OpenglRenderer::BeginMode2D(const Camera2D &camera) {}
+void OpenglRenderer::BeginMode2D(const Camera2D& camera) {}
 
 void OpenglRenderer::EndMode2D() {}
 
@@ -537,11 +517,9 @@ void OpenglRenderer::BeginCanvas() {
         }
 
         float scale_x =
-                static_cast<float>(GEngine->GetRenderer()->viewport[0]) /
-                static_cast<float>(GEngine->Window.width);
+            static_cast<float>(GEngine->GetRenderer()->viewport[0]) / static_cast<float>(GEngine->Window.width);
         float scale_y =
-                static_cast<float>(GEngine->GetRenderer()->viewport[1]) /
-                static_cast<float>(GEngine->Window.height);
+            static_cast<float>(GEngine->GetRenderer()->viewport[1]) / static_cast<float>(GEngine->Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
@@ -550,9 +528,8 @@ void OpenglRenderer::BeginCanvas() {
     const float scale_factor = calculate_scale_factor();
 
     const glm::mat4 projection =
-            glm::ortho(0.0f, static_cast<float>(GEngine->Window.width) * scale_factor,
-                       static_cast<float>(GEngine->Window.height) * scale_factor, 0.0f, -1.0f,
-                       1.0f);
+        glm::ortho(0.0f, static_cast<float>(GEngine->Window.width) * scale_factor,
+                   static_cast<float>(GEngine->Window.height) * scale_factor, 0.0f, -1.0f, 1.0f);
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
@@ -577,18 +554,25 @@ float OpenglRenderer::BindTexture(Uint32 slot) {
 #else
 
     for (int i = 0; i < _textureCount; ++i) {
-        if (_textures[i] == slot) return static_cast<float>(i + 1);
+        if (_textures[i] == slot) {
+            return static_cast<float>(i + 1);
+        }
     }
 
-    if (_textureCount >= MAX_TEXTURE_SLOTS) Flush();
+    if (_textureCount >= MAX_TEXTURE_SLOTS) {
+        Flush();
+    }
     _textures[_textureCount] = slot;
     _textureCount++;
     return static_cast<float>(_textureCount);
 #endif
-
 }
 
 void OpenglRenderer::Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) {
+
+    if (_quadCount >= MAX_QUADS) {
+        Flush();
+    }
 
     const float texIndex = slot ? BindTexture(slot) : 0.0f;
 
@@ -640,14 +624,26 @@ void OpenglRenderer::Flush() {
 
     _quadCount  = 0;
     _indexCount = 0;
+    // _textureCount = 0;
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    _buffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
+                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+#else
+    _buffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+#endif
+
+    if (!_buffer) {
+        LOG_CRITICAL("Failed to re-map vertex buffer after flush");
+    }
 }
 
-void OpenglRenderer::UnloadFont(const Font &font) {
+void OpenglRenderer::UnloadFont(const Font& font) {
 
     UnloadTexture(font.texture);
 }
 
-void OpenglRenderer::UnloadTexture(const Texture &texture) {
+void OpenglRenderer::UnloadTexture(const Texture& texture) {
 
     if (texture.id == 0) {
         return;
