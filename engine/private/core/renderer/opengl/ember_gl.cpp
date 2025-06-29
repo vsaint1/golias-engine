@@ -34,7 +34,7 @@ void OpenglRenderer::Initialize() {
         offset += 4;
     }
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STREAM_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
@@ -125,7 +125,7 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
 #endif
 
     if (!_buffer) {
-        LOG_CRITICAL("The buffer is EMPTY (?)");
+        LOG_CRITICAL("Failed to map vertex buffer");
     }
 
 
@@ -608,6 +608,11 @@ void OpenglRenderer::Submit(const Transform2D& transform, glm::vec2 size, glm::v
 }
 
 void OpenglRenderer::Flush() {
+
+    if (_indexCount == 0) {
+        return;
+    }
+
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -624,18 +629,6 @@ void OpenglRenderer::Flush() {
 
     _quadCount  = 0;
     _indexCount = 0;
-    // _textureCount = 0;
-
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-    _buffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
-                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
-#else
-    _buffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
-#endif
-
-    if (!_buffer) {
-        LOG_CRITICAL("Failed to re-map vertex buffer after flush");
-    }
 }
 
 void OpenglRenderer::UnloadFont(const Font& font) {
