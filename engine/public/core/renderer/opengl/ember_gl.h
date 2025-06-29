@@ -4,7 +4,7 @@
 #include <array>
 
 // TODO: get this based on device?
-constexpr int MAX_QUADS         = 100000;
+constexpr int MAX_QUADS         = 10000;
 constexpr int MAX_VERTICES      = MAX_QUADS * 4;
 constexpr int MAX_INDICES       = MAX_QUADS * 6;
 
@@ -31,6 +31,8 @@ public:
     OpenglShader* GetTextShader() override;
 
     void Initialize() override;
+
+    void Flush() override ;
 
     void Resize(int view_width, int view_height) override;
 
@@ -88,78 +90,9 @@ public:
 
 private:
 
-    float BindTexture(Uint32 slot = 0) override {
+    float BindTexture(Uint32 slot = 0) override ;
 
-
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-        return static_cast<float>(slot + 1);
-#else
-
-        for (int i = 0; i < _textureCount; ++i) {
-            if (_textures[i] == slot) return static_cast<float>(i + 1);
-        }
-
-        if (_textureCount >= MAX_TEXTURE_SLOTS) Flush();
-        _textures[_textureCount] = slot;
-        _textureCount++;
-        return static_cast<float>(_textureCount);
-#endif
-
-    }
-
-    void SubmitQuad(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) override {
-        const float texIndex = slot ? BindTexture(slot) : 0.0f;
-
-        glm::vec2 uv00 = slot ? glm::vec2(0, 0) : glm::vec2(0);
-        glm::vec2 uv11 = slot ? glm::vec2(1) : glm::vec2(0);
-
-        glm::mat4 model = transform.GetMatrix();
-
-        glm::vec4 corners[4] = {
-            model * glm::vec4(0, 0, 0, 1),
-            model * glm::vec4(size.x, 0, 0, 1),
-            model * glm::vec4(size.x, size.y, 0, 1),
-            model * glm::vec4(0, size.y, 0, 1),
-        };
-
-
-        Vertex quad[4] = {{corners[0], color, {uv00.x, uv11.y}, texIndex},
-                          {corners[1], color, {uv11.x, uv11.y}, texIndex},
-                          {corners[2], color, {uv11.x, uv00.y}, texIndex},
-                          {corners[3], color, {uv00.x, uv00.y}, texIndex}};
-
-
-        for (int i = 0; i < 4; ++i) {
-            _buffer[_quadCount * 4 + i] = quad[i];
-        }
-
-        _quadCount++;
-        _indexCount += 6;
-
-        if (_indexCount >= MAX_INDICES) {
-            Flush();
-        }
-    }
-
-
-    void Flush() {
-        glUnmapBuffer(GL_ARRAY_BUFFER);
-
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
-#else
-        for (int i = 0; i < _textureCount; ++i) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, _textures[i]);
-        }
-#endif
-
-        glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_INT, nullptr);
-
-        _quadCount  = 0;
-        _indexCount = 0;
-    }
+    void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) override;
 
     unsigned int VAO = 0, VBO = 0, EBO = 0;
     glm::mat4 Projection;

@@ -43,6 +43,8 @@ public:
 
     virtual void Initialize() = 0;
 
+    virtual void Flush() = 0;
+
     /*!
 
    @brief Load a texture on `GPU` given a file path
@@ -524,5 +526,5 @@ public:
 private:
     virtual float BindTexture(Uint32 slot = 0) = 0;
 
-    virtual void SubmitQuad(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) = 0;
+    virtual void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) = 0;
 };

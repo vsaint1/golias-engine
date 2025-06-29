@@ -367,7 +367,7 @@ void OpenglRenderer::DrawText(const Font &font, const std::string &text, Transfo
 void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
                                  const Color& color) {
 
-    SubmitQuad(transform, size, color.GetNormalizedColor(), texture.id);
+    Submit(transform, size, color.GetNormalizedColor(), texture.id);
 }
 
 
@@ -437,7 +437,7 @@ void OpenglRenderer::DrawLine(glm::vec3 start, glm::vec3 end, const Color &color
     t.Rotation = angle;
     t.Scale = {len, thickness};
 
-    SubmitQuad(t, {1, 1}, color.GetNormalizedColor());
+    Submit(t, {1, 1}, color.GetNormalizedColor());
 }
 
 
@@ -466,7 +466,7 @@ void OpenglRenderer::DrawRect(const Transform2D &transform, glm::vec2 size, cons
 void
 OpenglRenderer::DrawRectFilled(const Transform2D &transform, glm::vec2 size, const Color &color,
                                float thickness) {
-    SubmitQuad(transform, size, color.GetNormalizedColor());
+    Submit(transform, size, color.GetNormalizedColor());
 }
 
 void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color &color) {
@@ -566,6 +566,80 @@ void OpenglRenderer::BeginCanvas() {
 void OpenglRenderer::EndCanvas() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+}
+
+
+float OpenglRenderer::BindTexture(Uint32 slot) {
+
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    return static_cast<float>(slot + 1);
+#else
+
+    for (int i = 0; i < _textureCount; ++i) {
+        if (_textures[i] == slot) return static_cast<float>(i + 1);
+    }
+
+    if (_textureCount >= MAX_TEXTURE_SLOTS) Flush();
+    _textures[_textureCount] = slot;
+    _textureCount++;
+    return static_cast<float>(_textureCount);
+#endif
+
+}
+
+void OpenglRenderer::Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) {
+
+    const float texIndex = slot ? BindTexture(slot) : 0.0f;
+
+    glm::vec2 uv00 = slot ? glm::vec2(0, 0) : glm::vec2(0);
+    glm::vec2 uv11 = slot ? glm::vec2(1) : glm::vec2(0);
+
+    glm::mat4 model = transform.GetMatrix();
+
+    glm::vec4 corners[4] = {
+        model * glm::vec4(0, 0, 0, 1),
+        model * glm::vec4(size.x, 0, 0, 1),
+        model * glm::vec4(size.x, size.y, 0, 1),
+        model * glm::vec4(0, size.y, 0, 1),
+    };
+
+
+    Vertex quad[4] = {{corners[0], color, {uv00.x, uv11.y}, texIndex},
+                      {corners[1], color, {uv11.x, uv11.y}, texIndex},
+                      {corners[2], color, {uv11.x, uv00.y}, texIndex},
+                      {corners[3], color, {uv00.x, uv00.y}, texIndex}};
+
+
+    for (int i = 0; i < 4; ++i) {
+        _buffer[_quadCount * 4 + i] = quad[i];
+    }
+
+    _quadCount++;
+    _indexCount += 6;
+
+    if (_indexCount >= MAX_INDICES) {
+        Flush();
+    }
+}
+
+void OpenglRenderer::Flush() {
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
+#else
+    for (int i = 0; i < _textureCount; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, _textures[i]);
+    }
+#endif
+
+    glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_INT, nullptr);
+
+    _quadCount  = 0;
+    _indexCount = 0;
 }
 
 void OpenglRenderer::UnloadFont(const Font &font) {
