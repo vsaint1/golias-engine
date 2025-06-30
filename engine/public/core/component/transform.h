@@ -4,7 +4,7 @@
 
 // TODO: refactor this to other file
 struct Transform2D {
-    glm::vec3 Position{0, 0,0};
+    glm::vec3 Position{0, 0, 0};
     glm::vec2 Scale{1, 1};
     float Rotation = 0.0f;
 
@@ -15,7 +15,6 @@ struct Transform2D {
         mat = glm::scale(mat, glm::vec3(Scale, 1.0f));
         return mat;
     }
-
 };
 
 struct Transform {
@@ -26,7 +25,8 @@ struct Transform {
 
     Transform() = default;
     Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
-        : position(position), rotation(rotation), scale(scale) {}
+        : position(position), rotation(rotation), scale(scale) {
+    }
 
     /*!
         @brief Get the model matrix 2D
@@ -42,4 +42,3 @@ struct Transform {
     */
     glm::mat4 GetModelMatrix() const;
 };
-
