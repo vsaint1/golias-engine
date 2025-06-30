@@ -89,23 +89,23 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         0.0f
     };
 
-    // for (int i = 0; i < entities; i++) {
-    //     GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
-    //                                           0.2f);
-    // }
-    //
+    for (int i = 0; i < entities; i++) {
+        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
+                                              0.2f);
+    }
+
     GEngine->GetRenderer()->DrawLine({200, 200, 0}, {300, 300, 0}, {0, 255, 0, 255}, 2.f);
 
     GEngine->GetRenderer()->DrawTexture(p2_texture, transform2,{0,0} );
-    //
-    // transform2.Position.z = 0.002f;
-    //
+
+    transform2.Position.z = 0.002f;
+
     GEngine->GetRenderer()->DrawRect(transform2, {512, 512}, {255, 255, 255, 255}, 2.f);
-    //
-    // GEngine->GetRenderer()->DrawCircle({300, 650,0.1}, 40, {255, 255, 255, 255});
-    // GEngine->GetRenderer()->DrawCircleFilled({300, 300,0.2}, 20, {255,0 , 255, 255});
-    // GEngine->GetRenderer()->DrawTriangle({100, 100,0}, {200, 100,0}, {150, 200,0}, {255, 255, 0, 255});
-    //
+
+    GEngine->GetRenderer()->DrawCircle({300, 650,0.1}, 40, {255, 255, 255, 255});
+    GEngine->GetRenderer()->DrawCircleFilled({300, 300,0.2}, 20, {255,0 , 255, 255});
+    GEngine->GetRenderer()->DrawTriangle({100, 100,0}, {200, 100,0}, {150, 200,0}, {255, 255, 0, 255});
+
     GEngine->GetRenderer()->DrawTextureEx(p2_texture, {0, 0, 32, 32}, {100, 200, 128, 128}, glm::vec2(0.5f, 0.5f),
                                           angle);
 
