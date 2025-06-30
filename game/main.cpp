@@ -96,7 +96,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     GEngine->GetRenderer()->DrawLine({200, 200, 0}, {300, 300, 0}, {0, 255, 0, 255}, 2.f);
 
-    GEngine->GetRenderer()->DrawTexture(p2_texture, transform2,{0,0} );
+    GEngine->GetRenderer()->DrawTexture(player_texture, transform2,{0,0} );
 
     transform2.Position.z = 0.002f;
 

@@ -16,7 +16,7 @@ void main() {
 #ifdef GL_ES
     vec4 tex = (TextureIndex < 0.5)
     ? vec4(1.0)
-    : texture(uTextures, vec3(TextureCoords, TextureIndex - 1.0));
+    : texture(uTextures, vec3(TextureCoords, TextureIndex));
 #else
     vec4 tex = (TextureIndex < 0.5)
     ? vec4(1.0)

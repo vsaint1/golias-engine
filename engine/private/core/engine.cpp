@@ -181,7 +181,6 @@ void Engine::Shutdown() {
     delete this->_time_manager;
     this->_time_manager = nullptr;
 
-    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 

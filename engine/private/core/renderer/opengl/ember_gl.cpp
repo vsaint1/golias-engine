@@ -131,6 +131,10 @@ void OpenglRenderer::Destroy() {
     glDeleteBuffers(1, &_textVBO);
     glDeleteBuffers(1, &_textEBO);
 
+    glDeleteTextures(1, &_textureArrayBuffer);
+
+    ImGui_ImplOpenGL3_Shutdown();
+
     SDL_GL_DestroyContext(context);
 
     SDL_DestroyWindow(window);
@@ -140,6 +144,7 @@ void OpenglRenderer::Destroy() {
 
     delete text_shader;
     text_shader = nullptr;
+
 }
 
 
@@ -273,6 +278,9 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
+    constexpr int ATLAS_WIDTH  = 1024;
+    constexpr int ATLAS_HEIGHT = 1024;
+
     if (_textureArrayBuffer == 0) {
         glGenTextures(1, &_textureArrayBuffer);
         glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
@@ -281,19 +289,25 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        std::vector<unsigned char> white(ATLAS_WIDTH * ATLAS_HEIGHT * 4, 255);
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, ATLAS_WIDTH, ATLAS_HEIGHT, 1, GL_RGBA, GL_UNSIGNED_BYTE,
+                        white.data());
     }
 
-    int layer = _textureCount;
+    int layer = _textureCount + 1;
 
 
     if (layer >= MAX_TEXTURE_SLOTS) {
-        layer = 0;
+        LOG_WARN("Texture slot overflow, wrapping to 1");
+        layer = 1;
     }
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
     texture.id = layer;
+    _textureCount++;
 
 #else
     unsigned int texId;
@@ -308,17 +322,19 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     texture.id = texId;
 #endif
 
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-    _textureCount++;
-#endif
 
-    if (!error_texture) {
+    if (error_texture) {
+        LOG_WARN("Failed to load texture: %s", file_path.c_str());
+        delete[] data;
+
+
+    }else {
         LOG_INFO("Loaded texture with ID: %d, path: %s", texture.id, file_path.c_str());
         LOG_INFO(" > Width %d, Height %d", w, h);
         LOG_INFO(" > Num. Channels %d", channels);
-    }
+        stbi_image_free(data);
 
-    stbi_image_free(data);
+    }
 
     texture.width  = w;
     texture.height = h;
@@ -523,6 +539,8 @@ void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& tran
         size = glm::vec2(texture.width, texture.height);
     }
 
+    SDL_assert(texture.width > 0 && texture.height > 0);
+
     Submit(transform, size, color.GetNormalizedColor(), texture.id);
 }
 
@@ -713,7 +731,7 @@ float OpenglRenderer::BindTexture(Uint32 slot) {
 
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-    return static_cast<float>(slot + 1);
+    return static_cast<float>(slot);
 #else
 
     for (int i = 0; i < _textureCount; ++i) {
