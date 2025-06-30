@@ -290,9 +290,9 @@ Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        std::vector<unsigned char> white(ATLAS_WIDTH * ATLAS_HEIGHT * 4, 255);
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, ATLAS_WIDTH, ATLAS_HEIGHT, 1, GL_RGBA, GL_UNSIGNED_BYTE,
-                        white.data());
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, ATLAS_WIDTH, ATLAS_HEIGHT, MAX_TEXTURE_SLOTS);
+
+
     }
 
     int layer = _textureCount + 1;
@@ -635,6 +635,14 @@ void OpenglRenderer::DrawRectFilled(const Transform2D& transform, glm::vec2 size
 
 void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
 
+    constexpr float thickness = 1.f;
+    DrawLine(p0, p1, color,thickness);
+    DrawLine(p1, p2, color,thickness);
+    DrawLine(p2, p0, color,thickness);
+}
+
+void OpenglRenderer::DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
+
     float texIndex = 0.0f;
 
     const glm::vec4 normalized_color = color.GetNormalizedColor();
@@ -675,12 +683,12 @@ void OpenglRenderer::DrawCircleFilled(glm::vec3 position, float radius, const Co
 
         glm::vec3 point = position + glm::vec3(cos(theta) * radius, sin(theta) * radius, 0.0f);
 
-        DrawTriangle(position, prev, point, color);
+        DrawTriangleFilled(position, prev, point, color);
 
         prev = point;
     }
 
-    DrawTriangle(position, prev, start, color);
+    DrawTriangleFilled(position, prev, start, color);
 }
 
 

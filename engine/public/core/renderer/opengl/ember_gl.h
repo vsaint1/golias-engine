@@ -74,6 +74,8 @@ public:
 
     void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
+    void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
+
     void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments = 32) override;
 
     void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments = 32) override;

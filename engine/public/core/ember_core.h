@@ -368,6 +368,8 @@ public:
 */
     virtual void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness = 1.0f) = 0;
 
+    virtual void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
+
     virtual void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
 
     virtual void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments = 32) = 0;
