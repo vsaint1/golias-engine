@@ -45,6 +45,7 @@ public:
 
     virtual void Flush() = 0;
 
+    virtual void FlushText() = 0;
     /*!
 
    @brief Load a texture on `GPU` given a file path

@@ -12,6 +12,8 @@ OpenglShader* OpenglRenderer::GetTextShader() {
 }
 
 void OpenglRenderer::Initialize() {
+
+#pragma region DEFAULT_BUFFER
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
@@ -21,20 +23,22 @@ void OpenglRenderer::Initialize() {
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    std::vector<Uint32> indices(MAX_INDICES);
-    Uint32 offset = 0;
 
-    for (int i = 0; i < MAX_QUADS; ++i) {
-        indices[i * 6 + 0] = offset + 0;
-        indices[i * 6 + 1] = offset + 1;
-        indices[i * 6 + 2] = offset + 2;
-        indices[i * 6 + 3] = offset + 2;
-        indices[i * 6 + 4] = offset + 3;
-        indices[i * 6 + 5] = offset + 0;
-        offset += 4;
+    {
+        std::vector<Uint32> indices(MAX_INDICES);
+        Uint32 offset = 0;
+        for (int i = 0; i < MAX_QUADS; ++i) {
+            indices[i * 6 + 0] = offset + 0;
+            indices[i * 6 + 1] = offset + 1;
+            indices[i * 6 + 2] = offset + 2;
+            indices[i * 6 + 3] = offset + 2;
+            indices[i * 6 + 4] = offset + 3;
+            indices[i * 6 + 5] = offset + 0;
+            offset += 4;
+        }
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
     }
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
@@ -58,6 +62,48 @@ void OpenglRenderer::Initialize() {
 
     _textureCount = 0;
     _quadCount    = 0;
+#pragma endregion
+
+
+#pragma region TEXT_BUFFER
+
+    glGenVertexArrays(1, &_textVAO);
+    glBindVertexArray(_textVAO);
+
+    glGenBuffers(1, &_textVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTICES, nullptr, GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1, &_textEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _textEBO);
+
+    {
+        std::vector<Uint32> indices(MAX_INDICES);
+        Uint32 offset = 0;
+        for (int i = 0; i < MAX_QUADS; ++i) {
+            indices[i * 6 + 0] = offset + 0;
+            indices[i * 6 + 1] = offset + 1;
+            indices[i * 6 + 2] = offset + 2;
+            indices[i * 6 + 3] = offset + 2;
+            indices[i * 6 + 4] = offset + 3;
+            indices[i * 6 + 5] = offset + 0;
+            offset += 4;
+        }
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
+    }
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Color));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, UV));
+
+#pragma endregion
+
+    glBindVertexArray(0);
 }
 
 void OpenglRenderer::Resize(int view_width, int view_height) {
@@ -79,6 +125,11 @@ void OpenglRenderer::Destroy() {
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+
+    glDeleteVertexArrays(1, &_textVAO);
+    glDeleteBuffers(1, &_textVBO);
+    glDeleteBuffers(1, &_textEBO);
 
     SDL_GL_DestroyContext(context);
 
@@ -89,7 +140,6 @@ void OpenglRenderer::Destroy() {
 
     delete text_shader;
     text_shader = nullptr;
-
 }
 
 
@@ -97,7 +147,7 @@ void OpenglRenderer::ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 
@@ -110,11 +160,15 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
                                             static_cast<float>(GEngine->GetRenderer()->viewport[1]), 0.0f, -1.0f, 1.0f);
 
 
+    // TODO: multiply w/ view_projection
+    Projection = projection;
+
     Shader* _default = this->GetDefaultShader();
     _default->Bind();
-    _default->SetValue("ViewProjection", projection);
+    _default->SetValue("ViewProjection", Projection);
 
     glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     _buffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
@@ -131,11 +185,55 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
     _indexCount   = 0;
     _textureCount = 0;
     _quadCount    = 0;
+
+    glBindVertexArray(_textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    _textBuffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
+                                                        GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+#else
+    _textBuffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+#endif
+
+    if (!_textBuffer) {
+        LOG_CRITICAL("Failed to map text vertex buffer");
+    }
+
+    _textQuadCount  = 0;
+    _textIndexCount = 0;
+}
+
+
+void OpenglRenderer::FlushText() {
+    if (_textIndexCount == 0) {
+        return;
+    }
+
+    glBindVertexArray(_textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+
+    Shader* _text_shader = this->GetTextShader();
+    _text_shader->Bind();
+    _text_shader->SetValue("ViewProjection", Projection);
+    _text_shader->SetValue("uTexture", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _currentFontTextureID);
+
+    glDrawElements(GL_TRIANGLES, _textIndexCount, GL_UNSIGNED_INT, nullptr);
+
+    _textQuadCount  = 0;
+    _textIndexCount = 0;
 }
 
 void OpenglRenderer::EndDrawing() {
 
     Flush();
+
+    FlushText();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -352,12 +450,78 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
     return font;
 }
 
-void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
-                              float font_size, const ShaderEffect& shader_effect, float kerning) {}
+void OpenglRenderer::DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color,
+                              float font_size, const ShaderEffect& shader_effect, float kerning) {
+
+
+    if (text.empty()) {
+        return;
+    }
+
+    // TODO: fix this so we can use many fonts instead of only 1
+    // if (_currentFontTextureID != font.texture.id) {
+    //     FlushText();
+    // }
+
+    _currentFontTextureID = font.texture.id;
+
+    const glm::vec4 norm_color = color.GetNormalizedColor();
+    const float scale          = font_size / font.font_size;
+
+    glm::vec3 pos = transform.Position;
+
+    for (size_t i = 0; i < text.size(); ++i) {
+        constexpr float texIndex = 0.0f;
+        char c                   = text[i];
+        if (c == '\n') {
+            pos.x = transform.Position.x;
+            pos.y += (font.ascent - font.descent + font.line_gap) * scale;
+            continue;
+        }
+
+        const auto& glyph = font.glyphs.at(c);
+
+        float xpos = pos.x + glyph.x_offset * scale;
+        float ypos = pos.y + glyph.y_offset * scale;
+
+        float w = glyph.w * scale;
+        float h = glyph.h * scale;
+
+        glm::vec3 p0 = glm::vec3(xpos, ypos, 0);
+        glm::vec3 p1 = glm::vec3(xpos + w, ypos, 0);
+        glm::vec3 p2 = glm::vec3(xpos + w, ypos + h, 0);
+        glm::vec3 p3 = glm::vec3(xpos, ypos + h, 0);
+
+        Vertex quad[4] = {
+            {p0, norm_color, {glyph.x0, glyph.y0}, texIndex},
+            {p1, norm_color, {glyph.x1, glyph.y0}, texIndex},
+            {p2, norm_color, {glyph.x1, glyph.y1}, texIndex},
+            {p3, norm_color, {glyph.x0, glyph.y1}, texIndex},
+        };
+
+        for (int j = 0; j < 4; ++j) {
+            _textBuffer[_textQuadCount * 4 + j] = quad[j];
+        }
+
+        _textQuadCount++;
+        _textIndexCount += 6;
+
+        if (_textIndexCount >= MAX_INDICES || _textQuadCount >= MAX_QUADS) {
+            FlushText();
+        }
+
+
+        pos.x += (glyph.advance + kerning) * scale;
+    }
+}
 
 // TODO: fix me
 void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
                                  const Color& color) {
+
+    if (size.x <= 0 || size.y <= 0) {
+        size = glm::vec2(texture.width, texture.height);
+    }
 
     Submit(transform, size, color.GetNormalizedColor(), texture.id);
 }
@@ -423,7 +587,7 @@ void OpenglRenderer::DrawLine(glm::vec3 start, glm::vec3 end, const Color& color
     t.Rotation = angle;
     t.Scale    = {len, thickness};
 
-    Submit(t, {1, 1}, color.GetNormalizedColor());
+    Submit(t, {1, 1}, color.GetNormalizedColor(), UINT32_MAX);
 }
 
 
@@ -448,7 +612,7 @@ void OpenglRenderer::DrawRect(const Transform2D& transform, glm::vec2 size, cons
 
 
 void OpenglRenderer::DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) {
-    Submit(transform, size, color.GetNormalizedColor());
+    Submit(transform, size, color.GetNormalizedColor(), UINT32_MAX);
 }
 
 void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
@@ -561,6 +725,7 @@ float OpenglRenderer::BindTexture(Uint32 slot) {
     if (_textureCount >= MAX_TEXTURE_SLOTS) {
         Flush();
     }
+
     _textures[_textureCount] = slot;
     _textureCount++;
     return static_cast<float>(_textureCount);
@@ -573,7 +738,8 @@ void OpenglRenderer::Submit(const Transform2D& transform, glm::vec2 size, glm::v
         Flush();
     }
 
-    const float texIndex = slot ? BindTexture(slot) : 0.0f;
+    bool textured        = (slot != UINT32_MAX);
+    const float texIndex = textured ? BindTexture(slot) : 0.0f;
 
     glm::vec2 uv00 = slot ? glm::vec2(0, 0) : glm::vec2(0);
     glm::vec2 uv11 = slot ? glm::vec2(1) : glm::vec2(0);
@@ -612,6 +778,8 @@ void OpenglRenderer::Flush() {
         return;
     }
 
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)

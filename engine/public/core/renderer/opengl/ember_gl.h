@@ -31,7 +31,9 @@ public:
 
     void Initialize() override;
 
-    void Flush() override ;
+    void Flush() override;
+
+    void FlushText() override;
 
     void Resize(int view_width, int view_height) override;
 
@@ -55,7 +57,7 @@ public:
 
     void EndDrawing() override;
 
-    void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
+    void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
                   const ShaderEffect& shader_effect = {}, float kerning = 0.0f) override;
 
     void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
@@ -89,13 +91,21 @@ public:
 
 private:
 
+
     float BindTexture(Uint32 slot = 0) override ;
 
-    void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) override;
+    void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
 
-    unsigned int VAO = 0, VBO = 0, EBO = 0;
     glm::mat4 Projection;
 
+    GLuint _textVAO = 0, _textVBO = 0, _textEBO =0;
+    Vertex* _textBuffer = nullptr;
+    int _textQuadCount = 0;
+    int _textIndexCount = 0;
+    unsigned int _currentFontTextureID = 0;
+
+
+    GLuint VAO = 0, VBO = 0, EBO = 0;
     Vertex* _buffer                                       = nullptr;
 
     // OPENGL/ES HACK FIX
