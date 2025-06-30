@@ -12,6 +12,7 @@
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1
 #include <math.h>
+#include <array>
 
 #include <glad.h>
 

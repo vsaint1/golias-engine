@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/ember_core.h"
-#include <array>
 
 // TODO: get this based on device?
 constexpr int MAX_QUADS         = 10000;
