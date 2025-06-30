@@ -168,10 +168,6 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
     // TODO: multiply w/ view_projection
     Projection = projection;
 
-    Shader* _default = this->GetDefaultShader();
-    _default->Bind();
-    _default->SetValue("ViewProjection", Projection);
-
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
@@ -181,10 +177,6 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
 #else
     _buffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 #endif
-
-    if (!_buffer) {
-        LOG_CRITICAL("Failed to map vertex buffer");
-    }
 
 
     _indexCount   = 0;
@@ -200,10 +192,6 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
 #else
     _textBuffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
 #endif
-
-    if (!_textBuffer) {
-        LOG_CRITICAL("Failed to map text vertex buffer");
-    }
 
     _textQuadCount  = 0;
     _textIndexCount = 0;
@@ -807,6 +795,10 @@ void OpenglRenderer::Flush() {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    Shader* _default = this->GetDefaultShader();
+    _default->Bind();
+    _default->SetValue("ViewProjection", Projection);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     glActiveTexture(GL_TEXTURE0);
