@@ -25,7 +25,8 @@
 
     @version 0.0.1
 */
-struct Renderer {
+class Renderer {
+public:
     virtual ~Renderer() = default;
 
     Renderer() = default;
@@ -40,6 +41,11 @@ struct Renderer {
 
     virtual Shader* GetTextShader() = 0;
 
+    virtual void Initialize() = 0;
+
+    virtual void Flush() = 0;
+
+    virtual void FlushText() = 0;
     /*!
 
    @brief Load a texture on `GPU` given a file path
@@ -48,7 +54,9 @@ struct Renderer {
 
 
      *
-     * @version
+
+
+     * * * @version
 
 
      * * *
@@ -56,8 +64,10 @@ struct Renderer {
  * * 0.0.1
    @param file_path the path to the file in `assets` folder
    @return
-     *
-     * Texture
+ *
+
+
+     * * * Texture
 */
     virtual Texture LoadTexture(const std::string& file_path) = 0;
 
@@ -69,9 +79,11 @@ struct Renderer {
 
    @version 0.0.1
 
-     *
+ *
 
-     * * @param
+
+
+     * * * * @param
 
 
  * * *
@@ -87,11 +99,13 @@ struct Renderer {
 
    @version 0.0.9
    @param font The loaded Font
- @return
+
+     * @return
 
 
 
-     * * * *
+
+     * * * * *
 
  * *
  * void
@@ -108,7 +122,9 @@ struct Renderer {
 
  *
 
-     * * @return
+
+
+     * * * * @return
 
 
 
@@ -135,7 +151,9 @@ struct Renderer {
     - Draw between
 
 
-     * * *
+
+
+     * * * * *
 
      * *
 
@@ -143,7 +161,9 @@ struct Renderer {
     - Orthographic projection
     - Ordered rendering
 
- Usage:
+
+
+     * * Usage:
 
 
 
@@ -155,16 +175,18 @@ struct Renderer {
 
  * * * * // Draw anything without needing a camera
 
-    EndDrawing();
+ EndDrawing();
 
-   @version
+
+
+     * * @version
      * 0.0.1
 
 
      * * @return void
 
 */
-    virtual void BeginDrawing() = 0;
+    virtual void BeginDrawing(const glm::mat4& view_projection = 0) = 0;
 
     /*!
 
@@ -184,7 +206,9 @@ struct Renderer {
    @see Font
    @see Glyph
 
- @version
+
+     *
+     * @version
 
 
 
@@ -193,7 +217,9 @@ struct Renderer {
 
  * * * 0.0.1
    @param font The loaded Font `TTF`
-   @param text The text to draw, can be dynamic
+   @param text The text to draw,
+     * can
+     * be dynamic
    @param transform
  @param
      * transform
@@ -203,23 +229,30 @@ struct Renderer {
  * The
 
  * *
- * transform
-   @param color Color in RGBA
+ *
+     * transform
+
+     * @param color Color in RGBA
    @param font_size
-   @param shader_effect add glow/outline/shadow effects to the text
+   @param shader_effect add glow/outline/shadow
+     * effects to the
+     * text
    @param kerning spacing between
      * letters
      *
-     * <optional> Kerning (spacing between
- * characters)
+     * <optional> Kerning
+     * (spacing between
+ *
+     * characters)
 
  * @return
 
  * * void
 
 */
-    virtual void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
-                          const ShaderEffect& shader_effect, float kerning = 0.0f) = 0;
+    virtual void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
+                          const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
+
 
     /*!
 
@@ -230,63 +263,81 @@ struct Renderer {
    @param
  *
 
-     * * texture
+
+
+
+     * * * * * texture
 
 
  * * *
  * The loaded Texture
    @param texture
    @param rect The source rectangle
-   @param color
+   @param
+
+
+     * * * color
 
      * * Color in RGBA
  @return
      * void
 
 */
-    virtual void DrawTexture(const Texture& texture, ember::Rectangle rect, Color color = {255, 255, 255, 255}) = 0;
-
+    virtual void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
+                             const Color& color = {255, 255, 255, 255}) = 0;
     /*!
 
    @brief Draw Texture quad extended
    - Draw the texture with extended parameters, ex: spritesheet's
 
 
- *
+
+     * *
 
 
-     * * * @version
+
+
+     * * * * * @version
 
 
  * * * 0.0.1
    @param texture The loaded Texture
-   @param rect The source Rectangle
-   @param
+   @param rect The source
+     * Rectangle
 
-     * * dest
+     * @param
+
+
+     * * * dest
      * The
  * destination
  *
 
  * * Rectangle
-   @param origin The origin point (texture origin e.g
-     * center)
+   @param origin The
+     * origin point (texture
+     * origin e.g
+
+     * * center)
 
      * @param rotation
    @param
      * rotation The
- * rotation angle
+
+     * * rotation angle
  *
  *
- * (radians)
+ *
+     * (radians)
    @param
-     * color Color in RGBA
+
+     * * color in RGBA
 
      * @return void
 
 */
     virtual void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                               glm::vec2 origin, float rotation, const Color& color = {255, 255, 255, 255}) = 0;
+                               glm::vec2 origin, float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
 
     /*!
 
@@ -296,31 +347,48 @@ struct Renderer {
    @param start vec2 start point
    @param end
 
-     * * vec2
+ *
+     * *
+     * vec2
 
      * *
  * end
 
  * * point
-   @param color Color in RGBA
+    @param Vec2 start
+    @param Vec2 end
+   @param color Color in
+     * RGBA
    @param thickness float Line thickness
 
+     *
      * @return
      * void
 
 */
-    virtual void DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness = 1.0f) = 0;
+    virtual void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness = 1.0f) = 0;
+
+    virtual void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
+
+    virtual void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
+
+    virtual void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments = 32) = 0;
+
+    virtual void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments = 32) = 0;
 
 
     /*!
 
    @brief Draw rectangle
 
-   @param rect rectangle source
+   @param transform
+   @param size rectangle size
    @param color Color in RGBA
    @param thickness
 
-     * *
+
+
+     * * * *
 
      * * float
 
@@ -331,17 +399,21 @@ struct Renderer {
    @version 0.0.6
 
 */
-    virtual void DrawRect(const ember::Rectangle& rect, const Color& color, float thickness = 1.0f) = 0;
+    virtual void DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness = 1.f) = 0;
 
     /*!
 
    @brief Draw rectangle filled
 
 
-   @param rect rectangle source
+   @param transform
+   @param size rectangle size
    @param color Color in RGBA
+   @param thickness
    @return
- *
+
+
+     * * *
 
 
      * * * void
@@ -353,7 +425,7 @@ struct Renderer {
 
 
 */
-    virtual void DrawRectFilled(const ember::Rectangle& rect, const Color& color) = 0;
+    virtual void DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness = 1.f) = 0;
 
     /*!
 
@@ -363,10 +435,12 @@ struct Renderer {
    Usage:
    BeginMode2D(camera);
 
-   // Drawing
+   //
+     * Drawing
 
 
-     * * *
+
+     * * * *
      * with
 
 
@@ -375,7 +449,9 @@ struct Renderer {
    EndMode2D();
 
    @version 0.0.2
-   @param camera the camera
+   @param
+     * camera the
+     * camera
      * 2D
 
      * * (view_matrix)
@@ -424,7 +500,9 @@ struct Renderer {
 
    @return
 
- * *
+ *
+
+     * * *
      * void
 
 */
@@ -447,4 +525,9 @@ struct Renderer {
     virtual void* GetContext() = 0;
 
     virtual void Destroy() = 0;
+
+private:
+    virtual float BindTexture(Uint32 slot = 0) = 0;
+
+    virtual void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) = 0;
 };

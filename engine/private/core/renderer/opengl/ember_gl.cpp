@@ -11,6 +11,101 @@ OpenglShader* OpenglRenderer::GetTextShader() {
     return text_shader;
 }
 
+void OpenglRenderer::Initialize() {
+
+#pragma region DEFAULT_BUFFER
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTICES, nullptr, GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    {
+        std::vector<Uint32> indices(MAX_INDICES);
+        Uint32 offset = 0;
+        for (int i = 0; i < MAX_QUADS; ++i) {
+            indices[i * 6 + 0] = offset + 0;
+            indices[i * 6 + 1] = offset + 1;
+            indices[i * 6 + 2] = offset + 2;
+            indices[i * 6 + 3] = offset + 2;
+            indices[i * 6 + 4] = offset + 3;
+            indices[i * 6 + 5] = offset + 0;
+            offset += 4;
+        }
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
+    }
+
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Color));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, UV));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, TextureIndex));
+
+
+    glUseProgram(default_shader->GetID());
+
+    int samplers[MAX_TEXTURE_SLOTS];
+
+    for (int i = 0; i < MAX_TEXTURE_SLOTS; i++) {
+        samplers[i] = i;
+    }
+
+    glUniform1iv(glGetUniformLocation(default_shader->GetID(), "uTextures"), MAX_TEXTURE_SLOTS, samplers);
+
+    _textureCount = 0;
+    _quadCount    = 0;
+#pragma endregion
+
+
+#pragma region TEXT_BUFFER
+
+    glGenVertexArrays(1, &_textVAO);
+    glBindVertexArray(_textVAO);
+
+    glGenBuffers(1, &_textVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * MAX_VERTICES, nullptr, GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1, &_textEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _textEBO);
+
+    {
+        std::vector<Uint32> indices(MAX_INDICES);
+        Uint32 offset = 0;
+        for (int i = 0; i < MAX_QUADS; ++i) {
+            indices[i * 6 + 0] = offset + 0;
+            indices[i * 6 + 1] = offset + 1;
+            indices[i * 6 + 2] = offset + 2;
+            indices[i * 6 + 3] = offset + 2;
+            indices[i * 6 + 4] = offset + 3;
+            indices[i * 6 + 5] = offset + 0;
+            offset += 4;
+        }
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_STATIC_DRAW);
+    }
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Position));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, Color));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, UV));
+
+#pragma endregion
+
+    glBindVertexArray(0);
+}
+
 void OpenglRenderer::Resize(int view_width, int view_height) {
     viewport[0] = view_width;
     viewport[1] = view_height;
@@ -30,6 +125,15 @@ void OpenglRenderer::Destroy() {
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+
+    glDeleteVertexArrays(1, &_textVAO);
+    glDeleteBuffers(1, &_textVBO);
+    glDeleteBuffers(1, &_textEBO);
+
+    glDeleteTextures(1, &_textureArrayBuffer);
+
+    ImGui_ImplOpenGL3_Shutdown();
 
     SDL_GL_DestroyContext(context);
 
@@ -41,8 +145,6 @@ void OpenglRenderer::Destroy() {
     delete text_shader;
     text_shader = nullptr;
 
-    delete this;
-   
 }
 
 
@@ -50,100 +152,184 @@ void OpenglRenderer::ClearBackground(const Color& color) {
     const glm::vec4 norm_color = color.GetNormalizedColor();
 
     glClearColor(norm_color.r, norm_color.g, norm_color.b, norm_color.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 
-void OpenglRenderer::BeginDrawing() {
+void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    const glm::mat4 projection = glm::ortho(0.0f, (float) GEngine->GetRenderer()->viewport[0],
-                                            (float) GEngine->GetRenderer()->viewport[1], 0.0f, -1.0f, 1.0f);
-
-    constexpr glm::mat4 view = glm::mat4(1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->GetRenderer()->viewport[0]),
+                                            static_cast<float>(GEngine->GetRenderer()->viewport[1]), 0.0f, -1.0f, 1.0f);
 
 
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-    shader->Bind();
-    shader->SetValue("View", view);
-    shader->SetValue("Projection", projection);
+    // TODO: multiply w/ view_projection
+    Projection = projection;
 
-    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
-    text_shader->Bind();
-    text_shader->SetValue("View", view);
-    text_shader->SetValue("Projection", projection);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    _buffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
+                                                    GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+#else
+    _buffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+#endif
+
+
+    _indexCount   = 0;
+    _textureCount = 0;
+    _quadCount    = 0;
+
+    glBindVertexArray(_textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    _textBuffer = static_cast<Vertex*>(glMapBufferRange(GL_ARRAY_BUFFER, 0, MAX_VERTICES * sizeof(Vertex),
+                                                        GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT));
+#else
+    _textBuffer = static_cast<Vertex*>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY));
+#endif
+
+    _textQuadCount  = 0;
+    _textIndexCount = 0;
+}
+
+
+void OpenglRenderer::FlushText() {
+    if (_textIndexCount == 0) {
+        return;
+    }
+
+    glBindVertexArray(_textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+
+    Shader* _text_shader = this->GetTextShader();
+    _text_shader->Bind();
+    _text_shader->SetValue("ViewProjection", Projection);
+    _text_shader->SetValue("uTexture", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _currentFontTextureID);
+
+    glDrawElements(GL_TRIANGLES, _textIndexCount, GL_UNSIGNED_INT, nullptr);
+
+    _textQuadCount  = 0;
+    _textIndexCount = 0;
 }
 
 void OpenglRenderer::EndDrawing() {
+
+    Flush();
+
+    FlushText();
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
     SDL_GL_SwapWindow(GEngine->GetRenderer()->window);
 }
-
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
     Texture texture{};
     int w = 0, h = 0, channels = 4;
 
     stbi_set_flip_vertically_on_load(true);
-
-    const auto buffer = LoadFileIntoMemory(file_path);
-
+    const auto buffer   = LoadFileIntoMemory(file_path);
     unsigned char* data = stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &w, &h, &channels, 4);
 
     bool error_texture = false;
 
     if (!data) {
-        LOG_ERROR("Failed to load texture with path: %s", file_path.c_str());
+        LOG_ERROR("Failed to load texture: %s", file_path.c_str());
         w    = 128;
         h    = 128;
         data = new unsigned char[w * h * 4];
 
-        auto fallback_error_texture = [w, h, data]() {
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int i        = (y * w + x) * 4;
-                    bool is_pink = ((x / 8) % 2) == ((y / 8) % 2);
-
-                    data[i + 0] = is_pink ? 180 : 0;
-                    data[i + 1] = 0;
-                    data[i + 2] = is_pink ? 180 : 0;
-                    data[i + 3] = 255;
-                }
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                int i       = (y * w + x) * 4;
+                bool pink   = ((x / 8) % 2) == ((y / 8) % 2);
+                data[i + 0] = pink ? 180 : 0;
+                data[i + 1] = 0;
+                data[i + 2] = pink ? 180 : 0;
+                data[i + 3] = 255;
             }
-        };
+        }
 
-        fallback_error_texture();
         error_texture = true;
     }
 
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+
+    constexpr int ATLAS_WIDTH  = 1024;
+    constexpr int ATLAS_HEIGHT = 1024;
+
+    if (_textureArrayBuffer == 0) {
+        glGenTextures(1, &_textureArrayBuffer);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, w, h, MAX_TEXTURE_SLOTS);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, ATLAS_WIDTH, ATLAS_HEIGHT, MAX_TEXTURE_SLOTS);
+
+
+    }
+
+    int layer = _textureCount + 1;
+
+
+    if (layer >= MAX_TEXTURE_SLOTS) {
+        LOG_WARN("Texture slot overflow, wrapping to 1");
+        layer = 1;
+    }
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    texture.id = layer;
+    _textureCount++;
+
+#else
     unsigned int texId;
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    stbi_image_free(data);
+    texture.id = texId;
+#endif
 
-    if (!error_texture) {
-        LOG_INFO("Loaded texture with ID: %d, path: %s", texId, file_path.c_str());
+
+    if (error_texture) {
+        LOG_WARN("Failed to load texture: %s", file_path.c_str());
+        delete[] data;
+
+
+    }else {
+        LOG_INFO("Loaded texture with ID: %d, path: %s", texture.id, file_path.c_str());
         LOG_INFO(" > Width %d, Height %d", w, h);
         LOG_INFO(" > Num. Channels %d", channels);
+        stbi_image_free(data);
+
     }
 
-    texture.id     = texId;
     texture.width  = w;
     texture.height = h;
+
     return texture;
 }
+
 
 // https://stackoverflow.com/questions/71185718/how-to-use-ft-render-mode-sdf-in-freetype
 Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size) {
@@ -268,290 +454,235 @@ Font OpenglRenderer::LoadFont(const std::string& file_path, const int font_size)
     return font;
 }
 
-void OpenglRenderer::DrawText(const Font& font, const std::string& text, Transform transform, Color color,
+void OpenglRenderer::DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color,
                               float font_size, const ShaderEffect& shader_effect, float kerning) {
 
 
-    if (text.empty() || !font.IsValid()) {
+    if (text.empty()) {
         return;
     }
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, font.texture.id);
 
-    Shader* shader = GEngine->GetRenderer()->GetTextShader();
-    shader->Bind();
+    // TODO: fix this so we can use many fonts instead of only 1
+    // if (_currentFontTextureID != font.texture.id) {
+    //     FlushText();
+    // }
 
-    shader->SetValue("Color", color.GetNormalizedColor());
+    _currentFontTextureID = font.texture.id;
 
-    if (shader_effect.Shadow.bEnabled) {
+    const glm::vec4 norm_color = color.GetNormalizedColor();
+    const float scale          = font_size / font.font_size;
 
-        glm::vec2 uv_offset = shader_effect.Shadow.pixel_offset / glm::vec2(font.texture.width, font.texture.height);
-        shader->SetValue("shadow.enabled", shader_effect.Shadow.bEnabled);
-        shader->SetValue("shadow.color", shader_effect.Shadow.color);
-        shader->SetValue("shadow.uv_offset", uv_offset);
-    } else {
-        shader->SetValue("shadow.enabled", false);
-    }
+    glm::vec3 pos = transform.Position;
 
-    if (shader_effect.Outline.bEnabled) {
-
-        shader->SetValue("outline.enabled", shader_effect.Outline.bEnabled);
-        shader->SetValue("outline.color", shader_effect.Outline.color);
-        shader->SetValue("outline.thickness", shader_effect.Outline.thickness);
-    } else {
-        shader->SetValue("outline.enabled", false);
-    }
-
-    // TODO: add glow effect
-    if (shader_effect.Glow.bEnabled) {
-    }
-
-    const glm::mat4 model = transform.GetModelMatrix2D();
-
-    shader->SetValue("Model", model);
-
-    float scale_factor = (font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
-
-
-    float cursor_x = 0.0f;
-    float cursor_y = 0.0f;
-    float start_x  = cursor_x;
-
-    std::vector<Vertex> vertices;
-    std::vector<Uint32> indices;
-
-    vertices.clear();
-    indices.clear();
-
-    uint32_t index_offset = 0;
-
-    for (char c : text) {
-
+    for (size_t i = 0; i < text.size(); ++i) {
+        constexpr float texIndex = 0.0f;
+        char c                   = text[i];
         if (c == '\n') {
-            cursor_x = start_x;
-            cursor_y += font.font_size * scale_factor;
+            pos.x = transform.Position.x;
+            pos.y += (font.ascent - font.descent + font.line_gap) * scale;
             continue;
         }
 
-        if (!font.glyphs.contains(c)) {
-            continue;
+        const auto& glyph = font.glyphs.at(c);
+
+        float xpos = pos.x + glyph.x_offset * scale;
+        float ypos = pos.y + glyph.y_offset * scale;
+
+        float w = glyph.w * scale;
+        float h = glyph.h * scale;
+
+        glm::vec3 p0 = glm::vec3(xpos, ypos, 0);
+        glm::vec3 p1 = glm::vec3(xpos + w, ypos, 0);
+        glm::vec3 p2 = glm::vec3(xpos + w, ypos + h, 0);
+        glm::vec3 p3 = glm::vec3(xpos, ypos + h, 0);
+
+        Vertex quad[4] = {
+            {p0, norm_color, {glyph.x0, glyph.y0}, texIndex},
+            {p1, norm_color, {glyph.x1, glyph.y0}, texIndex},
+            {p2, norm_color, {glyph.x1, glyph.y1}, texIndex},
+            {p3, norm_color, {glyph.x0, glyph.y1}, texIndex},
+        };
+
+        for (int j = 0; j < 4; ++j) {
+            _textBuffer[_textQuadCount * 4 + j] = quad[j];
         }
 
-        const Glyph& g = font.glyphs.at(c);
+        _textQuadCount++;
+        _textIndexCount += 6;
 
-        float x0 = cursor_x + g.x_offset * scale_factor;
-        float y0 = cursor_y + g.y_offset * scale_factor;
-        float x1 = x0 + g.w * scale_factor;
-        float y1 = y0 + g.h * scale_factor;
+        if (_textIndexCount >= MAX_INDICES || _textQuadCount >= MAX_QUADS) {
+            FlushText();
+        }
 
-        float u0 = g.x0;
-        float v0 = g.y0;
-        float u1 = g.x1;
-        float v1 = g.y1;
 
-        vertices.push_back({glm::vec3(x0, y0, 0.0f), glm::vec2(u0, v0)}); // TL
-        vertices.push_back({glm::vec3(x1, y0, 0.0f), glm::vec2(u1, v0)}); // TR
-        vertices.push_back({glm::vec3(x1, y1, 0.0f), glm::vec2(u1, v1)}); // BR
-        vertices.push_back({glm::vec3(x0, y1, 0.0f), glm::vec2(u0, v1)}); // TL
-
-        indices.push_back(index_offset + 0);
-        indices.push_back(index_offset + 1);
-        indices.push_back(index_offset + 2);
-
-        indices.push_back(index_offset + 0);
-        indices.push_back(index_offset + 2);
-        indices.push_back(index_offset + 3);
-
-        index_offset += 4;
-        cursor_x += (g.advance + kerning) * scale_factor;
+        pos.x += (glyph.advance + kerning) * scale;
     }
-
-
-    static Mesh mesh(vertices, indices);
-
-    mesh.Update(vertices, indices);
-
-    glDepthMask(GL_FALSE);
-    mesh.Draw(GL_TRIANGLES);
-    glDepthMask(GL_TRUE);
 }
 
+// TODO: fix me
+void OpenglRenderer::DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
+                                 const Color& color) {
 
-void OpenglRenderer::DrawTexture(const Texture& texture, ember::Rectangle rect, Color color) {
-
-    if (texture.id == 0) {
-        return;
+    if (size.x <= 0 || size.y <= 0) {
+        size = glm::vec2(texture.width, texture.height);
     }
 
-    static Mesh mesh;
+    SDL_assert(texture.width > 0 && texture.height > 0);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture.id);
-
-
-    glm::mat4 model = glm::mat4(1.0f);
-
-    model = glm::translate(model, glm::vec3(rect.x, rect.y, 0.0f));
-    model = glm::scale(model, glm::vec3(rect.width, rect.height, 1.0f));
-
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-    shader->Bind();
-
-    shader->SetValue("Color", color.GetNormalizedColor());
-
-    shader->SetValue("Model", model);
-
-    const std::vector<Vertex> vertices = {
-        {glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)},
-        {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)},
-        {glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)},
-        {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)},
-    };
-
-    mesh.Update(vertices);
-
-
-    mesh.Draw(GL_TRIANGLE_FAN);
+    Submit(transform, size, color.GetNormalizedColor(), texture.id);
 }
 
 
 void OpenglRenderer::DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                                   glm::vec2 origin, float rotation, const Color& color) {
+                                   glm::vec2 origin, float rotation, float zIndex, const Color& color) {
 
-    if (texture.id == 0) {
-        return;
+    const float texIndex = BindTexture(texture.id);
+
+
+    glm::vec2 uv0 = {source.x / (float) texture.width, 1.0f - (source.y + source.height) / (float) texture.height};
+    glm::vec2 uv1 = {(source.x + source.width) / static_cast<float>(texture.width),
+                     1.0f - source.y / static_cast<float>(texture.height)};
+
+    glm::vec2 pivot = {origin.x * dest.width, origin.y * dest.height};
+
+    constexpr float angleCorrection = glm::radians(180.f);
+
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, glm::vec3(dest.x, dest.y, zIndex));
+    model = glm::translate(model, glm::vec3(pivot, 0.0f));
+    model = glm::rotate(model, angleCorrection, glm::vec3(0, 0, 1));
+    model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 0, 1));
+    model = glm::translate(model, glm::vec3(-pivot, 0.0f));
+    model = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
+
+    glm::vec4 corners[4] = {
+        model * glm::vec4(0, 0, 0, 1), // TL
+        model * glm::vec4(1, 0, 0, 1), // TR
+        model * glm::vec4(1, 1, 0, 1), // BR
+        model * glm::vec4(0, 1, 0, 1), // BL
+    };
+
+    const glm::vec4 normalized_color = color.GetNormalizedColor();
+
+    Vertex quad[4] = {
+        {corners[0], normalized_color, {uv0.x, uv0.y}, texIndex},
+        {corners[1], normalized_color, {uv1.x, uv0.y}, texIndex},
+        {corners[2], normalized_color, {uv1.x, uv1.y}, texIndex},
+        {corners[3], normalized_color, {uv0.x, uv1.y}, texIndex},
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        _buffer[_quadCount * 4 + i] = quad[i];
     }
 
+    _quadCount++;
+    _indexCount += 6;
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture.id);
-
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model           = glm::translate(model, glm::vec3(dest.x, dest.y, 0.0f));
-    model           = glm::translate(model, glm::vec3(origin.x, origin.y, 0.0f));
-    model           = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    model           = glm::translate(model, glm::vec3(-origin.x, -origin.y, 0.0f));
-    model           = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
-
-    shader->SetValue("Color", color.GetNormalizedColor());
-
-    float texLeft   = (float) source.x / texture.width;
-    float texRight  = (float) (source.x + source.width) / texture.width;
-    float texTop    = (float) source.y / texture.height;
-    float texBottom = (float) (source.y + source.height) / texture.height;
-
-    shader->SetValue("Model", model);
-
-    const float flipY = -1.0f;
-
-    const std::vector<Vertex> vertices = {
-        {{0.0f, 0.0f, 0.0f}, {texLeft, flipY - texTop}},
-        {{1.0f, 0.0f, 0.0f}, {texRight, flipY - texTop}},
-        {{1.0f, 1.0f, 0.0f}, {texRight, flipY - texBottom}},
-        {{0.0f, 1.0f, 0.0f}, {texLeft, flipY - texBottom}},
-    };
-
-    const std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
-
-    static Mesh mesh(vertices, indices);
-
-    mesh.Update(vertices);
-
-    mesh.Draw();
+    if (_indexCount >= MAX_INDICES) {
+        Flush();
+    }
 }
 
-void OpenglRenderer::DrawLine(glm::vec2 start, glm::vec2 end, const Color& color, float thickness) {
+void OpenglRenderer::DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) {
+    const glm::vec2 dir = end - start;
+    float len           = glm::length(dir);
+    const float angle   = atan2(dir.y, dir.x);
 
-    static Mesh mesh;
+    Transform2D t;
+    t.Position = start;
+    t.Rotation = angle;
+    t.Scale    = {len, thickness};
 
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-
-    shader->SetValue("Color", color.GetNormalizedColor());
-
-    shader->SetValue("Model", glm::mat4(1.0f));
-
-    const std::vector<Vertex> vertices = {{glm::vec3(start, 0.0f), glm::vec2(0.0f, 0.0f)},
-                                          {glm::vec3(end, 0.0f), glm::vec2(0.0f, 0.0f)}};
-    mesh.Update(vertices);
-
-    glLineWidth(thickness);
-
-    mesh.Draw(GL_LINES);
+    Submit(t, {1, 1}, color.GetNormalizedColor(), UINT32_MAX);
 }
 
 
-void OpenglRenderer::DrawRect(const ember::Rectangle& rect, const Color& color, float thickness) {
-    static Mesh mesh;
+void OpenglRenderer::DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) {
+    glm::vec3 p0 = {0, 0, 0};
+    glm::vec3 p1 = {size.x, 0, 0};
+    glm::vec3 p2 = {size.x, size.y, 0};
+    glm::vec3 p3 = {0, size.y, 0};
 
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
+    const glm::mat4 model = transform.GetMatrix();
 
-    shader->SetValue("Color", color.GetNormalizedColor());
+    p0 = glm::vec3(model * glm::vec4(p0, 1.0f));
+    p1 = glm::vec3(model * glm::vec4(p1, 1.0f));
+    p2 = glm::vec3(model * glm::vec4(p2, 1.0f));
+    p3 = glm::vec3(model * glm::vec4(p3, 1.0f));
 
-    shader->SetValue("Model", glm::mat4(1.0f));
-
-    const std::vector<Vertex> vertices = {{{rect.x, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                          {{rect.x + rect.width, rect.y, 0.0f}, {0.0f, 0.0f}},
-                                          {{rect.x + rect.width, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}},
-                                          {{rect.x, rect.y + rect.height, 0.0f}, {0.0f, 0.0f}}};
-
-    mesh.Update(vertices);
-
-    glLineWidth(thickness);
-
-    mesh.Draw(GL_LINE_LOOP);
+    DrawLine(p0, p1, color, thickness);
+    DrawLine(p1, p2, color, thickness);
+    DrawLine(p2, p3, color, thickness);
+    DrawLine(p3, p0, color, thickness);
 }
 
 
-void OpenglRenderer::DrawRectFilled(const ember::Rectangle& rect, const Color& color) {
-    static Mesh mesh;
-
-    const glm::mat4 model = glm::mat4(1.0f);
-
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-
-    shader->SetValue("Color", color.GetNormalizedColor());
-
-    shader->SetValue("Model", model);
-
-    const std::vector<Vertex> vertices = {
-        {glm::vec3(rect.x, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-        {glm::vec3(rect.x + rect.width, rect.y, 0.0f), glm::vec2(0.0f, 0.0f)},
-        {glm::vec3(rect.x + rect.width, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-        {glm::vec3(rect.x, rect.y + rect.height, 0.0f), glm::vec2(0.0f, 0.0f)},
-    };
-
-    mesh.Update(vertices);
-
-    mesh.Draw(GL_TRIANGLE_FAN);
+void OpenglRenderer::DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) {
+    Submit(transform, size, color.GetNormalizedColor(), UINT32_MAX);
 }
 
-void OpenglRenderer::BeginMode2D(const Camera2D& camera) {
+void OpenglRenderer::DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
 
-    const glm::mat4& view = camera.GetViewMatrix();
-
-    const glm::mat4& projection = camera.GetProjectionMatrix();
-
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-    shader->SetValue("View", view);
-
-    shader->SetValue("Projection", projection);
-
-    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
-    text_shader->SetValue("View", view);
-
-    text_shader->SetValue("Projection", projection);
+    constexpr float thickness = 1.f;
+    DrawLine(p0, p1, color,thickness);
+    DrawLine(p1, p2, color,thickness);
+    DrawLine(p2, p0, color,thickness);
 }
 
-void OpenglRenderer::EndMode2D() {
-    constexpr glm::mat4 view = glm::mat4(1.0f);
-    Shader* shader           = GEngine->GetRenderer()->GetDefaultShader();
-    shader->SetValue("View", view);
+void OpenglRenderer::DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) {
 
-    Shader* text_shader = GEngine->GetRenderer()->GetTextShader();
-    text_shader->SetValue("View", view);
+    float texIndex = 0.0f;
+
+    const glm::vec4 normalized_color = color.GetNormalizedColor();
+
+    _buffer[_quadCount * 4 + 0] = {p0, normalized_color, {0, 0}, texIndex};
+    _buffer[_quadCount * 4 + 1] = {p1, normalized_color, {0, 0}, texIndex};
+    _buffer[_quadCount * 4 + 2] = {p2, normalized_color, {0, 0}, texIndex};
+    _buffer[_quadCount * 4 + 3] = {p2, normalized_color, {0, 0}, texIndex};
+
+    _indexCount += 6;
+    _quadCount++;
+
+    if (_indexCount >= MAX_INDICES) {
+        Flush();
+    }
 }
+
+
+void OpenglRenderer::DrawCircle(glm::vec3 position, float radius, const Color& color, int segments) {
+    for (int i = 0; i < segments; ++i) {
+        float theta0 = static_cast<float>(i) / segments * 2.0f * M_PI;
+        float theta1 = static_cast<float>(i + 1) / segments * 2.0f * M_PI;
+
+        glm::vec3 p0 = position + glm::vec3(cos(theta0), sin(theta0), 0.0f) * radius;
+        glm::vec3 p1 = position + glm::vec3(cos(theta1), sin(theta1), 0.0f) * radius;
+
+        DrawLine(p0, p1, color, 1.0f);
+    }
+}
+
+
+void OpenglRenderer::DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments) {
+    glm::vec3 start = position + glm::vec3(radius, 0.0f, 0.0f);
+    glm::vec3 prev  = start;
+
+    for (int i = 1; i < segments; ++i) {
+        float theta = static_cast<float>(i) / segments * 2.0f * M_PI;
+
+        glm::vec3 point = position + glm::vec3(cos(theta) * radius, sin(theta) * radius, 0.0f);
+
+        DrawTriangleFilled(position, prev, point, color);
+
+        prev = point;
+    }
+
+    DrawTriangleFilled(position, prev, start, color);
+}
+
+
+void OpenglRenderer::BeginMode2D(const Camera2D& camera) {}
+
+void OpenglRenderer::EndMode2D() {}
 
 
 void OpenglRenderer::BeginCanvas() {
@@ -579,13 +710,6 @@ void OpenglRenderer::BeginCanvas() {
 
     constexpr glm::mat4 view = glm::mat4(1.0f);
 
-    Shader* shader = GEngine->GetRenderer()->GetDefaultShader();
-    shader->SetValue("View", view);
-    shader->SetValue("Projection", projection);
-
-    Shader* text_shader = GEngine->GetRenderer()->GetDefaultShader();
-    text_shader->SetValue("View", view);
-    text_shader->SetValue("Projection", projection);
 
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -596,6 +720,100 @@ void OpenglRenderer::BeginCanvas() {
 void OpenglRenderer::EndCanvas() {
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+}
+
+
+float OpenglRenderer::BindTexture(Uint32 slot) {
+
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    return static_cast<float>(slot);
+#else
+
+    for (int i = 0; i < _textureCount; ++i) {
+        if (_textures[i] == slot) {
+            return static_cast<float>(i + 1);
+        }
+    }
+
+    if (_textureCount >= MAX_TEXTURE_SLOTS) {
+        Flush();
+    }
+
+    _textures[_textureCount] = slot;
+    _textureCount++;
+    return static_cast<float>(_textureCount);
+#endif
+}
+
+void OpenglRenderer::Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) {
+
+    if (_quadCount >= MAX_QUADS) {
+        Flush();
+    }
+
+    bool textured        = (slot != UINT32_MAX);
+    const float texIndex = textured ? BindTexture(slot) : 0.0f;
+
+    glm::vec2 uv00 = slot ? glm::vec2(0, 0) : glm::vec2(0);
+    glm::vec2 uv11 = slot ? glm::vec2(1) : glm::vec2(0);
+
+    glm::mat4 model = transform.GetMatrix();
+
+    glm::vec4 corners[4] = {
+        model * glm::vec4(0, 0, 0, 1),
+        model * glm::vec4(size.x, 0, 0, 1),
+        model * glm::vec4(size.x, size.y, 0, 1),
+        model * glm::vec4(0, size.y, 0, 1),
+    };
+
+
+    Vertex quad[4] = {{corners[0], color, {uv00.x, uv11.y}, texIndex},
+                      {corners[1], color, {uv11.x, uv11.y}, texIndex},
+                      {corners[2], color, {uv11.x, uv00.y}, texIndex},
+                      {corners[3], color, {uv00.x, uv00.y}, texIndex}};
+
+
+    for (int i = 0; i < 4; ++i) {
+        _buffer[_quadCount * 4 + i] = quad[i];
+    }
+
+    _quadCount++;
+    _indexCount += 6;
+
+    if (_indexCount >= MAX_INDICES) {
+        Flush();
+    }
+}
+
+void OpenglRenderer::Flush() {
+
+    if (_indexCount == 0) {
+        return;
+    }
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
+    Shader* _default = this->GetDefaultShader();
+    _default->Bind();
+    _default->SetValue("ViewProjection", Projection);
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureArrayBuffer);
+#else
+    for (int i = 0; i < _textureCount; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, _textures[i]);
+    }
+#endif
+
+    glDrawElements(GL_TRIANGLES, _indexCount, GL_UNSIGNED_INT, nullptr);
+
+    _quadCount  = 0;
+    _indexCount = 0;
 }
 
 void OpenglRenderer::UnloadFont(const Font& font) {

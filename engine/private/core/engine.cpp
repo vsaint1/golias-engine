@@ -172,11 +172,15 @@ void Engine::Shutdown() {
 
     this->_renderer->Destroy();
 
+    delete this->_renderer;
+    this->_renderer = nullptr;
+
     delete this->_input_manager;
+    this->_input_manager = nullptr;
 
     delete this->_time_manager;
+    this->_time_manager = nullptr;
 
-    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
@@ -205,6 +209,7 @@ InputManager* Engine::GetInputManager() const {
 TimeManager* Engine::GetTimeManager() const {
     return _time_manager;
 }
+
 Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -261,14 +266,17 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
     }
 
     OpenglRenderer* glRenderer = new OpenglRenderer();
+
     glRenderer->viewport[0]    = view_width;
     glRenderer->viewport[1]    = view_height;
     glRenderer->window         = window;
+
     glRenderer->SetContext(glContext);
 
     glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
     glRenderer->text_shader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
 
+    glRenderer->Initialize();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -282,7 +290,6 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
     ImGui_ImplSDL3_InitForOpenGL(window, glContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -292,5 +299,6 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
 
     this->_renderer = glRenderer;
 
-    return this->_renderer;
+
+    return _renderer;
 }

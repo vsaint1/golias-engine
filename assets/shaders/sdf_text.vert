@@ -1,14 +1,15 @@
 
 layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aTexCoord;
+layout(location = 1) in vec4 aColor;
+layout(location = 2) in vec2 aTexCoord;
 
-uniform mat4 Model;
-uniform mat4 View;
-uniform mat4 Projection;
+uniform mat4 ViewProjection;
 
-out vec2 TexCoord;
+out vec2 TextureCoords;
+out vec4 vColor;
 
 void main() {
-    gl_Position = Projection * View * Model * vec4(aPos, 1.0);
-    TexCoord = aTexCoord;
+    gl_Position = ViewProjection * vec4(aPos, 1.0);
+    TextureCoords = aTexCoord;
+    vColor = aColor;
 }

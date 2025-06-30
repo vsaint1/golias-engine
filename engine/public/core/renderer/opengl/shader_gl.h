@@ -31,6 +31,8 @@ public:
 
     void SetValue(const std::string& name, int value) override;
 
+    void SetValue(const std::string& name, unsigned int value) override;
+
     void SetValue(const std::string& name, glm::mat4 value) override;
 
     void SetValue(const std::string& name, glm::vec2 value) override;

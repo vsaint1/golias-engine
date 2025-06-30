@@ -7,8 +7,10 @@
     @version 0.0.3
 */
 struct Vertex {
-    glm::vec3 position;
-    glm::vec2 texCoord;
+    glm::vec3 Position;
+    glm::vec4 Color;
+    glm::vec2 UV;
+    float TextureIndex;
 };
 
 /*! @brief Mesh class

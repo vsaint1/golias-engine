@@ -4,6 +4,7 @@
 bool Font::IsValid() const {
     return texture.id != 0 && glyphs.size() > 0;
 }
+
 glm::vec4 Color::GetNormalizedColor() const {
     glm::vec4 norm_color = {
         r / 255.0f,

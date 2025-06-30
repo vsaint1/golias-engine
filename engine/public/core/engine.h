@@ -13,14 +13,18 @@
     > WEB: WebGL 3.0
  >
 
- *
+
+
+ * * *
  * * DESKTOP: OpenGL 3.3
     > MOBILE: OpenGLES 3.0
 
     Type: Metal
     > Apple Devices only
 
-   @version 0.0.1
+   @version
+ *
+ * 0.0.1
 
 */
 enum RendererType { OPENGL, METAL };
@@ -31,8 +35,7 @@ class OpenglRenderer;
 
 class Engine {
 
-    public:
-
+public:
     struct {
         int width                   = 0;
         int height                  = 0;
@@ -71,66 +74,86 @@ class Engine {
     /*!
         @brief Initialize SDL window, renderer and modules
         - Window
-        - Graphics Backend  `OpenGL`
-     * or `Metal`
+        - Graphics Backend
+     * `OpenGL`
+
+     * * or `Metal`
      -
 
      * * Audio
         - Font
 
         @version 0.0.1
-        @param title Window title
+        @param title
+     * Window title
 
-     * @param width Window width
+
+     * * @param width Window width
         @param height
+        @param type
 
      * * Window height
-        @param type Renderer type
-     * `OPENGL` or `METAL`
+        @param
+     * type Renderer type
+
+     * * `OPENGL` or `METAL`
         @param flags SDL window flags
 
         @link
      *
-     *
+ *
+
+     * *
      * https://wiki.libsdl.org/SDL_WindowFlags @endlink
 
-        @return bool - true on `success` or false on `failure`
+        @return bool - true on `success` or false on
+
+     * * `failure`
 
      */
     bool Initialize(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
+
+
+private:
+    Renderer* _renderer          = nullptr;
+    InputManager* _input_manager = nullptr;
+    TimeManager* _time_manager   = nullptr;
 
 
     /*!
     @brief Create a renderer instance
     - Backend `OpenGL` or `Metal`
 
-    @param window SDL window instance
+    @param window SDL window
+     *
+     * instance
 
 
      * *
- * @param view_width Viewport width
+    *
+         * @param view_width Viewport width
     @param view_height Viewport height
-    @param type Renderer type
-     * `OPENGL` or
- *
- * `METAL`
+
+     * @param type
+     * Renderer type
+     * `OPENGL`
+         * or
+    *
+    * `METAL`
 
     @version 0.0.1
-    @return Renderer
-*/
+ @return
+     * Renderer
+    */
     Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type);
-
-
-private:
-    Renderer* _renderer = nullptr;
-    InputManager* _input_manager = nullptr;
-    TimeManager* _time_manager   = nullptr;
 
     /*!
         @brief Create a renderer instance internally
         - Backend `OpenGL`
 
         @param window SDL
+
+ * *
      * window instance
 
      *
@@ -138,7 +161,9 @@ private:
         @param view_height Viewport height
 
 
-     * @version 0.0.2
+
+
+     * * * @version 0.0.2
         @return Renderer
     */
     Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
@@ -146,7 +171,9 @@ private:
     /*
         @brief Create a renderer instance internally
         - Backend `Metal`
-        TODO: implement metal api
+        TODO: implement metal
+
+     * * api
 
      */
     Renderer* CreateRendererMTL(SDL_Window* window, int view_width, int view_height);

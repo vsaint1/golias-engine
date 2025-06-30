@@ -5,15 +5,19 @@
 class ShaderEffect {
 public:
     struct {
+
         int  bEnabled = 0;
         glm::vec4 color = glm::vec4(1.0f);
         float thickness = 0.0f;
+      
     } Outline;
 
     struct {
+
         int  bEnabled = 0;
         glm::vec4 color        = glm::vec4(1.0f);
         glm::vec2 pixel_offset = glm::vec2(0.0f);
+      
     } Shadow;
 
     struct {
@@ -29,9 +33,10 @@ public:
     - Bind the shader
     - Send uniforms
 
-    @version
+ @version
 
 
+ *
  * * * 0.0.2
     @param string vertex The shader source
     @param string fragment The shader source
@@ -55,6 +60,8 @@ public:
     virtual void SetValue(const std::string& name, glm::vec3 value) = 0;
 
     virtual void SetValue(const std::string& name, glm::vec4 value) = 0;
+
+    virtual void SetValue(const std::string& name, unsigned int value) = 0;
 
     virtual void Destroy() = 0;
 

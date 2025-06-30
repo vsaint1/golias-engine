@@ -75,7 +75,7 @@ AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
 # AllowShortCompoundRequirementOnASingleLine: true
 # AllowShortEnumsOnASingleLine: true
 # AllowShortFunctionsOnASingleLine: All
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: None
 # AllowShortIfStatementsOnASingleLine: Never
 # AllowShortLambdasOnASingleLine: All
 # AllowShortLoopsOnASingleLine: false
@@ -116,15 +116,15 @@ BreakAfterAttributes: Never
 # BreakBeforeBinaryOperators: None
 BreakBeforeBinaryOperators: NonAssignment
 # BreakBeforeConceptDeclarations: Always
-# BreakBeforeBraces: Attach
+#BreakBeforeBraces: Allman
 # BreakBeforeInlineASMColon: OnlyMultiline
 # BreakBeforeTernaryOperators: true
 # BreakConstructorInitializers: BeforeColon
 # BreakInheritanceList: BeforeColon
 # BreakStringLiterals: true
 # ColumnLimit:     80
-ColumnLimit:     120
-# CommentPragmas:  '^ IWYU pragma:'
+ColumnLimit:     140
+CommentPragmas:  '^'
 # CompactNamespaces: false
 # ConstructorInitializerIndentWidth: 4
 # ContinuationIndentWidth: 4
@@ -236,7 +236,7 @@ PointerAlignment: Left
 # PPIndentWidth:   -1
 # QualifierAlignment: Leave
 # ReferenceAlignment: Pointer
-# ReflowComments:  true
+ReflowComments:  false
 # RemoveBracesLLVM: false
 # RemoveParentheses: Leave
 # RemoveSemicolon: false
@@ -311,7 +311,7 @@ StatementMacros:
   - _EXTERN_C_UNLESS_PURE
   - _END_EXTERN_C_UNLESS_PURE
 # TabWidth:        8
-# UseTab:          Never
+UseTab:          Never
 # VerilogBreakBetweenInstancePorts: true
 # WhitespaceSensitiveMacros:
 #   - BOOST_PP_STRINGIZE

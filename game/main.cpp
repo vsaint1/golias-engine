@@ -1,12 +1,13 @@
 ﻿#include "core/renderer/opengl/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
+
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
 Font mine_font;
 
-Texture player_texture;
+Texture player_texture,p2_texture;
 bool bShowMetrics = false;
 
 Color background_color = {120, 100, 100, 255};
@@ -30,7 +31,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     mine_font = GEngine->GetRenderer()->LoadFont("fonts/Minecraft.ttf", 32);
 
     player_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_001.png");
-
+    p2_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_002.png");
     mine_music   = Audio::Load("sounds/lullaby.mp3");
     tel_music    = Audio::Load("sounds/the_entertainer.ogg");
     random_music = Audio::Load("sounds/test.flac");
@@ -68,54 +69,57 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     GEngine->GetRenderer()->BeginDrawing();
 
     static float angle         = 0.0f;
-    static glm::ivec3 position = {200, 300, 0};
+    static glm::vec3 position = {200, 300, 0};
 
-    static Transform transform = {
+    static Transform2D transform = {
         glm::vec3(300.f, 100.f, 0.f),
-        glm::vec3(0.f),
-        glm::vec3(1.f),
+        glm::vec2(1.f),
+        0.0f
     };
 
-    static Transform transform2 = {
-        glm::vec3(650.f, 350.f, 0.f),
-        glm::vec3(0.f),
-        glm::vec3(1.f),
-    };
 
-    static Transform transform3 = {
-        glm::vec3(500.f, 295.f, 0.f),
-        glm::vec3(0.f),
-        glm::vec3(1.f),
-    };
+    static Transform2D transform2;
+    transform2.Position = {500, 100, 0.001f};
+    transform2.Rotation = 0.0f;
+    transform2.Scale    = {1, 1};
 
-    GEngine->GetRenderer()->DrawTexture(player_texture, {0, 0, player_texture.width, player_texture.height});
+    static Transform2D transform3 = {
+        glm::vec3(300.f, 450.f, 0.f),
+        glm::vec2(1.f),
+        0.0f
+    };
 
 
     for (int i = 0; i < entities; i++) {
-        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 32, i * 32, 64, 64}, {32, 32}, angle,
-                                              {255, 255, 255, 255});
+        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
+                                              0.2f);
     }
 
-    GEngine->GetRenderer()->DrawText(mine_font, gui_text, transform, {0, 0, 0, 255}, 16.f, {});
+    GEngine->GetRenderer()->DrawLine({200, 200, 0}, {300, 300, 0}, {0, 255, 0, 255}, 2.f);
 
-    GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform2,
+    GEngine->GetRenderer()->DrawTexture(player_texture, transform2,{0,0} );
+
+    transform2.Position.z = 0.002f;
+
+    GEngine->GetRenderer()->DrawRect(transform2, {512, 512}, {255, 255, 255, 255}, 2.f);
+
+    GEngine->GetRenderer()->DrawCircle({300, 650,0.1}, 40, {255, 255, 255, 255});
+    GEngine->GetRenderer()->DrawCircleFilled({300, 300,0.2}, 20, {255,0 , 255, 255});
+    GEngine->GetRenderer()->DrawTriangle({100, 100,0}, {200, 100,0}, {150, 200,0}, {255, 255, 0, 255});
+
+    GEngine->GetRenderer()->DrawTextureEx(p2_texture, {0, 0, 32, 32}, {100, 200, 128, 128}, glm::vec2(0.5f, 0.5f),
+                                          angle);
+
+    GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform,
+                                     {255, 255, 255, 255}, 20.f);
+
+    GEngine->GetRenderer()->DrawText(mine_font, "Hello World!", transform3,
                                      {255, 255, 255, 255}, 20.f,
                                      {.Outline = {
                                           .bEnabled  = true,
                                           .color     = Color(255, 0, 0, 255).GetNormalizedColor(),
                                           .thickness = 0.35f,
                                       }});
-    //
-    // GEngine->GetRenderer()->DrawText(mine_font, "Hello world", transform3, text_color, 32.f,
-    //                                  {
-    //                                      .Shadow =
-    //                                          {
-    //                                              .bEnabled     = true,
-    //                                              .color        = Color(255, 0, 0, 255).GetNormalizedColor(),
-    //                                              .pixel_offset = glm::vec2(-2.f, -4.f),
-    //
-    //                                          },
-    //                                  });
 
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
@@ -127,13 +131,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
 
     ImGui::Text("Player");
-    ImGui::DragInt3("Position##player", &position.x, 1);
+    ImGui::DragFloat3("Position##player", &position.x, 1);
     ImGui::SliderFloat("Angle##player", &angle, 0.0f, 360.0f, "%.2f");
 
     ImGui::Text("Text");
-    ImGui::SliderFloat3("Position##text", &transform.position.x, 0.0f, GEngine->Window.width);
-    ImGui::SliderFloat3("Scale##text", &transform.scale.x, 0.0f, 10.0f);
-    ImGui::SliderFloat3("Rotation##text", &transform.rotation.x, 0.0f, 360.0f);
+    ImGui::SliderFloat3("Position##text", &transform2.Position.x, 0.0f, GEngine->Window.width);
+    ImGui::SliderFloat3("Scale##text", &transform2.Scale.x, 0.0f, 10.0f);
+    ImGui::SliderFloat3("Rotation##text", &transform2.Rotation, 0.0f, 360.0f);
 
 
     if (ImGui::ColorEdit4("Text color", temp_color), ImGuiColorEditFlags_NoInputs) {
@@ -233,7 +237,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     GEngine->GetRenderer()->EndDrawing();
 
-    // GEngine->GetTimeManager()->FixedFrameRate();
+    GEngine->GetTimeManager()->FixedFrameRate();
 
     return SDL_APP_CONTINUE;
 }
@@ -266,3 +270,4 @@ void SDL_AppQuit(void* app_state, SDL_AppResult result) {
 
     GEngine->Shutdown();
 }
+
