@@ -90,6 +90,7 @@ public:
 
      * * @param width Window width
         @param height
+        @param type
 
      * * Window height
         @param

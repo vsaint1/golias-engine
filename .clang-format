@@ -123,8 +123,8 @@ BreakBeforeBinaryOperators: NonAssignment
 # BreakInheritanceList: BeforeColon
 # BreakStringLiterals: true
 # ColumnLimit:     80
-ColumnLimit:     120
-# CommentPragmas:  '^ IWYU pragma:'
+ColumnLimit:     140
+CommentPragmas:  '^'
 # CompactNamespaces: false
 # ConstructorInitializerIndentWidth: 4
 # ContinuationIndentWidth: 4
@@ -236,7 +236,7 @@ PointerAlignment: Left
 # PPIndentWidth:   -1
 # QualifierAlignment: Leave
 # ReferenceAlignment: Pointer
-# ReflowComments:  true
+ReflowComments:  false
 # RemoveBracesLLVM: false
 # RemoveParentheses: Leave
 # RemoveSemicolon: false
