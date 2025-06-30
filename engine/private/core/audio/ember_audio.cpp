@@ -61,9 +61,12 @@ Audio* Audio::Load(const std::string& file_Path) {
 
     Audio* audio = (Audio*) SDL_malloc(sizeof(Audio));
 
-    SDL_assert(audio != nullptr);
+    if (!audio) {
+        LOG_ERROR("Failed to allocate memory for audio %s",file_Path.c_str());
+        return nullptr;
+    }
 
-    std::string path = ASSETS_PATH + file_Path;
+    const std::string path = ASSETS_PATH + file_Path;
 
     ma_decoder_config decoder_config = ma_decoder_config_init_default();
 
@@ -103,6 +106,8 @@ Audio* Audio::Load(const std::string& file_Path) {
         SDL_free(audio);
         return nullptr;
     }
+
+    SDL_assert(audio != nullptr);
 
     audio->decoder  = decoder;
     audio->duration = len;

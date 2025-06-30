@@ -89,6 +89,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
         0.0f
     };
 
+
     for (int i = 0; i < entities; i++) {
         GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
                                               0.2f);

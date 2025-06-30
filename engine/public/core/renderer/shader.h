@@ -5,19 +5,23 @@
 class ShaderEffect {
 public:
     struct {
-        bool bEnabled   = false;
+
+        int  bEnabled = 0;
         glm::vec4 color = glm::vec4(1.0f);
         float thickness = 0.0f;
+      
     } Outline;
 
     struct {
-        bool bEnabled          = false;
+
+        int  bEnabled = 0;
         glm::vec4 color        = glm::vec4(1.0f);
         glm::vec2 pixel_offset = glm::vec2(0.0f);
+      
     } Shadow;
 
     struct {
-        bool bEnabled = false;
+        int  bEnabled = 0;
     } Glow;
 };
 
