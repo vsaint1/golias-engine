@@ -249,7 +249,7 @@ public:
  * * void
 
 */
-    virtual void DrawText(const Font& font, const std::string& text, Transform transform, Color color, float font_size,
+    virtual void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
                           const ShaderEffect& shader_effect, float kerning = 0.0f) = 0;
 
 
@@ -526,5 +526,5 @@ public:
 private:
     virtual float BindTexture(Uint32 slot = 0) = 0;
 
-    virtual void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = 0) = 0;
+    virtual void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) = 0;
 };
