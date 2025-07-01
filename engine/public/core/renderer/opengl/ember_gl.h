@@ -25,9 +25,6 @@ class OpenglRenderer final : public Renderer {
 public:
     OpenglRenderer() = default;
 
-    OpenglShader* GetDefaultShader() override;
-
-    OpenglShader* GetTextShader() override;
 
     void Initialize() override;
 
@@ -53,18 +50,18 @@ public:
 
     void ClearBackground(const Color& color) override;
 
-    void BeginDrawing(const glm::mat4& view_projection = 0) override;
+    void BeginDrawing(const glm::mat4& view_projection) override;
 
     void EndDrawing() override;
 
     void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
-                  const ShaderEffect& shader_effect = {}, float kerning = 0.0f) override;
+                  const ShaderEffect& shader_effect, float kerning) override;
 
     void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
-                     const Color& color = {255, 255, 255, 255}) override;
+                     const Color& color) override;
 
     void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                       glm::vec2 origin, float rotation,float zIndex = 0.0f, const Color& color = {255, 255, 255, 255} ) override;
+                       glm::vec2 origin, float rotation,float zIndex, const Color& color) override;
 
     void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
 
@@ -76,9 +73,9 @@ public:
 
     void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
-    void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments = 32) override;
+    void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments) override;
 
-    void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments = 32) override;
+    void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments) override;
 
     void BeginMode2D(const Camera2D& camera) override;
 
@@ -88,8 +85,9 @@ public:
 
     void EndCanvas() override;
 
-    OpenglShader* default_shader = nullptr;
-    OpenglShader* text_shader    = nullptr;
+    OpenglShader* DefaultShader = nullptr;
+    OpenglShader* TextShader    = nullptr;
+    glm::mat4 Projection = glm::mat4(1.f);
 
 private:
 
@@ -98,7 +96,6 @@ private:
 
     void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
 
-    glm::mat4 Projection;
 
     GLuint _textVAO = 0, _textVBO = 0, _textEBO =0;
     Vertex* _textBuffer = nullptr;

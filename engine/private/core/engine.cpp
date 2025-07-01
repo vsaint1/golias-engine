@@ -106,7 +106,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
         return false;
     }
 
-    GEngine->Window.window = _window;
+    GEngine->Window.handle = _window;
 
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
@@ -150,7 +150,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
     this->Window.width  = width;
     this->Window.height = height;
     this->Window.title  = _title;
-    this->_renderer->type = type;
+    this->_renderer->Type = type;
 
     if (type == RendererType::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
@@ -185,6 +185,8 @@ void Engine::Shutdown() {
     ImGui::DestroyContext();
 
     Logger::Destroy();
+
+    SDL_DestroyWindow(Window.handle);
 
     CloseAudio();
 
@@ -281,14 +283,14 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
 
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
-    glRenderer->viewport[0]    = view_width;
-    glRenderer->viewport[1]    = view_height;
-    glRenderer->window         = window;
+    glRenderer->Viewport[0]    = view_width;
+    glRenderer->Viewport[1]    = view_height;
+    glRenderer->Window         = window;
 
     glRenderer->SetContext(glContext);
 
-    glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    glRenderer->text_shader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+    glRenderer->DefaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
+    glRenderer->TextShader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
 
     glRenderer->Initialize();
 

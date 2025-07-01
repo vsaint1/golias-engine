@@ -3,14 +3,6 @@
 #include <stb_image.h>
 
 
-OpenglShader* OpenglRenderer::GetDefaultShader() {
-    return default_shader;
-}
-
-OpenglShader* OpenglRenderer::GetTextShader() {
-    return text_shader;
-}
-
 void OpenglRenderer::Initialize() {
 
 #pragma region DEFAULT_BUFFER
@@ -50,7 +42,7 @@ void OpenglRenderer::Initialize() {
     glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, TextureIndex));
 
 
-    glUseProgram(default_shader->GetID());
+    glUseProgram(DefaultShader->GetID());
 
     int samplers[MAX_TEXTURE_SLOTS];
 
@@ -58,7 +50,7 @@ void OpenglRenderer::Initialize() {
         samplers[i] = i;
     }
 
-    glUniform1iv(glGetUniformLocation(default_shader->GetID(), "uTextures"), MAX_TEXTURE_SLOTS, samplers);
+    glUniform1iv(glGetUniformLocation(DefaultShader->GetID(), "uTextures"), MAX_TEXTURE_SLOTS, samplers);
 
     _textureCount = 0;
     _quadCount    = 0;
@@ -107,8 +99,8 @@ void OpenglRenderer::Initialize() {
 }
 
 void OpenglRenderer::Resize(int view_width, int view_height) {
-    viewport[0] = view_width;
-    viewport[1] = view_height;
+    Viewport[0] = view_width;
+    Viewport[1] = view_height;
     glViewport(0, 0, view_width, view_height);
 }
 
@@ -121,7 +113,7 @@ void* OpenglRenderer::GetContext() {
 }
 
 void OpenglRenderer::Destroy() {
-    default_shader->Destroy();
+    DefaultShader->Destroy();
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
@@ -136,14 +128,12 @@ void OpenglRenderer::Destroy() {
     ImGui_ImplOpenGL3_Shutdown();
 
     SDL_GL_DestroyContext(context);
+    
+    delete DefaultShader;
+    DefaultShader = nullptr;
 
-    SDL_DestroyWindow(window);
-
-    delete default_shader;
-    default_shader = nullptr;
-
-    delete text_shader;
-    text_shader = nullptr;
+    delete TextShader;
+    TextShader = nullptr;
 
 }
 
@@ -161,8 +151,8 @@ void OpenglRenderer::BeginDrawing(const glm::mat4& view_projection) {
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->GetRenderer()->viewport[0]),
-                                            static_cast<float>(GEngine->GetRenderer()->viewport[1]), 0.0f, -1.0f, 1.0f);
+    const glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(GEngine->GetRenderer()->Viewport[0]),
+                                            static_cast<float>(GEngine->GetRenderer()->Viewport[1]), 0.0f, -1.0f, 1.0f);
 
 
     // TODO: multiply w/ view_projection
@@ -208,10 +198,9 @@ void OpenglRenderer::FlushText() {
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
 
-    Shader* _text_shader = this->GetTextShader();
-    _text_shader->Bind();
-    _text_shader->SetValue("ViewProjection", Projection);
-    _text_shader->SetValue("uTexture", 0);
+    TextShader->Bind();
+    TextShader->SetValue("ViewProjection", Projection);
+    TextShader->SetValue("uTexture", 0);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _currentFontTextureID);
@@ -231,7 +220,7 @@ void OpenglRenderer::EndDrawing() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    SDL_GL_SwapWindow(GEngine->GetRenderer()->window);
+    SDL_GL_SwapWindow(Window);
 }
 
 Texture OpenglRenderer::LoadTexture(const std::string& file_path) {
@@ -689,14 +678,14 @@ void OpenglRenderer::BeginCanvas() {
 
     // TODO: refactor this fn
     auto calculate_scale_factor = []() -> float {
-        if (GEngine->GetRenderer()->viewport[0] == 0 || GEngine->GetRenderer()->viewport[1] == 0) {
+        if (GEngine->GetRenderer()->Viewport[0] == 0 || GEngine->GetRenderer()->Viewport[1] == 0) {
             return 1.0f;
         }
 
         float scale_x =
-            static_cast<float>(GEngine->GetRenderer()->viewport[0]) / static_cast<float>(GEngine->Window.width);
+            static_cast<float>(GEngine->GetRenderer()->Viewport[0]) / static_cast<float>(GEngine->Window.width);
         float scale_y =
-            static_cast<float>(GEngine->GetRenderer()->viewport[1]) / static_cast<float>(GEngine->Window.height);
+            static_cast<float>(GEngine->GetRenderer()->Viewport[1]) / static_cast<float>(GEngine->Window.height);
 
         float scale_factor = SDL_min(scale_x, scale_y);
         return scale_factor;
@@ -796,9 +785,8 @@ void OpenglRenderer::Flush() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    Shader* _default = this->GetDefaultShader();
-    _default->Bind();
-    _default->SetValue("ViewProjection", Projection);
+    DefaultShader->Bind();
+    DefaultShader->SetValue("ViewProjection", Projection);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     glActiveTexture(GL_TEXTURE0);

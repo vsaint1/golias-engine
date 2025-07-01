@@ -4,526 +4,256 @@
 #include "core/engine_structs.h"
 
 #pragma region OPENGL/ES
-
 #include "core/renderer/mesh.h"
 #include "core/renderer/opengl/shader_gl.h"
-
 #pragma endregion
 
 #pragma region METAL
-
-
 #pragma endregion
 
 #include "core/audio/ember_audio.h"
 #include "core/ember_utils.h"
 #include "core/system_info.h"
 
-
-/*!
-    @brief Renderer struct
-
-    @version 0.0.1
-*/
+/**
+ * @brief Renderer interface
+ *
+ * Defines the base API for rendering operations.
+ *
+ * @version 0.0.1
+ */
 class Renderer {
 public:
     virtual ~Renderer() = default;
+    Renderer()          = default;
 
-    Renderer() = default;
-
-    SDL_Window* window = nullptr;
-
-    int viewport[2] = {480, 270};
-
-    RendererType type = OPENGL;
-
-    virtual Shader* GetDefaultShader() = 0;
-
-    virtual Shader* GetTextShader() = 0;
+    SDL_Window* Window = nullptr;
+    RendererType Type  = OPENGL;
+    int Viewport[2]    = {480, 270};
 
     virtual void Initialize() = 0;
 
     virtual void Flush() = 0;
 
     virtual void FlushText() = 0;
-    /*!
 
-   @brief Load a texture on `GPU` given a file path
-   - Create a texture on `GPU`
-   @see Texture
-
-
+    /**
+     * @brief Load a texture to the GPU.
      *
-
-
-     * * * @version
-
-
-     * * *
-
- * * 0.0.1
-   @param file_path the path to the file in `assets` folder
-   @return
- *
-
-
-     * * * Texture
-*/
+     * @param file_path Path to the texture file in the assets folder.
+     * @return Texture Loaded texture handle.
+     */
     virtual Texture LoadTexture(const std::string& file_path) = 0;
 
-    /*!
-
-   @brief Load a `TTF` font on `GPU` given a file path
-   - Bake the font on `GPU`
-
-
-   @version 0.0.1
-
- *
-
-
-
-     * * * * @param
-
-
- * * *
- * file_path the path to the file in `assets` folder
-   @return Font
-
-*/
+    /**
+     * @brief Load a TTF font to the GPU.
+     *
+     * @param file_path Path to the TTF file in the assets folder.
+     * @param font_size Desired font size.
+     * @return Font Loaded font handle.
+     */
     virtual Font LoadFont(const std::string& file_path, int font_size) = 0;
 
-    /*!
-
-   @brief Unload the Font from CPU/GPU (cleanup)
-
-   @version 0.0.9
-   @param font The loaded Font
-
-     * @return
-
-
-
-
-     * * * * *
-
- * *
- * void
-
-*/
+    /**
+     * @brief Unload a font from CPU/GPU.
+     *
+     * @param font Font to unload.
+     */
     virtual void UnloadFont(const Font& font) = 0;
 
-    /*!
-
-   @brief Unload the Texture from GPU (cleanup)
-
-   @version 0.0.1
-   @param texture The loaded Texture
-
- *
-
-
-
-     * * * * @return
-
-
-
- * * * * void
-
-*/
+    /**
+     * @brief Unload a texture from the GPU.
+     *
+     * @param texture Texture to unload.
+     */
     virtual void UnloadTexture(const Texture& texture) = 0;
 
-    /*!
+    /**
+     * @brief Clear the window background with a color.
+     *
+     * @param color Color in RGBA.
+     */
+    virtual void ClearBackground(const Color& color = {120, 100, 100, 255}) = 0;
 
-   @brief Window background color
+    /**
+     * @brief Begin the drawing procedure.
+     *
+     * Clears the background and sets up drawing with an orthographic projection.
+     *
+     * Example:
+     * @code
+     * BeginDrawing();
+     * // Draw your stuff
+     * EndDrawing();
+     * @endcode
+     *
+     * @param view_projection The combined view-projection matrix.
+     */
+    virtual void BeginDrawing(const glm::mat4& view_projection = glm::mat4(1.f)) = 0;
 
-   @version 0.0.1
-   @param color Color in RGBA
-   @return void
-
-*/
-    virtual void ClearBackground(const Color& color) = 0;
-
-    /*!
-
-   @brief Starting of the drawing procedure
-    - Clear the background and start drawing
-    - Draw between
-
-
-
-
-     * * * * *
-
-     * *
-
- * * BeginDrawing and EndDrawing
-    - Orthographic projection
-    - Ordered rendering
-
-
-
-     * * Usage:
-
-
-
-     * * * BeginDrawing();
-
-
-
-
-
- * * * * // Draw anything without needing a camera
-
- EndDrawing();
-
-
-
-     * * @version
-     * 0.0.1
-
-
-     * * @return void
-
-*/
-    virtual void BeginDrawing(const glm::mat4& view_projection = 0) = 0;
-
-    /*!
-
-   @brief End of the drawing procedure (swap buffers)
-
-   @version 0.0.1
-   @return void
-
-*/
+    /**
+     * @brief End the drawing procedure and swap buffers.
+     */
     virtual void EndDrawing() = 0;
 
-    /*!
-
-   @brief Draw glyphs given a Loaded Font and text
-   - Draw the text
-
-   @see Font
-   @see Glyph
-
-
+    /**
+     * @brief Draw text using a loaded font.
      *
-     * @version
-
-
-
-     * * * *
-
-
- * * * 0.0.1
-   @param font The loaded Font `TTF`
-   @param text The text to draw,
-     * can
-     * be dynamic
-   @param transform
- @param
-     * transform
- @param
-
-     * * transform
- * The
-
- * *
- *
-     * transform
-
-     * @param color Color in RGBA
-   @param font_size
-   @param shader_effect add glow/outline/shadow
-     * effects to the
-     * text
-   @param kerning spacing between
-     * letters
-     *
-     * <optional> Kerning
-     * (spacing between
- *
-     * characters)
-
- * @return
-
- * * void
-
-*/
+     * @param font The loaded TTF font.
+     * @param text The text to render.
+     * @param transform Position, rotation, and scale.
+     * @param color RGBA color.
+     * @param font_size Size of the text.
+     * @param shader_effect Shader effect (e.g., glow, outline).
+     * @param kerning Spacing between characters.
+     */
     virtual void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
                           const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
 
-
-    /*!
-
-   @brief Draw Texture quad at given Rectangle source
-   - Draw the texture
-
-   @version 0.0.1
-   @param
- *
-
-
-
-
-     * * * * * texture
-
-
- * * *
- * The loaded Texture
-   @param texture
-   @param rect The source rectangle
-   @param
-
-
-     * * * color
-
-     * * Color in RGBA
- @return
-     * void
-
-*/
+    /**
+     * @brief Draw a texture quad.
+     *
+     * @param texture The loaded texture.
+     * @param transform Transform of the quad.
+     * @param size Size of the quad.
+     * @param color RGBA color tint.
+     */
     virtual void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
                              const Color& color = {255, 255, 255, 255}) = 0;
-    /*!
 
-   @brief Draw Texture quad extended
-   - Draw the texture with extended parameters, ex: spritesheet's
-
-
-
-     * *
-
-
-
-
-     * * * * * @version
-
-
- * * * 0.0.1
-   @param texture The loaded Texture
-   @param rect The source
-     * Rectangle
-
-     * @param
-
-
-     * * * dest
-     * The
- * destination
- *
-
- * * Rectangle
-   @param origin The
-     * origin point (texture
-     * origin e.g
-
-     * * center)
-
-     * @param rotation
-   @param
-     * rotation The
-
-     * * rotation angle
- *
- *
- *
-     * (radians)
-   @param
-
-     * * color in RGBA
-
-     * @return void
-
-*/
-    virtual void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                               glm::vec2 origin, float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
-
-    /*!
-
-   @brief Draw Lines between two points
-
-   @version 0.0.1
-   @param start vec2 start point
-   @param end
-
- *
-     * *
-     * vec2
-
-     * *
- * end
-
- * * point
-    @param Vec2 start
-    @param Vec2 end
-   @param color Color in
-     * RGBA
-   @param thickness float Line thickness
-
+    /**
+     * @brief Draw an extended texture quad (e.g., for spritesheets).
      *
-     * @return
-     * void
+     * @param texture The loaded texture.
+     * @param source Source rectangle.
+     * @param dest Destination rectangle.
+     * @param origin Origin point (e.g., center).
+     * @param rotation Rotation in radians.
+     * @param zIndex Z index for ordering.
+     * @param color RGBA color tint.
+     */
+    virtual void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+                               float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
 
-*/
-    virtual void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness = 1.0f) = 0;
+    /**
+     * @brief Draw a line between two 3D points.
+     *
+     * @param start Start point.
+     * @param end End point.
+     * @param color RGBA color.
+     * @param thickness Line thickness.
+     */
+    virtual void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color = {255, 255, 255, 255}, float thickness = 1.f) = 0;
 
-    virtual void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
+    /**
+     * @brief Draw a filled triangle.
+     *
+     * @param p0 First vertex.
+     * @param p1 Second vertex.
+     * @param p2 Third vertex.
+     * @param color RGBA color.
+     */
+    virtual void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
 
-    virtual void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) = 0;
+    /**
+     * @brief Draw a triangle outline.
+     *
+     * @param p0 First vertex.
+     * @param p1 Second vertex.
+     * @param p2 Third vertex.
+     * @param color RGBA color.
+     */
+    virtual void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
 
-    virtual void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments = 32) = 0;
+    /**
+     * @brief Draw a circle outline.
+     *
+     * @param position Center position.
+     * @param radius Circle radius.
+     * @param color RGBA color.
+     * @param segments Number of segments.
+     */
+    virtual void DrawCircle(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
 
-    virtual void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments = 32) = 0;
+    /**
+     * @brief Draw a filled circle.
+     *
+     * @param position Center position.
+     * @param radius Circle radius.
+     * @param color RGBA color.
+     * @param segments Number of segments.
+     */
+    virtual void DrawCircleFilled(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
 
+    /**
+     * @brief Draw a rectangle outline.
+     *
+     * @param transform Transform of the rectangle.
+     * @param size Rectangle size.
+     * @param color RGBA color.
+     * @param thickness Line thickness.
+     */
+    virtual void DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
+                          float thickness = 1.f) = 0;
 
-    /*!
+    /**
+     * @brief Draw a filled rectangle.
+     *
+     * @param transform Transform of the rectangle.
+     * @param size Rectangle size.
+     * @param color RGBA color.
+     * @param thickness Optional thickness (may not be used).
+     */
+    virtual void DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
+                                float thickness = 1.f) = 0;
 
-   @brief Draw rectangle
-
-   @param transform
-   @param size rectangle size
-   @param color Color in RGBA
-   @param thickness
-
-
-
-     * * * *
-
-     * * float
-
-
- * * * Line thickness
-   @return void
-
-   @version 0.0.6
-
-*/
-    virtual void DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness = 1.f) = 0;
-
-    /*!
-
-   @brief Draw rectangle filled
-
-
-   @param transform
-   @param size rectangle size
-   @param color Color in RGBA
-   @param thickness
-   @return
-
-
-     * * *
-
-
-     * * * void
-
-
-
-
- * * * @version 0.0.6
-
-
-*/
-    virtual void DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness = 1.f) = 0;
-
-    /*!
-
-   @brief Begin 2D mode
-   - Set up the Camera2D component
-
-   Usage:
-   BeginMode2D(camera);
-
-   //
-     * Drawing
-
-
-
-     * * * *
-     * with
-
-
- * * * the camera view_matrix
-
-   EndMode2D();
-
-   @version 0.0.2
-   @param
-     * camera the
-     * camera
-     * 2D
-
-     * * (view_matrix)
-
- * @return
-
-
- * * * void
-
-*/
+    /**
+     * @brief Begin 2D mode with a camera.
+     *
+     * @param camera 2D camera (view_matrix).
+     */
     virtual void BeginMode2D(const Camera2D& camera) = 0;
 
-    /*!
-
-   @brief End 2D mode
-   - Restore the default view_matrix
-
-
-   @version 0.0.2
-
-   @return void
-
-*/
+    /**
+     * @brief End 2D mode and restore view matrix.
+     */
     virtual void EndMode2D() = 0;
 
-    /*!
-
-   @brief Begin Canvas Procedure
-   - Used for Draw Static `UI`
-
-   @version 0.0.7
-
-   @return void
-
-*/
+    /**
+     * @brief Begin a static UI canvas.
+     */
     virtual void BeginCanvas() = 0;
 
-    /*!
-
-   @brief End Canvas Procedure
-    - Restore GL state
-
-   @see BeginCanvas
-
-   @version 0.0.7
-
-   @return
-
- *
-
-     * * *
-     * void
-
-*/
+    /**
+     * @brief End the UI canvas and restore state.
+     */
     virtual void EndCanvas() = 0;
 
+    /**
+     * @brief Resize the rendering viewport.
+     *
+     * @param view_width New width.
+     * @param view_height New height.
+     */
     virtual void Resize(int view_width, int view_height) = 0;
 
-    /*
-        @brief Set the current context 
-        - Opengl `SDL_GLContext`
-        - Metal `MTLDevice`
-        
- */
+    /**
+     * @brief Set the current rendering context.
+     *
+     * @param ctx Context pointer (e.g., SDL_GLContext, MTLDevice).
+     */
     virtual void SetContext(const void* ctx) = 0;
 
-    /*
-        @brief Get the current context
-        - dynamic Cast to `SDL_GLContext` or `MTLDevice`
-    */
+    /**
+     * @brief Get the current rendering context.
+     *
+     * @return Context pointer.
+     */
     virtual void* GetContext() = 0;
 
+    /**
+     * @brief Destroy the renderer and free resources.
+     */
     virtual void Destroy() = 0;
 
 private:
