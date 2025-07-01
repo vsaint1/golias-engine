@@ -15,35 +15,14 @@
 OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragment) {
     LOG_INFO("Compiling Shaders Vertex (%s) | Fragment (%s)", vertex.c_str(), fragment.c_str());
 
-    const auto bake_shader = [](const std::string& source) -> std::string {
-        std::string header;
 
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-        header += "#version 300 es\n";
-        header += "precision mediump float;\n";
-#else
-        header += "#version 330 core\n";
-#endif
 
-        const std::vector<std::string> defines = {"USE_TEXTURE_ARRAY"};
+    const std::string vertexSource   = SHADER_HEADER + LoadAssetsFile(vertex);
+    const std::string fragmentSource = SHADER_HEADER + LoadAssetsFile(fragment);
 
-        for (const auto& def : defines) {
-            header += "#define " + def + "\n";
-        }
 
-        header += "\n";
-
-        return header + source;
-    };
-
-    const std::string vertexSource   = LoadAssetsFile(vertex);
-    const std::string fragmentSource = LoadAssetsFile(fragment);
-
-    const std::string vertexShaderSrc   = bake_shader(vertexSource);
-    const std::string fragmentShaderSrc = bake_shader(fragmentSource);
-
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShaderSrc.c_str());
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc.c_str());
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexSource.c_str());
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentSource.c_str());
 
     unsigned int program = glCreateProgram();
     glAttachShader(program, vs);

@@ -1,4 +1,3 @@
-#define USE_TEXTURE_ARRAY
 
 in vec4 vColor;
 in vec2 TextureCoords;
