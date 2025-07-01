@@ -194,7 +194,7 @@ void Engine::Shutdown() {
 
 void Engine::ResizeWindow(int w, int h) const {
     SDL_assert(w > 0 && h > 0);
-    
+
     GEngine->Window.width= w;
     GEngine->Window.height = h;
 }
@@ -245,6 +245,7 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
     }
 
 
+
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
@@ -264,6 +265,19 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
     if (!SDL_GL_SetSwapInterval(0)) {
         LOG_CRITICAL("Failed to disable VSYNC, %s", SDL_GetError());
     }
+
+#if ENGINE_DEBUG
+    int numExtensions = 0;
+
+    glGetIntegerv(GL_NUM_EXTENSIONS,&numExtensions);
+
+    LOG_INFO("Number of available OpenGL/ES extensions: %d", numExtensions);
+    for (int i=0; i < numExtensions;i++) {
+        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS,i));
+        LOG_INFO("GL_EXTENSION_NAME: %s", extension);
+    }
+#endif
+
 
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
