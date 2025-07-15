@@ -31,11 +31,11 @@ public:
     RendererType Type  = OPENGL;
     int Viewport[2]    = {480, 270};
 
-    virtual void Initialize() = 0;
+    virtual void initialize() = 0;
 
-    virtual void Flush() = 0;
+    virtual void flush() = 0;
 
-    virtual void FlushText() = 0;
+    virtual void flush_text() = 0;
 
     /**
      * @brief Load a texture to the GPU.
@@ -43,7 +43,7 @@ public:
      * @param file_path Path to the texture file in the assets folder.
      * @return Texture Loaded texture handle.
      */
-    virtual Texture LoadTexture(const std::string& file_path) = 0;
+    virtual Texture load_texture(const std::string& file_path) = 0;
 
     /**
      * @brief Load a TTF font to the GPU.
@@ -52,28 +52,28 @@ public:
      * @param font_size Desired font size.
      * @return Font Loaded font handle.
      */
-    virtual Font LoadFont(const std::string& file_path, int font_size) = 0;
+    virtual Font load_font(const std::string& file_path, int font_size) = 0;
 
     /**
      * @brief Unload a font from CPU/GPU.
      *
      * @param font Font to unload.
      */
-    virtual void UnloadFont(const Font& font) = 0;
+    virtual void unload_font(const Font& font) = 0;
 
     /**
      * @brief Unload a texture from the GPU.
      *
      * @param texture Texture to unload.
      */
-    virtual void UnloadTexture(const Texture& texture) = 0;
+    virtual void unload_texture(const Texture& texture) = 0;
 
     /**
      * @brief Clear the window background with a color.
      *
      * @param color Color in RGBA.
      */
-    virtual void ClearBackground(const Color& color = {120, 100, 100, 255}) = 0;
+    virtual void clear_background(const Color& color = {120, 100, 100, 255}) = 0;
 
     /**
      * @brief Begin the drawing procedure.
@@ -89,12 +89,12 @@ public:
      *
      * @param view_projection The combined view-projection matrix.
      */
-    virtual void BeginDrawing(const glm::mat4& view_projection = glm::mat4(1.f)) = 0;
+    virtual void begin_drawing(const glm::mat4& view_projection = glm::mat4(1.f)) = 0;
 
     /**
      * @brief End the drawing procedure and swap buffers.
      */
-    virtual void EndDrawing() = 0;
+    virtual void end_drawing() = 0;
 
     /**
      * @brief Draw text using a loaded font.
@@ -107,7 +107,7 @@ public:
      * @param shader_effect Shader effect (e.g., glow, outline).
      * @param kerning Spacing between characters.
      */
-    virtual void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
+    virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
                           const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
 
     /**
@@ -118,7 +118,7 @@ public:
      * @param size Size of the quad.
      * @param color RGBA color tint.
      */
-    virtual void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
+    virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size,
                              const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
@@ -132,7 +132,7 @@ public:
      * @param zIndex Z index for ordering.
      * @param color RGBA color tint.
      */
-    virtual void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+    virtual void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
                                float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
@@ -143,7 +143,7 @@ public:
      * @param color RGBA color.
      * @param thickness Line thickness.
      */
-    virtual void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color = {255, 255, 255, 255}, float thickness = 1.f) = 0;
+    virtual void draw_line(glm::vec3 start, glm::vec3 end, const Color& color = {255, 255, 255, 255}, float thickness = 1.f) = 0;
 
     /**
      * @brief Draw a filled triangle.
@@ -163,7 +163,7 @@ public:
      * @param p2 Third vertex.
      * @param color RGBA color.
      */
-    virtual void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
+    virtual void draw_triangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
      * @brief Draw a circle outline.
@@ -173,7 +173,7 @@ public:
      * @param color RGBA color.
      * @param segments Number of segments.
      */
-    virtual void DrawCircle(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
+    virtual void draw_circle(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
 
     /**
      * @brief Draw a filled circle.
@@ -183,7 +183,7 @@ public:
      * @param color RGBA color.
      * @param segments Number of segments.
      */
-    virtual void DrawCircleFilled(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
+    virtual void draw_circle_filled(glm::vec3 position, float radius, const Color& color = {255, 255, 255, 255}, int segments = 32) = 0;
 
     /**
      * @brief Draw a rectangle outline.
@@ -193,7 +193,7 @@ public:
      * @param color RGBA color.
      * @param thickness Line thickness.
      */
-    virtual void DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
+    virtual void draw_rect(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
                           float thickness = 1.f) = 0;
 
     /**
@@ -204,7 +204,7 @@ public:
      * @param color RGBA color.
      * @param thickness Optional thickness (may not be used).
      */
-    virtual void DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
+    virtual void DrawRectFilled(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
                                 float thickness = 1.f) = 0;
 
     /**
@@ -235,29 +235,29 @@ public:
      * @param view_width New width.
      * @param view_height New height.
      */
-    virtual void Resize(int view_width, int view_height) = 0;
+    virtual void resize(int view_width, int view_height) = 0;
 
     /**
      * @brief Set the current rendering context.
      *
      * @param ctx Context pointer (e.g., SDL_GLContext, MTLDevice).
      */
-    virtual void SetContext(const void* ctx) = 0;
+    virtual void set_context(const void* ctx) = 0;
 
     /**
      * @brief Get the current rendering context.
      *
      * @return Context pointer.
      */
-    virtual void* GetContext() = 0;
+    virtual void* get_context() = 0;
 
     /**
      * @brief Destroy the renderer and free resources.
      */
-    virtual void Destroy() = 0;
+    virtual void destroy() = 0;
 
 private:
-    virtual float BindTexture(Uint32 slot = 0) = 0;
+    virtual float _bind_texture(Uint32 slot = 0) = 0;
 
-    virtual void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) = 0;
+    virtual void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) = 0;
 };

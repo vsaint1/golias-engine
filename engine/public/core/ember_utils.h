@@ -4,9 +4,9 @@
 /*!
     @brief Create a formatted string
 
-    @return String 
+    @return String
     @version 0.0.8
 */
-std::string TextFormat(const char* fmt, ...);
+std::string text_format(const char* fmt, ...);
 
-int GetMemoryUsage();
+int get_memory_usage();

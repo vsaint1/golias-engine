@@ -11,7 +11,7 @@
    @param file_path the path to the file in `assets` folder
    @return File content as `string`
 */
-std::string LoadAssetsFile(const std::string& file_path);
+std::string _load_assets_file(const std::string& file_path);
 
 /*!
 
@@ -22,7 +22,7 @@ std::string LoadAssetsFile(const std::string& file_path);
    @param file_path the path to the file in `assets` folder
    @return File content as `vector<char>`
 */
-std::vector<char> LoadFileIntoMemory(const std::string& file_path);
+std::vector<char> _load_file_into_memory(const std::string& file_path);
 
 
 struct SDL_File {
@@ -35,4 +35,4 @@ struct Ember_VFS
 };
 
 
-ma_result Ember_Init_VFS(Ember_VFS* vfs);
+ma_result _ember_init_vfs(Ember_VFS* vfs);

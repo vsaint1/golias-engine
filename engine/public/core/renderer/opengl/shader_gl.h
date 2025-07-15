@@ -25,34 +25,34 @@ public:
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
-    void Bind() const override;
+    void bind() const override;
 
-    void SetValue(const std::string& name, float value) override;
+    void set_value(const std::string& name, float value) override;
 
-    void SetValue(const std::string& name, int value) override;
+    void set_value(const std::string& name, int value) override;
 
-    void SetValue(const std::string& name, unsigned int value) override;
+    void set_value(const std::string& name, unsigned int value) override;
 
-    void SetValue(const std::string& name, glm::mat4 value) override;
+    void set_value(const std::string& name, glm::mat4 value) override;
 
-    void SetValue(const std::string& name, glm::vec2 value) override;
+    void set_value(const std::string& name, glm::vec2 value) override;
 
-    void SetValue(const std::string& name, glm::vec3 value) override;
+    void set_value(const std::string& name, glm::vec3 value) override;
 
-    void SetValue(const std::string& name, glm::vec4 value) override;
+    void set_value(const std::string& name, glm::vec4 value) override;
 
-    void Destroy() override;
+    void destroy() override;
 
-    unsigned int GetID() const override;
+    unsigned int get_id() const override;
 
-    bool IsValid() const override;
+    bool is_valid() const override;
 
 private:
     unsigned int GetUniformLocation(const std::string& name);
 
     unsigned int CompileShader(unsigned int type, const char* source);
 
-    
+
 };
 
 

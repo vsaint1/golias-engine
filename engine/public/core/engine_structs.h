@@ -2,11 +2,10 @@
 
 #include "imports.h"
 #include <freetype/freetype.h>
-#include  <freetype/ftstroke.h>
+#include <freetype/ftstroke.h>
 
 
 // Core struct (engine stuff) - 0.0.1
-
 
 
 typedef struct Texture {
@@ -28,6 +27,11 @@ namespace ember {
         int height;
     };
 
+    struct Size {
+        int width;
+        int height;
+    };
+
 }; // namespace ember
 
 
@@ -37,7 +41,7 @@ struct Color {
     unsigned char b;
     unsigned char a;
 
-    glm::vec4 GetNormalizedColor() const;
+    glm::vec4 normalize_color() const;
 
     bool operator==(const Color& other) const;
 };
@@ -52,17 +56,17 @@ struct Glyph {
 
 
 struct Font {
-    std::map<char, Glyph> glyphs{};
+    HashMap<char, Glyph> glyphs{};
     Texture texture;
     int font_size;
     float kerning = 0.0f;
     int ascent, descent, line_gap;
     float scale;
 
-    bool IsValid() const;
+    bool is_valid() const;
 
     Font() = default;
-
 };
 
-std::tuple<int,int> CalcTextSize(const std::string& text, const Font& font, float font_size = 0.0f);
+
+ember::Size CalcTextSize(const std::string& text, const Font& font, float font_size = 0.0f);

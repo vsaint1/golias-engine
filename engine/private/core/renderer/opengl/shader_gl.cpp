@@ -17,8 +17,8 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
 
 
 
-    const std::string vertexSource   = SHADER_HEADER + LoadAssetsFile(vertex);
-    const std::string fragmentSource = SHADER_HEADER + LoadAssetsFile(fragment);
+    const std::string vertexSource   = SHADER_HEADER + _load_assets_file(vertex);
+    const std::string fragmentSource = SHADER_HEADER + _load_assets_file(fragment);
 
 
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexSource.c_str());
@@ -69,8 +69,8 @@ unsigned int OpenglShader::CompileShader(unsigned int type, const char* source) 
 }
 
 unsigned int OpenglShader::GetUniformLocation(const std::string& name) {
-    if (uniforms.find(name) != uniforms.end()) {
-        return uniforms[name];
+    if (_uniforms.find(name) != _uniforms.end()) {
+        return _uniforms[name];
     }
 
     unsigned int location = glGetUniformLocation(id, name.c_str());
@@ -79,11 +79,11 @@ unsigned int OpenglShader::GetUniformLocation(const std::string& name) {
         LOG_WARN("Uniform %s not found", name.c_str());
     }
 
-    uniforms[name] = location;
+    _uniforms[name] = location;
     return location;
 }
 
-bool OpenglShader::IsValid() const {
+bool OpenglShader::is_valid() const {
     int status;
 
     glGetProgramiv(id, GL_VALIDATE_STATUS, &status);
@@ -98,49 +98,49 @@ bool OpenglShader::IsValid() const {
     return true;
 }
 
-void OpenglShader::Bind() const {
+void OpenglShader::bind() const {
     glUseProgram(id);
 }
 
-void OpenglShader::Destroy() {
+void OpenglShader::destroy() {
     glDeleteProgram(id);
 }
 
-unsigned int OpenglShader::GetID() const {
+unsigned int OpenglShader::get_id() const {
     return id;
 }
 
 
-void OpenglShader::SetValue(const std::string& name, float value) {
+void OpenglShader::set_value(const std::string& name, float value) {
     unsigned int location = GetUniformLocation(name);
     glUniform1f(location, value);
 }
 
-void OpenglShader::SetValue(const std::string& name, int value) {
+void OpenglShader::set_value(const std::string& name, int value) {
     unsigned int location = GetUniformLocation(name);
     glUniform1i(location, value);
 }
-void OpenglShader::SetValue(const std::string& name, unsigned int value) {
+void OpenglShader::set_value(const std::string& name, unsigned int value) {
     unsigned int location = GetUniformLocation(name);
     glUniform1i(location, value);
 }
 
-void OpenglShader::SetValue(const std::string& name, glm::mat4 value) {
+void OpenglShader::set_value(const std::string& name, glm::mat4 value) {
     unsigned int location = GetUniformLocation(name);
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-void OpenglShader::SetValue(const std::string& name, glm::vec2 value) {
+void OpenglShader::set_value(const std::string& name, glm::vec2 value) {
     unsigned int location = GetUniformLocation(name);
     glUniform2fv(location, 1, glm::value_ptr(value));
 }
 
-void OpenglShader::SetValue(const std::string& name, glm::vec3 value) {
+void OpenglShader::set_value(const std::string& name, glm::vec3 value) {
     unsigned int location = GetUniformLocation(name);
     glUniform3fv(location, 1, glm::value_ptr(value));
 }
 
-void OpenglShader::SetValue(const std::string& name, glm::vec4 value) {
+void OpenglShader::set_value(const std::string& name, glm::vec4 value) {
     unsigned int location = GetUniformLocation(name);
     glUniform4fv(location, 1, glm::value_ptr(value));
 }

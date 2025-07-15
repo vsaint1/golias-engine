@@ -24,29 +24,29 @@ public:
 
     InputManager(SDL_Window* window) : _window(window) {}
 
-    void ProcessEvents(const SDL_Event* pEvent);
+    void process(const SDL_Event* pEvent);
 
-    void Update();
+    void update();
 
-    glm::vec2 GetMousePosition();
+    glm::vec2 get_mouse_position();
 
-    bool IsMouseButtonPressed(Uint8 button);
+    bool is_mouse_button_pressed(Uint8 button);
 
-    bool IsMouseButtonReleased(Uint8 button);
+    bool is_mouse_button_released(Uint8 button);
 
-    bool IsKeyPressed(SDL_Scancode key);
+    bool is_key_pressed(SDL_Scancode key);
 
-    bool IsKeyHeld(SDL_Scancode key);
+    bool is_key_held(SDL_Scancode key);
 
-    bool IsKeyReleased(SDL_Scancode key);
+    bool is_key_released(SDL_Scancode key);
 
-    bool IsPositionInRect(glm::vec2 position, ember::Rectangle rect);
+    bool position_in_rect(glm::vec2 position, ember::Rectangle rect);
 
-    std::string GetTypedText();
+    std::string get_typed_text();
 
-    void SetTextInputActive(bool status);
+    void set_text_input_active(bool status);
 
-    bool IsTextInputActive();
+    bool is_text_input_active();
 
 private:
     SDL_Window* _window;

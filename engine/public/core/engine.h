@@ -59,35 +59,35 @@ public:
      * @param w New width.
      * @param h New height.
      */
-    void ResizeWindow(int w, int h) const;
+    void resize_window(int w, int h) const;
 
     /**
      * @brief Get the renderer instance.
      *
      * @return Renderer* Renderer pointer.
      */
-    Renderer* GetRenderer() const;
+    Renderer* get_renderer() const;
 
     /**
      * @brief Get the input manager.
      *
      * @return InputManager* Input manager pointer.
      */
-    InputManager* GetInputManager() const;
+    InputManager* input_manager() const;
 
     /**
      * @brief Get the time manager.
      *
      * @return TimeManager* Time manager pointer.
      */
-    TimeManager* GetTimeManager() const;
+    TimeManager* time_manager() const;
 
     /**
      * @brief Deinitialize window, renderer, and modules.
      *
      * @version 0.0.1
      */
-    void Shutdown();
+    void shutdown();
 
     /**
      * @brief Initialize the engine: SDL window, renderer, audio, fonts.
@@ -106,7 +106,7 @@ public:
      *
      * @version 0.0.1
      */
-    bool Initialize(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
+    bool initialize(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
 
 private:
     Renderer* _renderer = nullptr;
@@ -124,7 +124,7 @@ private:
      *
      * @version 0.0.1
      */
-    Renderer* CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type);
+    Renderer* _create_renderer_internal(SDL_Window* window, int view_width, int view_height, RendererType type);
 
     /**
      * @brief Create an OpenGL renderer internally.
@@ -136,7 +136,7 @@ private:
      *
      * @version 0.0.2
      */
-    Renderer* CreateRendererGL(SDL_Window* window, int view_width, int view_height);
+    Renderer* _create_renderer_gl(SDL_Window* window, int view_width, int view_height);
 
     /**
      * @brief Create a Metal renderer internally.
@@ -148,7 +148,7 @@ private:
      * @param view_height Viewport height.
      * @return Renderer* Created Metal renderer.
      */
-    Renderer* CreateRendererMTL(SDL_Window* window, int view_width, int view_height);
+    Renderer* _create_renderer_metal(SDL_Window* window, int view_width, int view_height);
 };
 
 // Global engine instance

@@ -26,56 +26,56 @@ public:
     OpenglRenderer() = default;
 
 
-    void Initialize() override;
+    void initialize() override;
 
-    void Flush() override;
+    void flush() override;
 
-    void FlushText() override;
+    void flush_text() override;
 
-    void Resize(int view_width, int view_height) override;
+    void resize(int view_width, int view_height) override;
 
-    void SetContext(const void* ctx) override;
+    void set_context(const void* ctx) override;
 
-    void* GetContext() override;
+    void* get_context() override;
 
-    void Destroy() override;
+    void destroy() override;
 
-    Texture LoadTexture(const std::string& file_path) override;
+    Texture load_texture(const std::string& file_path) override;
 
-    Font LoadFont(const std::string& file_path, int font_size) override;
+    Font load_font(const std::string& file_path, int font_size) override;
 
-    void UnloadFont(const Font& font) override;
+    void unload_font(const Font& font) override;
 
-    void UnloadTexture(const Texture& texture) override;
+    void unload_texture(const Texture& texture) override;
 
-    void ClearBackground(const Color& color) override;
+    void clear_background(const Color& color) override;
 
-    void BeginDrawing(const glm::mat4& view_projection) override;
+    void begin_drawing(const glm::mat4& view_projection) override;
 
-    void EndDrawing() override;
+    void end_drawing() override;
 
-    void DrawText(const Font& font, const std::string& text, const Transform2D& transform, Color color, float font_size,
+    void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
                   const ShaderEffect& shader_effect, float kerning) override;
 
-    void DrawTexture(const Texture& texture, const Transform2D& transform, glm::vec2 size,
+    void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size,
                      const Color& color) override;
 
-    void DrawTextureEx(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
+    void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
                        glm::vec2 origin, float rotation,float zIndex, const Color& color) override;
 
-    void DrawLine(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
+    void draw_line(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
 
-    void DrawRect(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) override;
+    void draw_rect(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
 
-    void DrawRectFilled(const Transform2D& transform, glm::vec2 size, const Color& color, float thickness) override;
+    void DrawRectFilled(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
 
-    void DrawTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
+    void draw_triangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
     void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
-    void DrawCircle(glm::vec3 position, float radius, const Color& color, int segments) override;
+    void draw_circle(glm::vec3 position, float radius, const Color& color, int segments) override;
 
-    void DrawCircleFilled(glm::vec3 position, float radius, const Color& color, int segments) override;
+    void draw_circle_filled(glm::vec3 position, float radius, const Color& color, int segments) override;
 
     void BeginMode2D(const Camera2D& camera) override;
 
@@ -92,9 +92,9 @@ public:
 private:
 
 
-    float BindTexture(Uint32 slot = 0) override ;
+    float _bind_texture(Uint32 slot = 0) override ;
 
-    void Submit(const Transform2D& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
+    void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
 
 
     GLuint _textVAO = 0, _textVBO = 0, _textEBO =0;

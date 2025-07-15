@@ -21,7 +21,7 @@ public:
         lastTick = SDL_GetPerformanceCounter();
     }
 
-    float GetDeltaTime() {
+    float get_delta_time() {
         if (bIsPaused) {
             return 0.0f;
         }
@@ -29,11 +29,11 @@ public:
         return this->deltaTime;
     }
 
-    Uint64 GetFrameCount() {
+    Uint64 get_frame_count() {
         return this->frameCount;
     }
 
-    float GetElapsedTime() {
+    float get_elapsed_time() {
         return this->elapsedTime;
     }
 
@@ -55,10 +55,10 @@ public:
 
     void Resume();
 
-    void Update();
+    void update();
 
     /* max_fps = 1 -> UNLIMITED */
-    void FixedFrameRate(Uint32 max_fps = 60);
+    void fixed_frame_rate(Uint32 max_fps = 60);
 };
 
 

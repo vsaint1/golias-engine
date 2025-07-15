@@ -15,7 +15,7 @@ void TimeManager::Resume() {
         pausedTick = 0;
     }
 }
-void TimeManager::Update() {
+void TimeManager::update() {
     if (bIsPaused) {
         deltaTime = 0.0f; // Avoid accumulating DT when paused
         return;
@@ -47,7 +47,7 @@ void TimeManager::Update() {
     }
 }
 
-void TimeManager::FixedFrameRate(Uint32 max_fps) {
+void TimeManager::fixed_frame_rate(Uint32 max_fps) {
     this->MAX_FPS = max_fps;
 
     if (MAX_FPS < 1) {

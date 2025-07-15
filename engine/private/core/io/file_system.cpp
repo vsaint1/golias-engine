@@ -1,16 +1,16 @@
 #include "core/io/file_system.h"
 
 
-std::string LoadAssetsFile(const std::string& file_path) {
+std::string _load_assets_file(const std::string& file_path) {
 
-    const auto buffer = LoadFileIntoMemory(file_path);
+    const auto buffer = _load_file_into_memory(file_path);
 
     return std::string(buffer.begin(), buffer.end());
   
 }
 
 
-std::vector<char> LoadFileIntoMemory(const std::string& file_path){
+std::vector<char> _load_file_into_memory(const std::string& file_path){
 
     auto path = ASSETS_PATH + file_path;
 
@@ -118,7 +118,7 @@ static ma_result sdl_vfs_onClose(ma_vfs* pVFS, ma_vfs_file file) {
     return MA_SUCCESS;
 }
 
-ma_result Ember_Init_VFS(Ember_VFS* vfs) {
+ma_result _ember_init_vfs(Ember_VFS* vfs) {
     if (!vfs) {
         return MA_INVALID_ARGS;
     }

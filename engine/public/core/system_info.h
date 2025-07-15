@@ -29,9 +29,9 @@ public:
 
         @version 0.0.7
     */
-    static std::string GetPlatform();
+    static std::string platform_name();
 
-    
+
     /*!
 
         @brief Check if the app is running on a mobile device
@@ -40,19 +40,19 @@ public:
 
         @version 0.0.7
     */
-    static bool IsMobile();
-    
-    // TODO: implement
-    static std::string GetDeviceType();
+    static bool is_mobile();
 
     // TODO: implement
-    static std::string GetDeviceName();
+    static std::string get_device_type();
 
     // TODO: implement
-    static std::string GetDeviceModel();
+    static std::string get_device_name();
 
     // TODO: implement
-    static std::string GetDeviceUniqueIdentifier();
+    static std::string get_device_model();
+
+    // TODO: implement
+    static std::string get_device_unique_identifier();
 
     /*!
 
@@ -66,7 +66,7 @@ public:
 
         @version 0.0.7
     */
-    static int GetBatteryPercentage();
+    static int get_battery_percentage();
 
 
 private:

@@ -1,30 +1,36 @@
 #include "helpers/logging.h"
 
-void Logger::Start() {
-    auto& debug = Get();
 
-    if (debug._log_thread) {
+Logger& Logger::get_instance() {
+    static Logger instance;
+    return instance;
+}
+
+void Logger::initialize() {
+    auto& debug = get_instance();
+
+    if (debug._thread) {
         return;
     }
 
     auto fn_thread = [](void* data) -> int {
-        static_cast<Logger*>(data)->LogThread();
+        static_cast<Logger*>(data)->_log_thread();
         return 0;
     };
 
-    debug._bIsRunning    = true;
-    debug._log_thread = SDL_CreateThread(fn_thread, "LogThread", &debug);
+    debug._bIsRunning = true;
+    debug._thread     = SDL_CreateThread(fn_thread, "LogThread", &debug);
 }
 
-void Logger::Push(const std::string& formatted_log) {
+void Logger::push(const std::string& formatted_log) {
 
     std::lock_guard<std::mutex> lock(_mutex);
     _log_queue.push_back(formatted_log);
     _condition.notify_all();
 }
 
-void Logger::Destroy() {
-    auto& debug = Get();
+void Logger::destroy() {
+    auto& debug = get_instance();
 
     debug._mutex.lock();
 
@@ -35,21 +41,20 @@ void Logger::Destroy() {
     debug._condition.notify_all();
 
     int status = 0;
-    SDL_WaitThread(debug._log_thread, &status);
-
+    SDL_WaitThread(debug._thread, &status);
 }
 
 
-void Logger::LogThread() {
+void Logger::_log_thread() {
 
     // TODO: Get from config file
     char* pref_path = SDL_GetPrefPath("Ember", "com.emberengine.app");
 
-    time_t now = time(nullptr);
+    time_t now   = time(nullptr);
     tm* timeinfo = localtime(&now);
     char buffer[80];
     strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", timeinfo);
-    
+
     char file_name[256];
     SDL_snprintf(file_name, sizeof(file_name), "ember_logs.%s.txt", buffer);
 
@@ -62,7 +67,7 @@ void Logger::LogThread() {
         return;
     }
 
-    std::unique_lock<std::mutex> lock(_mutex);
+    std::unique_lock lock(_mutex);
 
     while (_bIsRunning || !_log_queue.empty()) {
         _condition.wait(lock, [this]() { return !_log_queue.empty() || !_bIsRunning; });

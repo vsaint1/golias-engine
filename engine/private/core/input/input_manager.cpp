@@ -1,6 +1,6 @@
 #include "core/input/input_manager.h"
 
-void InputManager::ProcessEvents(const SDL_Event* pEvent) {
+void InputManager::process(const SDL_Event* pEvent) {
 
 
     // Simple check but this may never fail
@@ -57,7 +57,7 @@ void InputManager::ProcessEvents(const SDL_Event* pEvent) {
     }
 }
 
-void InputManager::Update() {
+void InputManager::update() {
 
     // Saving resources 
     if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MINIMIZED) {
@@ -85,7 +85,7 @@ void InputManager::Update() {
     }
 }
 
-void InputManager::SetTextInputActive(bool active) {
+void InputManager::set_text_input_active(bool active) {
     if (active && !textInputEvt.bIsActive) {
         textInputEvt.bIsActive = true;
         SDL_StartTextInput(_window);
@@ -95,41 +95,41 @@ void InputManager::SetTextInputActive(bool active) {
     }
 }
 
-bool InputManager::IsTextInputActive() {
+bool InputManager::is_text_input_active() {
     return textInputEvt.bIsActive;
 }
 
-std::string InputManager::GetTypedText() {
+std::string InputManager::get_typed_text() {
     return textInputEvt.text;
 }
 
-bool InputManager::IsPositionInRect(glm::vec2 position, ember::Rectangle rect) {
+bool InputManager::position_in_rect(glm::vec2 position, ember::Rectangle rect) {
     return position.x > rect.x && position.x < rect.x + rect.width && position.y > rect.y
         && position.y < rect.y + rect.height;
 }
 
-glm::vec2 InputManager::GetMousePosition() {
+glm::vec2 InputManager::get_mouse_position() {
 
     return mousePosition;
 }
 
-bool InputManager::IsMouseButtonPressed(Uint8 button) {
+bool InputManager::is_mouse_button_pressed(Uint8 button) {
     return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(button);
 }
 
-bool InputManager::IsMouseButtonReleased(Uint8 button) {
+bool InputManager::is_mouse_button_released(Uint8 button) {
     return !(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(button));
 }
 
 
-bool InputManager::IsKeyPressed(SDL_Scancode key) {
+bool InputManager::is_key_pressed(SDL_Scancode key) {
     return keyState[key] && !prevKeyState[key];
 }
 
-bool InputManager::IsKeyReleased(SDL_Scancode key) {
+bool InputManager::is_key_released(SDL_Scancode key) {
     return !keyState[key] && prevKeyState[key];
 }
 
-bool InputManager::IsKeyHeld(SDL_Scancode key) {
+bool InputManager::is_key_held(SDL_Scancode key) {
     return keyState[key];
 }

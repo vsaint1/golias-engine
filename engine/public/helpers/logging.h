@@ -2,9 +2,11 @@
 
 #include "imports.h"
 
-#define STRINGIFY(x)   #x
-#define TO_STRING(x)   STRINGIFY(x)
-#define TRACE_FILE_LOG "[" __TIME__ "]" "[EMBER_ENGINE - " __FILE__ ":" TO_STRING(__LINE__)"] - "
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
+#define TRACE_FILE_LOG \
+    "[" __TIME__ "]"   \
+    "[EMBER_ENGINE - " __FILE__ ":" TO_STRING(__LINE__) "] - "
 
 /*
    @brief Class for logging, tracing and debugging
@@ -17,7 +19,7 @@
    - iOS - Output to xcode console
 
    Use the LOG_ERROR, LOG_INFO, LOG_WARN, LOG_DEBUG macros to log messages
-   
+
    @note Do not push sensitive data to the logs
 
    @version 0.0.9
@@ -25,27 +27,25 @@
 */
 class Logger {
 public:
-    static Logger& Get() {
-        static Logger instance;
-        return instance;
-    }
+    static Logger& get_instance();
 
-    static void Start();
+    static void initialize();
 
-    void Push(const std::string& formatted_log);
+    void push(const std::string& formatted_log);
 
-    static void Destroy();
+    static void destroy();
 
 private:
     Logger()  = default;
     ~Logger() = default;
 
-    void LogThread();
+    void _log_thread();
 
-    std::mutex _mutex = std::mutex();
-    SDL_Thread* _log_thread = nullptr;
+    std::mutex _mutex                  = std::mutex();
+    SDL_Thread* _thread                = nullptr;
     std::condition_variable _condition = std::condition_variable();
     std::atomic<bool> _bIsRunning = false;
+
     std::deque<std::string> _log_queue = std::deque<std::string>();
 };
 
@@ -62,7 +62,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -77,7 +77,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -92,7 +92,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -107,7 +107,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);       \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -122,7 +122,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -137,7 +137,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -152,7 +152,7 @@ private:
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);      \
-        Logger::Get().Push(buffer);                                        \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!

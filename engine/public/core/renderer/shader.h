@@ -9,7 +9,7 @@ public:
         int  bEnabled = 0;
         glm::vec4 color = glm::vec4(1.0f);
         float thickness = 0.0f;
-      
+
     } Outline;
 
     struct {
@@ -17,7 +17,7 @@ public:
         int  bEnabled = 0;
         glm::vec4 color        = glm::vec4(1.0f);
         glm::vec2 pixel_offset = glm::vec2(0.0f);
-      
+
     } Shadow;
 
     struct {
@@ -47,31 +47,31 @@ public:
 
     virtual ~Shader() = default;
 
-    virtual void Bind() const = 0;
+    virtual void bind() const = 0;
 
-    virtual void SetValue(const std::string& name, float value) = 0;
+    virtual void set_value(const std::string& name, float value) = 0;
 
-    virtual void SetValue(const std::string& name, int value) = 0;
+    virtual void set_value(const std::string& name, int value) = 0;
 
-    virtual void SetValue(const std::string& name, glm::mat4 value) = 0;
+    virtual void set_value(const std::string& name, glm::mat4 value) = 0;
 
-    virtual void SetValue(const std::string& name, glm::vec2 value) = 0;
+    virtual void set_value(const std::string& name, glm::vec2 value) = 0;
 
-    virtual void SetValue(const std::string& name, glm::vec3 value) = 0;
+    virtual void set_value(const std::string& name, glm::vec3 value) = 0;
 
-    virtual void SetValue(const std::string& name, glm::vec4 value) = 0;
+    virtual void set_value(const std::string& name, glm::vec4 value) = 0;
 
-    virtual void SetValue(const std::string& name, unsigned int value) = 0;
+    virtual void set_value(const std::string& name, unsigned int value) = 0;
 
-    virtual void Destroy() = 0;
+    virtual void destroy() = 0;
 
-    virtual unsigned int GetID() const = 0;
+    virtual unsigned int get_id() const = 0;
 
-    virtual bool IsValid() const = 0;
+    virtual bool is_valid() const = 0;
 
 
 protected:
     unsigned int id;
 
-    std::unordered_map<std::string, unsigned int> uniforms;
+    std::unordered_map<std::string, unsigned int> _uniforms;
 };
