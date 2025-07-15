@@ -6,7 +6,7 @@ std::string _load_assets_file(const std::string& file_path) {
     const auto buffer = _load_file_into_memory(file_path);
 
     return std::string(buffer.begin(), buffer.end());
-  
+
 }
 
 
@@ -55,13 +55,13 @@ static ma_result sdl_vfs_onOpen(ma_vfs* pVFS, const char* pPath, ma_uint32 openM
         return MA_DOES_NOT_EXIST;
     }
 
-    SDL_File* file = (SDL_File*) SDL_malloc(sizeof(SDL_File));
+    Ember_File* file = (Ember_File*) SDL_malloc(sizeof(Ember_File));
     if (!file) {
         SDL_CloseIO(rw);
         return MA_OUT_OF_MEMORY;
     }
 
-    file->rw = rw;
+    file->stream = rw;
     *pFile   = file;
     return MA_SUCCESS;
 }
@@ -71,8 +71,8 @@ static ma_result sdl_vfs_onRead(ma_vfs* pVFS, ma_vfs_file file, void* pBuffer, s
         return MA_INVALID_ARGS;
     }
 
-    SDL_File* sdlFile = (SDL_File*) file;
-    size_t bytesRead  = SDL_ReadIO(sdlFile->rw, pBuffer, size);
+    Ember_File* sdlFile = (Ember_File*) file;
+    size_t bytesRead  = SDL_ReadIO(sdlFile->stream, pBuffer, size);
     *pBytesRead       = bytesRead;
 
     return (bytesRead > 0) ? MA_SUCCESS : MA_AT_END;
@@ -83,12 +83,12 @@ static ma_result sdl_vfs_onSeek(ma_vfs* pVFS, ma_vfs_file file, ma_int64 offset,
         return MA_INVALID_ARGS;
     }
 
-    SDL_File* sdlFile   = (SDL_File*) file;
+    Ember_File* sdlFile   = (Ember_File*) file;
     SDL_IOWhence whence = (origin == ma_seek_origin_start)   ? SDL_IO_SEEK_SET
                         : (origin == ma_seek_origin_current) ? SDL_IO_SEEK_CUR
                                                              : SDL_IO_SEEK_END;
 
-    return (SDL_SeekIO(sdlFile->rw, offset, whence) < 0) ? MA_ERROR : MA_SUCCESS;
+    return (SDL_SeekIO(sdlFile->stream, offset, whence) < 0) ? MA_ERROR : MA_SUCCESS;
 }
 
 static ma_result sdl_vfs_onTell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCursor) {
@@ -96,8 +96,8 @@ static ma_result sdl_vfs_onTell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCurso
         return MA_INVALID_ARGS;
     }
 
-    SDL_File* sdlFile = (SDL_File*) file;
-    ma_int64 pos      = SDL_TellIO(sdlFile->rw);
+    Ember_File* sdlFile = (Ember_File*) file;
+    ma_int64 pos      = SDL_TellIO(sdlFile->stream);
     if (pos < 0) {
         return MA_ERROR;
     }
@@ -111,8 +111,8 @@ static ma_result sdl_vfs_onClose(ma_vfs* pVFS, ma_vfs_file file) {
         return MA_INVALID_ARGS;
     }
 
-    SDL_File* sdlFile = (SDL_File*) file;
-    SDL_CloseIO(sdlFile->rw);
+    Ember_File* sdlFile = (Ember_File*) file;
+    SDL_CloseIO(sdlFile->stream);
     SDL_free(sdlFile);
 
     return MA_SUCCESS;

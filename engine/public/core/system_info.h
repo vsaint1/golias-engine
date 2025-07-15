@@ -8,7 +8,8 @@ enum BatteryLevel {
 /*!
 
    @brief SystemInfo class
-    - Get information about the system the app is running on
+
+   @details  Get information about the system the app is running on
 
    @version 0.0.7
 */
@@ -45,13 +46,31 @@ public:
     // TODO: implement
     static std::string get_device_type();
 
-    // TODO: implement
+    /*!
+     * @brief get device name (cross-platform)
+     *
+     *
+     * @return  "iPhone 8s"
+     */
     static std::string get_device_name();
 
-    // TODO: implement
+    /*!
+      * @brief get device model (cross-platform)
+      *
+      *
+      * @return  "iPhone 8s"
+      */
     static std::string get_device_model();
 
-    // TODO: implement
+    /*!
+    * @brief get device UUID (cross-platform)
+    *
+    * @details this function return platform UUID, each platform handles different the size.
+    *
+    * @return UUID characters
+    *
+    * @version 0.0.7
+    */
     static std::string get_device_unique_identifier();
 
     /*!
@@ -76,9 +95,9 @@ private:
 
 extern "C" {
 
-    const char* DeviceName_Injected();
+const char* DeviceName_Injected();
 
-    const char* DeviceModel_Injected();
+const char* DeviceModel_Injected();
 
-    const char* DeviceUniqueIdentifier_Injected();
+const char* DeviceUniqueIdentifier_Injected();
 }

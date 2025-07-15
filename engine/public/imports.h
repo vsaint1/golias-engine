@@ -21,6 +21,7 @@ using HashMap = std::unordered_map<K, V>;
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1
 #include <array>
+#include <math.h>
 
 #include <glad.h>
 

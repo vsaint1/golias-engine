@@ -24,11 +24,22 @@ std::string _load_assets_file(const std::string& file_path);
 */
 std::vector<char> _load_file_into_memory(const std::string& file_path);
 
-
-struct SDL_File {
-    SDL_IOStream* rw;
+/*!
+ *  @brief Ember file (SDL_stream)
+ *
+ *
+ *  @version 0.0.8
+ */
+struct Ember_File {
+    SDL_IOStream* stream;
 };
 
+/*!
+ *  @brief Engine virtual file system
+ *
+ *
+ * @version 0.0.5
+ */
 struct Ember_VFS {
     ma_vfs_callbacks base;
 };

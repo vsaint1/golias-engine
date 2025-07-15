@@ -7,16 +7,17 @@ constexpr int MAX_QUADS         = 10000;
 constexpr int MAX_VERTICES      = MAX_QUADS * 4;
 constexpr int MAX_INDICES       = MAX_QUADS * 6;
 
-/*
- * DESKTOP - 32
- * WEBGL - 16
- * ANDROID - 32
- * IOS - 32
+/*!
+ *  @brief sampler2D (array) supported by platform
+ *  DESKTOP - 32
+ *  WEBGL - 16
+ *  ANDROID - 32
+ *  IOS - 32
  */
 
 constexpr int MAX_TEXTURE_SLOTS = 16;
 
-/*
+/*!
    @brief Opengl Renderer implementation
    - Opengl 3.3
    - Opengl ES 3.0
