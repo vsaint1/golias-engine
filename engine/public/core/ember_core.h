@@ -82,12 +82,12 @@ public:
      *
      * Example:
      * @code
-     * BeginDrawing();
-     * // Draw your stuff
-     * EndDrawing();
+     * renderer::begin_drawing();
+     *  // Here goes your draw calls ordered
+     * renderer::end_drawing();
      * @endcode
      *
-     * @param view_projection The combined view-projection matrix.
+     * @param view_projection The combined view + projection matrix.
      */
     virtual void begin_drawing(const glm::mat4& view_projection = glm::mat4(1.f)) = 0;
 
@@ -108,7 +108,7 @@ public:
      * @param kerning Spacing between characters.
      */
     virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
-                          const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
+                           const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
 
     /**
      * @brief Draw a texture quad.
@@ -119,7 +119,7 @@ public:
      * @param color RGBA color tint.
      */
     virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size,
-                             const Color& color = {255, 255, 255, 255}) = 0;
+                              const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
      * @brief Draw an extended texture quad (e.g., for spritesheets).
@@ -133,7 +133,7 @@ public:
      * @param color RGBA color tint.
      */
     virtual void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
-                               float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
+                                 float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
      * @brief Draw a line between two 3D points.
@@ -194,7 +194,7 @@ public:
      * @param thickness Line thickness.
      */
     virtual void draw_rect(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
-                          float thickness = 1.f) = 0;
+                           float thickness = 1.f) = 0;
 
     /**
      * @brief Draw a filled rectangle.
@@ -211,21 +211,25 @@ public:
      * @brief Begin 2D mode with a camera.
      *
      * @param camera 2D camera (view_matrix).
+     * @deprecated
      */
     virtual void BeginMode2D(const Camera2D& camera) = 0;
 
     /**
      * @brief End 2D mode and restore view matrix.
+     * @deprecated
      */
     virtual void EndMode2D() = 0;
 
     /**
      * @brief Begin a static UI canvas.
+     * @deprecated
      */
     virtual void BeginCanvas() = 0;
 
     /**
      * @brief End the UI canvas and restore state.
+     * @deprecated
      */
     virtual void EndCanvas() = 0;
 
@@ -257,7 +261,13 @@ public:
     virtual void destroy() = 0;
 
 private:
+    /**
+     * @brief Bind to texture slot before drawing.
+     */
     virtual float _bind_texture(Uint32 slot = 0) = 0;
 
+    /**
+     * @brief Submit a quad to the `CPU` queue to be flushed
+     */
     virtual void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) = 0;
 };
