@@ -26,11 +26,10 @@ std::vector<char> _load_file_into_memory(const std::string& file_path);
 
 
 struct SDL_File {
-   SDL_IOStream* rw;
+    SDL_IOStream* rw;
 };
 
-struct Ember_VFS
-{
+struct Ember_VFS {
     ma_vfs_callbacks base;
 };
 
