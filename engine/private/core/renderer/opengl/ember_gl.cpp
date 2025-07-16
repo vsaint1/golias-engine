@@ -122,6 +122,7 @@ void* OpenglRenderer::get_context() {
 
 void OpenglRenderer::destroy() {
     _default_shader->destroy();
+    _text_shader->destroy();
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
