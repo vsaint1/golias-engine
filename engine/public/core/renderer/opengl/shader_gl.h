@@ -2,7 +2,6 @@
 #include "core/renderer/shader.h"
 
 
-
 /*!
 
     @brief Opengl Shader implementation
@@ -16,12 +15,12 @@
     @param string fragment The shader source
 */
 
-class OpenglShader : public Shader {
+class OpenglShader final : public Shader {
 public:
     OpenglShader() = default;
 
     template <typename T>
-    T GetValue(const std::string& name);
+    T get_value(const std::string& name);
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
@@ -33,13 +32,17 @@ public:
 
     void set_value(const std::string& name, unsigned int value) override;
 
-    void set_value(const std::string& name, glm::mat4 value) override;
+    void set_value(const std::string& name, glm::mat4 value, Uint32 count = 1) override;
 
-    void set_value(const std::string& name, glm::vec2 value) override;
+    void set_value(const std::string& name, const int* value, Uint32 count = 1) override;
 
-    void set_value(const std::string& name, glm::vec3 value) override;
+    void set_value(const std::string& name, const float* value, Uint32 count = 1) override;
 
-    void set_value(const std::string& name, glm::vec4 value) override;
+    void set_value(const std::string& name, glm::vec2 value, Uint32 count = 1) override;
+
+    void set_value(const std::string& name, glm::vec3 value, Uint32 count = 1) override;
+
+    void set_value(const std::string& name, glm::vec4 value, Uint32 count = 1) override;
 
     void destroy() override;
 
@@ -48,17 +51,15 @@ public:
     bool is_valid() const override;
 
 private:
-    unsigned int GetUniformLocation(const std::string& name);
+    unsigned int _get_uniform_location(const std::string& name);
 
     unsigned int CompileShader(unsigned int type, const char* source);
-
-
 };
 
 
 template <typename T>
-inline T OpenglShader::GetValue(const std::string& name) {
-    unsigned int location = GetUniformLocation(name);
+inline T OpenglShader::get_value(const std::string& name) {
+    unsigned int location = _get_uniform_location(name);
     if (location == -1) {
         LOG_ERROR("Shader variable not found: %s", name.c_str());
         return T();
