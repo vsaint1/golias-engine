@@ -4,7 +4,7 @@
 int SCREEN_WIDTH  = 1280;
 int SCREEN_HEIGHT = 720;
 
-Font mine_font;
+Font mine_font, sans_font;
 
 Texture player_texture, p2_texture;
 bool bShowMetrics = false;
@@ -19,11 +19,12 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
         return SDL_APP_FAILURE;
     }
 
-    camera.transform.position  = glm::vec2(0.f, 0.f);
+    camera.transform.position = glm::vec2(0.f, 0.f);
     camera.transform.rotation = 0.0f;
 
     // assets in examples/assets
     mine_font = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
+    sans_font = GEngine->get_renderer()->load_font("fonts/OpenSans.ttf", 24);
 
     player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
     p2_texture     = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
@@ -70,13 +71,13 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     static Transform transform2;
     transform2.position = {500, 100};
     transform2.rotation = 0.0f;
-    transform2.scale = {1, 1};
+    transform2.scale    = {1, 1};
 
     static Transform transform3 = {glm::vec3(300.f, 450.f, 0.f), glm::vec2(1.f), 0.0f};
 
     for (int i = 0; i < entities; i++) {
         GEngine->get_renderer()->draw_texture_ex(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
-                                              0.01f);
+                                                 0.01f);
     }
 
     GEngine->get_renderer()->draw_triangle({100, 100, 0.3f}, {200, 100, 0}, {150, 200, 0}, {255, 255, 0, 255});
@@ -92,14 +93,14 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     GEngine->get_renderer()->draw_texture_ex(p2_texture, {0, 0, 32, 32}, {100, 200, 128, 128}, glm::vec2(0.5f, 0.5f), angle);
 
-    GEngine->get_renderer()->draw_text(mine_font, "I think this works\n No internationalization =(", transform, {255, 255, 255, 255}, 20.f);
+    GEngine->get_renderer()->draw_text(sans_font, "I think this works\n No internationalization =(", transform, {255, 255, 255, 255}, 20.f);
 
     GEngine->get_renderer()->draw_text(mine_font, "Hello World!", transform3, {255, 255, 255, 255}, 20.f,
-                                     {.Outline = {
-                                          .bEnabled  = true,
-                                          .color     = Color(255, 0, 0, 255).normalize_color(),
-                                          .thickness = 0.35f,
-                                      }});
+                                       {.Outline = {
+                                            .bEnabled  = true,
+                                            .color     = Color(255, 0, 0, 255).normalize_color(),
+                                            .thickness = 0.35f,
+                                        }});
 
     ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
     ImGui::Begin("[DEMO] - new API", nullptr, ImGuiWindowFlags_NoCollapse);
