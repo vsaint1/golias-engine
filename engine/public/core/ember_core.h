@@ -31,6 +31,8 @@ public:
     RendererType Type  = OPENGL;
     int Viewport[2]    = {480, 270};
 
+    virtual void setup_shaders(Shader* default_shader,Shader* text_shader) = 0;
+
     virtual void initialize() = 0;
 
     virtual void flush() = 0;
@@ -153,7 +155,7 @@ public:
      * @param p2 Third vertex.
      * @param color RGBA color.
      */
-    virtual void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
+    virtual void draw_triangle_filled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
      * @brief Draw a triangle outline.
@@ -204,22 +206,9 @@ public:
      * @param color RGBA color.
      * @param thickness Optional thickness (may not be used).
      */
-    virtual void DrawRectFilled(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
+    virtual void draw_rect_filled(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
                                 float thickness = 1.f) = 0;
 
-    /**
-     * @brief Begin 2D mode with a camera.
-     *
-     * @param camera 2D camera (view_matrix).
-     * @deprecated
-     */
-    virtual void BeginMode2D(const Camera2D& camera) = 0;
-
-    /**
-     * @brief End 2D mode and restore view matrix.
-     * @deprecated
-     */
-    virtual void EndMode2D() = 0;
 
     /**
      * @brief Begin a static UI canvas.

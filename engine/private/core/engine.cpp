@@ -11,7 +11,6 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 ma_engine audio_engine;
 
 
-
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, RendererType type) {
 
     if (type == RendererType::OPENGL) {
@@ -147,9 +146,9 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL/ES" : "Metal");
 
-    this->Window.width  = width;
-    this->Window.height = height;
-    this->Window.title  = _title;
+    this->Window.width    = width;
+    this->Window.height   = height;
+    this->Window.title    = _title;
     this->_renderer->Type = type;
 
     if (type == RendererType::OPENGL) {
@@ -197,7 +196,7 @@ void Engine::shutdown() {
 void Engine::resize_window(int w, int h) const {
     SDL_assert(w > 0 && h > 0);
 
-    GEngine->Window.width= w;
+    GEngine->Window.width  = w;
     GEngine->Window.height = h;
 }
 
@@ -247,7 +246,6 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     }
 
 
-
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
@@ -271,11 +269,11 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 #if ENGINE_DEBUG
     int numExtensions = 0;
 
-    glGetIntegerv(GL_NUM_EXTENSIONS,&numExtensions);
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
 
     LOG_INFO("Number of available OpenGL/ES extensions: %d", numExtensions);
-    for (int i=0; i < numExtensions;i++) {
-        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS,i));
+    for (int i = 0; i < numExtensions; i++) {
+        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
         LOG_INFO("GL_EXTENSION_NAME: %s", extension);
     }
 #endif
@@ -283,14 +281,16 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
-    glRenderer->Viewport[0]    = view_width;
-    glRenderer->Viewport[1]    = view_height;
-    glRenderer->Window         = window;
+    glRenderer->Viewport[0] = view_width;
+    glRenderer->Viewport[1] = view_height;
+    glRenderer->Window      = window;
 
     glRenderer->set_context(glContext);
 
-    glRenderer->DefaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    glRenderer->TextShader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+    OpenglShader* defaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
+    OpenglShader* textShader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+
+    glRenderer->setup_shaders(defaultShader, textShader);
 
     glRenderer->initialize();
 

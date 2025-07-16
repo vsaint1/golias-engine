@@ -27,6 +27,8 @@ public:
     OpenglRenderer() = default;
 
 
+    void setup_shaders(Shader* default_shader, Shader* text_shader) override;
+
     void initialize() override;
 
     void flush() override;
@@ -68,30 +70,27 @@ public:
 
     void draw_rect(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
 
-    void DrawRectFilled(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
+    void draw_rect_filled(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
 
     void draw_triangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
-    void DrawTriangleFilled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
+    void draw_triangle_filled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
 
     void draw_circle(glm::vec3 position, float radius, const Color& color, int segments) override;
 
     void draw_circle_filled(glm::vec3 position, float radius, const Color& color, int segments) override;
 
-    void BeginMode2D(const Camera2D& camera) override;
-
-    void EndMode2D() override;
-
     void BeginCanvas() override;
 
     void EndCanvas() override;
 
-    OpenglShader* DefaultShader = nullptr;
-    OpenglShader* TextShader    = nullptr;
+
     glm::mat4 Projection = glm::mat4(1.f);
 
 private:
 
+    OpenglShader* _default_shader = nullptr;
+    OpenglShader* _text_shader    = nullptr;
 
     float _bind_texture(Uint32 slot = 0) override ;
 
