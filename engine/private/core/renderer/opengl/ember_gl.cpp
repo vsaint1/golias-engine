@@ -536,7 +536,7 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Transform& trans
 
 
 void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
-                                     float rotation, float zIndex, const Color& color) {
+                                     float rotation, const Color& color) {
 
     const float texIndex = _bind_texture(texture.id);
 
@@ -549,7 +549,7 @@ void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectan
     constexpr float angleCorrection = glm::radians(180.f);
 
     glm::mat4 model(1.0f);
-    model = glm::translate(model, glm::vec3(dest.x, dest.y, zIndex));
+    model = glm::translate(model, glm::vec3(dest.x, dest.y, 1.f));
     model = glm::translate(model, glm::vec3(pivot, 0.0f));
     model = glm::rotate(model, angleCorrection, glm::vec3(0, 0, 1));
     model = glm::rotate(model, glm::radians(rotation), glm::vec3(0, 0, 1));

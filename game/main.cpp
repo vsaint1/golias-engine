@@ -76,8 +76,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
     static Transform transform3 = {glm::vec3(300.f, 450.f, 0.f), glm::vec2(1.f), 0.0f};
 
     for (int i = 0; i < entities; i++) {
-        GEngine->get_renderer()->draw_texture_ex(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
-                                                 0.01f);
+        GEngine->get_renderer()->draw_texture_ex(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle);
     }
 
     GEngine->get_renderer()->draw_triangle({100, 100, 0.3f}, {200, 100, 0}, {150, 200, 0}, {255, 255, 0, 255});

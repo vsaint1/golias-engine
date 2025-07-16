@@ -64,7 +64,7 @@ public:
                      const Color& color) override;
 
     void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                       glm::vec2 origin, float rotation,float zIndex, const Color& color) override;
+                       glm::vec2 origin, float rotation, const Color& color) override;
 
     void draw_line(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
 

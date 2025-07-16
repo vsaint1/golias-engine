@@ -131,11 +131,10 @@ public:
      * @param dest Destination rectangle.
      * @param origin Origin point (e.g., center).
      * @param rotation Rotation in radians.
-     * @param zIndex Z index for ordering.
      * @param color RGBA color tint.
      */
     virtual void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
-                                 float rotation, float zIndex = 0.0f, const Color& color = {255, 255, 255, 255}) = 0;
+                                 float rotation, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
      * @brief Draw a line between two 3D points.
