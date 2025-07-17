@@ -1,5 +1,7 @@
 #include "core/input/input_manager.h"
 
+#include "core/engine.h"
+
 void InputManager::process(const SDL_Event* pEvent) {
 
 
@@ -59,7 +61,7 @@ void InputManager::process(const SDL_Event* pEvent) {
 
 void InputManager::update() {
 
-    // Saving resources 
+    // Saving resources
     if (SDL_GetWindowFlags(_window) & SDL_WINDOW_MINIMIZED) {
         SDL_Delay(10);
         return;
@@ -73,7 +75,7 @@ void InputManager::update() {
 
         if (event.type == SDL_EVENT_QUIT) {
 
-            // SHUTDOWN AND RELEASE RESOURCES
+            GEngine->bIsRunning = false;
 
         }
 
