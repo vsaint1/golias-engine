@@ -739,6 +739,31 @@ float OpenglRenderer::_bind_texture(Uint32 slot) {
 #endif
 }
 
+void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color, bool filled) {
+
+    if (vertices.size() < 3) return;
+
+    if (!filled) {
+
+        for (size_t i = 0; i < vertices.size(); ++i) {
+            glm::vec3 a = {vertices[i].x, vertices[i].y, 0};
+            glm::vec3 b = {vertices[(i + 1) % vertices.size()].x, vertices[(i + 1) % vertices.size()].y, 0};
+            draw_line(a, b, color, 1.0f);
+
+        }
+
+        return;
+    }
+
+    const glm::vec2 center = vertices[0];
+    for (size_t i = 1; i < vertices.size() - 1; ++i) {
+        glm::vec2 a = vertices[i];
+        glm::vec2 b = vertices[i + 1];
+
+        draw_triangle_filled(glm::vec3(center,1.f),glm::vec3(a,1.f),glm::vec3(b,1.f),color);
+    }
+}
+
 void OpenglRenderer::_submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) {
 
     if (_quadCount >= MAX_QUADS) {

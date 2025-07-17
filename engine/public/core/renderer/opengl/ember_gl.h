@@ -64,6 +64,8 @@ public:
     void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
                          float rotation, const Color& color) override;
 
+    void draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color, bool filled) override;
+
     void draw_line(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
 
     void draw_rect(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;

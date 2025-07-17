@@ -40,6 +40,16 @@ int main(int argc, char* argv[]) {
 
     root->print_tree();
 
+    std::vector<glm::vec2> hexagon;
+
+    glm::vec2 center = {100, 100};
+    for (int i = 0; i < 6; ++i) {
+        float angle     = glm::radians(60.0f * i);
+        glm::vec2 point = center + glm::vec2(cos(angle), sin(angle)) * 50.f;
+        hexagon.push_back(point);
+    }
+
+
     SDL_Event e;
     while (GEngine->bIsRunning) {
         while (SDL_PollEvent(&e)) {
@@ -52,6 +62,8 @@ int main(int argc, char* argv[]) {
             GEngine->input_manager()->process(&e);
 
             GEngine->get_renderer()->begin_drawing();
+
+            GEngine->get_renderer()->draw_polygon(hexagon, Color::RED, true);
 
             root->draw(GEngine->get_renderer());
 

@@ -26,13 +26,13 @@
  */
 class Renderer {
 public:
-    Renderer()          = default;
+    Renderer() = default;
 
     SDL_Window* Window = nullptr;
     RendererType Type  = OPENGL;
     int Viewport[2]    = {480, 270};
 
-    virtual void setup_shaders(Shader* default_shader,Shader* text_shader) = 0;
+    virtual void setup_shaders(Shader* default_shader, Shader* text_shader) = 0;
 
     virtual void initialize() = 0;
 
@@ -113,6 +113,14 @@ public:
     virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
                            const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
 
+    /*!
+     * @brief Draw polygon shape with given vertices
+     * @param vertices given points.
+     * @param color RGBA color.
+     * @param filled fill the polygon shape
+     */
+    virtual void draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color = {255, 255, 255, 255}, bool filled = false) = 0;
+
     /**
      * @brief Draw a texture quad.
      *
@@ -121,7 +129,7 @@ public:
      * @param size Size of the quad.
      * @param color RGBA color tint.
      */
-    virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size = {0,0},
+    virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size = {0, 0},
                               const Color& color = {255, 255, 255, 255}) = 0;
 
     /**
@@ -207,7 +215,7 @@ public:
      * @param thickness Optional thickness (may not be used).
      */
     virtual void draw_rect_filled(const Transform& transform, glm::vec2 size, const Color& color = {255, 255, 255, 255},
-                                float thickness = 1.f) = 0;
+                                  float thickness = 1.f) = 0;
 
 
     /**
