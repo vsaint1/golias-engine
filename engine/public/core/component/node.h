@@ -1,8 +1,8 @@
 #pragma once
 #include "core/engine_structs.h"
-#include "transform.h"
-#include "helpers/logging.h"
 #include "core/input/input_manager.h"
+#include "helpers/logging.h"
+#include "transform.h"
 
 class Renderer;
 
@@ -15,13 +15,15 @@ public:
 
     void set_z_index(int index);
 
-    int get_z_index() const;
+    [[nodiscard]] int get_z_index() const;
 
     void print_tree(int indent = 0) const;
 
-    Transform get_global_transform() const;
+    void change_visibility(bool visible);
 
-    Transform get_transform() const;
+    [[nodiscard]] Transform get_global_transform() const;
+
+    [[nodiscard]] Transform get_transform() const;
 
     void set_transform(const Transform& transform);
 
@@ -44,7 +46,9 @@ protected:
 
     std::string _name = "Node";
 
-    int _zIndex       = 0;
+    int _zIndex = 0;
+
+    bool _bIsVisible = true;
 
 private:
     Node2D* _parent = nullptr;

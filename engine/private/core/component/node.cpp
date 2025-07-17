@@ -16,7 +16,7 @@ void Node2D::print_tree(const int indent) const {
 
     printf("%s (zIndex: %d, Position: %.2f, %.2f)\n", _name.c_str(), _zIndex, _transform.position.x, _transform.position.y);
 
-    for (const auto&[name,node] : _nodes) {
+    for (const auto& [name, node] : _nodes) {
         node->print_tree(indent + 2);
     }
 }
@@ -80,8 +80,11 @@ Node2D* Node2D::get_node(const std::string& path) {
     return it->second->get_node(tail);
 }
 
-void Node2D::ready() {
+void Node2D::change_visibility(bool visible) {
+    _bIsVisible = visible;
+}
 
+void Node2D::ready() {
 }
 
 void Node2D::process(double delta_time) {
@@ -94,6 +97,11 @@ void Node2D::draw(Renderer* renderer) {
     std::ranges::sort(_draw_list, [](const Node2D* a, const Node2D* b) { return a->_zIndex < b->_zIndex; });
 
     for (auto* child : _draw_list) {
+
+        if (!child->_bIsVisible) {
+            continue;
+        }
+
         child->draw(renderer);
     }
 }

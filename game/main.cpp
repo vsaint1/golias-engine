@@ -5,6 +5,60 @@
 int SCREEN_WIDTH  = 1366;
 int SCREEN_HEIGHT = 768;
 
+class Label final : public Node2D {
+public:
+    Font _font;
+    std::string _text    = "";
+    Color _color         = Color::WHITE;
+    ShaderEffect _effect = {}; // for now just drawing text without effects
+    int _font_size       = 16;
+    std::string _path    = "";
+
+    explicit Label(Font   font, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
+        : _font(std::move(font)), _text(text), _color(color), _font_size(ft_size) {
+    }
+
+    Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
+        : _font(), _text(text), _color(color), _font_size(ft_size), _path(font_path) {
+
+        _font = GEngine->get_renderer()->load_font(font_path, ft_size);
+
+    }
+
+    void draw(Renderer* renderer) override {
+        renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, 0);
+        Node2D::draw(renderer);
+    }
+
+    void set_text(const char* fmt, ...) {
+        va_list args;
+        va_start(args, fmt);
+
+        const int size = SDL_vsnprintf(nullptr, 0, fmt, args);
+        va_end(args);
+
+        if (size <= 0) {
+            return;
+        }
+
+        std::string buffer(size, '\0');
+
+        va_start(args, fmt);
+        SDL_vsnprintf(&buffer[0], size + 1, fmt, args);
+        va_end(args);
+
+        _text = std::move(buffer);
+    }
+
+
+    void set_font_size(float size) {
+        _font_size = size;
+    }
+
+    void set_color(const Color& color) {
+        _color = color;
+    }
+};
 
 int main(int argc, char* argv[]) {
 
@@ -14,6 +68,7 @@ int main(int argc, char* argv[]) {
 
     auto player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
     auto enemy_texture  = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
+    auto mine_font      = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
 
     Node2D* root = new Node2D("Root");
 
@@ -21,8 +76,13 @@ int main(int argc, char* argv[]) {
     player->set_z_index(5);
     player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 50.0f});
 
+    Label* name = new Label(mine_font, "golias_bento", 32);
+    player->add_child("Name", name);
+    name->set_text("golias bento %d", 123);
+
     SpriteNode* sprite = new SpriteNode(player_texture);
     player->add_child("Image", sprite);
+    sprite->change_visibility(false);
 
     Node2D* enemy = new Node2D();
     enemy->set_z_index(4);
@@ -34,9 +94,9 @@ int main(int argc, char* argv[]) {
     root->add_child("Player", player);
     root->add_child("Enemy", enemy);
 
-    if (Node2D* playerT = root->get_node("Player")) {
-        playerT->print_tree();
-    }
+    // if (Node2D* playerT = root->get_node("Player")) {
+    //     playerT->print_tree();
+    // }
 
     root->print_tree();
 
@@ -49,6 +109,7 @@ int main(int argc, char* argv[]) {
         hexagon.push_back(point);
     }
 
+    root->ready();
 
     SDL_Event e;
     while (GEngine->bIsRunning) {
@@ -65,6 +126,7 @@ int main(int argc, char* argv[]) {
 
             GEngine->get_renderer()->draw_polygon(hexagon, Color::RED, true);
 
+            root->event(GEngine->input_manager());
             root->draw(GEngine->get_renderer());
 
             GEngine->get_renderer()->end_drawing();

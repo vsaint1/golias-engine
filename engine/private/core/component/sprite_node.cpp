@@ -2,6 +2,10 @@
 #include "core/ember_core.h"
 
 
+void SpriteNode::set_color(const Color& col) {
+    _color = col;
+}
+
 void SpriteNode::ready() {
 
 }

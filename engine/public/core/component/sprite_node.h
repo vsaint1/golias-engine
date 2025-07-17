@@ -11,6 +11,8 @@ public:
         : _texture(tex), _size(size), _color(col) {
     }
 
+    void set_color(const Color& col);
+
     void ready() override;
 
     void process(double delta_time) override;

@@ -52,7 +52,7 @@ struct Color {
     unsigned char b;
     unsigned char a;
 
-    glm::vec4 normalize_color() const;
+    [[nodiscard]] glm::vec4 normalize_color() const;
 
     bool operator==(const Color& other) const;
 
@@ -89,17 +89,15 @@ struct Glyph {
 struct Font {
     HashMap<char, Glyph> glyphs{};
     Texture texture;
-    int font_size;
+    int font_size = 16;
     float kerning = 0.0f;
-    int ascent, descent, line_gap;
-    float scale;
+    int ascent = 0, descent = 0, line_gap = 0;
+    float scale = 1.0f;
 
-    bool is_valid() const;
+    [[nodiscard]] bool is_valid() const;
 
     Font() = default;
 };
 
 
-
-
-ember::Size _calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);
+ember::Size calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);

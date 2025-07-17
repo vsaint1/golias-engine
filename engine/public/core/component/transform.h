@@ -18,7 +18,7 @@ struct Transform {
      *
      * @version 0.2.0
      */
-    glm::mat4 get_matrix() const {
+   [[nodiscard]] glm::mat4 get_matrix() const {
         glm::mat4 mat(1.0f);
         mat = glm::translate(mat, glm::vec3(position, 1.f));
         mat = glm::rotate(mat, rotation, glm::vec3(0, 0, 1));
