@@ -5,61 +5,6 @@
 int SCREEN_WIDTH  = 1366;
 int SCREEN_HEIGHT = 768;
 
-class Label final : public Node2D {
-public:
-    Font _font;
-    std::string _text    = "";
-    Color _color         = Color::WHITE;
-    ShaderEffect _effect = {}; // for now just drawing text without effects
-    int _font_size       = 16;
-    std::string _path    = "";
-
-    explicit Label(Font   font, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
-        : _font(std::move(font)), _text(text), _color(color), _font_size(ft_size) {
-    }
-
-    Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
-        : _font(), _text(text), _color(color), _font_size(ft_size), _path(font_path) {
-
-        _font = GEngine->get_renderer()->load_font(font_path, ft_size);
-
-    }
-
-    void draw(Renderer* renderer) override {
-        renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, 0);
-        Node2D::draw(renderer);
-    }
-
-    void set_text(const char* fmt, ...) {
-        va_list args;
-        va_start(args, fmt);
-
-        const int size = SDL_vsnprintf(nullptr, 0, fmt, args);
-        va_end(args);
-
-        if (size <= 0) {
-            return;
-        }
-
-        std::string buffer(size, '\0');
-
-        va_start(args, fmt);
-        SDL_vsnprintf(&buffer[0], size + 1, fmt, args);
-        va_end(args);
-
-        _text = std::move(buffer);
-    }
-
-
-    void set_font_size(float size) {
-        _font_size = size;
-    }
-
-    void set_color(const Color& color) {
-        _color = color;
-    }
-};
-
 int main(int argc, char* argv[]) {
 
     if (!GEngine->initialize("Node System", SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL)) {
@@ -82,7 +27,7 @@ int main(int argc, char* argv[]) {
 
     SpriteNode* sprite = new SpriteNode(player_texture);
     player->add_child("Image", sprite);
-    sprite->change_visibility(false);
+    // sprite->change_visibility(false);
 
     Node2D* enemy = new Node2D();
     enemy->set_z_index(4);

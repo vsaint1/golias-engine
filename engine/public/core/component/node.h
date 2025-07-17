@@ -1,5 +1,6 @@
 #pragma once
 #include "core/engine_structs.h"
+#include "core/renderer/shader.h"
 #include "core/input/input_manager.h"
 #include "helpers/logging.h"
 #include "transform.h"
