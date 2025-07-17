@@ -55,6 +55,16 @@ struct Color {
     glm::vec4 normalize_color() const;
 
     bool operator==(const Color& other) const;
+
+    static const Color RED;
+    static const Color GREEN;
+    static const Color BLUE;
+    static const Color WHITE;
+    static const Color BLACK;
+    static const Color YELLOW;
+    static const Color CYAN;
+    static const Color MAGENTA;
+    static const Color TRANSPARENT;
 };
 
 /*!
@@ -88,6 +98,8 @@ struct Font {
 
     Font() = default;
 };
+
+
 
 
 ember::Size _calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);
