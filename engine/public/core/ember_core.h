@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/component/camera.h"
+#include "core/component/node.h"
+#include "core/component/sprite_node.h"
 #include "core/engine_structs.h"
 
 #pragma region OPENGL/ES
