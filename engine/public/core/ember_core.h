@@ -25,7 +25,6 @@
 class Renderer {
 public:
     Renderer()          = default;
-    virtual ~Renderer() = 0;
 
     SDL_Window* Window = nullptr;
     RendererType Type  = OPENGL;
@@ -120,7 +119,7 @@ public:
      * @param size Size of the quad.
      * @param color RGBA color tint.
      */
-    virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size,
+    virtual void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size = {0,0},
                               const Color& color = {255, 255, 255, 255}) = 0;
 
     /**

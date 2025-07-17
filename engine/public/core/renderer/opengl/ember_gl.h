@@ -3,9 +3,9 @@
 #include "core/ember_core.h"
 
 // TODO: get this based on device?
-constexpr int MAX_QUADS         = 10000;
-constexpr int MAX_VERTICES      = MAX_QUADS * 4;
-constexpr int MAX_INDICES       = MAX_QUADS * 6;
+constexpr int MAX_QUADS    = 10000;
+constexpr int MAX_VERTICES = MAX_QUADS * 4;
+constexpr int MAX_INDICES  = MAX_QUADS * 6;
 
 /*!
  *  @brief sampler2D (array) supported by platform
@@ -25,8 +25,6 @@ constexpr int MAX_TEXTURE_SLOTS = 16;
 class OpenglRenderer final : public Renderer {
 public:
     OpenglRenderer() = default;
-
-    ~OpenglRenderer() override = default;
 
     void setup_shaders(Shader* default_shader, Shader* text_shader) override;
 
@@ -59,13 +57,12 @@ public:
     void end_drawing() override;
 
     void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
-                  const ShaderEffect& shader_effect, float kerning) override;
+                   const ShaderEffect& shader_effect, float kerning) override;
 
-    void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size,
-                     const Color& color) override;
+    void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) override;
 
-    void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest,
-                       glm::vec2 origin, float rotation, const Color& color) override;
+    void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+                         float rotation, const Color& color) override;
 
     void draw_line(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
 
@@ -89,24 +86,23 @@ public:
     glm::mat4 Projection = glm::mat4(1.f);
 
 private:
-
     OpenglShader* _default_shader = nullptr;
     OpenglShader* _text_shader    = nullptr;
 
-    float _bind_texture(Uint32 slot = 0) override ;
+    float _bind_texture(Uint32 slot = 0) override;
 
     void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
 
 
-    GLuint _textVAO = 0, _textVBO = 0, _textEBO =0;
-    Vertex* _textBuffer = nullptr;
-    int _textQuadCount = 0;
-    int _textIndexCount = 0;
+    GLuint _textVAO = 0, _textVBO = 0, _textEBO = 0;
+    Vertex* _textBuffer                = nullptr;
+    int _textQuadCount                 = 0;
+    int _textIndexCount                = 0;
     unsigned int _currentFontTextureID = 0;
 
 
     GLuint VAO = 0, VBO = 0, EBO = 0;
-    Vertex* _buffer                                       = nullptr;
+    Vertex* _buffer = nullptr;
 
     // OPENGL/ES HACK FIX
     Uint32 _textureArrayBuffer = 0;

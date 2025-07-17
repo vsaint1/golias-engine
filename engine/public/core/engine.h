@@ -53,6 +53,8 @@ public:
 
     Ember_VFS VirtualFileSystem{};
 
+    bool bIsRunning = false;
+
     /**
      * @brief Resize the SDL window.
      *

@@ -162,6 +162,7 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
+    this->bIsRunning = true;
 
     return true;
 }
