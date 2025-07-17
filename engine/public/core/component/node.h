@@ -2,6 +2,7 @@
 #include "core/engine_structs.h"
 #include "transform.h"
 #include "helpers/logging.h"
+#include "core/input/input_manager.h"
 
 class Renderer;
 
@@ -24,24 +25,31 @@ public:
 
     void set_transform(const Transform& transform);
 
-    virtual ~Node2D();
-
     void add_child(const std::string& name, Node2D* node);
 
     Node2D* get_node(const std::string& path);
+
+    virtual void ready();
 
     virtual void process(double delta_time);
 
     virtual void draw(Renderer* renderer);
 
+    virtual void event(const InputManager* input);
+
+    virtual ~Node2D();
+
 protected:
     Transform _transform = {};
 
     std::string _name = "Node";
+
     int _zIndex       = 0;
 
+private:
     Node2D* _parent = nullptr;
 
     HashMap<std::string, Node2D*> _nodes;
+
     std::vector<Node2D*> _draw_list;
 };

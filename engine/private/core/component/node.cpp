@@ -80,6 +80,10 @@ Node2D* Node2D::get_node(const std::string& path) {
     return it->second->get_node(tail);
 }
 
+void Node2D::ready() {
+
+}
+
 void Node2D::process(double delta_time) {
     for (auto* child : _draw_list) {
         child->process(delta_time);
@@ -91,5 +95,11 @@ void Node2D::draw(Renderer* renderer) {
 
     for (auto* child : _draw_list) {
         child->draw(renderer);
+    }
+}
+
+void Node2D::event(const InputManager* input) {
+    for (auto& [name, child] : _nodes) {
+        child->event(input);
     }
 }
