@@ -33,11 +33,7 @@ public:
     - Bind the shader
     - Send uniforms
 
- @version
-
-
- *
- * * * 0.0.2
+    @version  0.0.2
     @param string vertex The shader source
     @param string fragment The shader source
 */
@@ -76,7 +72,7 @@ public:
 
 
 protected:
-    unsigned int id;
+    unsigned int id = 0;
 
     std::unordered_map<std::string, unsigned int> _uniforms;
 };

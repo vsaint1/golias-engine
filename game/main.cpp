@@ -1,4 +1,5 @@
-﻿#include "core/renderer/opengl/ember_gl.h"
+﻿#define SDL_MAIN_USE_CALLBACKS
+#include "core/renderer/opengl/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
 int SCREEN_WIDTH  = 1280;

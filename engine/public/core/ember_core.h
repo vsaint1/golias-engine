@@ -24,8 +24,8 @@
  */
 class Renderer {
 public:
-    virtual ~Renderer() = default;
     Renderer()          = default;
+    virtual ~Renderer() = 0;
 
     SDL_Window* Window = nullptr;
     RendererType Type  = OPENGL;

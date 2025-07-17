@@ -26,6 +26,7 @@ class OpenglRenderer final : public Renderer {
 public:
     OpenglRenderer() = default;
 
+    ~OpenglRenderer() override = default;
 
     void setup_shaders(Shader* default_shader, Shader* text_shader) override;
 

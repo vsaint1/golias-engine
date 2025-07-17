@@ -34,7 +34,7 @@ add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
 
 # [iOs/Emscripten] - disable shared libs
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
-    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")   
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
     set(SDL_SHARED OFF)
 else()
     set(SDL_SHARED ON)
@@ -42,7 +42,7 @@ endif()
 
 if(MSVC)
     if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
-        add_definitions(/MP)				
+        add_definitions(/MP)
     endif()
 endif()
 
@@ -97,9 +97,9 @@ if(ANDROID)
     set(CMAKE_ANDROID_VERSION_CODE 1)
 
     file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
-    
+
     # configure_file("${CMAKE_SOURCE_DIR}/templates/config/AndroidManifest.xml.in" "${CMAKE_BINARY_DIR}/templates/android/app/src/main/AndroidManifest.xml" @ONLY)
-   
+
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES} ${ANDROID_FILES})
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 
@@ -196,7 +196,7 @@ if(MSVC)
             ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
-    
+
     add_compile_options(-fsanitize=address)
     add_link_options(-fsanitize=address)
 
@@ -244,4 +244,4 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
+# target_compile_definitions(${PROJECT_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
