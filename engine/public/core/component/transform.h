@@ -18,11 +18,11 @@ struct Transform {
      *
      * @version 0.2.0
      */
-   [[nodiscard]] glm::mat4 get_matrix() const {
-        glm::mat4 mat(1.0f);
-        mat = glm::translate(mat, glm::vec3(position, 1.f));
-        mat = glm::rotate(mat, rotation, glm::vec3(0, 0, 1));
-        mat = glm::scale(mat, glm::vec3(scale, 1.0f));
-        return mat;
-    }
+    [[nodiscard]] glm::mat4 get_matrix() const;
+
+    /*! @brief Transform point into screen
+     *
+     * @version 1.0.0
+     */
+    [[nodiscard]] glm::vec3 transform_point(const glm::vec2& point) const;
 };

@@ -1,14 +1,15 @@
 #include "core/component/transform.h"
 
-// glm::mat4 Transform::GetModelMatrix() const {
-//     return glm::mat4(1.0f);
-// }
-//
-// glm::mat4 Transform::GetModelMatrix2D() const {
-//
-//     glm::mat4 model = glm::mat4(1.0f);
-//     model           = glm::translate(model, position);
-//     model           = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-//     model           = glm::scale(model, scale);
-//     return model;
-// }
+glm::mat4 Transform::get_matrix() const {
+    glm::mat4 mat(1.0f);
+    mat = glm::translate(mat, glm::vec3(position, 1.f));
+    mat = glm::rotate(mat, rotation, glm::vec3(0, 0, 1));
+    mat = glm::scale(mat, glm::vec3(scale, 1.0f));
+    return mat;
+}
+
+glm::vec3 Transform::transform_point(const glm::vec2& point) const {
+    const auto res = get_matrix() * glm::vec4(point, 1.f, 1.0f);
+
+    return res;
+}
