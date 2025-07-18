@@ -1,22 +1,22 @@
 #include "core/time_manager.h"
 
 void TimeManager::pause() {
-    if (!_bPaused) {
-        _bPaused  = true;
+    if (!_is_paused) {
+        _is_paused  = true;
         _paused_tick = SDL_GetPerformanceCounter();
     }
 }
 
 void TimeManager::resume() {
-    if (_bPaused) {
-        _bPaused         = false;
+    if (_is_paused) {
+        _is_paused         = false;
         Uint64 resumeTick = SDL_GetPerformanceCounter();
         _last_tick += (resumeTick - _paused_tick);
         _paused_tick = 0;
     }
 }
 void TimeManager::update() {
-    if (_bPaused) {
+    if (_is_paused) {
         _delta_time = 0.0f; // Avoid accumulating DT when paused
         return;
     }

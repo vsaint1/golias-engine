@@ -10,7 +10,7 @@ public:
     }
 
     [[nodiscard]] float get_delta_time() const {
-        if (_bPaused) {
+        if (is_paused()) {
             return 0.0f;
         }
 
@@ -36,7 +36,7 @@ public:
     }
 
     [[nodiscard]] bool is_paused() const {
-        return this->_bPaused;
+        return this->_is_paused;
     }
 
     void pause();
@@ -59,6 +59,6 @@ private:
 
     /* MAX_FPS = 1 -> UNLIMITED */
     Uint32 MAX_FPS    = 60;
-    bool paused    = false;
+    bool _is_paused    = false;
     Uint64 _paused_tick = 0;
 };
