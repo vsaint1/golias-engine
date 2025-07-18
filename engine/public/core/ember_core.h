@@ -5,6 +5,8 @@
 #include "core/component/sprite_node.h"
 #include "core/component/label.h"
 #include "core/engine_structs.h"
+#include "core/component/circle.h"
+#include "core/component/polygon.h"
 
 #pragma region OPENGL/ES
 #include "core/renderer/mesh.h"
@@ -27,8 +29,8 @@
  */
 class Renderer {
 public:
-    virtual ~Renderer() = default;
     Renderer() = default;
+    virtual ~Renderer() = default;
 
     SDL_Window* Window = nullptr;
     RendererType Type  = OPENGL;

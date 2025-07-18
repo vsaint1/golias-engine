@@ -5,6 +5,7 @@
 int SCREEN_WIDTH  = 1366;
 int SCREEN_HEIGHT = 768;
 
+
 int main(int argc, char* argv[]) {
 
     if (!GEngine->initialize("Node System", SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL)) {
@@ -21,6 +22,19 @@ int main(int argc, char* argv[]) {
     player->set_z_index(5);
     player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 50.0f});
 
+    std::vector<glm::vec2> hexagon;
+
+    for (int i = 0; i < 6; ++i) {
+        const float angle = glm::radians(60.0f * i);
+        glm::vec2 point   = glm::vec2(cos(angle), sin(angle)) * 50.f;
+        hexagon.push_back(point);
+    }
+
+    Polygon2D* polygon = new Polygon2D(hexagon, true);
+    polygon->translate(200, 100);
+    polygon->rotate(0);
+
+
     Label* name = new Label(mine_font, "golias_bento", 32);
     player->add_child("Name", name);
     name->set_text("golias bento %d", 123);
@@ -32,9 +46,13 @@ int main(int argc, char* argv[]) {
     Node2D* enemy = new Node2D();
     enemy->set_z_index(4);
     enemy->set_transform({glm::vec2(600.f, 100.f), glm::vec2(1.f), 0.0f});
+    player->add_child("CollisionShape", polygon);
 
     SpriteNode* enemy_sprite = new SpriteNode(enemy_texture);
     enemy->add_child("Image", enemy_sprite);
+
+    Circle2D* circle = new Circle2D();
+    enemy->add_child("CollisionShape", circle);
 
     root->add_child("Player", player);
     root->add_child("Enemy", enemy);
@@ -44,15 +62,6 @@ int main(int argc, char* argv[]) {
     // }
 
     root->print_tree();
-
-    std::vector<glm::vec2> hexagon;
-
-    glm::vec2 center = {100, 100};
-    for (int i = 0; i < 6; ++i) {
-        float angle     = glm::radians(60.0f * i);
-        glm::vec2 point = center + glm::vec2(cos(angle), sin(angle)) * 50.f;
-        hexagon.push_back(point);
-    }
 
     root->ready();
 
@@ -67,11 +76,10 @@ int main(int argc, char* argv[]) {
 
             GEngine->input_manager()->process(&e);
 
+            root->event(GEngine->input_manager());
+
             GEngine->get_renderer()->begin_drawing();
 
-            GEngine->get_renderer()->draw_polygon(hexagon, Color::RED, true);
-
-            root->event(GEngine->input_manager());
             root->draw(GEngine->get_renderer());
 
             GEngine->get_renderer()->end_drawing();
