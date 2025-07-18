@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     Node2D* player = new Node2D();
     player->set_z_index(5);
-    player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 50.0f});
+    player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 0.0f});
 
     std::vector<glm::vec2> hexagon;
 
@@ -32,34 +32,39 @@ int main(int argc, char* argv[]) {
 
     Polygon2D* polygon = new Polygon2D(hexagon, true);
     polygon->translate(200, 100);
-    polygon->rotate(0);
 
 
     Label* name = new Label(mine_font, "golias_bento", 32);
-    player->add_child("Name", name);
     name->set_text("golias bento %d", 123);
+    name->set_z_index(10);
 
-    SpriteNode* sprite = new SpriteNode(player_texture);
-    player->add_child("Image", sprite);
+    Sprite2D* player_sprite = new Sprite2D(player_texture);
+    player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
+    player_sprite->translate(100, 50);
+
     // sprite->change_visibility(false);
 
     Node2D* enemy = new Node2D();
     enemy->set_z_index(4);
-    enemy->set_transform({glm::vec2(600.f, 100.f), glm::vec2(1.f), 0.0f});
-    player->add_child("CollisionShape", polygon);
+    enemy->set_transform({glm::vec2(600.f, 100.f), glm::vec2(1.f), 320.0f});
 
-    SpriteNode* enemy_sprite = new SpriteNode(enemy_texture);
-    enemy->add_child("Image", enemy_sprite);
+    Sprite2D* enemy_sprite = new Sprite2D(enemy_texture);
 
     Circle2D* circle = new Circle2D();
-    enemy->add_child("CollisionShape", circle);
 
     root->add_child("Player", player);
     root->add_child("Enemy", enemy);
 
-    // if (Node2D* playerT = root->get_node("Player")) {
-    //     playerT->print_tree();
-    // }
+    if (Node2D* playerT = root->get_node("Player")) {
+        playerT->print_tree();
+    }
+
+    player->add_child("Image", player_sprite);
+    player->add_child("CollisionShape", polygon);
+    player->add_child("Name", name);
+
+    enemy->add_child("Image", enemy_sprite);
+    enemy->add_child("CollisionShape", circle);
 
     root->print_tree();
 
