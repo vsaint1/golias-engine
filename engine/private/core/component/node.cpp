@@ -14,11 +14,11 @@ void Node2D::scale(float sx, float sy) {
 }
 
 void Node2D::set_z_index(int index) {
-    _zIndex = index;
+    _z_index = index;
 }
 
 int Node2D::get_z_index() const {
-    return _zIndex;
+    return _z_index;
 }
 
 void Node2D::print_tree(const int indent) const {
@@ -26,7 +26,7 @@ void Node2D::print_tree(const int indent) const {
         printf(" ");
     }
 
-    printf("%s (zIndex: %d, Position: %.2f, %.2f)\n", _name.c_str(), _zIndex, _transform.position.x, _transform.position.y);
+    printf("%s (zIndex: %d, Position: %.2f, %.2f)\n", _name.c_str(), _z_index, _transform.position.x, _transform.position.y);
 
     for (const auto& [name, node] : _nodes) {
         node->print_tree(indent + 2);
@@ -93,7 +93,7 @@ Node2D* Node2D::get_node(const std::string& path) {
 }
 
 void Node2D::change_visibility(bool visible) {
-    _bIsVisible = visible;
+    _is_visible = visible;
 }
 
 void Node2D::ready() {
@@ -106,11 +106,11 @@ void Node2D::process(double delta_time) {
 }
 
 void Node2D::draw(Renderer* renderer) {
-    std::ranges::sort(_draw_list, [](const Node2D* a, const Node2D* b) { return a->_zIndex < b->_zIndex; });
+    std::ranges::sort(_draw_list, [](const Node2D* a, const Node2D* b) { return a->_z_index < b->_z_index; });
 
     for (auto* child : _draw_list) {
 
-        if (!child->_bIsVisible) {
+        if (!child->_is_visible) {
             continue;
         }
 

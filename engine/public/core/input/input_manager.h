@@ -22,7 +22,7 @@ class InputManager {
 public:
     InputManager() = default;
 
-    InputManager(SDL_Window* window) : _window(window) {}
+    explicit InputManager(SDL_Window* window) : _window(window) {}
 
     void process(const SDL_Event* pEvent);
 
@@ -49,7 +49,7 @@ public:
     bool is_text_input_active();
 
 private:
-    SDL_Window* _window;
+    SDL_Window* _window = nullptr;
 
     std::queue<SDL_Event> events;
 
@@ -57,9 +57,9 @@ private:
 
     std::unordered_map<SDL_Scancode, bool> prevKeyState;
 
-    glm::vec2 mousePosition;
+    glm::vec2 mousePosition = glm::vec2(0.0f);
 
-    Joystick joystickData;
+    Joystick joystickData = {};
 
     std::unordered_map<int, Joystick> joysticks;
 

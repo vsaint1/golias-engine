@@ -68,21 +68,21 @@ public:
      *
      * @return Renderer* Renderer pointer.
      */
-    Renderer* get_renderer() const;
+    [[nodiscard]] Renderer* get_renderer() const;
 
     /**
      * @brief Get the input manager.
      *
      * @return InputManager* Input manager pointer.
      */
-    InputManager* input_manager() const;
+    [[nodiscard]] InputManager* input_manager() const;
 
     /**
      * @brief Get the time manager.
      *
      * @return TimeManager* Time manager pointer.
      */
-    TimeManager* time_manager() const;
+    [[nodiscard]] TimeManager* time_manager() const;
 
     /**
      * @brief Deinitialize window, renderer, and modules.

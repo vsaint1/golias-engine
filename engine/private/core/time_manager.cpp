@@ -1,49 +1,49 @@
 #include "core/time_manager.h"
 
-void TimeManager::Pause() {
-    if (!bIsPaused) {
-        bIsPaused  = true;
-        pausedTick = SDL_GetPerformanceCounter();
+void TimeManager::pause() {
+    if (!_bPaused) {
+        _bPaused  = true;
+        _paused_tick = SDL_GetPerformanceCounter();
     }
 }
 
-void TimeManager::Resume() {
-    if (bIsPaused) {
-        bIsPaused         = false;
+void TimeManager::resume() {
+    if (_bPaused) {
+        _bPaused         = false;
         Uint64 resumeTick = SDL_GetPerformanceCounter();
-        lastTick += (resumeTick - pausedTick);
-        pausedTick = 0;
+        _last_tick += (resumeTick - _paused_tick);
+        _paused_tick = 0;
     }
 }
 void TimeManager::update() {
-    if (bIsPaused) {
-        deltaTime = 0.0f; // Avoid accumulating DT when paused
+    if (_bPaused) {
+        _delta_time = 0.0f; // Avoid accumulating DT when paused
         return;
     }
 
-    currentTick = SDL_GetPerformanceCounter();
+    _current_tick = SDL_GetPerformanceCounter();
 
-    if (lastTick == 0) {
-        lastTick = currentTick;
+    if (_last_tick == 0) {
+        _last_tick = _current_tick;
     }
 
-    deltaTime = static_cast<float>(currentTick - lastTick) / SDL_GetPerformanceFrequency();
+    _delta_time = static_cast<float>(_current_tick - _last_tick) / SDL_GetPerformanceFrequency();
 
     const float maxDeltaTime = 1.0f / MAX_FPS;
-    if (deltaTime > maxDeltaTime) {
-        deltaTime = maxDeltaTime;
+    if (_delta_time > maxDeltaTime) {
+        _delta_time = maxDeltaTime;
     }
 
-    lastTick = currentTick;
+    _last_tick = _current_tick;
 
-    frameCount++;
-    
-    elapsedTime += deltaTime;
+    _frame_count++;
 
-    if (elapsedTime >= 1.0f) {
-        fps         = (float) frameCount / elapsedTime;
-        frameCount  = 0;
-        elapsedTime = 0.0f;
+    _elapsed_time += _delta_time;
+
+    if (_elapsed_time >= 1.0f) {
+        fps         = (float) _frame_count / _elapsed_time;
+        _frame_count  = 0;
+        _elapsed_time = 0.0f;
     }
 }
 
@@ -55,7 +55,7 @@ void TimeManager::fixed_frame_rate(Uint32 max_fps) {
     }
 
     Uint64 frameDuration = SDL_GetPerformanceFrequency() / MAX_FPS;
-    Uint64 tickEnd       = lastTick + frameDuration;
+    Uint64 tickEnd       = _last_tick + frameDuration;
 
     while (SDL_GetPerformanceCounter() + (SDL_GetPerformanceFrequency() / 1000) < tickEnd) {
         SDL_Delay(1);

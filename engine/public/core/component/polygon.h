@@ -5,7 +5,7 @@
 class Polygon2D final : public Node2D {
 public:
     explicit Polygon2D(const std::vector<glm::vec2>& points, bool fill = false, Color color = Color::WHITE)
-        : _points(points), _color(color), _bFilled(fill) {
+        : _points(points), _color(color), _is_filled(fill) {
     }
 
     void ready() override;
@@ -17,5 +17,5 @@ public:
 private:
     std::vector<glm::vec2> _points;
     Color _color  = Color::WHITE;
-    bool _bFilled = false;
+    bool _is_filled = false;
 };

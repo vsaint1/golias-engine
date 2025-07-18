@@ -14,7 +14,7 @@ void Circle2D::process(double delta_time) {
 void Circle2D::draw(Renderer* renderer) {
     const auto center = get_global_transform().position;
 
-    if (_bFilled) {
+    if (_is_filled) {
         renderer->draw_circle_filled(glm::vec3(center, 1.f), _radius, _color, _segments);
     } else {
         renderer->draw_circle(glm::vec3(center, 1.f), _radius, _color, _segments);

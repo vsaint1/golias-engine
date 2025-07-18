@@ -54,9 +54,9 @@ protected:
 
     std::string _name = "Node";
 
-    int _zIndex = 0;
+    int _z_index = 0;
 
-    bool _bIsVisible = true;
+    bool _is_visible = true;
 
 private:
     Node2D* _parent = nullptr;

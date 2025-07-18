@@ -2,39 +2,27 @@
 #include "helpers/logging.h"
 
 class TimeManager {
-    Uint64 lastTick    = SDL_GetPerformanceCounter();
-    Uint64 currentTick = 0;
-    float deltaTime    = 0.0;
-
-    Uint64 frameCount = 0;
-    float elapsedTime = 0.0;
-    float fps         = 0.0;
-
-    /* MAX_FPS = 1 -> UNLIMITED */
-    Uint32 MAX_FPS    = 60;
-    bool bIsPaused    = false;
-    Uint64 pausedTick = 0;
 
 
 public:
     TimeManager() {
-        lastTick = SDL_GetPerformanceCounter();
+        _last_tick = SDL_GetPerformanceCounter();
     }
 
-    float get_delta_time() {
-        if (bIsPaused) {
+    [[nodiscard]] float get_delta_time() const {
+        if (_bPaused) {
             return 0.0f;
         }
 
-        return this->deltaTime;
+        return this->_delta_time;
     }
 
-    Uint64 get_frame_count() {
-        return this->frameCount;
+    [[nodiscard]] Uint64 get_frame_count() const {
+        return this->_frame_count;
     }
 
-    float get_elapsed_time() {
-        return this->elapsedTime;
+    [[nodiscard]] float get_elapsed_time() const {
+        return this->_elapsed_time;
     }
 
     void SetMaxFps(Uint32 fps) {
@@ -43,22 +31,34 @@ public:
         LOG_INFO("Target FPS (frames per second) to %02.03f ms", (float) fps * 1000.f);
     }
 
-    float GetFps() {
+    [[nodiscard]] float get_fps() const {
         return this->fps;
     }
 
-    bool IsPaused() {
-        return this->bIsPaused;
+    [[nodiscard]] bool is_paused() const {
+        return this->_bPaused;
     }
 
-    void Pause();
+    void pause();
 
-    void Resume();
+    void resume();
 
     void update();
 
     /* max_fps = 1 -> UNLIMITED */
     void fixed_frame_rate(Uint32 max_fps = 60);
+
+private:
+    Uint64 _last_tick    = SDL_GetPerformanceCounter();
+    Uint64 _current_tick = 0;
+    float _delta_time    = 0.0;
+
+    Uint64 _frame_count = 0;
+    float _elapsed_time = 0.0;
+    float fps         = 0.0;
+
+    /* MAX_FPS = 1 -> UNLIMITED */
+    Uint32 MAX_FPS    = 60;
+    bool paused    = false;
+    Uint64 _paused_tick = 0;
 };
-
-
