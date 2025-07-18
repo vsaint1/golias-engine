@@ -1,7 +1,7 @@
 #pragma once
 #include "core/engine_structs.h"
-#include "core/renderer/shader.h"
 #include "core/input/input_manager.h"
+#include "core/renderer/shader.h"
 #include "helpers/logging.h"
 #include "transform.h"
 
@@ -21,6 +21,13 @@ public:
     void print_tree(int indent = 0) const;
 
     void change_visibility(bool visible);
+
+    void translate(float dx, float dy);
+
+    void rotate(float degrees);
+
+    void scale(float sx, float sy);
+
 
     [[nodiscard]] Transform get_global_transform() const;
 

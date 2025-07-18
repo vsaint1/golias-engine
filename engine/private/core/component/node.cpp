@@ -1,6 +1,18 @@
 #include "core/component/node.h"
 
 
+void Node2D::translate(float dx, float dy) {
+    _transform.position += glm::vec2(dx, dy);
+}
+
+void Node2D::rotate(float degrees) {
+    _transform.rotation = glm::radians(degrees);
+}
+
+void Node2D::scale(float sx, float sy) {
+    _transform.scale *= glm::vec2(sx, sy);
+}
+
 void Node2D::set_z_index(int index) {
     _zIndex = index;
 }
