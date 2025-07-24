@@ -97,7 +97,7 @@ SDL_AppResult SDL_AppIterate(void* app_state) {
 
     GEngine->get_renderer()->draw_text(mine_font, "Hello World!", transform3, {255, 255, 255, 255}, 20.f,
                                        {.Outline = {
-                                            .bEnabled  = true,
+                                            .enabled  = true,
                                             .color     = Color(255, 0, 0, 255).normalize_color(),
                                             .thickness = 0.35f,
                                         }});
