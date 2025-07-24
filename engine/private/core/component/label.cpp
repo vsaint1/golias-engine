@@ -46,6 +46,18 @@ void Label::set_font_size(float size) {
     _font_size = size;
 }
 
-void Label::set_color(const Color& color) {
+void Label::set_text_color(const Color& color) {
     _color = color;
+}
+
+void Label::set_outline(bool enabled, float thickness, const Color& color) {
+    _effect.Outline.bEnabled = enabled ? 1 : 0;
+    _effect.Outline.thickness = thickness;
+    _effect.Outline.color = color.normalize_color();
+}
+
+void Label::set_shadow(bool enabled, glm::vec2 offset, const Color& color) {
+    _effect.Shadow.bEnabled = enabled ? 1 : 0;
+    _effect.Shadow.pixel_offset = offset;
+    _effect.Shadow.color = color.normalize_color();
 }
