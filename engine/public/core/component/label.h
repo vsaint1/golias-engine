@@ -9,7 +9,7 @@ public:
         : _font(std::move(font)), _text(text), _color(color), _font_size(ft_size) {
     }
 
-    Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color = Color::WHITE);
+    Label(const std::string& font_path, const std::string& text, float ft_size, const Color& color = Color::WHITE);
 
     void ready() override;
 
@@ -31,7 +31,7 @@ private:
     Font _font;
     std::string _text    = "";
     Color _color         = Color::WHITE;
-    ShaderEffect _effect = {}; // for now just drawing text without effects
+    UberShader _effect = {}; // for now just drawing text without effects
     int _font_size       = 16;
     std::string _path    = "";
 };
