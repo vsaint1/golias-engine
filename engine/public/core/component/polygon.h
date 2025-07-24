@@ -14,6 +14,8 @@ public:
 
     void draw(Renderer* renderer) override;
 
+    void set_filled(bool fill);
+
 private:
     std::vector<glm::vec2> _points;
     Color _color  = Color::WHITE;

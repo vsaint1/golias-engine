@@ -16,6 +16,9 @@ public:
     void process(double delta_time) override;
 
     void draw(Renderer* renderer) override;
+
+    void set_filled(bool fill);
+
 private:
     float _radius = 10.0f;
     int _segments = 32;

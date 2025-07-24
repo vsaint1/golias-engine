@@ -22,3 +22,7 @@ void Circle2D::draw(Renderer* renderer) {
 
     Node2D::draw(renderer);
 }
+
+void Circle2D::set_filled(bool fill) {
+        _is_filled = fill;
+}

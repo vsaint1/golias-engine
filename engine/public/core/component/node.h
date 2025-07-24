@@ -45,7 +45,7 @@ public:
 
     virtual void draw(Renderer* renderer);
 
-    virtual void event(const InputManager* input);
+    virtual void input(const InputManager* input);
 
     virtual ~Node2D();
 

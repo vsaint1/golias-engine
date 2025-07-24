@@ -118,8 +118,8 @@ void Node2D::draw(Renderer* renderer) {
     }
 }
 
-void Node2D::event(const InputManager* input) {
+void Node2D::input(const InputManager* input) {
     for (auto& [name, child] : _nodes) {
-        child->event(input);
+        child->input(input);
     }
 }

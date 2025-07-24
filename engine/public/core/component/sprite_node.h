@@ -19,7 +19,7 @@ public:
 
     void draw(Renderer* renderer) override;
 
-    void event(const InputManager* input) override;
+    void input(const InputManager* input) override;
 
 private:
     Texture _texture;

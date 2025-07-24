@@ -48,5 +48,5 @@ void Sprite2D::draw(Renderer* renderer) {
     Node2D::draw(renderer);
 }
 
-void Sprite2D::event(const InputManager* input) {
+void Sprite2D::input(const InputManager* input) {
 }

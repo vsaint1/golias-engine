@@ -25,3 +25,8 @@ void Polygon2D::draw(Renderer* renderer) {
     renderer->draw_polygon(transformed_points, _color, _is_filled);
     Node2D::draw(renderer);
 }
+
+void Polygon2D::set_filled(bool fill) {
+    _is_filled  = fill;
+}
+
