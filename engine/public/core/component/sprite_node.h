@@ -9,7 +9,7 @@ public:
     }
 
 
-    void set_region(const ember::Rectangle& region, glm::vec2 size);
+    void set_region(const Rect2& region, glm::vec2 size);
 
     void set_color(const Color& col);
 
@@ -25,8 +25,8 @@ private:
     Texture _texture;
     glm::vec2 _size          = glm::vec2(0.f);
     Color _color             = {255, 255, 255, 255};
-    ember::Rectangle _source = {};
-    ember::Rectangle _dest   = {};
+    Rect2 _source = {};
+    Rect2 _dest   = {};
     glm::vec2 _origin        = {};
     bool _use_region         = false;
 };

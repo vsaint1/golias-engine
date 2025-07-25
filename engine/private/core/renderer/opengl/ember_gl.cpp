@@ -555,7 +555,7 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Transform& trans
 }
 
 
-void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+void OpenglRenderer::draw_texture_ex(const Texture& texture, const Rect2& source, const Rect2& dest, glm::vec2 origin,
                                      float rotation, const Color& color) {
 
     const float texIndex = _bind_texture(texture.id);

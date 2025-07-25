@@ -146,7 +146,7 @@ public:
      * @param rotation Rotation in radians.
      * @param color RGBA color tint.
      */
-    virtual void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+    virtual void draw_texture_ex(const Texture& texture, const Rect2& source, const Rect2& dest, glm::vec2 origin,
                                  float rotation, const Color& color = {255, 255, 255, 255}) = 0;
 
     /**

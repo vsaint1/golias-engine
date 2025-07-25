@@ -21,22 +21,26 @@ typedef struct Texture {
     Texture() = default;
 } Texture, Texture2D;
 
-// Windows API conflict
-namespace ember {
 
-    struct Rectangle {
-        int x;
-        int y;
-        int width;
-        int height;
-    };
+struct Rect2 {
+    float x;
+    float y;
+    float width;
+    float height;
+};
 
-    struct Size {
-        int width;
-        int height;
-    };
+struct Recti {
+    int x;
+    int y;
+    int width;
+    int height;
+};
 
-}; // namespace ember
+struct Size {
+    int width;
+    int height;
+};
+
 
 /*!
  *  @brief Color struct
@@ -100,4 +104,4 @@ struct Font {
 };
 
 
-ember::Size calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);
+Size calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);

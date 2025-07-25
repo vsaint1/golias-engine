@@ -61,7 +61,7 @@ public:
 
     void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) override;
 
-    void draw_texture_ex(const Texture& texture, const ember::Rectangle& source, const ember::Rectangle& dest, glm::vec2 origin,
+    void draw_texture_ex(const Texture& texture, const Rect2& source, const Rect2& dest, glm::vec2 origin,
                          float rotation, const Color& color) override;
 
     void draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color, bool filled) override;

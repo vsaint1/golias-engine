@@ -3,7 +3,7 @@
 #include "core/ember_core.h"
 
 
-void Sprite2D::set_region(const ember::Rectangle& region, glm::vec2 size) {
+void Sprite2D::set_region(const Rect2& region, glm::vec2 size) {
     _source     = region;
     _size       = size;
     _use_region = true;
@@ -21,8 +21,7 @@ void Sprite2D::ready() {
 
     const auto position = get_global_transform().position;
 
-    _dest =
-        ember::Rectangle{static_cast<int>(position.x), static_cast<int>(position.y), static_cast<int>(_size.x), static_cast<int>(_size.y)};
+    _dest = Rect2{position.x, position.y, _size.x, _size.y};
 
     _origin = {0.5f, 0.5f};
 }
@@ -39,8 +38,8 @@ void Sprite2D::draw(Renderer* renderer) {
     SDL_assert(_texture.id > 0 && "Invalid texture");
 
     if (_use_region) {
-        renderer->draw_texture_ex(_texture, _source, {_dest.x, _dest.y, static_cast<int>(_size.x), static_cast<int>(_size.y)}, _origin,
-                                  get_global_transform().rotation, _color);
+        renderer->draw_texture_ex(_texture, _source, {_dest.x, _dest.y, _size.x, _size.y}, _origin, get_global_transform().rotation,
+                                  _color);
     } else {
         renderer->draw_texture(_texture, get_global_transform(), _size, _color);
     }
