@@ -113,9 +113,10 @@ public:
      * @param font_size Size of the text.
      * @param uber_shader shader effects (shadow, glow, outline,...).
      * @param kerning Spacing between characters.
+     * @param z_index layer the text will be drawn
      */
     virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
-                           const UberShader& uber_shader = {}, float kerning = 0.0f) = 0;
+                           const UberShader& uber_shader = {}, float kerning = 0.0f,int z_index = 0) = 0;
 
     /*!
      * @brief Draw polygon shape with given vertices

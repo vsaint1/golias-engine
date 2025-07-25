@@ -14,6 +14,18 @@ int main(int argc, char* argv[]) {
 
     GEngine->time_manager()->set_target_fps(60);
 
+    InputAction move_left("move_left");
+    move_left
+    .bind_key(SDL_SCANCODE_A)
+    .bind_key(SDL_SCANCODE_LEFT)
+    .bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+
+    GEngine->input_manager()->register_action(move_left);
+
+    InputAction move_right("move_right");
+    move_right.bind_key(SDL_SCANCODE_D).bind_key(SDL_SCANCODE_RIGHT).bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    GEngine->input_manager()->register_action(move_right);
+
     auto player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
     auto enemy_texture  = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
     auto mine_font      = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
@@ -37,12 +49,11 @@ int main(int argc, char* argv[]) {
 
 
     Label* name = new Label(mine_font, "golias_bento", 64);
-    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\n Player Health  [color=#028900]%d[/color] %s", 100,"robson");
+    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\n Player Health  [color=#028900]%d[/color] %s", 100, "robson");
     name->set_outline(true);
     name->set_shadow(true);
 
-    name->set_z_index(10);
-    name->translate(0,-50);
+    name->translate(0, -50);
     // name->set_font_size(64.f);
 
 
@@ -53,8 +64,13 @@ int main(int argc, char* argv[]) {
     // sprite->change_visibility(false);
 
     Node2D* enemy = new Node2D();
-    enemy->set_z_index(4);
-    enemy->set_transform({glm::vec2(600.f, 100.f), glm::vec2(1.f), 320.0f});
+    enemy->set_transform({glm::vec2(600.f, 110.f), glm::vec2(1.f), 320.0f});
+    enemy->set_z_index(2);
+
+    Label* enemy_name = new Label(mine_font, "golias_bento", 32);
+    enemy_name->set_text("Gingerbread %d",500);
+    enemy->add_child("Name",enemy_name);
+    enemy_name->set_z_index(100);
 
     Sprite2D* enemy_sprite = new Sprite2D(enemy_texture);
 
@@ -83,23 +99,32 @@ int main(int argc, char* argv[]) {
     SDL_Event e;
     while (GEngine->bIsRunning) {
         while (SDL_PollEvent(&e)) {
-
-            GEngine->input_manager()->update();
-            GEngine->time_manager()->update();
-
-            GEngine->get_renderer()->clear_background({120, 100, 100, 255});
-
             GEngine->input_manager()->process_event(e);
-
-            root->input(GEngine->input_manager());
-
-            GEngine->get_renderer()->begin_drawing();
-
-            root->draw(GEngine->get_renderer());
-
-            GEngine->get_renderer()->end_drawing();
-
         }
+
+        GEngine->input_manager()->update();
+        GEngine->time_manager()->update();
+
+        GEngine->get_renderer()->clear_background({120, 100, 100, 255});
+
+
+        if (GEngine->input_manager()->is_action_pressed("move_right")) {
+            player->translate(200.f * GEngine->time_manager()->get_delta_time(), 0);
+        }
+
+        if (GEngine->input_manager()->is_action_pressed("move_left")) {
+            player->translate(-200.f * GEngine->time_manager()->get_delta_time(), 0);
+        }
+
+
+
+        root->input(GEngine->input_manager());
+
+        GEngine->get_renderer()->begin_drawing();
+
+        root->draw(GEngine->get_renderer());
+
+        GEngine->get_renderer()->end_drawing();
     }
 
     delete root;

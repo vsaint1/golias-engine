@@ -17,7 +17,7 @@ void Label::process(double delta_time) {
 }
 
 void Label::draw(Renderer* renderer) {
-    renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, 0);
+    renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, 0,get_effective_z_index());
     Node2D::draw(renderer);
 }
 

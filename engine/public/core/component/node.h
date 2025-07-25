@@ -17,6 +17,7 @@ public:
     void set_z_index(int index);
 
     [[nodiscard]] int get_z_index() const;
+    [[nodiscard]] int get_effective_z_index() const;
 
     void print_tree(int indent = 0) const;
 

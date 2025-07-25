@@ -57,7 +57,7 @@ public:
     void end_drawing() override;
 
     void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
-                   const UberShader& uber_shader, float kerning) override;
+                   const UberShader& uber_shader, float kerning, int z_index ) override;
 
     void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) override;
 
@@ -91,9 +91,9 @@ private:
     OpenglShader* _default_shader = nullptr;
     OpenglShader* _text_shader    = nullptr;
 
-    float _bind_texture(Uint32 slot = 0) override;
+    float _bind_texture(Uint32 slot) override;
 
-    void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot = UINT32_MAX) override;
+    void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) override;
 
 
     GLuint _textVAO = 0, _textVBO = 0, _textEBO = 0;

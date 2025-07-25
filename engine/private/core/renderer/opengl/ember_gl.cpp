@@ -446,7 +446,7 @@ Font OpenglRenderer::load_font(const std::string& file_path, const int font_size
 
 // TODO: draw text batched, for now use this.
 void OpenglRenderer::draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
-                               const UberShader& uber_shader, float kerning) {
+                               const UberShader& uber_shader, float kerning,int z_index) {
     if (text.empty()) return;
 
     auto tokens = TextToken::parse_bbcode(text, color);
@@ -506,10 +506,15 @@ void OpenglRenderer::draw_text(const Font& font, const std::string& text, const 
             float w    = glyph.w * scale;
             float h    = glyph.h * scale;
 
-            glm::vec3 p0(xpos,     ypos,     0);
-            glm::vec3 p1(xpos + w, ypos,     0);
-            glm::vec3 p2(xpos + w, ypos + h, 0);
-            glm::vec3 p3(xpos,     ypos + h, 0);
+
+            // TODO: refactor...this is a hack fix to re-order text draw commands, but still not working perfectly
+            const float depth = 1.0f - (static_cast<float>(z_index) / 1000);
+
+
+            glm::vec3 p0(xpos,     ypos,     depth);
+            glm::vec3 p1(xpos + w, ypos,     depth);
+            glm::vec3 p2(xpos + w, ypos + h, depth);
+            glm::vec3 p3(xpos,     ypos + h, depth);
 
             constexpr float TEXTURE_INDEX = 0.0f;
 
