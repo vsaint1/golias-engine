@@ -44,7 +44,7 @@ private:
     std::mutex _mutex                  = std::mutex();
     SDL_Thread* _thread                = nullptr;
     std::condition_variable _condition = std::condition_variable();
-    std::atomic<bool> _bIsRunning = false;
+    std::atomic<bool> _is_running = false;
 
     std::deque<std::string> _log_queue = std::deque<std::string>();
 };

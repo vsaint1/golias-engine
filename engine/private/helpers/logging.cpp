@@ -18,11 +18,15 @@ void Logger::initialize() {
         return 0;
     };
 
-    debug._bIsRunning = true;
+    debug._is_running = true;
     debug._thread     = SDL_CreateThread(fn_thread, "LogThread", &debug);
 }
 
 void Logger::push(const std::string& formatted_log) {
+
+    if (!_is_running || _thread == nullptr) {
+        return;
+    }
 
     std::lock_guard<std::mutex> lock(_mutex);
     _log_queue.push_back(formatted_log);
@@ -34,7 +38,7 @@ void Logger::destroy() {
 
     debug._mutex.lock();
 
-    debug._bIsRunning = false;
+    debug._is_running = false;
 
     debug._mutex.unlock();
 
@@ -69,8 +73,8 @@ void Logger::_log_thread() {
 
     std::unique_lock lock(_mutex);
 
-    while (_bIsRunning || !_log_queue.empty()) {
-        _condition.wait(lock, [this]() { return !_log_queue.empty() || !_bIsRunning; });
+    while (_is_running || !_log_queue.empty()) {
+        _condition.wait(lock, [this]() { return !_log_queue.empty() || !_is_running; });
 
         while (!_log_queue.empty()) {
             std::string msg = _log_queue.front();
