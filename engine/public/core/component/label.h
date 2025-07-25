@@ -23,9 +23,9 @@ public:
 
     void set_text_color(const Color& color);
 
-    void set_outline(bool enabled, float thickness, const Color& color = Color::BLACK);
+    void set_outline(bool enabled, float thickness = 0.03f, const Color& color = Color::BLACK);
 
-    void set_shadow(bool enabled, glm::vec2 offset = glm::vec2(1.f), const Color& color = Color::BLACK);
+    void set_shadow(bool enabled, glm::vec2 offset = glm::vec2(-1.f), const Color& color = Color::BLACK);
 
 private:
     Font _font;

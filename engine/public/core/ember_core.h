@@ -111,11 +111,11 @@ public:
      * @param transform Position, rotation, and scale.
      * @param color RGBA color.
      * @param font_size Size of the text.
-     * @param shader_effect Shader effect (e.g., glow, outline).
+     * @param uber_shader shader effects (shadow, glow, outline,...).
      * @param kerning Spacing between characters.
      */
-    virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
-                           const ShaderEffect& shader_effect = {}, float kerning = 0.0f) = 0;
+    virtual void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
+                           const UberShader& uber_shader = {}, float kerning = 0.0f) = 0;
 
     /*!
      * @brief Draw polygon shape with given vertices
