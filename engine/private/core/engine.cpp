@@ -208,6 +208,7 @@ void Engine::resize_window(int w, int h) const {
 Renderer* Engine::get_renderer() const {
     return _renderer;
 }
+
 InputManager* Engine::input_manager() const {
     return _input_manager;
 }
