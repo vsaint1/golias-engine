@@ -65,7 +65,9 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
 
 #pragma endregion
 
+#if defined(NDEBUG)
     Logger::initialize();
+#endif
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -184,7 +186,9 @@ void Engine::shutdown() {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
+#if defined(NDEBUG)
     Logger::destroy();
+#endif
 
     SDL_DestroyWindow(Window.handle);
 
