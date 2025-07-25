@@ -4,7 +4,7 @@
 #include "core/component/node.h"
 #include "core/component/sprite_node.h"
 #include "core/component/label.h"
-#include "core/engine_structs.h"
+#include "core/text_parser.h"
 #include "core/component/circle.h"
 #include "core/component/polygon.h"
 

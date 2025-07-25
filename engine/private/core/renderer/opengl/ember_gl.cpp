@@ -207,7 +207,7 @@ void OpenglRenderer::flush_text() {
 
 
     _text_shader->bind();
-    _text_shader->set_value("ViewProjection", Projection);
+    _text_shader->set_value("VIEW_PROJECTION", Projection);
     _text_shader->set_value("uTexture", 0);
 
     glActiveTexture(GL_TEXTURE0);
@@ -353,7 +353,7 @@ Font OpenglRenderer::load_font(const std::string& file_path, const int font_size
     int x = 0, y = 0, max_row_height = 0;
 
     for (char c = 32; c < 127; ++c) {
-        if (FT_Load_Char(face, c, FT_LOAD_DEFAULT)) {
+        if (FT_Load_Char(face, c, FT_RENDER_MODE_SDF)) {
             LOG_WARN("Failed to load character %c", c);
             continue;
         }
@@ -420,8 +420,8 @@ Font OpenglRenderer::load_font(const std::string& file_path, const int font_size
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, atlas_w, atlas_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -445,71 +445,91 @@ Font OpenglRenderer::load_font(const std::string& file_path, const int font_size
 }
 
 // TODO: draw text batched, for now use this.
-void OpenglRenderer::draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
-                               const ShaderEffect& shader_effect, float kerning) {
+void OpenglRenderer::draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
+                               const UberShader& uber_shader, float kerning) {
+    if (text.empty()) return;
 
-
-    if (text.empty()) {
-        return;
-    }
+    auto tokens = TextToken::parse_bbcode(text, color);
 
     _text_shader->bind();
-    _text_shader->set_value("ViewProjection", Projection);
-    // TextShader->set_value("uTexture", 0);
+    _text_shader->set_value("VIEW_PROJECTION", Projection);
+
+    // Shadow config
+    bool shadow_enabled = uber_shader.Shadow.enabled;
+    _text_shader->set_value("shadow.enabled", shadow_enabled);
+    if (shadow_enabled) {
+        glm::vec2 uv_offset = uber_shader.Shadow.pixel_offset / glm::vec2(font.texture.width, font.texture.height);
+        _text_shader->set_value("shadow.color", uber_shader.Shadow.color);
+        _text_shader->set_value("shadow.uv_offset", uv_offset);
+    }
+
+    // Outline config
+    bool outline_enabled = uber_shader.Outline.enabled;
+    _text_shader->set_value("outline.enabled", outline_enabled);
+    if (outline_enabled) {
+        _text_shader->set_value("outline.color", uber_shader.Outline.color);
+        _text_shader->set_value("outline.thickness", uber_shader.Outline.thickness);
+    }
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, font.texture.id);
-
     glBindVertexArray(_textVAO);
 
-    const glm::vec4 norm_color = color.normalize_color();
-    const float scale          = font_size / font.font_size;
+    const float scale = static_cast<float>(font_size) / static_cast<float>(font.font_size);
+    glm::vec2 pos     = transform.position;
 
-    glm::vec2 pos = transform.position;
-
-    std::vector<Vertex> quad_vertices = {};
-    std::vector<unsigned int> indices = {};
+    std::vector<Vertex> quad_vertices;
+    std::vector<unsigned int> indices;
+    quad_vertices.reserve(text.size() * 4); // Rough estimation
+    indices.reserve(text.size() * 6);
 
     unsigned int index_offset = 0;
 
-    for (char c : text) {
-        if (c == '\n') {
-            pos.x = transform.position.x;
-            pos.y += (font.ascent - font.descent + font.line_gap) * scale;
-            continue;
+    for (const auto& token : tokens) {
+        _text_shader->set_value("boldness", token.bold ? 0.05f : 0.0f);
+        const glm::vec4 norm_color = token.color.normalize_color();
+
+        for (char c : token.text) {
+            if (c == '\n') {
+                pos.x = transform.position.x;
+                pos.y += static_cast<float>(font.ascent - font.descent + font.line_gap) * scale;
+                continue;
+            }
+
+            auto glyph_it = font.glyphs.find(c);
+            if (glyph_it == font.glyphs.end()) continue;
+
+            const auto& glyph = glyph_it->second;
+
+            float xpos = pos.x + glyph.x_offset * scale;
+            float ypos = pos.y + glyph.y_offset * scale;
+            float w    = glyph.w * scale;
+            float h    = glyph.h * scale;
+
+            glm::vec3 p0(xpos,     ypos,     0);
+            glm::vec3 p1(xpos + w, ypos,     0);
+            glm::vec3 p2(xpos + w, ypos + h, 0);
+            glm::vec3 p3(xpos,     ypos + h, 0);
+
+            constexpr float TEXTURE_INDEX = 0.0f;
+
+            quad_vertices.push_back({p0, norm_color, {glyph.x0, glyph.y0}, TEXTURE_INDEX});
+            quad_vertices.push_back({p1, norm_color, {glyph.x1, glyph.y0}, TEXTURE_INDEX});
+            quad_vertices.push_back({p2, norm_color, {glyph.x1, glyph.y1}, TEXTURE_INDEX});
+            quad_vertices.push_back({p3, norm_color, {glyph.x0, glyph.y1}, TEXTURE_INDEX});
+
+            indices.insert(indices.end(), {
+                index_offset + 0,
+                index_offset + 1,
+                index_offset + 2,
+                index_offset + 2,
+                index_offset + 3,
+                index_offset + 0
+            });
+
+            index_offset += 4;
+            pos.x += (glyph.advance + kerning) * scale;
         }
-
-        const auto& glyph = font.glyphs.at(c);
-
-        float xpos = pos.x + glyph.x_offset * scale;
-        float ypos = pos.y + glyph.y_offset * scale;
-
-        float w = glyph.w * scale;
-        float h = glyph.h * scale;
-
-        glm::vec3 p0 = glm::vec3(xpos, ypos, 0);
-        glm::vec3 p1 = glm::vec3(xpos + w, ypos, 0);
-        glm::vec3 p2 = glm::vec3(xpos + w, ypos + h, 0);
-        glm::vec3 p3 = glm::vec3(xpos, ypos + h, 0);
-
-        constexpr float texIndex = 0.0f;
-
-        quad_vertices.push_back({p0, norm_color, {glyph.x0, glyph.y0}, texIndex});
-        quad_vertices.push_back({p1, norm_color, {glyph.x1, glyph.y0}, texIndex});
-        quad_vertices.push_back({p2, norm_color, {glyph.x1, glyph.y1}, texIndex});
-        quad_vertices.push_back({p3, norm_color, {glyph.x0, glyph.y1}, texIndex});
-
-        indices.push_back(index_offset + 0);
-        indices.push_back(index_offset + 1);
-        indices.push_back(index_offset + 2);
-
-        indices.push_back(index_offset + 2);
-        indices.push_back(index_offset + 3);
-        indices.push_back(index_offset + 0);
-
-        index_offset += 4;
-
-        pos.x += (static_cast<float>(glyph.advance) + kerning) * scale;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, _textVBO);
@@ -518,10 +538,10 @@ void OpenglRenderer::draw_text(const Font& font, const std::string& text, const 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _textEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW);
 
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
+
 
 void OpenglRenderer::draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) {
 
@@ -544,7 +564,7 @@ void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectan
     glm::vec2 uv0 = {source.x / (float) texture.width, 1.0f - (source.y + source.height) / (float) texture.height};
     glm::vec2 uv1 = {(source.x + source.width) / static_cast<float>(texture.width), 1.0f - source.y / static_cast<float>(texture.height)};
 
-    glm::vec2 pivot = {origin.x * dest.width, origin.y * dest.height};
+    const glm::vec2 pivot = {origin.x * dest.width, origin.y * dest.height};
 
     constexpr float angleCorrection = glm::radians(180.f);
 
@@ -556,7 +576,7 @@ void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectan
     model = glm::translate(model, glm::vec3(-pivot, 0.0f));
     model = glm::scale(model, glm::vec3(dest.width, dest.height, 1.0f));
 
-    glm::vec4 corners[4] = {
+    const glm::vec4 corners[4] = {
         model * glm::vec4(0, 0, 0, 1), // TL
         model * glm::vec4(1, 0, 0, 1), // TR
         model * glm::vec4(1, 1, 0, 1), // BR
@@ -565,7 +585,7 @@ void OpenglRenderer::draw_texture_ex(const Texture& texture, const ember::Rectan
 
     const glm::vec4 normalized_color = color.normalize_color();
 
-    Vertex quad[4] = {
+    const Vertex quad[4] = {
         {corners[0], normalized_color, {uv0.x, uv0.y}, texIndex},
         {corners[1], normalized_color, {uv1.x, uv0.y}, texIndex},
         {corners[2], normalized_color, {uv1.x, uv1.y}, texIndex},
@@ -741,7 +761,9 @@ float OpenglRenderer::_bind_texture(Uint32 slot) {
 
 void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color, bool filled) {
 
-    if (vertices.size() < 3) return;
+    if (vertices.size() < 3) {
+        return;
+    }
 
     if (!filled) {
 
@@ -749,7 +771,6 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& vertices, const 
             glm::vec3 a = {vertices[i].x, vertices[i].y, 0};
             glm::vec3 b = {vertices[(i + 1) % vertices.size()].x, vertices[(i + 1) % vertices.size()].y, 0};
             draw_line(a, b, color, 1.0f);
-
         }
 
         return;
@@ -760,7 +781,7 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& vertices, const 
         glm::vec2 a = vertices[i];
         glm::vec2 b = vertices[i + 1];
 
-        draw_triangle_filled(glm::vec3(center,1.f),glm::vec3(a,1.f),glm::vec3(b,1.f),color);
+        draw_triangle_filled(glm::vec3(center, 1.f), glm::vec3(a, 1.f), glm::vec3(b, 1.f), color);
     }
 }
 
@@ -815,7 +836,7 @@ void OpenglRenderer::flush() {
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
     _default_shader->bind();
-    _default_shader->set_value("ViewProjection", Projection);
+    _default_shader->set_value("VIEW_PROJECTION", Projection);
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     glActiveTexture(GL_TEXTURE0);

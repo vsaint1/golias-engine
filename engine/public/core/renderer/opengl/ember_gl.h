@@ -56,8 +56,8 @@ public:
 
     void end_drawing() override;
 
-    void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, float font_size,
-                   const ShaderEffect& shader_effect, float kerning) override;
+    void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
+                   const UberShader& uber_shader, float kerning) override;
 
     void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) override;
 
