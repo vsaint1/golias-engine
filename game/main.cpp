@@ -12,6 +12,8 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    GEngine->time_manager()->set_target_fps(60);
+
     auto player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
     auto enemy_texture  = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
     auto mine_font      = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
@@ -34,13 +36,19 @@ int main(int argc, char* argv[]) {
     polygon->translate(200, 100);
 
 
-    Label* name = new Label(mine_font, "golias_bento", 32);
-    name->set_text("golias bento %d", 123);
+    Label* name = new Label(mine_font, "golias_bento", 64);
+    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\n Player Health  [color=#028900]%d[/color] %s", 100,"robson");
+    name->set_outline(true);
+    name->set_shadow(true);
+
     name->set_z_index(10);
+    name->translate(0,-50);
+    // name->set_font_size(64.f);
+
 
     Sprite2D* player_sprite = new Sprite2D(player_texture);
     player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
-    player_sprite->translate(100, 50);
+    player_sprite->translate(100, 150);
 
     // sprite->change_visibility(false);
 
@@ -51,6 +59,8 @@ int main(int argc, char* argv[]) {
     Sprite2D* enemy_sprite = new Sprite2D(enemy_texture);
 
     Circle2D* circle = new Circle2D();
+    circle->set_filled(true);
+    circle->change_visibility(false);
 
     root->add_child("Player", player);
     root->add_child("Enemy", enemy);
@@ -79,9 +89,9 @@ int main(int argc, char* argv[]) {
 
             GEngine->get_renderer()->clear_background({120, 100, 100, 255});
 
-            GEngine->input_manager()->process(&e);
+            GEngine->input_manager()->process_event(e);
 
-            root->event(GEngine->input_manager());
+            root->input(GEngine->input_manager());
 
             GEngine->get_renderer()->begin_drawing();
 
@@ -89,7 +99,6 @@ int main(int argc, char* argv[]) {
 
             GEngine->get_renderer()->end_drawing();
 
-            GEngine->time_manager()->fixed_frame_rate();
         }
     }
 
