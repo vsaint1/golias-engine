@@ -32,8 +32,8 @@ void Sprite2D::process(double delta_time) {
 void Sprite2D::draw(Renderer* renderer) {
     const auto position = get_global_transform().position;
 
-    _dest.x = static_cast<int>(position.x);
-    _dest.y = static_cast<int>(position.y);
+    _dest.x = position.x;
+    _dest.y = position.y;
 
     SDL_assert(_texture.id > 0 && "Invalid texture");
 

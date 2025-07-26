@@ -27,11 +27,13 @@ public:
 
     void set_shadow(bool enabled, glm::vec2 offset = glm::vec2(-1.f), const Color& color = Color::BLACK);
 
+
 private:
     Font _font;
     std::string _text    = "";
     Color _color         = Color::WHITE;
     UberShader _effect = {}; // for now just drawing text without effects
     int _font_size       = 16;
+    float _kerning       = 0.0f; // spacing between characters
     std::string _path    = "";
 };
