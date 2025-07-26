@@ -3,13 +3,8 @@
 #include "core/ember_core.h"
 
 
-Label::Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color)
-    : _text(text), _color(color), _font_size(ft_size), _path(font_path) {
-
-    // _font = GEngine->get_renderer()->load_font(font_path, ft_size);
-}
-
 void Label::ready() {
+    Node2D::ready();
 }
 
 void Label::process(double delta_time) {
@@ -17,7 +12,9 @@ void Label::process(double delta_time) {
 }
 
 void Label::draw(Renderer* renderer) {
-    // renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, _kerning,get_effective_z_index());
+    const auto& transform = get_global_transform();
+    GEngine->get_renderer()->draw_text(_text, transform.position.x,transform.position.y, transform.rotation, transform.scale.x, _color.normalize_color(), _font_alias, _z_index);
+
     Node2D::draw(renderer);
 }
 

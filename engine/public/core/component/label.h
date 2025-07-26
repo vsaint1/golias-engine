@@ -5,11 +5,14 @@
 class Label final : public Node2D {
 
 public:
-    explicit Label(Font font, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
-        : _font(std::move(font)), _text(text), _color(color), _font_size(ft_size) {
+    explicit Label(const std::string& font_alias, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
+        : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
     }
 
-    Label(const std::string& font_path, const std::string& text, float ft_size, const Color& color = Color::WHITE);
+    Label(const std::string& font_path, const std::string& font_alias, const std::string& text, int ft_size, const Color& color = Color::WHITE)
+        : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
+        _path = font_path;
+    }
 
     void ready() override;
 
@@ -29,7 +32,7 @@ public:
 
 
 private:
-    Font _font;
+    std::string _font_alias = "default";
     std::string _text    = "";
     Color _color         = Color::WHITE;
     UberShader _effect = {}; // for now just drawing text without effects

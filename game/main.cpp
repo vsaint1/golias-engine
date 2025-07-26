@@ -37,12 +37,19 @@ int main(int argc, char* argv[]) {
     player->set_z_index(5);
     player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 0.0f});
 
+    Label* name = new Label("mine", "golias_bento", 64);
+    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\nPlayer Health  [color=#028900]%d[/color] %s", 100, "robson");
+    name->set_outline(true);
+    name->set_shadow(true);
+
+
     Sprite2D* player_sprite = new Sprite2D(sample_texture);
     player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
 
     player->add_child("Image", player_sprite);
+    player->add_child("Name", name);
 
-    root->add_child("player",player);
+    root->add_child("Player",player);
 
     root->ready();
     root->print_tree();
@@ -80,7 +87,6 @@ int main(int argc, char* argv[]) {
         // GEngine->get_renderer()->draw_text("Hola amigo, como estas?", 100, 60, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
         // GEngine->get_renderer()->draw_text("Ola mundo", 100, 250, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "arial", 10);
         // GEngine->get_renderer()->draw_text("Hello world", 100, 350, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
-        GEngine->get_renderer()->draw_text("Hello [color=#FF0000]World[/color]", 100, 500, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
 
 
         GEngine->get_renderer()->flush();
