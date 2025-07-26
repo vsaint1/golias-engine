@@ -8,7 +8,8 @@ enum BatteryLevel {
 /*!
 
    @brief SystemInfo class
-    - Get information about the system the app is running on
+
+   @details  Get information about the system the app is running on
 
    @version 0.0.7
 */
@@ -29,9 +30,9 @@ public:
 
         @version 0.0.7
     */
-    static std::string GetPlatform();
+    static std::string platform_name();
 
-    
+
     /*!
 
         @brief Check if the app is running on a mobile device
@@ -40,19 +41,37 @@ public:
 
         @version 0.0.7
     */
-    static bool IsMobile();
-    
-    // TODO: implement
-    static std::string GetDeviceType();
+    static bool is_mobile();
 
     // TODO: implement
-    static std::string GetDeviceName();
+    static std::string get_device_type();
 
-    // TODO: implement
-    static std::string GetDeviceModel();
+    /*!
+     * @brief get device name (cross-platform)
+     *
+     *
+     * @return  "iPhone 8s"
+     */
+    static std::string get_device_name();
 
-    // TODO: implement
-    static std::string GetDeviceUniqueIdentifier();
+    /*!
+      * @brief get device model (cross-platform)
+      *
+      *
+      * @return  "iPhone 8s"
+      */
+    static std::string get_device_model();
+
+    /*!
+    * @brief get device UUID (cross-platform)
+    *
+    * @details this function return platform UUID, each platform handles different the size.
+    *
+    * @return UUID characters
+    *
+    * @version 0.0.7
+    */
+    static std::string get_device_unique_identifier();
 
     /*!
 
@@ -66,7 +85,7 @@ public:
 
         @version 0.0.7
     */
-    static int GetBatteryPercentage();
+    static int get_battery_percentage();
 
 
 private:
@@ -76,9 +95,9 @@ private:
 
 extern "C" {
 
-    const char* DeviceName_Injected();
+const char* DeviceName_Injected();
 
-    const char* DeviceModel_Injected();
+const char* DeviceModel_Injected();
 
-    const char* DeviceUniqueIdentifier_Injected();
+const char* DeviceUniqueIdentifier_Injected();
 }

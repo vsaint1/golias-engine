@@ -14,9 +14,9 @@
 struct Camera2D {
     Transform transform;
 
-    Camera2D(int view_width, int view_height, float zoom = 1.0f) : width(view_width), height(view_height), zoom(zoom) {}
+    Camera2D(int view_width, int view_height, float zoom = 1.0f) : _width(view_width), _height(view_height), zoom(zoom) {}
 
-    glm::mat4 GetViewMatrix() const;
+    glm::mat4 get_view_matrix() const;
 
     /*!
         @brief Get the viewport
@@ -27,7 +27,7 @@ struct Camera2D {
         @return glm::vec4 Viewport
 
     */
-    glm::vec4 GetViewport() const;
+    glm::vec4 get_viewport() const;
 
     /*!
         @brief Check if the position is visible by the camera
@@ -39,7 +39,7 @@ struct Camera2D {
         @return bool
 
     */
-    bool IsVisible(const glm::vec3& position);
+    bool is_visible(const glm::vec3& position);
 
     /*!
        @brief Resize the camera view
@@ -52,7 +52,7 @@ struct Camera2D {
        @return void
 
    */
-    void Resize(int view_width, int view_height);
+    void resize(int view_width, int view_height);
 
     /*!
       @brief Get the projection matrix (orthographic)
@@ -63,25 +63,25 @@ struct Camera2D {
       @return glm::mat4 Matrix
 
   */
-    glm::mat4 GetProjectionMatrix() const;
+    glm::mat4 get_projection_matrix() const;
 
-    int GetHeight() const {
-        return height;
+    int get_height() const {
+        return _height;
     }
 
-    int GetWidth() const {
-        return width;
+    int get_width() const {
+        return _width;
     }
 
-    void SetZoom(float zoom) {
+    void set_zoom(float zoom) {
         this->zoom = SDL_clamp(zoom, 0.10f, 10.0f); // ENSURE CAMERA ZOOM NEVER HITS 0
     }
 
-    float GetZoom() const {
+    float get_zoom() const {
         return this->zoom;
     }
 
     float zoom = 1.0f; // MAX_ZOOM = 10.0f
 private:
-    int width = 0, height = 0;
+    int _width = 0, _height = 0;
 };

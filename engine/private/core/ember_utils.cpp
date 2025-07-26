@@ -1,6 +1,6 @@
 #include "core/ember_utils.h"
 
-std::string TextFormat(const char* fmt, ...) {
+std::string text_format(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
@@ -21,6 +21,6 @@ std::string TextFormat(const char* fmt, ...) {
 }
 
 // TODO: implement
-int GetMemoryUsage() {
+int get_memory_usage() {
     return 0;
 }

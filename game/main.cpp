@@ -2,272 +2,134 @@
 #include <SDL3/SDL_main.h>
 
 
-int SCREEN_WIDTH  = 1280;
-int SCREEN_HEIGHT = 720;
-
-Font mine_font;
-
-Texture player_texture,p2_texture;
-bool bShowMetrics = false;
-
-Color background_color = {120, 100, 100, 255};
-
-Audio *mine_music, *tel_music, *random_music;
-Camera2D camera = Camera2D(480, 270);
-
-SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
+int SCREEN_WIDTH  = 1366;
+int SCREEN_HEIGHT = 768;
 
 
-    if (!GEngine->Initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL,
-                             SDL_WINDOW_RESIZABLE)) {
-        return SDL_APP_FAILURE;
+int main(int argc, char* argv[]) {
+
+    if (!GEngine->initialize("Node System", SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL)) {
+        return -1;
     }
 
+    GEngine->time_manager()->set_target_fps(60);
 
-    camera.transform.position = glm::vec3(0.f, 0.f, 0.0f);
-    camera.transform.rotation = glm::vec3(0.f);
+    InputAction move_left("move_left");
+    move_left
+    .bind_key(SDL_SCANCODE_A)
+    .bind_key(SDL_SCANCODE_LEFT)
+    .bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
 
-    // assets in examples/assets
-    mine_font = GEngine->GetRenderer()->LoadFont("fonts/Minecraft.ttf", 32);
+    GEngine->input_manager()->register_action(move_left);
 
-    player_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_001.png");
-    p2_texture = GEngine->GetRenderer()->LoadTexture("sprites/Character_002.png");
-    mine_music   = Audio::Load("sounds/lullaby.mp3");
-    tel_music    = Audio::Load("sounds/the_entertainer.ogg");
-    random_music = Audio::Load("sounds/test.flac");
+    InputAction move_right("move_right");
+    move_right.bind_key(SDL_SCANCODE_D).bind_key(SDL_SCANCODE_RIGHT).bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    GEngine->input_manager()->register_action(move_right);
 
-    mine_music->Play();
+    auto player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
+    auto enemy_texture  = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
+    auto mine_font      = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
 
-    LOG_INFO("Device Name %s", SystemInfo::GetDeviceName().c_str());
-    LOG_INFO("Device Model %s", SystemInfo::GetDeviceModel().c_str());
-    LOG_INFO("Device UniqueIdentifier %s", SystemInfo::GetDeviceUniqueIdentifier().c_str());
+    Node2D* root = new Node2D("Root");
 
-    return SDL_APP_CONTINUE;
+    Node2D* player = new Node2D();
+    player->set_z_index(5);
+    player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 0.0f});
+
+    std::vector<glm::vec2> hexagon;
+
+    for (int i = 0; i < 6; ++i) {
+        const float angle = glm::radians(60.0f * i);
+        glm::vec2 point   = glm::vec2(cos(angle), sin(angle)) * 50.f;
+        hexagon.push_back(point);
+    }
+
+    Polygon2D* polygon = new Polygon2D(hexagon, true);
+    polygon->translate(200, 100);
+
+
+    Label* name = new Label(mine_font, "golias_bento", 64);
+    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\n Player Health  [color=#028900]%d[/color] %s", 100, "robson");
+    name->set_outline(true);
+    name->set_shadow(true);
+
+    name->translate(0, -50);
+    // name->set_font_size(64.f);
+
+
+    Sprite2D* player_sprite = new Sprite2D(player_texture);
+    player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
+    player_sprite->translate(100, 150);
+
+    // sprite->change_visibility(false);
+
+    Node2D* enemy = new Node2D();
+    enemy->set_transform({glm::vec2(600.f, 110.f), glm::vec2(1.f), 320.0f});
+    enemy->set_z_index(2);
+
+    Label* enemy_name = new Label(mine_font, "golias_bento", 32);
+    enemy_name->set_text("Gingerbread %d",500);
+    enemy->add_child("Name",enemy_name);
+    enemy_name->set_z_index(100);
+
+    Sprite2D* enemy_sprite = new Sprite2D(enemy_texture);
+
+    Circle2D* circle = new Circle2D();
+    circle->set_filled(true);
+    circle->change_visibility(false);
+
+    root->add_child("Player", player);
+    root->add_child("Enemy", enemy);
+
+    if (Node2D* playerT = root->get_node("Player")) {
+        playerT->print_tree();
+    }
+
+    player->add_child("Image", player_sprite);
+    player->add_child("CollisionShape", polygon);
+    player->add_child("Name", name);
+
+    enemy->add_child("Image", enemy_sprite);
+    enemy->add_child("CollisionShape", circle);
+
+    root->print_tree();
+
+    root->ready();
+
+    SDL_Event e;
+    while (GEngine->bIsRunning) {
+        while (SDL_PollEvent(&e)) {
+            GEngine->input_manager()->process_event(e);
+        }
+
+        GEngine->input_manager()->update();
+        GEngine->time_manager()->update();
+
+        GEngine->get_renderer()->clear_background({120, 100, 100, 255});
+
+
+        if (GEngine->input_manager()->is_action_pressed("move_right")) {
+            player->translate(200.f * GEngine->time_manager()->get_delta_time(), 0);
+        }
+
+        if (GEngine->input_manager()->is_action_pressed("move_left")) {
+            player->translate(-200.f * GEngine->time_manager()->get_delta_time(), 0);
+        }
+
+
+
+        root->input(GEngine->input_manager());
+
+        GEngine->get_renderer()->begin_drawing();
+
+        root->draw(GEngine->get_renderer());
+
+        GEngine->get_renderer()->end_drawing();
+    }
+
+    delete root;
+
+    GEngine->shutdown();
+
+    return 0;
 }
-
-const char* gui_text = R"(
-Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
-when an unknown printer took a galley of type and scrambled it to make a type specimen book.
-It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.
-It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages,
-and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-
-)";
-
-Color text_color     = {255, 255, 255, 255};
-
-int entities = 0;
-
-SDL_AppResult SDL_AppIterate(void* app_state) {
-
-    GEngine->GetInputManager()->Update();
-
-    GEngine->GetTimeManager()->Update();
-
-    GEngine->GetRenderer()->ClearBackground(background_color);
-    GEngine->GetRenderer()->BeginDrawing();
-
-    static float angle         = 0.0f;
-    static glm::vec3 position = {200, 300, 0};
-
-    static Transform2D transform = {
-        glm::vec3(300.f, 100.f, 0.f),
-        glm::vec2(1.f),
-        0.0f
-    };
-
-
-    static Transform2D transform2;
-    transform2.Position = {500, 100, 0.001f};
-    transform2.Rotation = 0.0f;
-    transform2.Scale    = {1, 1};
-
-    static Transform2D transform3 = {
-        glm::vec3(300.f, 450.f, 0.f),
-        glm::vec2(1.f),
-        0.0f
-    };
-
-
-    for (int i = 0; i < entities; i++) {
-        GEngine->GetRenderer()->DrawTextureEx(player_texture, {0, 0, 32, 32}, {i * 64, i * 64, 64, 64}, glm::vec2(0.5f, 0.5f), angle,
-                                              0.2f);
-    }
-
-    GEngine->GetRenderer()->DrawLine({200, 200, 0}, {300, 300, 0}, {0, 255, 0, 255}, 2.f);
-
-    GEngine->GetRenderer()->DrawTexture(player_texture, transform2,{0,0} );
-
-    transform2.Position.z = 0.002f;
-
-    GEngine->GetRenderer()->DrawRect(transform2, {512, 512}, {255, 255, 255, 255}, 2.f);
-
-    GEngine->GetRenderer()->DrawCircle({300, 650,0.1}, 40, {255, 255, 255, 255});
-    GEngine->GetRenderer()->DrawCircleFilled({300, 300,0.2}, 20, {255,0 , 255, 255});
-    GEngine->GetRenderer()->DrawTriangle({100, 100,0}, {200, 100,0}, {150, 200,0}, {255, 255, 0, 255});
-
-    GEngine->GetRenderer()->DrawTextureEx(p2_texture, {0, 0, 32, 32}, {100, 200, 128, 128}, glm::vec2(0.5f, 0.5f),
-                                          angle);
-
-    GEngine->GetRenderer()->DrawText(mine_font, "I think this works\n No internationalization =(", transform,
-                                     {255, 255, 255, 255}, 20.f);
-
-    GEngine->GetRenderer()->DrawText(mine_font, "Hello World!", transform3,
-                                     {255, 255, 255, 255}, 20.f,
-                                     {.Outline = {
-                                          .bEnabled  = true,
-                                          .color     = Color(255, 0, 0, 255).GetNormalizedColor(),
-                                          .thickness = 0.35f,
-                                      }});
-
-
-    ImGui::SetNextWindowSize(ImVec2(350.f, 600.f), ImGuiCond_FirstUseEver);
-    ImGui::Begin("[DEMO] - new API", nullptr, ImGuiWindowFlags_NoCollapse);
-
-    ImGui::InputInt("Create Entity", &entities, 10);
-
-    float temp_color[4] = {text_color.r / 255.0f, text_color.g / 255.0f, text_color.b / 255.0f, text_color.a / 255.0f};
-
-
-    ImGui::Text("Player");
-    ImGui::DragFloat3("Position##player", &position.x, 1);
-    ImGui::SliderFloat("Angle##player", &angle, 0.0f, 360.0f, "%.2f");
-
-    ImGui::Text("Text");
-    ImGui::SliderFloat3("Position##text", &transform2.Position.x, 0.0f, GEngine->Window.width);
-    ImGui::SliderFloat3("Scale##text", &transform2.Scale.x, 0.0f, 10.0f);
-    ImGui::SliderFloat3("Rotation##text", &transform2.Rotation, 0.0f, 360.0f);
-
-
-    if (ImGui::ColorEdit4("Text color", temp_color), ImGuiColorEditFlags_NoInputs) {
-        text_color.r = static_cast<uint8_t>(temp_color[0] * 255);
-        text_color.g = static_cast<uint8_t>(temp_color[1] * 255);
-        text_color.b = static_cast<uint8_t>(temp_color[2] * 255);
-        text_color.a = static_cast<uint8_t>(temp_color[3] * 255);
-    }
-
-
-    ImGui::Text("Camera");
-    ImGui::DragFloat3("Position##Camera", &camera.transform.position.x, 1.0f);
-    ImGui::DragFloat("Zoom##Camera", &camera.zoom, 0.1f, 0.01f, 10.0f);
-
-
-    ImGui::Text("Musics");
-
-    if (!mine_music->IsPlaying()) {
-
-        if (ImGui::Button("Play Lullaby")) {
-            mine_music->Play();
-        }
-
-    } else {
-        if (ImGui::Button("Stop Lullaby")) {
-            mine_music->Pause();
-        }
-    }
-
-    if (ImGui::SliderFloat("Volume##1", &mine_music->volume, 0.0f, 1.0f)) {
-        mine_music->SetVolume(mine_music->volume);
-    }
-
-    if (!tel_music->IsPlaying()) {
-
-        if (ImGui::Button("Play The Entertainer")) {
-            tel_music->Play();
-        }
-
-    } else {
-        if (ImGui::Button("Stop The Entertainer")) {
-
-            tel_music->Pause();
-        }
-    }
-
-    if (ImGui::SliderFloat("Volume##2", &tel_music->volume, 0.0f, 1.0f)) {
-        tel_music->SetVolume(tel_music->volume);
-    }
-
-    if (!random_music->IsPlaying()) {
-
-        if (ImGui::Button("Play Unknown")) {
-            random_music->Play();
-        }
-
-    } else {
-        if (ImGui::Button("Stop The Unknown")) {
-
-            random_music->Pause();
-        }
-    }
-
-    if (ImGui::SliderFloat("Volume##3", &random_music->volume, 0.0f, 1.0f)) {
-        random_music->SetVolume(random_music->volume);
-    }
-
-
-    ImGui::Text("Engine");
-    if (ImGui::SliderFloat("Musics Volume", &GEngine->Audio.global_volume, 0.0f, 1.0f)) {
-        Audio_SetMasterVolume(GEngine->Audio.global_volume);
-    }
-
-    ImGui::Checkbox("Metrics", &bShowMetrics);
-
-    ImGui::End();
-
-
-    if (bShowMetrics) {
-        ImGui::Begin("Metrics", &bShowMetrics);
-
-        const ImGuiIO& io = ImGui::GetIO();
-        ImGui::Text("Application average: %2.03f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta Time: %f", GEngine->GetTimeManager()->GetDeltaTime());
-        ImGui::Text("Elapsed Time: %.3f", GEngine->GetTimeManager()->GetElapsedTime());
-        ImGui::Text("Frame count: %llu", GEngine->GetTimeManager()->GetFrameCount());
-
-        ImGui::Text("RAM Usage: %d MB", GetMemoryUsage());
-
-
-        if (ImGui::Button("Close Me")) {
-            bShowMetrics = false;
-        }
-
-        ImGui::End();
-    }
-
-    GEngine->GetRenderer()->EndDrawing();
-
-    GEngine->GetTimeManager()->FixedFrameRate();
-
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult SDL_AppEvent(void* app_state, SDL_Event* event) {
-
-    GEngine->GetInputManager()->ProcessEvents(event);
-
-    auto pKey = SDL_GetKeyboardState(nullptr);
-
-    if (pKey[SDL_SCANCODE_ESCAPE] || event->type == SDL_EVENT_QUIT) {
-        return SDL_APP_SUCCESS;
-    }
-
-
-    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
-        GEngine->ResizeWindow(event->window.data1, event->window.data2);
-
-        GEngine->GetRenderer()->Resize(event->window.data1, event->window.data2);
-    }
-
-    return SDL_APP_CONTINUE;
-}
-
-void SDL_AppQuit(void* app_state, SDL_AppResult result) {
-
-    GEngine->GetRenderer()->UnloadFont(mine_font);
-
-    GEngine->GetRenderer()->UnloadTexture(player_texture);
-
-    GEngine->Shutdown();
-}
-

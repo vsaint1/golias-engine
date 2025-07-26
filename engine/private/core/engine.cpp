@@ -11,11 +11,10 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 ma_engine audio_engine;
 
 
-
-Renderer* Engine::CreateRenderer(SDL_Window* window, int view_width, int view_height, RendererType type) {
+Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, RendererType type) {
 
     if (type == RendererType::OPENGL) {
-        return CreateRendererGL(window, view_width, view_height);
+        return _create_renderer_gl(window, view_width, view_height);
     }
 
     if (type == RendererType::METAL) {
@@ -30,7 +29,7 @@ Renderer* Engine::CreateRenderer(SDL_Window* window, int view_width, int view_he
 }
 
 
-bool Engine::Initialize(const char* title, int width, int height, RendererType type, Uint64 flags) {
+bool Engine::initialize(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
@@ -66,7 +65,9 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
 #pragma endregion
 
-    Logger::Start();
+#if defined(NDEBUG)
+    Logger::initialize();
+#endif
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
@@ -91,7 +92,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
         return false;
     }
 
-    if (!InitAudio()) {
+    if (!init_audio_engine()) {
         LOG_CRITICAL("Failed to initialize Audio Engine");
         return false;
     }
@@ -99,14 +100,14 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
     LOG_INFO("Initialized Audio Engine");
 
 
-    const std::string gamepad_mappings = LoadAssetsFile("controller_db");
+    const std::string gamepad_mappings = _load_assets_file("controller_db");
 
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
         return false;
     }
 
-    GEngine->Window.window = _window;
+    GEngine->Window.handle = _window;
 
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
@@ -128,7 +129,7 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
 #endif
 
-    this->_renderer = CreateRenderer(_window, bbWidth, bbHeight, type);
+    this->_renderer = _create_renderer_internal(_window, bbWidth, bbHeight, type);
 
     if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
@@ -147,10 +148,10 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL/ES" : "Metal");
 
-    this->Window.width  = width;
-    this->Window.height = height;
-    this->Window.title  = _title;
-    this->_renderer->type = type;
+    this->Window.width    = width;
+    this->Window.height   = height;
+    this->Window.title    = _title;
+    this->_renderer->Type = type;
 
     if (type == RendererType::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
@@ -163,14 +164,15 @@ bool Engine::Initialize(const char* title, int width, int height, RendererType t
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
+    this->bIsRunning = true;
 
     return true;
 }
 
 
-void Engine::Shutdown() {
+void Engine::shutdown() {
 
-    this->_renderer->Destroy();
+    this->_renderer->destroy();
 
     delete this->_renderer;
     this->_renderer = nullptr;
@@ -184,33 +186,38 @@ void Engine::Shutdown() {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    Logger::Destroy();
+#if defined(NDEBUG)
+    Logger::destroy();
+#endif
 
-    CloseAudio();
+    SDL_DestroyWindow(Window.handle);
+
+    close_audio_engine();
 
     SDL_Quit();
 }
 
 
-void Engine::ResizeWindow(int w, int h) const {
+void Engine::resize_window(int w, int h) const {
     SDL_assert(w > 0 && h > 0);
-    
-    GEngine->Window.width= w;
+
+    GEngine->Window.width  = w;
     GEngine->Window.height = h;
 }
 
-Renderer* Engine::GetRenderer() const {
+Renderer* Engine::get_renderer() const {
     return _renderer;
 }
-InputManager* Engine::GetInputManager() const {
+
+InputManager* Engine::input_manager() const {
     return _input_manager;
 }
 
-TimeManager* Engine::GetTimeManager() const {
+TimeManager* Engine::time_manager() const {
     return _time_manager;
 }
 
-Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_height) {
+Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -265,18 +272,33 @@ Renderer* Engine::CreateRendererGL(SDL_Window* window, int view_width, int view_
         LOG_CRITICAL("Failed to disable VSYNC, %s", SDL_GetError());
     }
 
+#if ENGINE_DEBUG
+    int numExtensions = 0;
+
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    LOG_INFO("Number of available OpenGL/ES extensions: %d", numExtensions);
+    for (int i = 0; i < numExtensions; i++) {
+        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+        LOG_INFO("GL_EXTENSION_NAME: %s", extension);
+    }
+#endif
+
+
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
-    glRenderer->viewport[0]    = view_width;
-    glRenderer->viewport[1]    = view_height;
-    glRenderer->window         = window;
+    glRenderer->Viewport[0] = view_width;
+    glRenderer->Viewport[1] = view_height;
+    glRenderer->Window      = window;
 
-    glRenderer->SetContext(glContext);
+    glRenderer->set_context(glContext);
 
-    glRenderer->default_shader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    glRenderer->text_shader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+    OpenglShader* defaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
+    OpenglShader* textShader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
 
-    glRenderer->Initialize();
+    glRenderer->setup_shaders(defaultShader, textShader);
+
+    glRenderer->initialize();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

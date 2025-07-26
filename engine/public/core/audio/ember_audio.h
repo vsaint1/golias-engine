@@ -29,7 +29,7 @@ public:
 
      * * @return Audio allocated audio memory struct
     */
-    static Audio* Load(const std::string& file_Path);
+    static Audio* load(const std::string& file_Path);
 
 
     /*!
@@ -43,7 +43,7 @@ public:
 
      * * void
     */
-    void SetVolume(float vol);
+    void set_volume(float vol);
 
     /*!
 
@@ -52,7 +52,7 @@ public:
         @version 0.0.3
         @return void
     */
-    void Pause();
+    void pause();
 
     /*!
 
@@ -63,11 +63,11 @@ public:
     @version 0.0.3
     @return void
     */
-    void Play(bool loop = false);
+    void play(bool loop = false);
 
-    bool IsPlaying();
+    bool is_playing();
 
-    void SetLoop(bool loop);
+    void set_loop(bool loop);
 
 
     /*!
@@ -83,7 +83,7 @@ public:
     @version 0.0.3
     @return void
     */
-    void Destroy();
+    void destroy();
 
     Audio(const Audio&)      = delete;
     Audio& operator=(Audio&) = delete;
@@ -103,7 +103,7 @@ private:
     @version 0.0.3
     @return bool
 */
-bool InitAudio();
+bool init_audio_engine();
 
 /*!
 
@@ -113,13 +113,13 @@ bool InitAudio();
     @version 0.0.3
     @return void
 */
-void CloseAudio();
+void close_audio_engine();
 
 /*!
 
     @brief Change the [audio engine] global volume
 
-    @param volume Audio volume from [0.0f -> 1.f] 
+    @param volume Audio volume from [0.0f -> 1.f]
 
  @version
 
@@ -134,4 +134,4 @@ void Audio_SetMasterVolume(float volume);
 // extern Core core;
 
 // TODO: create a Resource Manager
-inline std::unordered_map<std::string, Audio*> audios;
+inline HashMap<std::string, Audio*> audios;

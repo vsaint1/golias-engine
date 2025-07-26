@@ -1,4 +1,3 @@
-#define USE_TEXTURE_ARRAY
 
 in vec4 vColor;
 in vec2 TextureCoords;
@@ -10,7 +9,7 @@ in float TextureIndex;
     uniform sampler2D uTextures[16];
 #endif
 
-out vec4 FragColor;
+out vec4 COLOR;
 
 void main() {
 #ifdef GL_ES
@@ -23,5 +22,5 @@ void main() {
     : texture(uTextures[int(TextureIndex) - 1], TextureCoords);
 #endif
 
-    FragColor = vColor * tex;
+    COLOR = vColor * tex;
 }

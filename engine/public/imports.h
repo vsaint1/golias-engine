@@ -3,16 +3,25 @@
 #include <cmath>
 #include <string>
 #include <filesystem>
-#include <map>
 #include <chrono>
 #include <queue>
+
+#if !defined(NDEBUG)
+    #include <map>
+    template <typename K, typename V>
+    using HashMap = std::map<K, V>;
+#else
 #include <unordered_map>
+template <typename K, typename V>
+using HashMap = std::unordered_map<K, V>;
+#endif
+
 #include <sstream>
 
 /* ENABLE MATH CONSTANTS*/
 #define _USE_MATH_DEFINES 1
-#include <math.h>
 #include <array>
+#include <math.h>
 
 #include <glad.h>
 

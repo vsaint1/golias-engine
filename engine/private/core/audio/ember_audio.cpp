@@ -1,30 +1,29 @@
 #include "core/audio/ember_audio.h"
 
 
+bool init_audio_engine() {
+    ma_device_config* device_config = (ma_device_config*) SDL_malloc(sizeof(ma_device_config));
 
-bool InitAudio() {
-    ma_device_config* device_config = (ma_device_config*)SDL_malloc(sizeof(ma_device_config));
-
-    if(!device_config) {
+    if (!device_config) {
         LOG_ERROR("Failed to allocate memory for device config");
         return false;
     }
-    
+
     *device_config = ma_device_config_init(ma_device_type_playback);
 
-    device_config->playback.format   = ma_format_f32;
-    device_config->playback.channels = 2;
-    device_config->sampleRate        = 48000;
-    device_config->dataCallback      = 0; 
-    device_config->periodSizeInFrames = 0; 
-    device_config->periods = 0;            
+    device_config->playback.format    = ma_format_f32;
+    device_config->playback.channels  = 2;
+    device_config->sampleRate         = 48000;
+    device_config->dataCallback       = 0;
+    device_config->periodSizeInFrames = 0;
+    device_config->periods            = 0;
     device_config->performanceProfile = ma_performance_profile_low_latency;
 
     ma_engine_config config = ma_engine_config_init();
 
     ma_result res = ma_engine_init(&config, &audio_engine);
 
-    SDL_free(device_config); 
+    SDL_free(device_config);
 
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engine backend %d", res);
@@ -35,7 +34,7 @@ bool InitAudio() {
     GEngine->Audio.spec.format   = SDL_AUDIO_F32;
     GEngine->Audio.spec.freq     = 48000;
     GEngine->Audio.spec.channels = 2;
-    
+
 
     res = ma_engine_start(&audio_engine);
     if (res != MA_SUCCESS) {
@@ -45,7 +44,7 @@ bool InitAudio() {
 
     ma_engine_set_volume(&audio_engine, GEngine->Audio.global_volume);
 
-    res = Ember_Init_VFS(&GEngine->VirtualFileSystem);
+    res = _ember_init_vfs(&GEngine->VirtualFileSystem);
     if (res != MA_SUCCESS) {
         LOG_ERROR("Failed to initialize MA engineVFS %d", res);
         return false;
@@ -57,12 +56,12 @@ bool InitAudio() {
     return true;
 }
 
-Audio* Audio::Load(const std::string& file_Path) {
+Audio* Audio::load(const std::string& file_Path) {
 
     Audio* audio = (Audio*) SDL_malloc(sizeof(Audio));
 
     if (!audio) {
-        LOG_ERROR("Failed to allocate memory for audio %s",file_Path.c_str());
+        LOG_ERROR("Failed to allocate memory for audio %s", file_Path.c_str());
         return nullptr;
     }
 
@@ -122,20 +121,19 @@ Audio* Audio::Load(const std::string& file_Path) {
     return audio;
 }
 
-void Audio::SetVolume(float vol) {
+void Audio::set_volume(float vol) {
 
     vol = SDL_clamp(vol, 0.0f, 1.0f);
     ma_sound_set_volume(&sound, vol);
     this->volume = vol;
 }
 
-void Audio::Pause() {
+void Audio::pause() {
 
     ma_sound_stop(&this->sound);
 }
 
-void Audio::Play(bool loop) {
-
+void Audio::play(bool loop) {
 
 
     const ma_uint64 time = ma_engine_get_time_in_milliseconds(&audio_engine);
@@ -158,16 +156,15 @@ void Audio::Play(bool loop) {
     }
 }
 
-bool Audio::IsPlaying() {
+bool Audio::is_playing() {
     return ma_sound_is_playing(&sound);
 }
 
-void Audio::SetLoop(bool loop) {
+void Audio::set_loop(bool loop) {
     ma_sound_set_looping(&sound, loop);
 }
 
-void Audio::Destroy() {
-
+void Audio::destroy() {
 
 
     ma_sound_stop(&this->sound);
@@ -188,14 +185,15 @@ void Audio_SetMasterVolume(float volume) {
 }
 
 
+void close_audio_engine() {
 
-void CloseAudio() {
 
+    if (!audios.empty()) {
+        LOG_INFO("Cleaning allocated Audios");
+    }
 
-    LOG_INFO("Cleaning allocated Audios");
-
-    for (auto& [_, audio] : audios) {
-        audio->Destroy();
+    for (const auto& [_, audio] : audios) {
+        audio->destroy();
     }
 
     LOG_INFO("Closing MA engine backend");
