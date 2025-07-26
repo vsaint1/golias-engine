@@ -38,10 +38,10 @@ void Sprite2D::draw(Renderer* renderer) {
     SDL_assert(_texture.id > 0 && "Invalid texture");
 
     if (_use_region) {
-        renderer->draw_texture_ex(_texture, _source, {_dest.x, _dest.y, _size.x, _size.y}, _origin, get_global_transform().rotation,
-                                  _color);
+        // renderer->draw_texture_ex(_texture, _source, {_dest.x, _dest.y, _size.x, _size.y}, _origin, get_global_transform().rotation,
+                                  // _color);
     } else {
-        renderer->draw_texture(_texture, get_global_transform(), _size, _color);
+        // renderer->draw_texture(_texture, get_global_transform(), _size, _color);
     }
 
     Node2D::draw(renderer);

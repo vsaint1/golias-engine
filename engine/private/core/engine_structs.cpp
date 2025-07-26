@@ -12,7 +12,7 @@ const Color Color::TRANSPARENT = {0, 0, 0, 0};
 
 
 bool Font::is_valid() const {
-    return texture.id != 0 && glyphs.size() > 0;
+    return characters.size() > 0;
 }
 
 glm::vec4 Color::normalize_color() const {
@@ -39,13 +39,13 @@ Size _calc_text_size(const std::string& text, const Font& font, float font_size)
         if (c == '\n') {
             continue;
         }
-        if (font.glyphs.find(c) == font.glyphs.end()) {
+        if (font.characters.find(c) == font.characters.end()) {
             continue;
         }
 
-        const Glyph& g = font.glyphs.at(c);
-        text_height    = SDL_max(text_height, (g.y1 - g.y0) * scale_factor);
-        text_width += (g.advance) * scale_factor;
+        const Character& g = font.characters.at(c);
+        text_height = SDL_max(text_height, static_cast<int>(g.size.y * scale_factor));
+        text_width += static_cast<int>(g.advance * scale_factor);
     }
 
     return {text_width, text_height};

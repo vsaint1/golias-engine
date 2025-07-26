@@ -300,6 +300,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     glRenderer->initialize();
 
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();

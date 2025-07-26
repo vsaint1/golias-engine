@@ -6,7 +6,7 @@
 Label::Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color)
     : _text(text), _color(color), _font_size(ft_size), _path(font_path) {
 
-    _font = GEngine->get_renderer()->load_font(font_path, ft_size);
+    // _font = GEngine->get_renderer()->load_font(font_path, ft_size);
 }
 
 void Label::ready() {
@@ -17,7 +17,7 @@ void Label::process(double delta_time) {
 }
 
 void Label::draw(Renderer* renderer) {
-    renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, _kerning,get_effective_z_index());
+    // renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, _kerning,get_effective_z_index());
     Node2D::draw(renderer);
 }
 

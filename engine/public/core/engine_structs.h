@@ -12,21 +12,40 @@
  *
  *  @version 0.0.1
  */
-typedef struct Texture {
-    unsigned int id = 0;
-    int width       = 0;
-    int height      = 0;
+struct Texture {
+    Uint32 id  = 0;
+    int width  = 0;
+    int height = 0;
+    std::string path;
 
+    Texture()                          = default;
+    // Texture(const Texture&)            = delete;
+    // Texture& operator=(const Texture&) = delete;
 
-    Texture() = default;
-} Texture, Texture2D;
+    ~Texture() {
+        if (id) {
+            glDeleteTextures(1, &id);
+        }
+    }
+};
 
 
 struct Rect2 {
-    float x;
-    float y;
-    float width;
-    float height;
+    float x, y, width, height;
+
+    Rect2(float x = 0, float y = 0, float width = 0, float height = 0) : x(x), y(y), width(width), height(height) {
+    }
+
+    bool is_zero() const {
+        return width == 0 && height == 0 && x == 0 && y == 0;
+    }
+
+    glm::vec2 top_left() const {
+        return {x, y};
+    }
+    glm::vec2 bottom_right() const {
+        return {x + width, y + height};
+    }
 };
 
 struct Recti {
@@ -83,6 +102,14 @@ struct Glyph {
     int advance;
 };
 
+
+struct Character {
+    GLuint texture_id;
+    glm::ivec2 size;
+    glm::ivec2 bearing;
+    GLuint advance;
+};
+
 /*!
  *  @brief Font struct
  *
@@ -91,9 +118,9 @@ struct Glyph {
  *  @version 0.0.1
  */
 struct Font {
-    HashMap<char, Glyph> glyphs{};
-    Texture texture;
-    int font_size = 16;
+    std::unordered_map<char, Character> characters;
+    std::string font_path;
+    int font_size = 48;
     float kerning = 0.0f;
     int ascent = 0, descent = 0, line_gap = 0;
     float scale = 1.0f;

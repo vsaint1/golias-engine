@@ -22,7 +22,7 @@ void Polygon2D::draw(Renderer* renderer) {
         transformed_points.emplace_back(t.transform_point(p));
     }
 
-    renderer->draw_polygon(transformed_points, _color, _is_filled);
+    // renderer->draw_polygon(transformed_points, _color, _is_filled);
     Node2D::draw(renderer);
 }
 
