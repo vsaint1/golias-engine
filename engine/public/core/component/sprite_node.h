@@ -5,6 +5,9 @@ class Sprite2D final : public Node2D {
 
 public:
 
+    explicit Sprite2D(const Texture& tex, const Color col = Color(255, 255, 255, 255), const glm::vec2 size = {0, 0})
+      : _texture(tex), _size(size), _color(col) {
+    }
 
     void set_region(const Rect2& region, glm::vec2 size);
 
