@@ -43,7 +43,7 @@ public:
 
     Texture& get_texture(const std::string& path) override;
 
-    bool load_font(const std::string& file_path, const std::string& font_alias, int font_size = 48) override;
+    bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
     void set_current_font(const std::string& font_name) override;
 
@@ -51,25 +51,24 @@ public:
 
     void unload_texture(Uint32 id) override;
 
-    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
-                      const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0) override;
+    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
+                      const Rect2& src_rect,int z_index) override;
 
-    void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled = true, int z_index = 0) override;
+    void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
     void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                   const std::string& font_alias = "", int z_index = 0) override;
+                   const std::string& font_alias , int z_index,int ft_size ) override;
 
-    void draw_line(float x1, float y1, float x2, float y2, float width, const glm::vec4& color, int z_index = 0,
-                   float rotation = 0.0f) override;
+    void draw_line(float x1, float y1, float x2, float y2, float width,float rotation, const glm::vec4& color, int z_index) override;
 
     void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color,
-                       bool filled = true, int z_index = 0) override;
+                       bool filled, int z_index) override;
 
-    void draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled = true,
-                     int segments = 32, int z_index = 0) override;
+    void draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled,
+                     int segments, int z_index) override;
 
-    void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled = true,
-                      int z_index = 0) override;
+    void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled,
+                      int z_index) override;
 
     void render_command(const DrawCommand& cmd) override;
 

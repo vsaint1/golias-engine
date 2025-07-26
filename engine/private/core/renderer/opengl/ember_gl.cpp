@@ -28,23 +28,23 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
 
     if (filled) {
         BatchKey key{0, z_index, DrawCommandType::RECT};
-        add_quad_to_batch(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation);
+        _add_quad_to_batch(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation);
     } else {
         float line_width = 1.0f;
         glm::vec2 center(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f);
-        glm::vec2 p1 = rotate_point({rect.x, rect.y}, center, rotation);
-        glm::vec2 p2 = rotate_point({rect.x + rect.width, rect.y}, center, rotation);
-        glm::vec2 p3 = rotate_point({rect.x + rect.width, rect.y + rect.height}, center, rotation);
-        glm::vec2 p4 = rotate_point({rect.x, rect.y + rect.height}, center, rotation);
-        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, color, z_index);
-        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, color, z_index);
-        draw_line(p3.x, p3.y, p4.x, p4.y, line_width, color, z_index);
-        draw_line(p4.x, p4.y, p1.x, p1.y, line_width, color, z_index);
+        glm::vec2 p1 = _rotate_point({rect.x, rect.y}, center, rotation);
+        glm::vec2 p2 = _rotate_point({rect.x + rect.width, rect.y}, center, rotation);
+        glm::vec2 p3 = _rotate_point({rect.x + rect.width, rect.y + rect.height}, center, rotation);
+        glm::vec2 p4 = _rotate_point({rect.x, rect.y + rect.height}, center, rotation);
+        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
+        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, rotation, color, z_index);
+        draw_line(p3.x, p3.y, p4.x, p4.y, line_width, rotation, color, z_index);
+        draw_line(p4.x, p4.y, p1.x, p1.y, line_width, rotation, color, z_index);
     }
 }
 
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                               const std::string& font_alias, int z_index) {
+                               const std::string& font_alias, int z_index, int ft_size) {
 
     const std::string use_font_name = font_alias.empty() ? current_font_name : font_alias;
 
@@ -89,22 +89,22 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
         float x0            = xpos + ch.bearing.x * scale;
         float y0            = y + (font.font_size - ch.bearing.y) * scale;
 
-        glm::vec2 glyph_pos = rotate_point({x0, y0}, text_center, rotation);
+        glm::vec2 glyph_pos = _rotate_point({x0, y0}, text_center, rotation);
 
         BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT};
-        add_quad_to_batch(key, glyph_pos.x, glyph_pos.y, w, h, 0, 0, 1, 1, color, 0.0f);
+        _add_quad_to_batch(key, glyph_pos.x, glyph_pos.y, w, h, 0, 0, 1, 1, color, 0.0f);
         xpos += (ch.advance >> 6) * scale;
     }
 }
 
-void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float width, const glm::vec4& color, int z_index, float rotation) {
+void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index) {
     glm::vec2 dir    = glm::normalize(glm::vec2(x2 - x1, y2 - y1));
     glm::vec2 normal = glm::vec2(-dir.y, dir.x) * (width * 0.5f);
     glm::vec2 center = (glm::vec2(x1, y1) + glm::vec2(x2, y2)) * 0.5f;
-    glm::vec2 p1     = rotate_point({x1 - normal.x, y1 - normal.y}, center, rotation);
-    glm::vec2 p2     = rotate_point({x1 + normal.x, y1 + normal.y}, center, rotation);
-    glm::vec2 p3     = rotate_point({x2 + normal.x, y2 + normal.y}, center, rotation);
-    glm::vec2 p4     = rotate_point({x2 - normal.x, y2 - normal.y}, center, rotation);
+    glm::vec2 p1     = _rotate_point({x1 - normal.x, y1 - normal.y}, center, rotation);
+    glm::vec2 p2     = _rotate_point({x1 + normal.x, y1 + normal.y}, center, rotation);
+    glm::vec2 p3     = _rotate_point({x2 + normal.x, y2 + normal.y}, center, rotation);
+    glm::vec2 p4     = _rotate_point({x2 - normal.x, y2 - normal.y}, center, rotation);
 
     BatchKey key{0, z_index, DrawCommandType::LINE};
     Batch& batch  = batches[key];
@@ -121,9 +121,9 @@ void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float wid
 void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color,
                                    bool filled, int z_index) {
     glm::vec2 center = (glm::vec2(x1, y1) + glm::vec2(x2, y2) + glm::vec2(x3, y3)) / 3.0f;
-    glm::vec2 p1     = rotate_point({x1, y1}, center, rotation);
-    glm::vec2 p2     = rotate_point({x2, y2}, center, rotation);
-    glm::vec2 p3     = rotate_point({x3, y3}, center, rotation);
+    glm::vec2 p1     = _rotate_point({x1, y1}, center, rotation);
+    glm::vec2 p2     = _rotate_point({x2, y2}, center, rotation);
+    glm::vec2 p3     = _rotate_point({x3, y3}, center, rotation);
 
     if (filled) {
         BatchKey key{0, z_index, DrawCommandType::TRIANGLE};
@@ -136,9 +136,9 @@ void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float
         batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2});
     } else {
         float line_width = 1.0f;
-        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, color, z_index);
-        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, color, z_index);
-        draw_line(p3.x, p3.y, p1.x, p1.y, line_width, color, z_index);
+        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
+        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, rotation, color, z_index);
+        draw_line(p3.x, p3.y, p1.x, p1.y, line_width, rotation, color, z_index);
     }
 }
 
@@ -156,7 +156,7 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
             float angle = 2.0f * M_PI * i / segments;
             float x     = center_x + radius * cos(angle);
             float y     = center_y + radius * sin(angle);
-            glm::vec2 p = rotate_point({x, y}, center, rotation);
+            glm::vec2 p = _rotate_point({x, y}, center, rotation);
             batch.vertices.push_back({p, {0.5f + 0.5f * cos(angle), 0.5f + 0.5f * sin(angle)}, color});
             if (i > 0) {
                 batch.indices.push_back(base);
@@ -169,9 +169,9 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
         for (int i = 0; i < segments; ++i) {
             float angle1 = 2.0f * M_PI * i / segments;
             float angle2 = 2.0f * M_PI * (i + 1) / segments;
-            glm::vec2 p1 = rotate_point({center_x + radius * cos(angle1), center_y + radius * sin(angle1)}, center, rotation);
-            glm::vec2 p2 = rotate_point({center_x + radius * cos(angle2), center_y + radius * sin(angle2)}, center, rotation);
-            draw_line(p1.x, p1.y, p2.x, p2.y, line_width, color, z_index);
+            glm::vec2 p1 = _rotate_point({center_x + radius * cos(angle1), center_y + radius * sin(angle1)}, center, rotation);
+            glm::vec2 p2 = _rotate_point({center_x + radius * cos(angle2), center_y + radius * sin(angle2)}, center, rotation);
+            draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
         }
     }
 }
@@ -180,15 +180,18 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
     if (points.size() < 3) {
         return;
     }
+
     glm::vec2 center(0.0f);
+
     for (const auto& p : points) {
         center += p;
     }
+
     center /= static_cast<float>(points.size());
 
     std::vector<glm::vec2> rotated_points;
     for (const auto& p : points) {
-        rotated_points.push_back(rotate_point(p, center, rotation));
+        rotated_points.push_back(_rotate_point(p, center, rotation));
     }
 
     if (filled) {
@@ -205,10 +208,11 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
             batch.indices.push_back(base + i + 1);
         }
     } else {
-        float line_width = 1.0f;
         for (size_t i = 0; i < rotated_points.size(); ++i) {
+            constexpr float line_width = 1.0f;
             size_t next = (i + 1) % rotated_points.size();
-            draw_line(rotated_points[i].x, rotated_points[i].y, rotated_points[next].x, rotated_points[next].y, line_width, color, z_index);
+            draw_line(rotated_points[i].x, rotated_points[i].y, rotated_points[next].x, rotated_points[next].y, line_width, rotation, color,
+                      z_index);
         }
     }
 }
@@ -305,7 +309,7 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
     }
 
     auto texture = std::make_unique<Texture>();
-    texture->id = 0;
+    texture->id  = 0;
 
     glGenTextures(1, &texture->id);
     int nr_channels = 4;
@@ -356,6 +360,8 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     FT_Set_Pixel_Sizes(face, 0, font_size);
     font.font_path = file_path;
     font.font_size = font_size;
+    // font.face = face;
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (unsigned char c = 0; c < 128; c++) {
 
@@ -386,8 +392,6 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
         font.characters.insert(std::pair<char, Character>(c, character));
     }
 
-    FT_Done_Face(face);
-
     glBindTexture(GL_TEXTURE_2D, 0);
     fonts[font_alias] = font;
 
@@ -417,7 +421,7 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect
     }
 
     BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE};
-    add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
+    _add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
 }
 
 void OpenglRenderer::flush() {
