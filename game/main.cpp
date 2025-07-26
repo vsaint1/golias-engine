@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
         // GEngine->get_renderer()->draw_text("Hola amigo, como estas?", 100, 60, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
         // GEngine->get_renderer()->draw_text("Ola mundo", 100, 250, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "arial", 10);
         // GEngine->get_renderer()->draw_text("Hello world", 100, 350, 0, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
-        // GEngine->get_renderer()->draw_text("No internationalization  =(", 100, 500, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
+        GEngine->get_renderer()->draw_text("Hello [color=#FF0000]World[/color]", 100, 500, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine", 10);
 
 
         GEngine->get_renderer()->flush();

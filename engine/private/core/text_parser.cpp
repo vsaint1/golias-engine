@@ -3,14 +3,14 @@
 
 
 
-std::vector<TextToken> TextToken::parse_bbcode(const std::string& text, const Color& default_color) {
+std::vector<TextToken> TextToken::parse_bbcode(const std::string& text, const glm::vec4& default_color) {
     std::vector<TextToken> tokens;
-    std::vector<Color> color_stack = { default_color };
+    std::vector<glm::vec4> color_stack = { default_color };
     std::vector<bool> bold_stack = { false };
     std::vector<bool> italic_stack = { false };
     std::vector<bool> strike_stack = { false };
 
-    Color current_color = default_color;
+    glm::vec4 current_color = default_color;
     bool is_bold = false;
     bool is_italic = false;
     bool is_strike = false;
@@ -70,7 +70,7 @@ std::vector<TextToken> TextToken::parse_bbcode(const std::string& text, const Co
                             int b = std::stoi(hex.substr(5, 2), nullptr, 16);
                             flush();
                             color_stack.push_back(current_color);
-                            current_color = Color(r, g, b, 255);
+                            current_color = Color(r, g, b, 255).normalize_color();
                         } catch (...) {
                             buffer += full_tag; // invalid hex
                         }

@@ -53,47 +53,46 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
     }
 
     const Font& font = fonts[use_font_name];
+    const auto tokens = TextToken::parse_bbcode(text, color);
 
-    float xpos  = x;
+    float xpos = x;
     float min_x = x, max_x = x, min_y = y, max_y = y;
-    for (char c : text) {
-        auto it = font.characters.find(c);
-
-        if (it == font.characters.end()) {
-            continue;
+    for (const auto& token : tokens) {
+        for (char c : token.text) {
+            auto it = font.characters.find(c);
+            if (it == font.characters.end()) {
+                continue;
+            }
+            const Character& ch = it->second;
+            float w             = ch.size.x * scale;
+            float h             = ch.size.y * scale;
+            float x0            = xpos + ch.bearing.x * scale;
+            float y0            = y + (font.font_size - ch.bearing.y) * scale;
+            min_x               = std::min(min_x, x0);
+            max_x               = std::max(max_x, x0 + w);
+            min_y               = std::min(min_y, y0);
+            max_y               = std::max(max_y, y0 + h);
+            xpos += (ch.advance >> 6) * scale;
         }
-
-        const Character& ch = it->second;
-        float w             = ch.size.x * scale;
-        float h             = ch.size.y * scale;
-        float x0            = xpos + ch.bearing.x * scale;
-        float y0            = y + (font.font_size - ch.bearing.y) * scale;
-        min_x               = SDL_min(min_x, x0);
-        max_x               = SDL_max(max_x, x0 + w);
-        min_y               = SDL_min(min_y, y0);
-        max_y               = SDL_max(max_y, y0 + h);
-        xpos += (ch.advance >> 6) * scale;
     }
 
     const glm::vec2 text_center((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f);
 
     xpos = x;
-    for (char c : text) {
-        auto it = font.characters.find(c);
-        if (it == font.characters.end()) {
-            continue;
+    for (const auto& token : tokens) {
+        for (char c : token.text) {
+            auto it = font.characters.find(c);
+            if (it == font.characters.end()) continue;
+            const Character& ch = it->second;
+            float w = ch.size.x * scale;
+            float h = ch.size.y * scale;
+            float x0 = xpos + ch.bearing.x * scale;
+            float y0                  = y + (font.font_size - ch.bearing.y) * scale;
+            const glm::vec2 glyph_pos = _rotate_point({x0, y0}, text_center, rotation);
+            BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT};
+            _add_quad_to_batch(key, glyph_pos.x, glyph_pos.y, w, h, 0, 0, 1, 1, token.color, 0.0f);
+            xpos += (ch.advance >> 6) * scale;
         }
-        const Character& ch = it->second;
-        float w             = ch.size.x * scale;
-        float h             = ch.size.y * scale;
-        float x0            = xpos + ch.bearing.x * scale;
-        float y0            = y + (font.font_size - ch.bearing.y) * scale;
-
-        glm::vec2 glyph_pos = _rotate_point({x0, y0}, text_center, rotation);
-
-        BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT};
-        _add_quad_to_batch(key, glyph_pos.x, glyph_pos.y, w, h, 0, 0, 1, 1, color, 0.0f);
-        xpos += (ch.advance >> 6) * scale;
     }
 }
 
