@@ -22,7 +22,7 @@ constexpr int MAX_TEXTURE_SLOTS = 16;
    - Opengl 3.3
    - Opengl ES 3.0
 */
-class OpenglRenderer : public Renderer {
+class OpenglRenderer final : public Renderer {
 public:
     OpenglRenderer();
     ~OpenglRenderer() override;
@@ -51,24 +51,23 @@ public:
 
     void unload_texture(Uint32 id) override;
 
-    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                      const Rect2& src_rect,int z_index) override;
+    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
+                      int z_index, const UberShader& uber_shader) override;
 
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
     void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                   const std::string& font_alias , int z_index,int ft_size ) override;
+                   const std::string& font_alias, int z_index, int ft_size, const UberShader& effects) override;
 
-    void draw_line(float x1, float y1, float x2, float y2, float width,float rotation, const glm::vec4& color, int z_index) override;
+    void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index) override;
 
-    void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color,
-                       bool filled, int z_index) override;
+    void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color, bool filled,
+                       int z_index) override;
 
-    void draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled,
-                     int segments, int z_index) override;
+    void draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled, int segments,
+                     int z_index) override;
 
-    void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled,
-                      int z_index) override;
+    void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
     void render_command(const DrawCommand& cmd) override;
 
@@ -89,4 +88,9 @@ private:
     GLuint projection_uniform;
 
     SDL_GLContext context = nullptr;
+
+    void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
+
+     glm::vec2 _get_texture_size(Uint32 texture_id) const  override;
+
 };
