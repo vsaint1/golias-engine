@@ -44,19 +44,34 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
 }
 
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                               const std::string& font_alias, int z_index, int ft_size) {
+                               const std::string& font_alias, int z_index, int ft_size, const UberShader& uber_shader) {
 
-    const std::string use_font_name = font_alias.empty() ? current_font_name : font_alias;
 
-    if (use_font_name.empty() || !fonts.contains(use_font_name)) {
+    const std::string& use_font_name = font_alias.empty() ? current_font_name : font_alias;
+    if (use_font_name.empty()) {
         return;
     }
 
-    const Font& font = fonts[use_font_name];
+    auto font_it = fonts.find(use_font_name);
+    if (font_it == fonts.end()) {
+        return;
+    }
+
+    const Font& font  = font_it->second;
     const auto tokens = TextToken::parse_bbcode(text, color);
 
-    float xpos = x;
-    float ypos = y;
+    if (tokens.empty()) {
+        return;
+    }
+
+    const float font_scale    = font.font_size * scale;
+    const float advance_scale = scale / 64.0f;
+    const bool needs_rotation = std::abs(rotation) > 1e-6f;
+
+    std::vector<CharData> char_data;
+    char_data.reserve(text.length());
+
+    float xpos = x, ypos = y;
     float min_x = x, max_x = x, min_y = y, max_y = y;
 
     for (const auto& token : tokens) {
@@ -66,52 +81,39 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
                 ypos += font.font_size * scale;
                 continue;
             }
-
             auto it = font.characters.find(c);
             if (it == font.characters.end()) {
                 continue;
             }
 
             const Character& ch = it->second;
-            float w = ch.size.x * scale;
-            float h = ch.size.y * scale;
-            float x0 = xpos + ch.bearing.x * scale;
-            float y0 = ypos + (font.font_size - ch.bearing.y) * scale;
+            float w             = ch.size.x * scale;
+            float h             = ch.size.y * scale;
+            float x0            = xpos + ch.bearing.x * scale;
+            float y0            = ypos + (font.font_size - ch.bearing.y) * scale;
+
             min_x = std::min(min_x, x0);
             max_x = std::max(max_x, x0 + w);
             min_y = std::min(min_y, y0);
             max_y = std::max(max_y, y0 + h);
+
+            char_data.push_back({x0, y0, w, h, &ch, &token.color});
             xpos += (ch.advance >> 6) * scale;
         }
     }
 
-    const glm::vec2 text_center((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f);
+    if (char_data.empty()) {
+        return;
+    }
 
-    // Second pass: render
-    xpos = x;
-    ypos = y;
-    for (const auto& token : tokens) {
-        for (char c : token.text) {
-            if (c == '\n') {
-                xpos = x;
-                ypos += font.font_size * scale;
-                continue;
-            }
+    const glm::vec2 text_center = needs_rotation ? glm::vec2((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f) : glm::vec2(0.0f);
 
-            auto it = font.characters.find(c);
-            if (it == font.characters.end()) continue;
+    for (const auto& data : char_data) {
+        glm::vec2 glyph_pos = needs_rotation ? _rotate_point({data.x0, data.y0}, text_center, rotation) : glm::vec2(data.x0, data.y0);
 
-            const Character& ch = it->second;
-            float w = ch.size.x * scale;
-            float h = ch.size.y * scale;
-            float x0 = xpos + ch.bearing.x * scale;
-            float y0 = ypos + (font.font_size - ch.bearing.y) * scale;
 
-            const glm::vec2 glyph_pos = _rotate_point({x0, y0}, text_center, rotation);
-            BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT};
-            _add_quad_to_batch(key, glyph_pos.x, glyph_pos.y, w, h, 0, 0, 1, 1, token.color, 0.0f);
-            xpos += (ch.advance >> 6) * scale;
-        }
+        BatchKey current_key{data.ch->texture_id, z_index, DrawCommandType::TEXT, uber_shader};
+        _add_quad_to_batch(current_key, glyph_pos.x, glyph_pos.y, data.w, data.h, 0, 0, 1, 1, *(data.token_color), 0.0f);
     }
 }
 
@@ -228,7 +230,7 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
     } else {
         for (size_t i = 0; i < rotated_points.size(); ++i) {
             constexpr float line_width = 1.0f;
-            size_t next = (i + 1) % rotated_points.size();
+            size_t next                = (i + 1) % rotated_points.size();
             draw_line(rotated_points[i].x, rotated_points[i].y, rotated_points[next].x, rotated_points[next].y, line_width, rotation, color,
                       z_index);
         }
@@ -327,35 +329,59 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
     }
 
     auto texture = std::make_unique<Texture>();
-    texture->id  = 0;
 
     glGenTextures(1, &texture->id);
     int nr_channels = 4;
     stbi_set_flip_vertically_on_load(false);
 
     const auto buffer = _load_file_into_memory(file_path);
+
     unsigned char* data =
         stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &texture->width, &texture->height, &nr_channels, 4);
 
-    if (data) {
+    bool has_error_texture = false;
 
-        glBindTexture(GL_TEXTURE_2D, texture->id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        stbi_image_free(data);
-        textures[file_path] = std::move(texture);
-        return *(textures[file_path]);
+    if (!data) {
+        has_error_texture = true;
+        texture->width  = 128;
+        texture->height = 128;
+        LOG_ERROR("Failed to load texture from file: %s", file_path.c_str());
+
+        data = new unsigned char[texture->width * texture->height * 4];
+
+        for (int y = 0; y < texture->height; ++y) {
+            for (int x = 0; x < texture->width; ++x) {
+                int i       = (y * texture->width + x) * 4;
+                bool pink   = ((x / 8) % 2) == ((y / 8) % 2);
+                data[i + 0] = pink ? 180 : 0;
+                data[i + 1] = 0;
+                data[i + 2] = pink ? 180 : 0;
+                data[i + 3] = 255;
+            }
+        }
+
     }
 
-    LOG_ERROR("Failed to load texture: %s", file_path.c_str());
-    LOG_ERROR("STB %s", stbi_failure_reason());
-    glDeleteTextures(1, &texture->id);
-    static Texture dummy;
-    return dummy;
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+    if (!has_error_texture) {
+        LOG_INFO("Loaded texture with ID: %d, path: %s", texture->id, file_path.c_str());
+        LOG_INFO(" > Width %d, Height %d", texture->width, texture->height);
+        LOG_INFO(" > Num. Channels %d", nr_channels);
+
+    }
+
+    delete[] data;
+
+    textures[file_path] = std::move(texture);
+    return *(textures[file_path]);
 }
 
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
@@ -410,8 +436,12 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
         font.characters.insert(std::pair<char, Character>(c, character));
     }
 
+
+
     glBindTexture(GL_TEXTURE_2D, 0);
     fonts[font_alias] = font;
+
+    LOG_INFO("Generated font atlas. Texture ID: %d, ft_size %d, alias %s, path: %s", font.characters.begin()->second.texture_id,font_size,font_alias, file_path.c_str());
 
     if (current_font_name.empty()) {
         current_font_name = font_alias;
@@ -422,12 +452,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
 
 void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                  const Rect2& src_rect, int z_index) {
-
-    if (!texture.id) {
-        LOG_WARN("TEXTURE NOT FOUND - ID: %d", texture.id);
-        return;
-    }
+                                  const Rect2& src_rect, int z_index,const UberShader& uber_shader) {
 
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
 
@@ -438,45 +463,57 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect
         v1 = (src_rect.y + src_rect.height) / texture.height;
     }
 
-    BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE};
+    BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE,uber_shader};
     _add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
 }
 
 void OpenglRenderer::flush() {
     int draw_call_count = 0;
     // Sort batches by z_index
-    std::vector<Batch*> sorted_batches;
-
+    std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
     for (auto& [key, batch] : batches) {
-        sorted_batches.push_back(&batch);
+        sorted_batches.push_back({key, &batch});
     }
 
-    std::sort(sorted_batches.begin(), sorted_batches.end(), [](Batch* a, Batch* b) { return a->z_index < b->z_index; });
+    std::sort(sorted_batches.begin(), sorted_batches.end(),
+        [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
+            return a.second->z_index < b.second->z_index;
+        });
 
     glUseProgram(shader_program);
     glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
     glBindVertexArray(vao);
 
-    // Batched draw calls
-    for (auto* batch : sorted_batches) {
+    for (auto& [key, batch] : sorted_batches) {
         if (batch->vertices.empty() || batch->indices.empty()) {
             continue;
         }
+
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, batch->vertices.size() * sizeof(Vertex), batch->vertices.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch->indices.size() * sizeof(uint32_t), batch->indices.data(), GL_DYNAMIC_DRAW);
-        bool use_texture = (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
+
+        const bool use_texture = (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
         glUniform1i(glGetUniformLocation(shader_program, "use_texture"), use_texture);
+
         if (use_texture) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, batch->texture_id);
             glUniform1i(glGetUniformLocation(shader_program, "TEXTURE"), 0);
         }
+
+        if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
+            auto tex_size = _get_texture_size(batch->texture_id);
+            _set_effect_uniforms(key.uber_shader, tex_size);
+        }
+
         glDrawElements(GL_TRIANGLES, batch->indices.size(), GL_UNSIGNED_INT, 0);
+
         if (use_texture) {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
+
         draw_call_count++;
     }
 
@@ -498,6 +535,25 @@ void OpenglRenderer::clear(const glm::vec4& color) {
     glClear(GL_COLOR_BUFFER_BIT);
     commands.clear();
     batches.clear();
+}
+
+glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const  {
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    int width, height;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+    return glm::vec2(width, height);
+}
+
+void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) {
+    glUniform1i(glGetUniformLocation(shader_program, "use_outline"), uber_shader.use_outline);
+    glUniform1i(glGetUniformLocation(shader_program, "use_shadow"), uber_shader.use_shadow);
+    glUniform4fv(glGetUniformLocation(shader_program, "outline_color"), 1, &uber_shader.outline_color[0]);
+    glUniform4fv(glGetUniformLocation(shader_program, "shadow_color"), 1, &uber_shader.shadow_color[0]);
+    glUniform1f(glGetUniformLocation(shader_program, "outline_width"), uber_shader.outline_width);
+    glUniform2fv(glGetUniformLocation(shader_program, "shadow_offset"), 1, &uber_shader.shadow_offset[0]);
+    glUniform2fv(glGetUniformLocation(shader_program, "texture_size"), 1, glm::value_ptr(texture_size));
+
 }
 
 void OpenglRenderer::unload_font(const Font& font) {

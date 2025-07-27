@@ -103,6 +103,7 @@ struct Glyph {
 };
 
 
+
 struct Character {
     GLuint texture_id;
     glm::ivec2 size;
@@ -110,6 +111,11 @@ struct Character {
     GLuint advance;
 };
 
+struct CharData {
+    float x0, y0, w, h;
+    const Character* ch;
+    const glm::vec4* token_color;
+};
 /*!
  *  @brief Font struct
  *

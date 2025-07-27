@@ -62,6 +62,7 @@ struct BatchKey {
     Uint32 texture_id;        ///< Texture used.
     int z_index;              ///< Z-index.
     DrawCommandType type;     ///< Type of draw command.
+    UberShader uber_shader = UberShader::none(); ///< Shader used for this batch.
 
     /**
      * @brief Equality operator.
@@ -96,7 +97,10 @@ struct Batch {
     Uint32 texture_id    = 0;          ///< Texture used in this batch.
     DrawCommandType type = DrawCommandType::NONE; ///< Type of draw command.
     int z_index          = 0;          ///< Render order.
+    UberShader uber_shader = UberShader::none(); ///< Shader effects applied.
 };
+
+
 
 /**
  * @brief Base class for all renderers.
@@ -145,7 +149,7 @@ public:
      * @brief Draw a textured quad.
      */
     virtual void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
-                              const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0) = 0;
+                              const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0,const UberShader& uber_shader = UberShader::none()) = 0;
 
     /**
      * @brief Draw a rectangle (filled or outlined).
@@ -156,7 +160,7 @@ public:
      * @brief Draw text to screen.
      */
     virtual void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1) = 0;
+                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1,const UberShader& uber_shader = UberShader::none()) = 0;
 
     /**
      * @brief Draw a line.
@@ -268,4 +272,8 @@ protected:
         batch.vertices.push_back({_rotate_point({x, y}, center, rotation), {u0, v0}, color});
         batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2, base + 2, base + 3, base});
     }
+
+   virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1,1)) = 0;
+
+   virtual  glm::vec2 _get_texture_size(Uint32 texture_id) const  = 0;
 };
