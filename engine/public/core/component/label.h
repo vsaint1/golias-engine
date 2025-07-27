@@ -26,7 +26,7 @@ public:
 
     void set_text_color(const Color& color);
 
-    void set_outline(bool enabled, float thickness = 0.03f, const Color& color = Color::BLACK);
+    void set_outline(bool enabled, float thickness = 1.f, const Color& color = Color::BLACK);
 
     void set_shadow(bool enabled, glm::vec2 offset = glm::vec2(-1.f), const Color& color = Color::BLACK);
 
@@ -35,7 +35,7 @@ private:
     std::string _font_alias = "default";
     std::string _text    = "";
     Color _color         = Color::WHITE;
-    UberShader _effect = {}; // for now just drawing text without effects
+    UberShader _effect = UberShader::none();
     int _font_size       = 16;
     float _kerning       = 0.0f; // spacing between characters
     std::string _path    = "";
