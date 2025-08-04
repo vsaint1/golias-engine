@@ -5,16 +5,11 @@
 #include <filesystem>
 #include <chrono>
 #include <queue>
-
-#if !defined(NDEBUG)
-    #include <map>
-    template <typename K, typename V>
-    using HashMap = std::map<K, V>;
-#else
 #include <unordered_map>
+
 template <typename K, typename V>
 using HashMap = std::unordered_map<K, V>;
-#endif
+
 
 #include <sstream>
 
