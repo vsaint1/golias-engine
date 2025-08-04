@@ -293,7 +293,8 @@ void OpenglRenderer::initialize() {
 
 #pragma region FRAMEBUFFER_SETUP
 
-    float fbo_quad_vertices[] = {
+    constexpr float fbo_quad_vertices[] = {
+        // pos        // tex_coords
         -1.0f, 1.0f,  0.0f, 1.0f, // TL
         -1.0f, -1.0f, 0.0f, 0.0f, // BL
         1.0f,  -1.0f, 1.0f, 0.0f, // BR
@@ -303,12 +304,22 @@ void OpenglRenderer::initialize() {
         1.0f,  1.0f,  1.0f, 1.0f // TR
     };
 
-    // glGenVertexArrays(1,&_fbo_vao);
-    // glGenBuffers(1, &_fbo_vbo);
-    //
-    // glBindVertexArray(_fbo_vao);
-    // glBindBuffer(GL_ARRAY_BUFFER, _fbo_vbo);
+    glGenVertexArrays(1,&_fbo_vao);
+    glGenBuffers(1, &_fbo_vbo);
 
+    glBindVertexArray(_fbo_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, _fbo_vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(fbo_quad_vertices), fbo_quad_vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 #pragma endregion
 }
 
@@ -334,6 +345,9 @@ void OpenglRenderer::destroy() {
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
 
+
+    glDeleteVertexArrays(1, &_fbo_vao);
+    glDeleteBuffers(1, &_fbo_vbo);
 
     ImGui_ImplOpenGL3_Shutdown();
 
