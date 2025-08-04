@@ -27,11 +27,11 @@ public:
     OpenglRenderer();
     ~OpenglRenderer() override;
 
-    void setup_shaders(Shader* default_shader, Shader* text_shader);
+    void setup_shaders(Shader* default_shader, Shader* framebuffer_shader);
 
     void initialize() override;
 
-    void resize(int view_width, int view_height) override;
+    void resize_viewport(int view_width, int view_height) override;
 
     void set_context(const void* ctx) override;
 
@@ -73,7 +73,9 @@ public:
 
     void flush() override;
 
-    void clear(const glm::vec4& color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) override;
+    void present() override;
+
+    void clear(const glm::vec4& color) override;
 
     void setup_camera(const Camera2D& camera);
 
@@ -81,7 +83,7 @@ public:
 
 private:
     OpenglShader* _default_shader = nullptr;
-    OpenglShader* _text_shader    = nullptr;
+    OpenglShader* _fbo_shader    = nullptr;
 
     GLuint vao, vbo, ebo;
     GLuint shader_program;

@@ -246,10 +246,10 @@ void OpenglRenderer::setup_camera(const Camera2D& camera) {
 void OpenglRenderer::setup_canvas(const int width, const int height) {
 }
 
-void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* text_shader) {
+void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_shader) {
 
     this->_default_shader = static_cast<OpenglShader*>(default_shader);
-    this->_text_shader    = static_cast<OpenglShader*>(text_shader);
+    this->_fbo_shader    = static_cast<OpenglShader*>(framebuffer_shader);
 
     LOG_INFO("Default shader setup complete");
 }
@@ -286,7 +286,7 @@ void OpenglRenderer::initialize() {
     projection = glm::ortho(0.0f, (float) Viewport[0], (float) Viewport[1], 0.0f, -1.0f, 1.0f);
 }
 
-void OpenglRenderer::resize(int view_width, int view_height) {
+void OpenglRenderer::resize_viewport(int view_width, int view_height) {
     Viewport[0] = view_width;
     Viewport[1] = view_height;
     glViewport(0, 0, view_width, view_height);
@@ -302,7 +302,7 @@ void* OpenglRenderer::get_context() {
 
 void OpenglRenderer::destroy() {
     _default_shader->destroy();
-    _text_shader->destroy();
+    _fbo_shader->destroy();
 
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
@@ -316,8 +316,8 @@ void OpenglRenderer::destroy() {
     delete _default_shader;
     _default_shader = nullptr;
 
-    delete _text_shader;
-    _text_shader = nullptr;
+    delete _fbo_shader;
+    _fbo_shader = nullptr;
 }
 
 Texture& OpenglRenderer::load_texture(const std::string& file_path) {
@@ -475,10 +475,9 @@ void OpenglRenderer::flush() {
         sorted_batches.push_back({key, &batch});
     }
 
-    std::sort(sorted_batches.begin(), sorted_batches.end(),
-        [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
-            return a.second->z_index < b.second->z_index;
-        });
+    std::sort(sorted_batches.begin(), sorted_batches.end(), [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
+        return a.second->z_index < b.second->z_index;
+    });
 
     glUseProgram(shader_program);
     glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
@@ -494,7 +493,8 @@ void OpenglRenderer::flush() {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch->indices.size() * sizeof(uint32_t), batch->indices.data(), GL_DYNAMIC_DRAW);
 
-        const bool use_texture = (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
+        const bool use_texture =
+            (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
         glUniform1i(glGetUniformLocation(shader_program, "use_texture"), use_texture);
 
         if (use_texture) {
@@ -523,11 +523,14 @@ void OpenglRenderer::flush() {
     }
 
     glBindVertexArray(0);
-    commands.clear();
-    batches.clear();
-    SDL_GL_SwapWindow(Window);
+    // commands.clear();
+    // batches.clear();
 
     // LOG_INFO("Draw Calls %d",draw_call_count);
+}
+
+void OpenglRenderer::present() {
+    SDL_GL_SwapWindow(Window);
 }
 
 void OpenglRenderer::clear(const glm::vec4& color) {
@@ -542,9 +545,10 @@ glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const  {
     int width, height;
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-    return glm::vec2(width, height);
+    return {width, height};
 }
 
+// TODO: this must be optimized, for now it is just a simple implementation
 void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) {
     glUniform1i(glGetUniformLocation(shader_program, "use_outline"), uber_shader.use_outline);
     glUniform1i(glGetUniformLocation(shader_program, "use_shadow"), uber_shader.use_shadow);

@@ -195,14 +195,22 @@ public:
     virtual void flush() = 0;
 
     /**
+     * @brief Swap buffers to present the rendered frame.
+     */
+    virtual void present() = 0;
+
+    /**
      * @brief Clear the screen to the given color.
+     * @param  color Color to clear the screen with (default is black).
      */
     virtual void clear(const glm::vec4& color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) = 0;
 
     /**
      * @brief Resize the rendering context.
+     * @param  view_width Width of the view.
+     * @param  view_height Height of the view.
      */
-    virtual void resize(int view_width, int view_height) = 0;
+    virtual void resize_viewport(int view_width, int view_height) = 0;
 
     /**
      * @brief Set the platform-specific rendering context.

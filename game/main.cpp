@@ -5,10 +5,9 @@
 int SCREEN_WIDTH  = 1366;
 int SCREEN_HEIGHT = 768;
 
-
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize("Example - new API", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->initialize("Example - with FBO", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
@@ -16,7 +15,6 @@ int main(int argc, char* argv[]) {
     if (!GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", "mine", 48)) {
         LOG_ERROR("failed to load mine font");
         return SDL_APP_FAILURE;
-
     }
 
     if (!GEngine->get_renderer()->load_font("fonts/Arial.otf", "arial", 48)) {
@@ -24,13 +22,14 @@ int main(int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    Texture& sample_texture  = GEngine->get_renderer()->load_texture("sprites/Character_0f01.png");
+    Texture& sample_texture  = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
     Texture& sample_texture2 = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
 
-    bool quit                = false;
+    bool quit = false;
     SDL_Event e;
     float angle = 0.0f;
 
+    // TODO: instead of using raw pointers, we must `track` the nodes and delete them automatically ( scene manager? )
     Node2D* root = new Node2D("Root");
 
     Node2D* player = new Node2D();
@@ -43,11 +42,13 @@ int main(int argc, char* argv[]) {
 
     Sprite2D* player_sprite = new Sprite2D(sample_texture2);
     player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
+    player_sprite->set_z_index(10);
+
 
     player->add_child("Image", player_sprite);
     player->add_child("Name", name);
 
-    root->add_child("Player",player);
+    root->add_child("Player", player);
 
     root->ready();
     root->print_tree();
@@ -80,13 +81,16 @@ int main(int argc, char* argv[]) {
         //     GEngine->get_renderer()->draw_texture(sample_texture, {i * 50.f, i * 50.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
         //                                           {0, 0, 64, 64}, 0,UberShader::shadow_only());
         // }
-        GEngine->get_renderer()->draw_texture(sample_texture, {50.f,  50.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-                                               {0, 0, 64, 64}, 0,UberShader::outline_only());
+        GEngine->get_renderer()->draw_texture(sample_texture, {50.f, 400.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
+                                              0, UberShader::shadow_only());
         //
         // GEngine->get_renderer()->draw_texture(sample_texture2, {400, 200, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {}, 5,UberShader::shadow_only());
 
 
         GEngine->get_renderer()->flush();
+
+        GEngine->get_renderer()->present();
+
     }
 
     delete root;
