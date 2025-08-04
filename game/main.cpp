@@ -2,8 +2,8 @@
 #include <SDL3/SDL_main.h>
 
 
-int SCREEN_WIDTH  = 1366;
-int SCREEN_HEIGHT = 768;
+int SCREEN_WIDTH  = 1280;
+int SCREEN_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
 
@@ -53,6 +53,8 @@ int main(int argc, char* argv[]) {
     root->ready();
     root->print_tree();
 
+    GEngine->get_renderer()->resize_viewport(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) {
@@ -69,10 +71,10 @@ int main(int argc, char* argv[]) {
 
         root->draw(GEngine->get_renderer());
 
-        //GEngine->get_renderer()->draw_rect({100, 100, 200, 150}, angle, glm::vec4(1.0f, 0.5f, 0.2f, 1.0f), true, 1);
-        // GEngine->get_renderer()->draw_circle(400, 300, 0, 80, glm::vec4(0.2f, 0.8f, 0.2f, 1.0f), false, 32, 2);
-        // GEngine->get_renderer()->draw_triangle(500, 100, 600, 200, 450, 200,0, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f), false, 3);
-        // GEngine->get_renderer()->draw_line(50, 50, 750, 550, 3.0f,0, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 5);
+        GEngine->get_renderer()->draw_rect({100, 100, 200, 150}, angle, glm::vec4(1.0f, 0.5f, 0.2f, 1.0f), true, 1);
+        GEngine->get_renderer()->draw_circle(400, 300, 0, 80, glm::vec4(0.2f, 0.8f, 0.2f, 1.0f), true, 128, 2);
+        GEngine->get_renderer()->draw_triangle(500, 100, 600, 200, 450, 200,0, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f), true, 3);
+        GEngine->get_renderer()->draw_line(50, 50, 750, 550, 3.0f,0, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 5);
         // std::vector<glm::vec2> polygon_points = {{200, 400}, {250, 380}, {300, 420}, {280, 480}, {220, 490}};
         // GEngine->get_renderer()->draw_polygon(polygon_points, 0, glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), true, 1);
         //
@@ -86,11 +88,9 @@ int main(int argc, char* argv[]) {
         //
         // GEngine->get_renderer()->draw_texture(sample_texture2, {400, 200, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {}, 5,UberShader::shadow_only());
 
-
         GEngine->get_renderer()->flush();
 
         GEngine->get_renderer()->present();
-
     }
 
     delete root;

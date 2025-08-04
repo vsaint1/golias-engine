@@ -45,7 +45,7 @@ public:
 
     bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
-    void set_current_font(const std::string& font_name) override;
+    void _set_default_font(const std::string& font_name) override;
 
     void unload_font(const Font& font) override;
 
@@ -69,7 +69,7 @@ public:
 
     void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
-    void render_command(const DrawCommand& cmd) override;
+    void _render_command(const DrawCommand& cmd) override;
 
     void flush() override;
 
@@ -90,12 +90,14 @@ private:
     GLuint shader_program;
 
     // DEFAULT FBO shader
-    GLuint _fbo_vao,_fbo_vbo;
+    GLuint _fbo_vao,_fbo_vbo,_frame_buffer_object, _fbo_texture;
 
     SDL_GLContext context = nullptr;
 
+    void _render_fbo() override;
+
     void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
 
-     glm::vec2 _get_texture_size(Uint32 texture_id) const  override;
+    glm::vec2 _get_texture_size(Uint32 texture_id) const  override;
 
 };

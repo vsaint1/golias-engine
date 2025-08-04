@@ -125,11 +125,7 @@ public:
      */
     virtual bool load_font(const std::string& font_path, const std::string& font_alias, int font_size = 48) = 0;
 
-    /**
-     * @brief Set the current font to use for rendering.
-     * @param font_name Alias of the font to use.
-     */
-    virtual void set_current_font(const std::string& font_name) = 0;
+
 
     /**
      * @brief Load a texture from disk.
@@ -184,10 +180,6 @@ public:
      */
     virtual void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled = true, int z_index = 0) = 0;
 
-    /**
-     * @brief Process a draw command.
-     */
-    virtual void render_command(const DrawCommand& cmd) = 0;
 
     /**
      * @brief Submit all batched draw calls.
@@ -196,6 +188,9 @@ public:
 
     /**
      * @brief Swap buffers to present the rendered frame.
+     *
+     * @details  This function is called to display the rendered content on the screen.
+     *
      */
     virtual void present() = 0;
 
@@ -250,6 +245,18 @@ protected:
 
     std::unordered_map<std::string, std::unique_ptr<Texture>> textures; ///< Cached textures.
 
+
+    /**
+     * @brief Process a draw command.
+     */
+    virtual void _render_command(const DrawCommand& cmd) = 0;
+
+    /**
+    * @brief Set the current font to use for rendering.
+    * @param font_name Alias of the font to use.
+    */
+    virtual void _set_default_font(const std::string& font_name) = 0;
+
     /**
      * @brief Rotate a point around a center point.
      */
@@ -260,6 +267,11 @@ protected:
         glm::vec2 rot_rel = glm::vec2(rel.x * c - rel.y * s, rel.x * s + rel.y * c);
         return center + rot_rel;
     }
+
+    /**
+    * @brief Render the current frame buffer.
+    */
+    virtual void _render_fbo() = 0;
 
     /**
      * @brief Add a quad (textured or untextured) to the appropriate batch.

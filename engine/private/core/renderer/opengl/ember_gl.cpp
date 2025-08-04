@@ -16,7 +16,7 @@ Texture& OpenglRenderer::get_texture(const std::string& path) {
     return load_texture(path);
 }
 
-void OpenglRenderer::set_current_font(const std::string& font_name) {
+void OpenglRenderer::_set_default_font(const std::string& font_name) {
     if (fonts.find(font_name) != fonts.end()) {
         current_font_name = font_name;
     } else {
@@ -185,13 +185,14 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
             }
         }
     } else {
-        float line_width = 1.0f;
+        // TODO: create circle outline drawing batch
         for (int i = 0; i < segments; ++i) {
+            float line_width = 1.0f;
             float angle1 = 2.0f * M_PI * i / segments;
             float angle2 = 2.0f * M_PI * (i + 1) / segments;
             glm::vec2 p1 = _rotate_point({center_x + radius * cos(angle1), center_y + radius * sin(angle1)}, center, rotation);
             glm::vec2 p2 = _rotate_point({center_x + radius * cos(angle2), center_y + radius * sin(angle2)}, center, rotation);
-            draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
+            draw_line(p1.x, p1.y, p2.x, p2.y, line_width, 0.0f, color, z_index);
         }
     }
 }
@@ -237,7 +238,7 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
     }
 }
 
-void OpenglRenderer::render_command(const DrawCommand& cmd) {
+void OpenglRenderer::_render_command(const DrawCommand& cmd) {
 }
 
 void OpenglRenderer::setup_camera(const Camera2D& camera) {
@@ -260,7 +261,6 @@ void OpenglRenderer::initialize() {
     _default_shader->bind();
 
     shader_program = _default_shader->get_id();
-
 
 
     glGenVertexArrays(1, &vao);
@@ -304,7 +304,8 @@ void OpenglRenderer::initialize() {
         1.0f,  1.0f,  1.0f, 1.0f // TR
     };
 
-    glGenVertexArrays(1,&_fbo_vao);
+
+    glGenVertexArrays(1, &_fbo_vao);
     glGenBuffers(1, &_fbo_vbo);
 
     glBindVertexArray(_fbo_vao);
@@ -313,13 +314,33 @@ void OpenglRenderer::initialize() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(fbo_quad_vertices), fbo_quad_vertices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) 0);
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) (2 * sizeof(float)));
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    glGenFramebuffers(1, &_frame_buffer_object);
+    glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+    glGenTextures(1, &_fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, _fbo_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Viewport[0], Viewport[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _fbo_texture, 0);
+
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LOG_ERROR("Framebuffer is not complete!");
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 #pragma endregion
 }
 
@@ -348,6 +369,9 @@ void OpenglRenderer::destroy() {
 
     glDeleteVertexArrays(1, &_fbo_vao);
     glDeleteBuffers(1, &_fbo_vbo);
+
+    glDeleteFramebuffers(1, &_frame_buffer_object);
+    glDeleteTextures(1, &_fbo_texture);
 
     ImGui_ImplOpenGL3_Shutdown();
 
@@ -461,16 +485,19 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
             rgba_buffer[4 * i + 2] = 255;
             rgba_buffer[4 * i + 3] = buffer[i];
         }
+
         GLuint texture;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
         Character character = {texture, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
                                static_cast<GLuint>(face->glyph->advance.x)};
+
         font.characters.insert(std::pair<char, Character>(c, character));
     }
 
@@ -479,7 +506,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     fonts[font_alias] = font;
 
     LOG_INFO("Generated font atlas. Texture ID: %d, ft_size %d, alias %s, path: %s", font.characters.begin()->second.texture_id, font_size,
-             font_alias, file_path.c_str());
+             font_alias.c_str(), file_path.c_str());
 
     if (current_font_name.empty()) {
         current_font_name = font_alias;
@@ -506,6 +533,8 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect
 }
 
 void OpenglRenderer::flush() {
+    glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
     int draw_call_count = 0;
     // Sort batches by z_index
     std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
@@ -518,7 +547,7 @@ void OpenglRenderer::flush() {
     });
 
     _default_shader->bind();
-    _default_shader->set_value("projection",projection);
+    _default_shader->set_value("projection", projection);
 
     glBindVertexArray(vao);
 
@@ -543,6 +572,7 @@ void OpenglRenderer::flush() {
             _default_shader->set_value("TEXTURE", 0);
         }
 
+        // TODO: fix it on mobile
         if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
             auto tex_size = _get_texture_size(batch->texture_id);
             _set_effect_uniforms(key.uber_shader, tex_size);
@@ -558,11 +588,13 @@ void OpenglRenderer::flush() {
     }
 
     for (const auto& cmd : commands) {
-        render_command(cmd);
+        _render_command(cmd);
         draw_call_count++;
     }
 
     glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     // commands.clear();
     // batches.clear();
 
@@ -570,14 +602,51 @@ void OpenglRenderer::flush() {
 }
 
 void OpenglRenderer::present() {
+    _render_fbo();
+
     SDL_GL_SwapWindow(Window);
 }
 
+void OpenglRenderer::_render_fbo() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, _frame_buffer_object);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    int window_width, window_height;
+    SDL_GetWindowSize(Window, &window_width, &window_height);
+
+    float target_aspect = static_cast<float>(Viewport[0]) / Viewport[1];
+    float window_aspect = static_cast<float>(window_width) / window_height;
+
+    int blit_width, blit_height;
+    int blit_x, blit_y;
+
+    if (window_aspect > target_aspect) {
+        blit_height = window_height;
+        blit_width  = static_cast<int>(window_height * target_aspect);
+        blit_x      = (window_width - blit_width) / 2;
+        blit_y      = 0;
+    } else {
+        blit_width  = window_width;
+        blit_height = static_cast<int>(window_width / target_aspect);
+        blit_x      = 0;
+        blit_y      = (window_height - blit_height) / 2;
+    }
+
+    glBlitFramebuffer(0, 0, Viewport[0], Viewport[1], blit_x, blit_y, blit_x + blit_width, blit_y + blit_height, GL_COLOR_BUFFER_BIT,
+                      GL_NEAREST);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
 void OpenglRenderer::clear(const glm::vec4& color) {
-    glClearColor(color.r, color.g, color.b, color.a);
-    glClear(GL_COLOR_BUFFER_BIT);
     commands.clear();
     batches.clear();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+    glClearColor(color.r, color.g, color.b, color.a);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const {
