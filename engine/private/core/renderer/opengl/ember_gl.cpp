@@ -249,25 +249,28 @@ void OpenglRenderer::setup_canvas(const int width, const int height) {
 void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_shader) {
 
     this->_default_shader = static_cast<OpenglShader*>(default_shader);
-    this->_fbo_shader    = static_cast<OpenglShader*>(framebuffer_shader);
+    this->_fbo_shader     = static_cast<OpenglShader*>(framebuffer_shader);
 
     LOG_INFO("Default shader setup complete");
 }
 
 void OpenglRenderer::initialize() {
 
+#pragma region DEFAULT_SHADER_SETUP
     _default_shader->bind();
 
     shader_program = _default_shader->get_id();
 
-    projection_uniform = glGetUniformLocation(shader_program, "projection");
+
 
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
+
     glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, tex_coord));
@@ -275,6 +278,7 @@ void OpenglRenderer::initialize() {
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, color));
     glEnableVertexAttribArray(2);
     glBindVertexArray(0);
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -284,6 +288,28 @@ void OpenglRenderer::initialize() {
     }
 
     projection = glm::ortho(0.0f, (float) Viewport[0], (float) Viewport[1], 0.0f, -1.0f, 1.0f);
+#pragma endregion
+
+
+#pragma region FRAMEBUFFER_SETUP
+
+    float fbo_quad_vertices[] = {
+        -1.0f, 1.0f,  0.0f, 1.0f, // TL
+        -1.0f, -1.0f, 0.0f, 0.0f, // BL
+        1.0f,  -1.0f, 1.0f, 0.0f, // BR
+
+        -1.0f, 1.0f,  0.0f, 1.0f, // TL
+        1.0f,  -1.0f, 1.0f, 0.0f, // BR
+        1.0f,  1.0f,  1.0f, 1.0f // TR
+    };
+
+    // glGenVertexArrays(1,&_fbo_vao);
+    // glGenBuffers(1, &_fbo_vbo);
+    //
+    // glBindVertexArray(_fbo_vao);
+    // glBindBuffer(GL_ARRAY_BUFFER, _fbo_vbo);
+
+#pragma endregion
 }
 
 void OpenglRenderer::resize_viewport(int view_width, int view_height) {
@@ -343,8 +369,8 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
 
     if (!data) {
         has_error_texture = true;
-        texture->width  = 128;
-        texture->height = 128;
+        texture->width    = 128;
+        texture->height   = 128;
         LOG_ERROR("Failed to load texture from file: %s", file_path.c_str());
 
         data = new unsigned char[texture->width * texture->height * 4];
@@ -359,7 +385,6 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
                 data[i + 3] = 255;
             }
         }
-
     }
 
     glBindTexture(GL_TEXTURE_2D, texture->id);
@@ -375,7 +400,6 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
         LOG_INFO("Loaded texture with ID: %d, path: %s", texture->id, file_path.c_str());
         LOG_INFO(" > Width %d, Height %d", texture->width, texture->height);
         LOG_INFO(" > Num. Channels %d", nr_channels);
-
     }
 
     delete[] data;
@@ -437,11 +461,11 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     }
 
 
-
     glBindTexture(GL_TEXTURE_2D, 0);
     fonts[font_alias] = font;
 
-    LOG_INFO("Generated font atlas. Texture ID: %d, ft_size %d, alias %s, path: %s", font.characters.begin()->second.texture_id,font_size,font_alias, file_path.c_str());
+    LOG_INFO("Generated font atlas. Texture ID: %d, ft_size %d, alias %s, path: %s", font.characters.begin()->second.texture_id, font_size,
+             font_alias, file_path.c_str());
 
     if (current_font_name.empty()) {
         current_font_name = font_alias;
@@ -452,7 +476,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
 
 void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                  const Rect2& src_rect, int z_index,const UberShader& uber_shader) {
+                                  const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
 
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
 
@@ -463,7 +487,7 @@ void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect
         v1 = (src_rect.y + src_rect.height) / texture.height;
     }
 
-    BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE,uber_shader};
+    BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE, uber_shader};
     _add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
 }
 
@@ -479,8 +503,9 @@ void OpenglRenderer::flush() {
         return a.second->z_index < b.second->z_index;
     });
 
-    glUseProgram(shader_program);
-    glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(projection));
+    _default_shader->bind();
+    _default_shader->set_value("projection",projection);
+
     glBindVertexArray(vao);
 
     for (auto& [key, batch] : sorted_batches) {
@@ -495,12 +520,13 @@ void OpenglRenderer::flush() {
 
         const bool use_texture =
             (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
-        glUniform1i(glGetUniformLocation(shader_program, "use_texture"), use_texture);
+
+        _default_shader->set_value("use_texture", use_texture);
 
         if (use_texture) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, batch->texture_id);
-            glUniform1i(glGetUniformLocation(shader_program, "TEXTURE"), 0);
+            _default_shader->set_value("TEXTURE", 0);
         }
 
         if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
@@ -540,7 +566,7 @@ void OpenglRenderer::clear(const glm::vec4& color) {
     batches.clear();
 }
 
-glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const  {
+glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const {
     glBindTexture(GL_TEXTURE_2D, texture_id);
     int width, height;
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
@@ -557,7 +583,6 @@ void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const g
     glUniform1f(glGetUniformLocation(shader_program, "outline_width"), uber_shader.outline_width);
     glUniform2fv(glGetUniformLocation(shader_program, "shadow_offset"), 1, &uber_shader.shadow_offset[0]);
     glUniform2fv(glGetUniformLocation(shader_program, "texture_size"), 1, glm::value_ptr(texture_size));
-
 }
 
 void OpenglRenderer::unload_font(const Font& font) {

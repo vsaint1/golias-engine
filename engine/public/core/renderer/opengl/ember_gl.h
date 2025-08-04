@@ -85,9 +85,12 @@ private:
     OpenglShader* _default_shader = nullptr;
     OpenglShader* _fbo_shader    = nullptr;
 
+    // DEFAULT shader (text/texture/primitives)
     GLuint vao, vbo, ebo;
     GLuint shader_program;
-    GLuint projection_uniform;
+
+    // DEFAULT FBO shader
+    GLuint _fbo_vao,_fbo_vbo;
 
     SDL_GLContext context = nullptr;
 
