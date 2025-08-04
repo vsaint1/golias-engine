@@ -2,29 +2,52 @@
 #include "core/io/file_system.h"
 
 
-class UberShader {
-public:
-    struct {
+/**
+ * @brief UberShader shader effects for rendering texts and sprites.
+ */
+struct UberShader {
+    bool use_outline = false;
+    bool use_shadow = false;
+    glm::vec4 outline_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 shadow_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.5f);
+    float outline_width = 1.0f;
+    glm::vec2 shadow_offset = glm::vec2(2.0f, 2.0f);
 
-        int enabled    = 0;
-        glm::vec4 color = glm::vec4(1.0f);
-        float thickness = 0.0f;
+    static UberShader none() {
+        return UberShader{};
+    }
 
-    } Outline;
+    static UberShader outline_only(const glm::vec4& color = glm::vec4(0,0,0,1), float width = 1.0f) {
+        UberShader effects;
+        effects.use_outline = true;
+        effects.outline_color = color;
+        effects.outline_width = width;
+        return effects;
+    }
 
-    struct {
+    static UberShader shadow_only(const glm::vec4& color = glm::vec4(0,0,0,0.5f),
+                                    const glm::vec2& offset = glm::vec2(2,2)) {
+        UberShader effects;
+        effects.use_shadow = true;
+        effects.shadow_color = color;
+        effects.shadow_offset = offset;
+        return effects;
+    }
 
-        int enabled           = 0;
-        glm::vec4 color        = glm::vec4(1.0f);
-        glm::vec2 pixel_offset = glm::vec2(0.0f);
+    static UberShader both(const glm::vec4& outline_col = glm::vec4(0,0,0,1),
+                             const glm::vec4& shadow_col = glm::vec4(0,0,0,0.5f),
+                             float width = 1.0f, const glm::vec2& offset = glm::vec2(2,2)) {
+        UberShader effects;
+        effects.use_outline = true;
+        effects.use_shadow = true;
+        effects.outline_color = outline_col;
+        effects.shadow_color = shadow_col;
+        effects.outline_width = width;
+        effects.shadow_offset = offset;
+        return effects;
+    }
 
-    } Shadow;
-
-    struct {
-        int enabled = 0;
-    } Glow;
 };
-
 
 /*!
 

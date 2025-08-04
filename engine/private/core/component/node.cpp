@@ -14,26 +14,10 @@ void Node2D::scale(float sx, float sy) {
 }
 
 void Node2D::set_z_index(int index) {
-    if (_z_index == index) return; // No change needed
+    if (_z_index == index) return;
 
     _z_index = index;
 
-    // If this node has a parent, re-sort its position in the parent's draw list
-    if (_parent) {
-        auto& parent_draw_list = _parent->_draw_list;
-
-        // Remove this node from current position
-        auto it = std::find(parent_draw_list.begin(), parent_draw_list.end(), this);
-        if (it != parent_draw_list.end()) {
-            parent_draw_list.erase(it);
-        }
-
-        // Insert at correct position based on new z-index
-        auto insert_pos = std::lower_bound(parent_draw_list.begin(), parent_draw_list.end(), this,
-            [](const Node2D* a, const Node2D* b) { return a->_z_index < b->_z_index; });
-
-        parent_draw_list.insert(insert_pos, this);
-    }
 }
 
 
@@ -96,10 +80,6 @@ void Node2D::add_child(const std::string& name, Node2D* node) {
 
     _nodes.emplace(name, node);
 
-    auto insert_pos = std::ranges::lower_bound(_draw_list, node,
-        [](const Node2D* a, const Node2D* b) { return a->_z_index < b->_z_index; });
-
-    _draw_list.insert(insert_pos, node);
 }
 
 
@@ -128,28 +108,39 @@ void Node2D::change_visibility(bool visible) {
 }
 
 void Node2D::ready() {
+    for (const auto& [name, child] : _nodes) {
+
+        child->ready();
+    }
 }
 
+
 void Node2D::process(double delta_time) {
-    for (auto* child : _draw_list) {
+    for (const auto& [name, child] : _nodes) {
+        if (!child->_is_visible)
+            continue;
+
         child->process(delta_time);
     }
 }
 
 
 void Node2D::draw(Renderer* renderer) {
-    for (auto* child : _draw_list) {
+
+    for (const auto& [name, child] : _nodes) {
         if (!child->_is_visible) {
             continue;
         }
 
-        child->draw(renderer);
+       child->draw(renderer);
     }
+
+
 }
 
 
 void Node2D::input(const InputManager* input) {
-    for (auto& [name, child] : _nodes) {
+    for (const auto& [name, child] : _nodes) {
         child->input(input);
     }
 }

@@ -64,5 +64,4 @@ private:
 
     HashMap<std::string, Node2D*> _nodes;
 
-    std::vector<Node2D*> _draw_list;
 };

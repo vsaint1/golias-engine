@@ -24,24 +24,26 @@ void Sprite2D::ready() {
     _dest = Rect2{position.x, position.y, _size.x, _size.y};
 
     _origin = {0.5f, 0.5f};
+
+    Node2D::ready();
 }
 
 void Sprite2D::process(double delta_time) {
+    Node2D::process(delta_time);
 }
 
 void Sprite2D::draw(Renderer* renderer) {
-    const auto position = get_global_transform().position;
+    const auto transform = get_global_transform();
 
-    _dest.x = static_cast<int>(position.x);
-    _dest.y = static_cast<int>(position.y);
+    _dest.x = transform.position.x;
+    _dest.y = transform.position.y;
 
-    SDL_assert(_texture.id > 0 && "Invalid texture");
+    SDL_assert(_texture.id > 0);
 
     if (_use_region) {
-        renderer->draw_texture_ex(_texture, _source, {_dest.x, _dest.y, _size.x, _size.y}, _origin, get_global_transform().rotation,
-                                  _color);
+        renderer->draw_texture(_texture,_dest,transform.rotation,glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), _source, _z_index);
     } else {
-        renderer->draw_texture(_texture, get_global_transform(), _size, _color);
+        renderer->draw_texture(_texture, _dest, transform.rotation, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {}, 5);
     }
 
     Node2D::draw(renderer);

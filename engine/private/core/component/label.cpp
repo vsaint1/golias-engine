@@ -3,13 +3,8 @@
 #include "core/ember_core.h"
 
 
-Label::Label(const std::string& font_path, const std::string& text, const float ft_size, const Color& color)
-    : _text(text), _color(color), _font_size(ft_size), _path(font_path) {
-
-    _font = GEngine->get_renderer()->load_font(font_path, ft_size);
-}
-
 void Label::ready() {
+    Node2D::ready();
 }
 
 void Label::process(double delta_time) {
@@ -17,7 +12,9 @@ void Label::process(double delta_time) {
 }
 
 void Label::draw(Renderer* renderer) {
-    renderer->draw_text(_font, _text, get_global_transform(), _color, _font_size, _effect, 0,get_effective_z_index());
+    const auto& transform = get_global_transform();
+    GEngine->get_renderer()->draw_text(_text, transform.position.x,transform.position.y, transform.rotation, transform.scale.x, _color.normalize_color(), _font_alias, _z_index,_font_size,_effect);
+
     Node2D::draw(renderer);
 }
 
@@ -51,13 +48,14 @@ void Label::set_text_color(const Color& color) {
 }
 
 void Label::set_outline(bool enabled, float thickness, const Color& color) {
-    _effect.Outline.enabled = enabled ? 1 : 0;
-    _effect.Outline.thickness = thickness;
-    _effect.Outline.color = color.normalize_color();
+    _effect.use_outline = enabled;
+    _effect.outline_width = thickness;
+    _effect.outline_color = color.normalize_color();
 }
 
 void Label::set_shadow(bool enabled, glm::vec2 offset, const Color& color) {
-    _effect.Shadow.enabled = enabled ? 1 : 0;
-    _effect.Shadow.pixel_offset = offset;
-    _effect.Shadow.color = color.normalize_color();
+    _effect.use_shadow = enabled;
+    _effect.shadow_color = color.normalize_color();
+    _effect.shadow_offset = offset;
+
 }

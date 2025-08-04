@@ -7,11 +7,11 @@
     @version 0.0.3
 */
 struct Vertex {
-    glm::vec3 Position;
-    glm::vec4 Color;
-    glm::vec2 UV;
-    float TextureIndex;
+    glm::vec2 position;
+    glm::vec2 tex_coord;
+    glm::vec4 color;
 };
+
 
 /*! @brief Mesh class
     - A mesh is a collection of vertices and indices

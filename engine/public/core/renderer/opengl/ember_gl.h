@@ -24,17 +24,14 @@ constexpr int MAX_TEXTURE_SLOTS = 16;
 */
 class OpenglRenderer final : public Renderer {
 public:
-    OpenglRenderer() = default;
+    OpenglRenderer();
+    ~OpenglRenderer() override;
 
-    void setup_shaders(Shader* default_shader, Shader* text_shader) override;
+    void setup_shaders(Shader* default_shader, Shader* framebuffer_shader);
 
     void initialize() override;
 
-    void flush() override;
-
-    void flush_text() override;
-
-    void resize(int view_width, int view_height) override;
+    void resize_viewport(int view_width, int view_height) override;
 
     void set_context(const void* ctx) override;
 
@@ -42,78 +39,65 @@ public:
 
     void destroy() override;
 
-    Texture load_texture(const std::string& file_path) override;
+    Texture& load_texture(const std::string& file_path) override;
 
-    Font load_font(const std::string& file_path, int font_size) override;
+    Texture& get_texture(const std::string& path) override;
+
+    bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
+
+    void _set_default_font(const std::string& font_name) override;
 
     void unload_font(const Font& font) override;
 
-    void unload_texture(const Texture& texture) override;
+    void unload_texture(Uint32 id) override;
 
-    void clear_background(const Color& color) override;
+    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
+                      int z_index, const UberShader& uber_shader) override;
 
-    void begin_drawing(const glm::mat4& view_projection) override;
+    void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
-    void end_drawing() override;
+    void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
+                   const std::string& font_alias, int z_index, int ft_size, const UberShader& effects) override;
 
-    void draw_text(const Font& font, const std::string& text, const Transform& transform, Color color, int font_size,
-                   const UberShader& uber_shader, float kerning, int z_index ) override;
+    void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index) override;
 
-    void draw_texture(const Texture& texture, const Transform& transform, glm::vec2 size, const Color& color) override;
+    void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color, bool filled,
+                       int z_index) override;
 
-    void draw_texture_ex(const Texture& texture, const Rect2& source, const Rect2& dest, glm::vec2 origin,
-                         float rotation, const Color& color) override;
+    void draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled, int segments,
+                     int z_index) override;
 
-    void draw_polygon(const std::vector<glm::vec2>& vertices, const Color& color, bool filled) override;
+    void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
-    void draw_line(glm::vec3 start, glm::vec3 end, const Color& color, float thickness) override;
+    void _render_command(const DrawCommand& cmd) override;
 
-    void draw_rect(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
+    void flush() override;
 
-    void draw_rect_filled(const Transform& transform, glm::vec2 size, const Color& color, float thickness) override;
+    void present() override;
 
-    void draw_triangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
+    void clear(const glm::vec4& color) override;
 
-    void draw_triangle_filled(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Color& color) override;
+    void setup_camera(const Camera2D& camera);
 
-    void draw_circle(glm::vec3 position, float radius, const Color& color, int segments) override;
-
-    void draw_circle_filled(glm::vec3 position, float radius, const Color& color, int segments) override;
-
-    void BeginCanvas() override;
-
-    void EndCanvas() override;
-
-
-    glm::mat4 Projection = glm::mat4(1.f);
+    void setup_canvas(const int width, const int height);
 
 private:
     OpenglShader* _default_shader = nullptr;
-    OpenglShader* _text_shader    = nullptr;
+    OpenglShader* _fbo_shader    = nullptr;
 
-    float _bind_texture(Uint32 slot) override;
+    // DEFAULT shader (text/texture/primitives)
+    GLuint vao, vbo, ebo;
+    GLuint shader_program;
 
-    void _submit(const Transform& transform, glm::vec2 size, glm::vec4 color, Uint32 slot) override;
-
-
-    GLuint _textVAO = 0, _textVBO = 0, _textEBO = 0;
-    Vertex* _textBuffer                = nullptr;
-    int _textQuadCount                 = 0;
-    int _textIndexCount                = 0;
-    unsigned int _currentFontTextureID = 0;
-
-
-    GLuint VAO = 0, VBO = 0, EBO = 0;
-    Vertex* _buffer = nullptr;
-
-    // OPENGL/ES HACK FIX
-    Uint32 _textureArrayBuffer = 0;
-
-    std::array<unsigned int, MAX_TEXTURE_SLOTS> _textures = std::array<unsigned int, MAX_TEXTURE_SLOTS>();
-    int _textureCount                                     = 0;
-    int _quadCount                                        = 0;
-    int _indexCount                                       = 0;
-
+    // DEFAULT FBO shader
+    GLuint _fbo_vao,_fbo_vbo,_frame_buffer_object, _fbo_texture;
 
     SDL_GLContext context = nullptr;
+
+    void _render_fbo() override;
+
+    void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
+
+    glm::vec2 _get_texture_size(Uint32 texture_id) const  override;
+
 };

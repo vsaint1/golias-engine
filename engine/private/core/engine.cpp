@@ -294,11 +294,12 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     glRenderer->set_context(glContext);
 
     OpenglShader* defaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    OpenglShader* textShader    = new OpenglShader("shaders/sdf_text.vert", "shaders/sdf_text.frag");
+    OpenglShader* defaultFboShader    = new OpenglShader("shaders/default_fbo.vert", "shaders/default_fbo.frag");
 
-    glRenderer->setup_shaders(defaultShader, textShader);
+    glRenderer->setup_shaders(defaultShader, defaultFboShader);
 
     glRenderer->initialize();
+
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
