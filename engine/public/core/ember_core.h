@@ -20,6 +20,14 @@
 #include "core/ember_utils.h"
 #include "core/system_info.h"
 
+/**
+ * @brief Mode of drawing commands.
+ *
+ */
+enum class DrawCommandMode {
+    LINES,
+    TRIANGLES
+};
 
 /**
  * @brief Types of draw commands supported by the renderer.
@@ -98,6 +106,7 @@ struct Batch {
     DrawCommandType type = DrawCommandType::NONE; ///< Type of draw command.
     int z_index          = 0;          ///< Render order.
     UberShader uber_shader = UberShader::none(); ///< Shader effects applied.
+    DrawCommandMode mode = DrawCommandMode::TRIANGLES;
 };
 
 
@@ -278,20 +287,43 @@ protected:
      * @brief Add a quad (textured or untextured) to the appropriate batch.
      */
     void _add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
-                           const glm::vec4& color, float rotation = 0.0f) {
+                           const glm::vec4& color, float rotation = 0.0f,bool is_filled = true) {
+
+
         Batch& batch     = batches[key];
         batch.texture_id = key.texture_id;
         batch.type       = key.type;
         batch.z_index    = key.z_index;
         uint32_t base    = batch.vertices.size();
+        batch.mode = is_filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
 
         const glm::vec2 center = glm::vec2(x + w * 0.5f, y + h * 0.5f);
 
-        batch.vertices.push_back({_rotate_point({x, y + h}, center, rotation), {u0, v1}, color});
-        batch.vertices.push_back({_rotate_point({x + w, y + h}, center, rotation), {u1, v1}, color});
-        batch.vertices.push_back({_rotate_point({x + w, y}, center, rotation), {u1, v0}, color});
-        batch.vertices.push_back({_rotate_point({x, y}, center, rotation), {u0, v0}, color});
-        batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2, base + 2, base + 3, base});
+        glm::vec2 p0 = _rotate_point({x,     y + h}, center, rotation); // top-left
+        glm::vec2 p1 = _rotate_point({x + w, y + h}, center, rotation); // top-right
+        glm::vec2 p2 = _rotate_point({x + w, y},     center, rotation); // bottom-right
+        glm::vec2 p3 = _rotate_point({x,     y},     center, rotation); // bottom-left
+
+        batch.vertices.push_back({p0, {u0, v1}, color});
+        batch.vertices.push_back({p1, {u1, v1}, color});
+        batch.vertices.push_back({p2, {u1, v0}, color});
+        batch.vertices.push_back({p3, {u0, v0}, color});
+
+        if (is_filled) {
+            // Two triangles
+            batch.indices.insert(batch.indices.end(), {
+                base, base + 1, base + 2,
+                base + 2, base + 3, base
+            });
+        } else {
+            // Outline (4 lines)
+            batch.indices.insert(batch.indices.end(), {
+                base, base + 1,
+                base + 1, base + 2,
+                base + 2, base + 3,
+                base + 3, base
+            });
+        }
     }
 
    virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1,1)) = 0;

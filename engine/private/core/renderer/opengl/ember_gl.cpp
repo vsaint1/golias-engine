@@ -26,21 +26,10 @@ void OpenglRenderer::_set_default_font(const std::string& font_name) {
 
 void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) {
 
-    if (filled) {
-        BatchKey key{0, z_index, DrawCommandType::RECT};
-        _add_quad_to_batch(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation);
-    } else {
-        float line_width = 1.0f;
-        glm::vec2 center(rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f);
-        glm::vec2 p1 = _rotate_point({rect.x, rect.y}, center, rotation);
-        glm::vec2 p2 = _rotate_point({rect.x + rect.width, rect.y}, center, rotation);
-        glm::vec2 p3 = _rotate_point({rect.x + rect.width, rect.y + rect.height}, center, rotation);
-        glm::vec2 p4 = _rotate_point({rect.x, rect.y + rect.height}, center, rotation);
-        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
-        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, rotation, color, z_index);
-        draw_line(p3.x, p3.y, p4.x, p4.y, line_width, rotation, color, z_index);
-        draw_line(p4.x, p4.y, p1.x, p1.y, line_width, rotation, color, z_index);
-    }
+    BatchKey key{0, z_index, DrawCommandType::RECT};
+
+    _add_quad_to_batch(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation, filled);
+
 }
 
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
@@ -128,8 +117,10 @@ void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float wid
 
     BatchKey key{0, z_index, DrawCommandType::LINE};
     Batch& batch  = batches[key];
+    batch.mode = DrawCommandMode::LINES;
     batch.z_index = z_index;
     uint32_t base = batch.vertices.size();
+
     batch.vertices.push_back({p1, {0.0f, 0.0f}, color});
     batch.vertices.push_back({p2, {0.0f, 0.0f}, color});
     batch.vertices.push_back({p3, {0.0f, 0.0f}, color});
@@ -141,24 +132,28 @@ void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float wid
 void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color,
                                    bool filled, int z_index) {
     glm::vec2 center = (glm::vec2(x1, y1) + glm::vec2(x2, y2) + glm::vec2(x3, y3)) / 3.0f;
-    glm::vec2 p1     = _rotate_point({x1, y1}, center, rotation);
-    glm::vec2 p2     = _rotate_point({x2, y2}, center, rotation);
-    glm::vec2 p3     = _rotate_point({x3, y3}, center, rotation);
+    glm::vec2 p1 = _rotate_point({x1, y1}, center, rotation);
+    glm::vec2 p2 = _rotate_point({x2, y2}, center, rotation);
+    glm::vec2 p3 = _rotate_point({x3, y3}, center, rotation);
+
+    BatchKey key{0, z_index, DrawCommandType::TRIANGLE, filled};
+    Batch& batch = batches[key];
+    batch.z_index = z_index;
+    batch.mode = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
+
+    uint32_t base = batch.vertices.size();
+    batch.vertices.push_back({p1, {0.0f, 0.0f}, color});
+    batch.vertices.push_back({p2, {0.0f, 0.0f}, color});
+    batch.vertices.push_back({p3, {0.0f, 0.0f}, color});
 
     if (filled) {
-        BatchKey key{0, z_index, DrawCommandType::TRIANGLE};
-        Batch& batch  = batches[key];
-        batch.z_index = z_index;
-        uint32_t base = batch.vertices.size();
-        batch.vertices.push_back({p1, {0.0f, 0.0f}, color});
-        batch.vertices.push_back({p2, {0.0f, 0.0f}, color});
-        batch.vertices.push_back({p3, {0.0f, 0.0f}, color});
         batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2});
     } else {
-        float line_width = 1.0f;
-        draw_line(p1.x, p1.y, p2.x, p2.y, line_width, rotation, color, z_index);
-        draw_line(p2.x, p2.y, p3.x, p3.y, line_width, rotation, color, z_index);
-        draw_line(p3.x, p3.y, p1.x, p1.y, line_width, rotation, color, z_index);
+        batch.indices.insert(batch.indices.end(), {
+            base, base + 1,
+            base + 1, base + 2,
+            base + 2, base
+        });
     }
 }
 
@@ -166,18 +161,24 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
                                  int segments, int z_index) {
 
     glm::vec2 center(center_x, center_y);
+
+    BatchKey key{0, z_index, DrawCommandType::CIRCLE, filled};
+    Batch& batch = batches[key];
+    batch.z_index = z_index;
+    batch.mode = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
+
+    uint32_t base = batch.vertices.size();
+
     if (filled) {
-        BatchKey key{0, z_index, DrawCommandType::CIRCLE};
-        Batch& batch  = batches[key];
-        batch.z_index = z_index;
-        uint32_t base = batch.vertices.size();
         batch.vertices.push_back({center, {0.5f, 0.5f}, color});
+
         for (int i = 0; i <= segments; ++i) {
             float angle = 2.0f * M_PI * i / segments;
-            float x     = center_x + radius * cos(angle);
-            float y     = center_y + radius * sin(angle);
+            float x = center_x + radius * cos(angle);
+            float y = center_y + radius * sin(angle);
             glm::vec2 p = _rotate_point({x, y}, center, rotation);
             batch.vertices.push_back({p, {0.5f + 0.5f * cos(angle), 0.5f + 0.5f * sin(angle)}, color});
+
             if (i > 0) {
                 batch.indices.push_back(base);
                 batch.indices.push_back(base + i);
@@ -185,14 +186,17 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
             }
         }
     } else {
-        // TODO: create circle outline drawing batch
         for (int i = 0; i < segments; ++i) {
-            float line_width = 1.0f;
-            float angle1 = 2.0f * M_PI * i / segments;
-            float angle2 = 2.0f * M_PI * (i + 1) / segments;
-            glm::vec2 p1 = _rotate_point({center_x + radius * cos(angle1), center_y + radius * sin(angle1)}, center, rotation);
-            glm::vec2 p2 = _rotate_point({center_x + radius * cos(angle2), center_y + radius * sin(angle2)}, center, rotation);
-            draw_line(p1.x, p1.y, p2.x, p2.y, line_width, 0.0f, color, z_index);
+            if (i == 0) {
+                for (int j = 0; j < segments; ++j) {
+                    float a = 2.0f * M_PI * j / segments;
+                    glm::vec2 p = _rotate_point({center_x + radius * cos(a), center_y + radius * sin(a)}, center, rotation);
+                    batch.vertices.push_back({p, {0.0f, 0.0f}, color});
+                }
+            }
+
+            batch.indices.push_back(base + i);
+            batch.indices.push_back(base + ((i + 1) % segments));
         }
     }
 }
@@ -443,7 +447,7 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
     delete[] data;
 
     _texture_sizes[texture->id] = glm::vec2(texture->width, texture->height);
-    textures[file_path] = std::move(texture);
+    textures[file_path]         = std::move(texture);
 
     return *(textures[file_path]);
 }
@@ -582,7 +586,11 @@ void OpenglRenderer::flush() {
             _set_effect_uniforms(key.uber_shader, tex_size);
         }
 
-        glDrawElements(GL_TRIANGLES, batch->indices.size(), GL_UNSIGNED_INT, 0);
+        if (batch->mode == DrawCommandMode::TRIANGLES) {
+            glDrawElements(GL_TRIANGLES, batch->indices.size(), GL_UNSIGNED_INT, 0);
+        } else {
+            glDrawElements(GL_LINES, batch->indices.size(), GL_UNSIGNED_INT, 0);
+        }
 
         if (use_texture) {
             glBindTexture(GL_TEXTURE_2D, 0);
