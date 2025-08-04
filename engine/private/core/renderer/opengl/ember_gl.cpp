@@ -442,7 +442,9 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
 
     delete[] data;
 
+    _texture_sizes[texture->id] = glm::vec2(texture->width, texture->height);
     textures[file_path] = std::move(texture);
+
     return *(textures[file_path]);
 }
 
@@ -486,17 +488,19 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
             rgba_buffer[4 * i + 3] = buffer[i];
         }
 
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        GLuint texture_id;
+        glGenTextures(1, &texture_id);
+        glBindTexture(GL_TEXTURE_2D, texture_id);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        Character character = {texture, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+        Character character = {texture_id, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
                                static_cast<GLuint>(face->glyph->advance.x)};
+
+        _texture_sizes[texture_id] = glm::vec2(w, h);
 
         font.characters.insert(std::pair<char, Character>(c, character));
     }
@@ -650,11 +654,17 @@ void OpenglRenderer::clear(const glm::vec4& color) {
 }
 
 glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const {
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    int width, height;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-    return {width, height};
+    // glBindTexture(GL_TEXTURE_2D, texture_id);
+    // int width, height;
+    // glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    // glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+    // return {width, height};
+
+    auto it = _texture_sizes.find(texture_id);
+    if (it != _texture_sizes.end()) {
+        return it->second;
+    }
+    return glm::vec2(1.0f); // fallback or assert
 }
 
 // TODO: this must be optimized, for now it is just a simple implementation

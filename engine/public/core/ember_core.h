@@ -233,18 +233,19 @@ public:
     virtual void unload_texture(Uint32 id) = 0;
 
 protected:
-    std::unordered_map<BatchKey, Batch> batches; ///< All batches by key.
+    HashMap<BatchKey, Batch> batches; ///< All batches by key.
 
     FT_Library ft = {}; ///< FreeType library instance.
 
-    std::unordered_map<std::string, Font> fonts; ///< Loaded fonts.
+    HashMap<std::string, Font> fonts; ///< Loaded fonts.
     std::string current_font_name;               ///< Currently selected font alias.
 
     glm::mat4 projection = glm::mat4(1.f);       ///< Projection matrix.
     std::vector<DrawCommand> commands;           ///< Commands to render this frame.
 
-    std::unordered_map<std::string, std::unique_ptr<Texture>> textures; ///< Cached textures.
+    HashMap<std::string, std::unique_ptr<Texture>> textures; ///< Cached textures.
 
+    HashMap<Uint32,glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
 
     /**
      * @brief Process a draw command.
