@@ -2,7 +2,8 @@
 
 #include <stb_image.h>
 
-OpenglRenderer::OpenglRenderer() {
+OpenglRenderer::OpenglRenderer()
+    : vao(0), vbo(0), ebo(0), shader_program(0), _fbo_vao(0), _fbo_vbo(0), _frame_buffer_object(0), _fbo_texture(0) {
 }
 
 OpenglRenderer::~OpenglRenderer() {
@@ -19,7 +20,7 @@ std::shared_ptr<Texture> OpenglRenderer::get_texture(const std::string& path) {
 }
 
 void OpenglRenderer::_set_default_font(const std::string& font_name) {
-    if (fonts.find(font_name) != fonts.end()) {
+    if (fonts.contains(font_name)) {
         current_font_name = font_name;
     } else {
         LOG_ERROR("Font not found: %s", font_name.c_str());
@@ -57,7 +58,7 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
 
     const float font_scale    = font.font_size * scale;
     const float advance_scale = scale / 64.0f;
-    const bool needs_rotation = std::abs(rotation) > 1e-6f;
+    const bool needs_rotation = std::abs(rotation) > FLT_MAX;
 
     std::vector<CharData> char_data;
     char_data.reserve(text.length());
@@ -293,7 +294,7 @@ void OpenglRenderer::initialize() {
         return;
     }
 
-    projection = glm::ortho(0.0f, (float) Viewport[0], (float) Viewport[1], 0.0f, -1.0f, 1.0f);
+    projection = glm::ortho(0.0f, static_cast<float>(Viewport[0]), static_cast<float>(Viewport[1]), 0.0f, -1.0f, 1.0f);
 #pragma endregion
 
 
@@ -350,7 +351,7 @@ void OpenglRenderer::initialize() {
 #pragma endregion
 }
 
-void OpenglRenderer::resize_viewport(int view_width, int view_height) {
+void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {
     Viewport[0] = view_width;
     Viewport[1] = view_height;
     glViewport(0, 0, view_width, view_height);
@@ -444,6 +445,8 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
         LOG_INFO("Loaded texture with ID: %d, path: %s", texture->id, file_path.c_str());
         LOG_INFO(" > Width %d, Height %d", texture->width, texture->height);
         LOG_INFO(" > Num. Channels %d", nr_channels);
+    }else {
+        LOG_WARN("Couldn't load texture from file: %s", file_path.c_str());
     }
 
     delete[] data;
@@ -560,6 +563,7 @@ void OpenglRenderer::flush() {
     });
 
     _default_shader->bind();
+
     _default_shader->set_value("projection", projection);
 
     glBindVertexArray(vao);
@@ -625,35 +629,39 @@ void OpenglRenderer::present() {
 }
 
 void OpenglRenderer::_render_fbo() {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, _frame_buffer_object);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
     int window_width, window_height;
     SDL_GetWindowSize(Window, &window_width, &window_height);
 
-    float target_aspect = static_cast<float>(Viewport[0]) / Viewport[1];
-    float window_aspect = static_cast<float>(window_width) / window_height;
 
-    int blit_width, blit_height;
-    int blit_x, blit_y;
+    float target_aspect = (float)Viewport[0] / Viewport[1];
+    float window_aspect = (float)window_width / window_height;
+
+    int draw_x = 0, draw_y = 0;
+    int draw_width = window_width, draw_height = window_height;
 
     if (window_aspect > target_aspect) {
-        blit_height = window_height;
-        blit_width  = static_cast<int>(window_height * target_aspect);
-        blit_x      = (window_width - blit_width) / 2;
-        blit_y      = 0;
+        draw_width = static_cast<int>(window_height * target_aspect);
+        draw_x = (window_width - draw_width) / 2;
     } else {
-        blit_width  = window_width;
-        blit_height = static_cast<int>(window_width / target_aspect);
-        blit_x      = 0;
-        blit_y      = (window_height - blit_height) / 2;
+        draw_height = static_cast<int>(window_width / target_aspect);
+        draw_y = (window_height - draw_height) / 2;
     }
 
-    glBlitFramebuffer(0, 0, Viewport[0], Viewport[1], blit_x, blit_y, blit_x + blit_width, blit_y + blit_height, GL_COLOR_BUFFER_BIT,
-                      GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(draw_x,draw_y, draw_width, draw_height);
 
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    _fbo_shader->bind();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, _fbo_texture);
+
+    glBindVertexArray(_fbo_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+
 }
 
 void OpenglRenderer::clear(const glm::vec4& color) {
@@ -666,29 +674,29 @@ void OpenglRenderer::clear(const glm::vec4& color) {
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-glm::vec2 OpenglRenderer::_get_texture_size(Uint32 texture_id) const {
-    // glBindTexture(GL_TEXTURE_2D, texture_id);
-    // int width, height;
-    // glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    // glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-    // return {width, height};
+glm::vec2 OpenglRenderer::_get_texture_size(const Uint32 texture_id) const {
 
     auto it = _texture_sizes.find(texture_id);
+
     if (it != _texture_sizes.end()) {
         return it->second;
     }
+
     return glm::vec2(1.0f); // fallback or assert
 }
 
 // TODO: this must be optimized, for now it is just a simple implementation
 void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) {
-    glUniform1i(glGetUniformLocation(shader_program, "use_outline"), uber_shader.use_outline);
-    glUniform1i(glGetUniformLocation(shader_program, "use_shadow"), uber_shader.use_shadow);
-    glUniform4fv(glGetUniformLocation(shader_program, "outline_color"), 1, &uber_shader.outline_color[0]);
-    glUniform4fv(glGetUniformLocation(shader_program, "shadow_color"), 1, &uber_shader.shadow_color[0]);
-    glUniform1f(glGetUniformLocation(shader_program, "outline_width"), uber_shader.outline_width);
-    glUniform2fv(glGetUniformLocation(shader_program, "shadow_offset"), 1, &uber_shader.shadow_offset[0]);
-    glUniform2fv(glGetUniformLocation(shader_program, "texture_size"), 1, glm::value_ptr(texture_size));
+    _default_shader->set_value("use_outline", uber_shader.use_outline);
+    _default_shader->set_value("outline_color", uber_shader.outline_color);
+    _default_shader->set_value("outline_width", uber_shader.outline_width);
+
+    _default_shader->set_value("use_shadow", uber_shader.use_shadow);
+    _default_shader->set_value("shadow_color", uber_shader.shadow_color);
+    _default_shader->set_value("shadow_offset", uber_shader.shadow_offset);
+
+    _default_shader->set_value("texture_size", texture_size);
+
 }
 
 void OpenglRenderer::unload_font(const Font& font) {

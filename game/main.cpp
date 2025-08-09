@@ -2,14 +2,16 @@
 #include <SDL3/SDL_main.h>
 
 
-int SCREEN_WIDTH  = 1280;
-int SCREEN_HEIGHT = 720;
+int VIRTUAL_SCREEN_WIDTH  = 1280;
+int VIRTUAL_SCREEN_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize("Example - with FBO", SCREEN_WIDTH, SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->initialize("Example - with FBO", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
+
+    GEngine->get_renderer()->resize_viewport(320,180);
 
 
     if (!GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", "mine", 48)) {
@@ -53,7 +55,6 @@ int main(int argc, char* argv[]) {
     root->ready();
     root->print_tree();
 
-    GEngine->get_renderer()->resize_viewport(SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 
     bool is_filled = true;
 
