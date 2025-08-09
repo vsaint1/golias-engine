@@ -19,7 +19,7 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
 
     if (type == RendererType::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
-        return nullptr;
+        return _create_renderer_metal(window,view_width,view_height);
     }
 
 
@@ -28,6 +28,18 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
     return nullptr;
 }
 
+void Engine::set_vsync(const bool enabled) {
+
+    if (_renderer->Type == RendererType::OPENGL) {
+        SDL_GL_SetSwapInterval(enabled ? 1 : 0);
+    }
+    else if (_renderer->Type == RendererType::METAL) {
+        // TODO
+    }
+
+    _vsync = enabled;
+
+}
 
 bool Engine::initialize(const char* title, int width, int height, RendererType type, Uint64 flags) {
 
@@ -195,6 +207,16 @@ void Engine::shutdown() {
     close_audio_engine();
 
     SDL_Quit();
+}
+
+bool Engine::get_vsync() const {
+    return _vsync;
+}
+
+Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
+    LOG_ERROR("Not implemented");
+
+    return nullptr;
 }
 
 
