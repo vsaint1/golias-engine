@@ -5,7 +5,7 @@ class Sprite2D final : public Node2D {
 
 public:
 
-    explicit Sprite2D(const Texture& tex, const Color col = Color(255, 255, 255, 255), const glm::vec2 size = {0, 0})
+    explicit Sprite2D(const std::weak_ptr<Texture>& tex, const Color col = Color(255, 255, 255, 255), const glm::vec2 size = {0, 0})
       : _texture(tex), _size(size), _color(col) {
     }
 
@@ -22,7 +22,7 @@ public:
     void input(const InputManager* input) override;
 
 private:
-    Texture _texture;
+    std::weak_ptr<Texture> _texture;
     glm::vec2 _size          = glm::vec2(0.f);
     Color _color             = {255, 255, 255, 255};
     Rect2 _source = {};

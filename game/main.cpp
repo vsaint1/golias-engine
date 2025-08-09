@@ -22,8 +22,8 @@ int main(int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    Texture& sample_texture  = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
-    Texture& sample_texture2 = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
+    auto sample_texture  = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
+    auto sample_texture2 = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
 
     bool quit = false;
     SDL_Event e;
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
         //                                           {0, 0, 64, 64}, 0);
         // }
 
-        GEngine->get_renderer()->draw_texture(sample_texture, {50.f, 400.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
+        GEngine->get_renderer()->draw_texture(sample_texture.get(), {50.f, 400.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
                                               0, UberShader::shadow_only());
         // GEngine->get_renderer()->draw_texture(sample_texture2, {400, 200, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {}, 5,UberShader::shadow_only());
 

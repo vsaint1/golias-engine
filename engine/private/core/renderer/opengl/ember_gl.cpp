@@ -8,11 +8,13 @@ OpenglRenderer::OpenglRenderer() {
 OpenglRenderer::~OpenglRenderer() {
 }
 
-Texture& OpenglRenderer::get_texture(const std::string& path) {
+std::shared_ptr<Texture> OpenglRenderer::get_texture(const std::string& path) {
     auto it = textures.find(path);
+
     if (it != textures.end()) {
-        return *(it->second);
+        return it->second;
     }
+
     return load_texture(path);
 }
 
@@ -388,15 +390,15 @@ void OpenglRenderer::destroy() {
     _fbo_shader = nullptr;
 }
 
-Texture& OpenglRenderer::load_texture(const std::string& file_path) {
+std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_path) {
 
     auto it = textures.find(file_path);
 
     if (it != textures.end()) {
-        return *(it->second);
+        return it->second;
     }
 
-    auto texture = std::make_unique<Texture>();
+    auto texture = std::make_shared<Texture>();
 
     glGenTextures(1, &texture->id);
     int nr_channels = 4;
@@ -446,10 +448,12 @@ Texture& OpenglRenderer::load_texture(const std::string& file_path) {
 
     delete[] data;
 
-    _texture_sizes[texture->id] = glm::vec2(texture->width, texture->height);
-    textures[file_path]         = std::move(texture);
 
-    return *(textures[file_path]);
+    // ! HACK_FIX: Cache texture sizes by ID ( glGetTexLevelParameteriv doesn't work on opengles )
+    _texture_sizes[texture->id] = glm::vec2(texture->width, texture->height);
+    auto [tex, _] = textures.emplace(file_path, std::move(texture));
+
+    return tex->second;
 }
 
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
@@ -524,19 +528,20 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 }
 
 
-void OpenglRenderer::draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
+void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
                                   const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
+
 
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
 
     if (!src_rect.is_zero()) {
-        u0 = src_rect.x / texture.width;
-        v0 = src_rect.y / texture.height;
-        u1 = (src_rect.x + src_rect.width) / texture.width;
-        v1 = (src_rect.y + src_rect.height) / texture.height;
+        u0 = src_rect.x / texture->width;
+        v0 = src_rect.y / texture->height;
+        u1 = (src_rect.x + src_rect.width) / texture->width;
+        v1 = (src_rect.y + src_rect.height) / texture->height;
     }
 
-    BatchKey key{texture.id, z_index, DrawCommandType::TEXTURE, uber_shader};
+    BatchKey key{texture->id, z_index, DrawCommandType::TEXTURE, uber_shader};
     _add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
 }
 

@@ -1,11 +1,6 @@
 #pragma once
 
-#include "core/component/camera.h"
-#include "core/component/circle.h"
-#include "core/component/label.h"
-#include "core/component/node.h"
-#include "core/component/polygon.h"
-#include "core/component/sprite_node.h"
+#include "core/component/components.h"
 #include "core/text_parser.h"
 
 #pragma region OPENGL/ES
@@ -24,23 +19,20 @@
  * @brief Mode of drawing commands.
  *
  */
-enum class DrawCommandMode {
-    LINES,
-    TRIANGLES
-};
+enum class DrawCommandMode { LINES, TRIANGLES };
 
 /**
  * @brief Types of draw commands supported by the renderer.
  */
 enum class DrawCommandType {
-    NONE,       ///< No command.
-    TEXTURE,    ///< Draw textured quad.
-    TEXT,       ///< Draw text.
-    LINE,       ///< Draw line.
-    RECT,       ///< Draw rectangle.
-    TRIANGLE,   ///< Draw triangle.
-    CIRCLE,     ///< Draw circle.
-    POLYGON     ///< Draw polygon.
+    NONE, ///< No command.
+    TEXTURE, ///< Draw textured quad.
+    TEXT, ///< Draw text.
+    LINE, ///< Draw line.
+    RECT, ///< Draw rectangle.
+    TRIANGLE, ///< Draw triangle.
+    CIRCLE, ///< Draw circle.
+    POLYGON ///< Draw polygon.
 };
 
 /**
@@ -48,28 +40,29 @@ enum class DrawCommandType {
  */
 struct DrawCommand {
     DrawCommandType type = DrawCommandType::NONE; ///< Type of draw command.
-    std::vector<Vertex> vertices;                 ///< Vertex data.
-    std::vector<uint32_t> indices;                ///< Index buffer.
-    Uint32 texture_id   = 0;                      ///< Texture used (if any).
-    float line_width    = 1.0f;                   ///< Line thickness (if applicable).
-    int circle_segments = 32;                     ///< Number of segments for circles.
-    int z_index         = 0;                      ///< Z-index (render order).
+    std::vector<Vertex> vertices; ///< Vertex data.
+    std::vector<uint32_t> indices; ///< Index buffer.
+    Uint32 texture_id   = 0; ///< Texture used (if any).
+    float line_width    = 1.0f; ///< Line thickness (if applicable).
+    int circle_segments = 32; ///< Number of segments for circles.
+    int z_index         = 0; ///< Z-index (render order).
 
     /**
      * @brief Constructs a DrawCommand with type and optional z-index.
      * @param t Type of command.
      * @param z Z-index (default = 0).
      */
-    explicit DrawCommand(DrawCommandType t, int z = 0) : type(t), z_index(z) {}
+    explicit DrawCommand(DrawCommandType t, int z = 0) : type(t), z_index(z) {
+    }
 };
 
 /**
  * @brief Used to batch draw commands by shared properties.
  */
 struct BatchKey {
-    Uint32 texture_id;        ///< Texture used.
-    int z_index;              ///< Z-index.
-    DrawCommandType type;     ///< Type of draw command.
+    Uint32 texture_id; ///< Texture used.
+    int z_index; ///< Z-index.
+    DrawCommandType type; ///< Type of draw command.
     UberShader uber_shader = UberShader::none(); ///< Shader used for this batch.
 
     /**
@@ -83,32 +76,29 @@ struct BatchKey {
 /**
  * @brief Hash function for BatchKey to use in unordered_map.
  */
-namespace std {
-    template <>
-    struct hash<BatchKey> {
-        std::size_t operator()(const BatchKey& k) const {
-            std::size_t h1 = std::hash<Uint32>()(k.texture_id);
-            std::size_t h2 = std::hash<int>()(k.z_index);
-            std::size_t h3 = std::hash<int>()(static_cast<int>(k.type));
-            std::size_t combined = h1 ^ (h2 << 1);
-            return (combined >> 1) ^ h3;
-        }
-    };
-}
+template <>
+struct std::hash<BatchKey> {
+    std::size_t operator()(const BatchKey& k) const {
+        std::size_t h1       = std::hash<Uint32>()(k.texture_id);
+        std::size_t h2       = std::hash<int>()(k.z_index);
+        std::size_t h3       = std::hash<int>()(static_cast<int>(k.type));
+        std::size_t combined = h1 ^ (h2 << 1);
+        return (combined >> 1) ^ h3;
+    }
+};
 
 /**
  * @brief A group of vertices and indices that can be rendered together.
  */
 struct Batch {
-    std::vector<Vertex> vertices;      ///< Batched vertex data.
-    std::vector<uint32_t> indices;     ///< Batched index data.
-    Uint32 texture_id    = 0;          ///< Texture used in this batch.
-    DrawCommandType type = DrawCommandType::NONE; ///< Type of draw command.
-    int z_index          = 0;          ///< Render order.
+    std::vector<Vertex> vertices; ///< Batched vertex data.
+    std::vector<uint32_t> indices; ///< Batched index data.
+    Uint32 texture_id      = 0; ///< Texture used in this batch.
+    DrawCommandType type   = DrawCommandType::NONE; ///< Type of draw command.
+    int z_index            = 0; ///< Render order.
     UberShader uber_shader = UberShader::none(); ///< Shader effects applied.
-    DrawCommandMode mode = DrawCommandMode::TRIANGLES;
+    DrawCommandMode mode   = DrawCommandMode::TRIANGLES;
 };
-
 
 
 /**
@@ -118,9 +108,9 @@ class Renderer {
 public:
     virtual ~Renderer() = default;
 
-    int Viewport[2] = {800, 600};     ///< Viewport size.
-    SDL_Window* Window = nullptr;     ///< SDL Window.
-    RendererType Type = RendererType::OPENGL; ///< Type of renderer.
+    int Viewport[2]    = {800, 600}; ///< Viewport size.
+    SDL_Window* Window = nullptr; ///< SDL Window.
+    RendererType Type  = RendererType::OPENGL; ///< Default Type of renderer.
 
     /** @brief Initialize the renderer and its resources. */
     virtual void initialize() = 0;
@@ -135,26 +125,26 @@ public:
     virtual bool load_font(const std::string& font_path, const std::string& font_alias, int font_size = 48) = 0;
 
 
-
     /**
      * @brief Load a texture from disk.
      * @param path Path to image file.
      * @return Reference to the loaded Texture.
      */
-    virtual Texture& load_texture(const std::string& path) = 0;
+    virtual std::shared_ptr<Texture> load_texture(const std::string& path) = 0;
 
     /**
      * @brief Get a previously loaded texture.
      * @param path Path or alias of the texture.
      * @return Reference to the Texture.
      */
-    virtual Texture& get_texture(const std::string& path) = 0;
+    virtual std::shared_ptr<Texture> get_texture(const std::string& path) = 0;
 
     /**
      * @brief Draw a textured quad.
      */
-    virtual void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
-                              const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0,const UberShader& uber_shader = UberShader::none()) = 0;
+    virtual void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
+                              const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0,
+                              const UberShader& uber_shader = UberShader::none()) = 0;
 
     /**
      * @brief Draw a rectangle (filled or outlined).
@@ -165,12 +155,14 @@ public:
      * @brief Draw text to screen.
      */
     virtual void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1,const UberShader& uber_shader = UberShader::none()) = 0;
+                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1,
+                           const UberShader& uber_shader = UberShader::none()) = 0;
 
     /**
      * @brief Draw a line.
      */
-    virtual void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index = 0) = 0;
+    virtual void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color,
+                           int z_index = 0) = 0;
 
     /**
      * @brief Draw a triangle.
@@ -187,7 +179,8 @@ public:
     /**
      * @brief Draw a polygon.
      */
-    virtual void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled = true, int z_index = 0) = 0;
+    virtual void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled = true,
+                              int z_index = 0) = 0;
 
 
     /**
@@ -247,14 +240,14 @@ protected:
     FT_Library ft = {}; ///< FreeType library instance.
 
     HashMap<std::string, Font> fonts; ///< Loaded fonts.
-    std::string current_font_name;               ///< Currently selected font alias.
+    std::string current_font_name; ///< Currently selected font alias.
 
-    glm::mat4 projection = glm::mat4(1.f);       ///< Projection matrix.
-    std::vector<DrawCommand> commands;           ///< Commands to render this frame.
+    glm::mat4 projection = glm::mat4(1.f); ///< Projection matrix.
+    std::vector<DrawCommand> commands; ///< Commands to render this frame.
 
-    HashMap<std::string, std::unique_ptr<Texture>> textures; ///< Cached textures.
+    HashMap<std::string, std::shared_ptr<Texture>> textures; ///< Cached textures.
 
-    HashMap<Uint32,glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
+    HashMap<Uint32, glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
 
     /**
      * @brief Process a draw command.
@@ -270,13 +263,7 @@ protected:
     /**
      * @brief Rotate a point around a center point.
      */
-    glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation) {
-        float s = sin(rotation);
-        float c = cos(rotation);
-        glm::vec2 rel = point - center;
-        glm::vec2 rot_rel = glm::vec2(rel.x * c - rel.y * s, rel.x * s + rel.y * c);
-        return center + rot_rel;
-    }
+    glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation);
 
     /**
     * @brief Render the current frame buffer.
@@ -287,46 +274,9 @@ protected:
      * @brief Add a quad (textured or untextured) to the appropriate batch.
      */
     void _add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
-                           const glm::vec4& color, float rotation = 0.0f,bool is_filled = true) {
+                            const glm::vec4& color, float rotation = 0.0f, bool is_filled = true);
 
+    virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;
 
-        Batch& batch     = batches[key];
-        batch.texture_id = key.texture_id;
-        batch.type       = key.type;
-        batch.z_index    = key.z_index;
-        uint32_t base    = batch.vertices.size();
-        batch.mode = is_filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
-
-        const glm::vec2 center = glm::vec2(x + w * 0.5f, y + h * 0.5f);
-
-        glm::vec2 p0 = _rotate_point({x,     y + h}, center, rotation); // top-left
-        glm::vec2 p1 = _rotate_point({x + w, y + h}, center, rotation); // top-right
-        glm::vec2 p2 = _rotate_point({x + w, y},     center, rotation); // bottom-right
-        glm::vec2 p3 = _rotate_point({x,     y},     center, rotation); // bottom-left
-
-        batch.vertices.push_back({p0, {u0, v1}, color});
-        batch.vertices.push_back({p1, {u1, v1}, color});
-        batch.vertices.push_back({p2, {u1, v0}, color});
-        batch.vertices.push_back({p3, {u0, v0}, color});
-
-        if (is_filled) {
-            // Two triangles
-            batch.indices.insert(batch.indices.end(), {
-                base, base + 1, base + 2,
-                base + 2, base + 3, base
-            });
-        } else {
-            // Outline (4 lines)
-            batch.indices.insert(batch.indices.end(), {
-                base, base + 1,
-                base + 1, base + 2,
-                base + 2, base + 3,
-                base + 3, base
-            });
-        }
-    }
-
-   virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1,1)) = 0;
-
-   virtual  glm::vec2 _get_texture_size(Uint32 texture_id) const  = 0;
+    virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
 };

@@ -1,6 +1,5 @@
 #pragma once
 #include "core/engine_structs.h"
-#include <unordered_set>
 
 enum class InputState {
     RELEASED = 0,
