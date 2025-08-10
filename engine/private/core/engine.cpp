@@ -71,7 +71,7 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
 
 #pragma region APP_METADATA
     // TODO: Get Metadata from config file
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
     SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "0", SDL_HINT_OVERRIDE);
     SDL_SetAppMetadata("Ember Engine", "1.0", "com.ember.engine");
 

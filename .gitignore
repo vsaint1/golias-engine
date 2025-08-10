@@ -12,8 +12,8 @@ build/
 
 .idea/
 
-assets/fonts
+res/fonts
 
-assets/sounds
+res/sounds
 
-assets/sprites
+res/sprites

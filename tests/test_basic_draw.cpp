@@ -23,7 +23,7 @@ SDL_AppResult SDL_AppInit(void** app_state, int argc, char** argv) {
     camera.transform.position = glm::vec2(0.f, 0.f);
     camera.transform.rotation = 0.0f;
 
-    // assets in examples/assets
+    // res in examples/res
     mine_font = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
     sans_font = GEngine->get_renderer()->load_font("fonts/OpenSans.ttf", 24);
 

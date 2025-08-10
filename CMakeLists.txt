@@ -20,11 +20,11 @@ set(APP_ORIENTATION "LandscapeLeft")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
-set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/assets)
+set(ASSETS_FOLDER ${CMAKE_SOURCE_DIR}/res)
 
 if(NOT EXISTS ${ASSETS_FOLDER})
-    message(STATUS "Copy the assets default assets folder to ${ASSETS_FOLDER}")
-    message(FATAL_ERROR "Assets folder not found: ${ASSETS_FOLDER}")
+    message(STATUS "Copy the default resources folder to ${ASSETS_FOLDER}")
+    message(FATAL_ERROR "Resources folder not found: ${ASSETS_FOLDER}")
 endif()
 
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
@@ -32,7 +32,7 @@ include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
 add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
 
-# [iOs/Emscripten] - disable shared libs
+# [iOS/Emscripten] - disable shared libs
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
     set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
     set(SDL_SHARED OFF)
@@ -111,7 +111,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
 
 
-    set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
+    set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/res")
 
     file(GLOB_RECURSE IOS_FILES "engine/private/core/platform/ios/*.mm")
 
@@ -142,7 +142,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
             XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
     )
 
-    # Ensure assets are copied into the bundle
+    # Ensure res are copied into the bundle
     set_source_files_properties(${ASSETS_PATH} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
     install(DIRECTORY ${ASSETS_PATH} DESTINATION "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app/Contents/Resources")
@@ -167,7 +167,7 @@ endif()
 if(APPLE AND BUILD_SHARED_LIBS)
 
     message(STATUS "BUILD MACOS")
-    set(RESOURCES "${CMAKE_SOURCE_DIR}/assets")
+    set(RESOURCES "${CMAKE_SOURCE_DIR}/res")
     file(GLOB_RECURSE MAC_FILES "engine/private/core/platform/macos/*.mm")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} ${MAC_FILES} )
@@ -193,7 +193,7 @@ if(MSVC)
 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+            ${CMAKE_SOURCE_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
 
@@ -218,7 +218,7 @@ if(EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@/assets")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
 
 
 endif()
@@ -235,7 +235,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets)
+            ${CMAKE_SOURCE_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res)
 
 endif()
 

@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
 
     bool is_filled = true;
 
+
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) {
@@ -73,9 +74,9 @@ int main(int argc, char* argv[]) {
         }
 
 
-        angle += 0.01f;
-        if (angle > 2 * M_PI) {
-            angle -= 2 * M_PI;
+        angle += 1.f;
+        if (glm::radians(angle) > glm::two_pi<float>()) {
+            angle = 0.f;
         }
 
 
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) {
 
         root->draw(GEngine->get_renderer());
 
-        GEngine->get_renderer()->draw_rect({100, 100, 200, 150}, 0.0f, glm::vec4(1.0f, 0.5f, 0.2f, 1.0f), is_filled, 1);
+        GEngine->get_renderer()->draw_rect({100, 100, 200, 150}, 0, glm::vec4(1.0f, 0.5f, 0.2f, 1.0f), is_filled, 1);
         GEngine->get_renderer()->draw_circle(400, 300, 0, 80, glm::vec4(0.2f, 0.8f, 0.2f, 1.0f), is_filled, 128, 2);
         GEngine->get_renderer()->draw_triangle(500, 100, 600, 200, 450, 200,0, glm::vec4(0.8f, 0.2f, 0.8f, 1.0f), is_filled, 3);
         GEngine->get_renderer()->draw_line(50, 50, 750, 550, 3.0f,0, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 5);
