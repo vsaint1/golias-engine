@@ -39,9 +39,9 @@ public:
 
     void destroy() override;
 
-    Texture& load_texture(const std::string& file_path) override;
+    std::shared_ptr<Texture> load_texture(const std::string& file_path) override;
 
-    Texture& get_texture(const std::string& path) override;
+    std::shared_ptr<Texture> get_texture(const std::string& path) override;
 
     bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
@@ -51,7 +51,7 @@ public:
 
     void unload_texture(Uint32 id) override;
 
-    void draw_texture(const Texture& texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
+    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
                       int z_index, const UberShader& uber_shader) override;
 
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;

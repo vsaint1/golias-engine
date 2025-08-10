@@ -1,8 +1,7 @@
 #pragma once
 
 #include "imports.h"
-#include <freetype/freetype.h>
-#include <freetype/ftstroke.h>
+
 
 
 // Core struct (engine stuff) - 0.0.1

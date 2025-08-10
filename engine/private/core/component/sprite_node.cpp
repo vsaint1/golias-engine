@@ -15,8 +15,15 @@ void Sprite2D::set_color(const Color& col) {
 }
 
 void Sprite2D::ready() {
+
+    const auto tex = _texture.lock();
+
+    if (!tex) {
+        LOG_ERROR("Failed to access texture in Sprite2D");
+    }
+
     if (_size.x <= 0 || _size.y <= 0) {
-        _size = {static_cast<float>(_texture.width), static_cast<float>(_texture.height)};
+        _size = {static_cast<float>(tex->width), static_cast<float>(tex->height)};
     }
 
     const auto position = get_global_transform().position;
@@ -38,12 +45,17 @@ void Sprite2D::draw(Renderer* renderer) {
     _dest.x = transform.position.x;
     _dest.y = transform.position.y;
 
-    SDL_assert(_texture.id > 0);
+    if (const auto tex = _texture.lock()) {
+        SDL_assert(tex->id > 0);
 
-    if (_use_region) {
-        renderer->draw_texture(_texture,_dest,transform.rotation,glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), _source, _z_index);
+        if (_use_region) {
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), _source, _z_index);
+        } else {
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), {}, _z_index);
+        }
+
     } else {
-        renderer->draw_texture(_texture, _dest, transform.rotation, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {}, 5);
+        LOG_ERROR("Failed to access texture in Sprite2D, it might have been unloaded or not set.");
     }
 
     Node2D::draw(renderer);

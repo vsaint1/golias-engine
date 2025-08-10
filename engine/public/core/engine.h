@@ -92,6 +92,24 @@ public:
     void shutdown();
 
     /**
+        * @brief Get vsync status.
+        *
+        * @details  Returns true if vertical synchronization (VSync) is enabled, false otherwise.
+        *
+        * @version 1.0.0
+        */
+    [[nodiscard]] bool get_vsync() const;
+
+    /**
+     * @brief Disable or enable vertical synchronization (VSync).
+     *
+     * @details by default, VSync is disabled.
+     *
+     * @version 1.0.0
+     */
+    void set_vsync(bool enabled);
+
+    /**
      * @brief Initialize the engine: SDL window, renderer, audio, fonts.
      *
      * - Creates Window
@@ -114,6 +132,8 @@ private:
     Renderer* _renderer = nullptr;
     InputManager* _input_manager = nullptr;
     TimeManager* _time_manager = nullptr;
+
+    bool _vsync = true;
 
     /**
      * @brief Create a renderer instance.

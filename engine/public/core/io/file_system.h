@@ -4,22 +4,22 @@
 
 /*!
 
-   @brief Loads a given file from `assets` folder
-   - The file path is relative to `assets` folder
+   @brief Loads a given file from `res` folder
+   - The file path is relative to `res` folder
 
    @version 0.0.1
-   @param file_path the path to the file in `assets` folder
+   @param file_path the path to the file in `res` folder
    @return File content as `string`
 */
 std::string _load_assets_file(const std::string& file_path);
 
 /*!
 
-   @brief Loads a given file from `assets` folder into memory
-   - The file path is relative to `assets` folder
+   @brief Loads a given file from `res` folder into memory
+   - The file path is relative to `res` folder
 
    @version 0.0.2
-   @param file_path the path to the file in `assets` folder
+   @param file_path the path to the file in `res` folder
    @return File content as `vector<char>`
 */
 std::vector<char> _load_file_into_memory(const std::string& file_path);
