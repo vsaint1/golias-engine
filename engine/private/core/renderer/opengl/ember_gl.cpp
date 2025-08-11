@@ -32,13 +32,10 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
     BatchKey key{0, z_index, DrawCommandType::RECT};
 
     _add_quad_to_batch(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation, filled);
-
 }
 
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                               const std::string& font_alias, int z_index, int ft_size, const UberShader& uber_shader) {
-
-
+                               const std::string& font_alias, int z_index, const UberShader& uber_shader, int ft_size) {
     const std::string& use_font_name = font_alias.empty() ? current_font_name : font_alias;
     if (use_font_name.empty()) {
         return;
@@ -51,46 +48,47 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
 
     const Font& font  = font_it->second;
     const auto tokens = TextToken::parse_bbcode(text, color);
-
     if (tokens.empty()) {
         return;
     }
 
-    const float font_scale    = font.font_size * scale;
-    const float advance_scale = scale / 64.0f;
-    const bool needs_rotation = std::abs(rotation) > FLT_MAX;
+    float size_ratio    = ft_size > 0 ? static_cast<float>(ft_size) / static_cast<float>(font.font_size) : 1.0f;
+    float font_scale    = scale * size_ratio;
+    bool needs_rotation = (rotation != 0.0f);
 
     std::vector<CharData> char_data;
-    char_data.reserve(text.length());
+    char_data.reserve(text.size());
 
     float xpos = x, ypos = y;
     float min_x = x, max_x = x, min_y = y, max_y = y;
 
     for (const auto& token : tokens) {
-        for (char c : token.text) {
+        const glm::vec4& tcolor = token.color;
+        for (unsigned char c : token.text) {
             if (c == '\n') {
                 xpos = x;
-                ypos += font.font_size * scale;
+                ypos += font.font_size * font_scale;
                 continue;
             }
+
             auto it = font.characters.find(c);
             if (it == font.characters.end()) {
                 continue;
             }
 
             const Character& ch = it->second;
-            float w             = ch.size.x * scale;
-            float h             = ch.size.y * scale;
-            float x0            = xpos + ch.bearing.x * scale;
-            float y0            = ypos + (font.font_size - ch.bearing.y) * scale;
+            float w             = ch.size.x * font_scale;
+            float h             = ch.size.y * font_scale;
+            float x0            = xpos + ch.bearing.x * font_scale;
+            float y0            = ypos + (font.font_size - ch.bearing.y) * font_scale;
 
             min_x = std::min(min_x, x0);
             max_x = std::max(max_x, x0 + w);
             min_y = std::min(min_y, y0);
             max_y = std::max(max_y, y0 + h);
 
-            char_data.push_back({x0, y0, w, h, &ch, &token.color});
-            xpos += (ch.advance >> 6) * scale;
+            char_data.push_back({x0, y0, w, h, &ch, &tcolor});
+            xpos += (ch.advance >> 6) * font_scale;
         }
     }
 
@@ -98,13 +96,12 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
         return;
     }
 
-    const glm::vec2 text_center = needs_rotation ? glm::vec2((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f) : glm::vec2(0.0f);
+    glm::vec2 text_center = needs_rotation ? glm::vec2((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f) : glm::vec2(0.0f);
 
+    BatchKey current_key{};
     for (const auto& data : char_data) {
         glm::vec2 glyph_pos = needs_rotation ? _rotate_point({data.x0, data.y0}, text_center, rotation) : glm::vec2(data.x0, data.y0);
-
-
-        BatchKey current_key{data.ch->texture_id, z_index, DrawCommandType::TEXT, uber_shader};
+        current_key         = {data.ch->texture_id, z_index, DrawCommandType::TEXT, uber_shader};
         _add_quad_to_batch(current_key, glyph_pos.x, glyph_pos.y, data.w, data.h, 0, 0, 1, 1, *(data.token_color), 0.0f);
     }
 }
@@ -120,7 +117,7 @@ void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float wid
 
     BatchKey key{0, z_index, DrawCommandType::LINE};
     Batch& batch  = batches[key];
-    batch.mode = DrawCommandMode::LINES;
+    batch.mode    = DrawCommandMode::LINES;
     batch.z_index = z_index;
     uint32_t base = batch.vertices.size();
 
@@ -135,14 +132,14 @@ void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float wid
 void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, float rotation, const glm::vec4& color,
                                    bool filled, int z_index) {
     glm::vec2 center = (glm::vec2(x1, y1) + glm::vec2(x2, y2) + glm::vec2(x3, y3)) / 3.0f;
-    glm::vec2 p1 = _rotate_point({x1, y1}, center, rotation);
-    glm::vec2 p2 = _rotate_point({x2, y2}, center, rotation);
-    glm::vec2 p3 = _rotate_point({x3, y3}, center, rotation);
+    glm::vec2 p1     = _rotate_point({x1, y1}, center, rotation);
+    glm::vec2 p2     = _rotate_point({x2, y2}, center, rotation);
+    glm::vec2 p3     = _rotate_point({x3, y3}, center, rotation);
 
     BatchKey key{0, z_index, DrawCommandType::TRIANGLE, filled};
-    Batch& batch = batches[key];
+    Batch& batch  = batches[key];
     batch.z_index = z_index;
-    batch.mode = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
+    batch.mode    = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
 
     uint32_t base = batch.vertices.size();
     batch.vertices.push_back({p1, {0.0f, 0.0f}, color});
@@ -152,11 +149,7 @@ void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float
     if (filled) {
         batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2});
     } else {
-        batch.indices.insert(batch.indices.end(), {
-            base, base + 1,
-            base + 1, base + 2,
-            base + 2, base
-        });
+        batch.indices.insert(batch.indices.end(), {base, base + 1, base + 1, base + 2, base + 2, base});
     }
 }
 
@@ -166,9 +159,9 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
     glm::vec2 center(center_x, center_y);
 
     BatchKey key{0, z_index, DrawCommandType::CIRCLE, filled};
-    Batch& batch = batches[key];
+    Batch& batch  = batches[key];
     batch.z_index = z_index;
-    batch.mode = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
+    batch.mode    = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
 
     uint32_t base = batch.vertices.size();
 
@@ -177,8 +170,8 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
 
         for (int i = 0; i <= segments; ++i) {
             float angle = 2.0f * M_PI * i / segments;
-            float x = center_x + radius * cos(angle);
-            float y = center_y + radius * sin(angle);
+            float x     = center_x + radius * cos(angle);
+            float y     = center_y + radius * sin(angle);
             glm::vec2 p = _rotate_point({x, y}, center, rotation);
             batch.vertices.push_back({p, {0.5f + 0.5f * cos(angle), 0.5f + 0.5f * sin(angle)}, color});
 
@@ -192,7 +185,7 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
         for (int i = 0; i < segments; ++i) {
             if (i == 0) {
                 for (int j = 0; j < segments; ++j) {
-                    float a = 2.0f * M_PI * j / segments;
+                    float a     = 2.0f * M_PI * j / segments;
                     glm::vec2 p = _rotate_point({center_x + radius * cos(a), center_y + radius * sin(a)}, center, rotation);
                     batch.vertices.push_back({p, {0.0f, 0.0f}, color});
                 }
@@ -354,7 +347,7 @@ void OpenglRenderer::initialize() {
 void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {
     Viewport[0] = view_width;
     Viewport[1] = view_height;
-    glViewport(0, 0, view_width, view_height);
+    // glViewport(0, 0, view_width, view_height);
 }
 
 void OpenglRenderer::set_context(const void* ctx) {
@@ -445,16 +438,16 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
         LOG_INFO("Loaded texture with ID: %d, path: %s", texture->id, file_path.c_str());
         LOG_INFO(" > Width %d, Height %d", texture->width, texture->height);
         LOG_INFO(" > Num. Channels %d", nr_channels);
-    }else {
+        stbi_image_free(data);
+    } else {
         LOG_WARN("Couldn't load texture from file: %s", file_path.c_str());
+        delete[] data;
     }
-
-    delete[] data;
 
 
     // ! HACK_FIX: Cache texture sizes by ID ( glGetTexLevelParameteriv doesn't work on opengles )
     _texture_sizes[texture->id] = glm::vec2(texture->width, texture->height);
-    auto [tex, _] = textures.emplace(file_path, std::move(texture));
+    auto [tex, _]               = textures.emplace(file_path, std::move(texture));
 
     return tex->second;
 }
@@ -552,10 +545,12 @@ void OpenglRenderer::flush() {
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 
     int draw_call_count = 0;
+
     // Sort batches by z_index
-    std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
+    static std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
+
     for (auto& [key, batch] : batches) {
-        sorted_batches.push_back({key, &batch});
+        sorted_batches.emplace_back(key, &batch);
     }
 
     std::sort(sorted_batches.begin(), sorted_batches.end(), [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
@@ -574,9 +569,13 @@ void OpenglRenderer::flush() {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, batch->vertices.size() * sizeof(Vertex), batch->vertices.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, batch->vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, batch->vertices.size() * sizeof(Vertex), batch->vertices.data());
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch->indices.size() * sizeof(uint32_t), batch->indices.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch->indices.size() * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, batch->indices.size() * sizeof(uint32_t), batch->indices.data());
+
 
         const bool use_texture =
             (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
@@ -589,7 +588,6 @@ void OpenglRenderer::flush() {
             _default_shader->set_value("TEXTURE", 0);
         }
 
-        // TODO: fix it on mobile
         if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
             auto tex_size = _get_texture_size(batch->texture_id);
             _set_effect_uniforms(key.uber_shader, tex_size);
@@ -629,26 +627,11 @@ void OpenglRenderer::present() {
 }
 
 void OpenglRenderer::_render_fbo() {
-    int window_width, window_height;
-    SDL_GetWindowSize(Window, &window_width, &window_height);
 
-
-    float target_aspect = (float)Viewport[0] / Viewport[1];
-    float window_aspect = (float)window_width / window_height;
-
-    int draw_x = 0, draw_y = 0;
-    int draw_width = window_width, draw_height = window_height;
-
-    if (window_aspect > target_aspect) {
-        draw_width = static_cast<int>(window_height * target_aspect);
-        draw_x = (window_width - draw_width) / 2;
-    } else {
-        draw_height = static_cast<int>(window_width / target_aspect);
-        draw_y = (window_height - draw_height) / 2;
-    }
+    const auto [x, y, width, height] = _calc_display();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(draw_x,draw_y, draw_width, draw_height);
+    glViewport(x, y, width, height);
 
     _fbo_shader->bind();
 
@@ -660,15 +643,17 @@ void OpenglRenderer::_render_fbo() {
     glBindVertexArray(0);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
-
 }
 
-void OpenglRenderer::clear(const glm::vec4& color) {
+void OpenglRenderer::clear(glm::vec4 color) {
     commands.clear();
     batches.clear();
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+    if (color == glm::vec4(0.0f)) {
+        color = GEngine->Config.get_environment().clear_color;
+    }
 
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -696,7 +681,6 @@ void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const g
     _default_shader->set_value("shadow_offset", uber_shader.shadow_offset);
 
     _default_shader->set_value("texture_size", texture_size);
-
 }
 
 void OpenglRenderer::unload_font(const Font& font) {

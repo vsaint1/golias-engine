@@ -110,7 +110,7 @@ public:
 
     int Viewport[2]    = {800, 600}; ///< Viewport size.
     SDL_Window* Window = nullptr; ///< SDL Window.
-    RendererType Type  = RendererType::OPENGL; ///< Default Type of renderer.
+    Backend Type  = Backend::OPENGL; ///< Default Type of renderer.
 
     /** @brief Initialize the renderer and its resources. */
     virtual void initialize() = 0;
@@ -155,8 +155,8 @@ public:
      * @brief Draw text to screen.
      */
     virtual void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1,
-                           const UberShader& uber_shader = UberShader::none()) = 0;
+                           const std::string& font_alias = "", int z_index = 0,
+                           const UberShader& uber_shader = UberShader::none(),int ft_size = 0) = 0;
 
     /**
      * @brief Draw a line.
@@ -200,7 +200,7 @@ public:
      * @brief Clear the screen to the given color.
      * @param  color Color to clear the screen with (default is black).
      */
-    virtual void clear(const glm::vec4& color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) = 0;
+    virtual void clear(glm::vec4 color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)) = 0;
 
     /**
      * @brief Resize the rendering context.
@@ -266,6 +266,15 @@ protected:
     glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation);
 
     /**
+     * @brief Calculate the display rectangle for rendering based on the viewport and window size.
+     *
+     * @details This function calculates the rectangle to draw the viewport in a way that maintains the aspect ratio (letterbox or pillarbox).
+     *
+     * @version  1.0.0
+     */
+    Recti _calc_display();
+
+    /**
     * @brief Render the current frame buffer.
     */
     virtual void _render_fbo() = 0;
@@ -278,5 +287,5 @@ protected:
 
     virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;
 
-    virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
+    [[nodiscard]] virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
 };

@@ -9,6 +9,28 @@ glm::vec2 Renderer::_rotate_point(const glm::vec2& point, const glm::vec2& cente
     return center + rot_rel;
 }
 
+Recti Renderer::_calc_display() {
+    int window_width, window_height;
+    SDL_GetWindowSize(Window, &window_width, &window_height);
+
+    float target_aspect = static_cast<float>(Viewport[0]) / Viewport[1];
+    float window_aspect = static_cast<float>(window_width) / window_height;
+
+    int draw_x = 0, draw_y = 0;
+    int draw_width = window_width, draw_height = window_height;
+
+    if (window_aspect > target_aspect) {
+        // Pillarbox
+        draw_width = static_cast<int>(window_height * target_aspect);
+        draw_x = (window_width - draw_width) / 2;
+    } else {
+        // Letterbox
+        draw_height = static_cast<int>(window_width / target_aspect);
+        draw_y = (window_height - draw_height) / 2;
+    }
+
+    return {draw_x,draw_y, draw_width, draw_height};
+}
 
 void Renderer::_add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
                                   const glm::vec4& color, float rotation, bool is_filled ) {
