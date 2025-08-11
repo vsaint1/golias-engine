@@ -57,7 +57,7 @@ public:
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
     void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                   const std::string& font_alias, int z_index, int ft_size, const UberShader& effects) override;
+                   const std::string& font_alias, int z_index, const UberShader& uber_shader, int ft_size) override;
 
     void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index) override;
 

@@ -155,8 +155,8 @@ public:
      * @brief Draw text to screen.
      */
     virtual void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
-                           const std::string& font_alias = "", int z_index = 0, int ft_size = 1,
-                           const UberShader& uber_shader = UberShader::none()) = 0;
+                           const std::string& font_alias = "", int z_index = 0,
+                           const UberShader& uber_shader = UberShader::none(),int ft_size = 0) = 0;
 
     /**
      * @brief Draw a line.
@@ -287,5 +287,5 @@ protected:
 
     virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;
 
-    virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
+    [[nodiscard]] virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
 };
