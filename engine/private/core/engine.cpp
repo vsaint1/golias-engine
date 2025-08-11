@@ -58,7 +58,7 @@ bool Engine::initialize(int width, int height, RendererType type, Uint64 flags) 
         flags &= ~SDL_WINDOW_METAL;
     }
 
-    flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
+    // flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
     flags |= SDL_WINDOW_HIDDEN;
 
     // TODO: check if metal is supported and create MTLDevice, if fail create OPENGL/ES

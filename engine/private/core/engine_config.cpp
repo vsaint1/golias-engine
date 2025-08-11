@@ -1,5 +1,7 @@
 #include "core/engine_config.h"
 
+#include "core/io/file_system.h"
+
 
 bool Viewport::load(const tinyxml2::XMLElement* root) {
 
@@ -143,10 +145,11 @@ std::string EngineConfig::get_orientation_string() const {
 
 bool EngineConfig::load() {
 
-    const auto CONFIG_PATH = "res/project.xml";
 
-    if (_doc.LoadFile(CONFIG_PATH) != tinyxml2::XML_SUCCESS) {
-        LOG_ERROR("Failed to load Engine Config from %s", CONFIG_PATH);
+    const auto file = _load_file_into_memory("project.xml");
+
+    if (_doc.Parse(file.data(),file.size()) != tinyxml2::XML_SUCCESS) {
+        LOG_ERROR("Failed to load Engine Config from %s, error: %s", "res/project.xml",_doc.ErrorStr());
         return false;
     }
 
