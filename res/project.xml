@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+
+    <application>
+        <name>Loading from config file</name>
+        <description>EEngine</description>
+        <icon>icon.png</icon>
+        <version>0.1.0</version>
+        <max_fps>60</max_fps>
+        <identifier>br.com.vsaint1.ember_engine</identifier>
+    </application>
+
+    <window>
+        <size width="1280" height="720"/>  <!-- virtual size-->
+        <mode>windowed</mode> <!-- windowed, minimized, maximized, fullscreen, exclusive-fullscreen -->
+        <resizable>true</resizable>
+        <borderless>true</borderless>
+        <dpi_scale>1.0</dpi_scale>
+    </window>
+
+    <viewport>
+        <size width="320" height="180"/>
+        <stretch mode="viewport" aspect="expand"/> <!-- none,keep, expand-->
+        <scale>1.0</scale>
+    </viewport>
+
+    <orientation>Landscape</orientation> <!-- landscape_left, landscape_right, portrait, portrait_upside_down-->
+
+    <vsync>true</vsync>
+
+    <renderer>
+        <method>gl_compatibility</method> <!-- gl_compatibility, ...-->
+        <texture_filter>nearest</texture_filter>  <!-- linear, nearest-->
+    </renderer>
+
+    <environment>
+        <clear_color r="0.2" g="0.3" b="0.3" a="1.0"/>
+    </environment>
+
+</config>
