@@ -11,13 +11,13 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 ma_engine audio_engine;
 
 
-Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, RendererType type) {
+Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
-    if (type == RendererType::OPENGL) {
+    if (type == Backend::OPENGL) {
         return _create_renderer_gl(window, view_width, view_height);
     }
 
-    if (type == RendererType::METAL) {
+    if (type == Backend::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
         return _create_renderer_metal(window,view_width,view_height);
     }
@@ -30,10 +30,10 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
 
 void Engine::set_vsync(const bool enabled) {
 
-    if (_renderer->Type == RendererType::OPENGL) {
+    if (_renderer->Type == Backend::OPENGL) {
         SDL_GL_SetSwapInterval(enabled ? 1 : 0);
     }
-    else if (_renderer->Type == RendererType::METAL) {
+    else if (_renderer->Type == Backend::METAL) {
         // TODO
     }
 
@@ -41,7 +41,7 @@ void Engine::set_vsync(const bool enabled) {
 
 }
 
-bool Engine::initialize(int width, int height, RendererType type, Uint64 flags) {
+bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
@@ -62,14 +62,14 @@ bool Engine::initialize(int width, int height, RendererType type, Uint64 flags) 
     flags |= SDL_WINDOW_HIDDEN;
 
     // TODO: check if metal is supported and create MTLDevice, if fail create OPENGL/ES
-    if (type == RendererType::METAL) {
+    if (type == Backend::METAL) {
         LOG_ERROR("Metal renderer is not supported yet");
 
         flags |= SDL_WINDOW_METAL;
         return false;
     }
 
-    if (type == RendererType::OPENGL) {
+    if (type == Backend::OPENGL) {
         flags |= SDL_WINDOW_OPENGL;
     }
 
@@ -168,12 +168,12 @@ bool Engine::initialize(int width, int height, RendererType type, Uint64 flags) 
     this->Window.height   = height;
     this->_renderer->Type = type;
 
-    if (type == RendererType::OPENGL) {
+    if (type == Backend::OPENGL) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
         LOG_INFO(" > Vendor: %s", (const char*) glGetString(GL_VENDOR));
     }
 
-    if (type == RendererType::METAL) {
+    if (type == Backend::METAL) {
         // TODO
     }
 

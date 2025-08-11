@@ -7,7 +7,7 @@ int VIRTUAL_SCREEN_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize("Example - with FBO", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->initialize("Example - with FBO", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, Backend::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 

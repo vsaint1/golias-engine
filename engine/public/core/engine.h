@@ -20,7 +20,7 @@
  *
  * @version 0.0.1
  */
-enum RendererType {
+enum Backend {
     OPENGL,
     METAL
 };
@@ -129,7 +129,7 @@ public:
      *
      * @version 0.0.1
      */
-    bool initialize(int width, int height, RendererType type, Uint64 flags = 0);
+    bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
 private:
     Renderer* _renderer = nullptr;
@@ -149,7 +149,7 @@ private:
      *
      * @version 0.0.1
      */
-    Renderer* _create_renderer_internal(SDL_Window* window, int view_width, int view_height, RendererType type);
+    Renderer* _create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type);
 
     /**
      * @brief Create an OpenGL renderer internally.

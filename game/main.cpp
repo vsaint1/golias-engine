@@ -7,7 +7,7 @@ int VIRTUAL_SCREEN_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize(VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, RendererType::OPENGL, SDL_WINDOW_RESIZABLE)) {
+    if (!GEngine->initialize(VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, Backend::OPENGL, SDL_WINDOW_RESIZABLE)) {
         return SDL_APP_FAILURE;
     }
 
@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 
         GEngine->get_renderer()->clear();
 
-        GEngine->get_renderer()->draw_texture(tex.get(), {50.f, 400.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
+        GEngine->get_renderer()->draw_texture(tex.get(), {0.f, 10.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
                                              0, UberShader::shadow_only());
 
         GEngine->get_renderer()->flush();

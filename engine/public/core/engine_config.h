@@ -2,6 +2,44 @@
 
 #include "helpers/logging.h"
 
+
+
+/**
+ * @brief Supported rendering backends for the engine.
+ */
+enum class RendererDevice {
+    /**
+     * @brief OpenGL-based compatibility profile.
+     *
+     * Desktop: OpenGL Core (3.3+)
+     * Mobile: OpenGL ES (3.0+)
+     * Web: WebGL 2/3
+     */
+    GL_COMPATIBILITY,
+
+    /**
+     * @brief Vulkan-based high-performance profile.
+     *
+     * Desktop and Android (if supported).
+     */
+    VK_FORWARD,
+
+    /**
+     * @brief DirectX 12 backend (Windows + Xbox).
+     */
+    DIRECTX12,
+
+    /**
+     * @brief Metal backend (macOS + iOS).
+     */
+    METAL,
+
+    /**
+     * @brief Automatically choose the best backend for the platform.
+     */
+    AUTO
+};
+
 enum class Orientation {
     LANDSCAPE_LEFT,
     LANDSCAPE_RIGHT,
@@ -19,6 +57,17 @@ enum class ViewportMode {
     VIEWPORT,
     CANVAS
 };
+
+/**
+ * @brief Texture filtering modes.
+ *
+ * Determines how texture pixels are sampled when scaled or transformed.
+ */
+enum class TextureFiltering {
+    LINEAR,  ///< Smooth filtering.
+    NEAREST  ///< Pixelated filtering.
+};
+
 
 struct Viewport {
     int width = 320;
@@ -52,6 +101,10 @@ struct Application {
 struct EngineConfig {
 
     Orientation orientation = Orientation::LANDSCAPE_LEFT;
+
+    RendererDevice renderer_device = RendererDevice::GL_COMPATIBILITY;
+
+    TextureFiltering texture_filtering = TextureFiltering::NEAREST;
 
     bool load();
 

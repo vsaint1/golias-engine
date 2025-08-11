@@ -110,7 +110,7 @@ public:
 
     int Viewport[2]    = {800, 600}; ///< Viewport size.
     SDL_Window* Window = nullptr; ///< SDL Window.
-    RendererType Type  = RendererType::OPENGL; ///< Default Type of renderer.
+    Backend Type  = Backend::OPENGL; ///< Default Type of renderer.
 
     /** @brief Initialize the renderer and its resources. */
     virtual void initialize() = 0;
@@ -200,7 +200,7 @@ public:
      * @brief Clear the screen to the given color.
      * @param  color Color to clear the screen with (default is black).
      */
-    virtual void clear(glm::vec4 color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) = 0;
+    virtual void clear(glm::vec4 color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)) = 0;
 
     /**
      * @brief Resize the rendering context.
@@ -264,6 +264,15 @@ protected:
      * @brief Rotate a point around a center point.
      */
     glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation);
+
+    /**
+     * @brief Calculate the display rectangle for rendering based on the viewport and window size.
+     *
+     * @details This function calculates the rectangle to draw the viewport in a way that maintains the aspect ratio (letterbox or pillarbox).
+     *
+     * @version  1.0.0
+     */
+    Recti _calc_display();
 
     /**
     * @brief Render the current frame buffer.

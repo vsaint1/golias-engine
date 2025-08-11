@@ -354,7 +354,7 @@ void OpenglRenderer::initialize() {
 void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {
     Viewport[0] = view_width;
     Viewport[1] = view_height;
-    glViewport(0, 0, view_width, view_height);
+    // glViewport(0, 0, view_width, view_height);
 }
 
 void OpenglRenderer::set_context(const void* ctx) {
@@ -555,7 +555,7 @@ void OpenglRenderer::flush() {
     // Sort batches by z_index
     std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
     for (auto& [key, batch] : batches) {
-        sorted_batches.push_back({key, &batch});
+        sorted_batches.emplace_back(key, &batch);
     }
 
     std::sort(sorted_batches.begin(), sorted_batches.end(), [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
@@ -629,26 +629,11 @@ void OpenglRenderer::present() {
 }
 
 void OpenglRenderer::_render_fbo() {
-    int window_width, window_height;
-    SDL_GetWindowSize(Window, &window_width, &window_height);
 
-
-    float target_aspect = (float)Viewport[0] / Viewport[1];
-    float window_aspect = (float)window_width / window_height;
-
-    int draw_x = 0, draw_y = 0;
-    int draw_width = window_width, draw_height = window_height;
-
-    if (window_aspect > target_aspect) {
-        draw_width = static_cast<int>(window_height * target_aspect);
-        draw_x = (window_width - draw_width) / 2;
-    } else {
-        draw_height = static_cast<int>(window_width / target_aspect);
-        draw_y = (window_height - draw_height) / 2;
-    }
+    const auto [x, y, width, height] = _calc_display();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(draw_x,draw_y, draw_width, draw_height);
+    glViewport(x, y, width, height);
 
     _fbo_shader->bind();
 
@@ -661,7 +646,6 @@ void OpenglRenderer::_render_fbo() {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-
 }
 
 void OpenglRenderer::clear(glm::vec4 color) {
@@ -670,7 +654,9 @@ void OpenglRenderer::clear(glm::vec4 color) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 
-    color = GEngine->Config.get_environment().clear_color;
+    if (color == glm::vec4(0.0f)) {
+        color = GEngine->Config.get_environment().clear_color;
+    }
 
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);
