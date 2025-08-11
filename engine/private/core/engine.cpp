@@ -41,9 +41,14 @@ void Engine::set_vsync(const bool enabled) {
 
 }
 
-bool Engine::initialize(const char* title, int width, int height, RendererType type, Uint64 flags) {
+bool Engine::initialize(int width, int height, RendererType type, Uint64 flags) {
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
+
+    if (!Config.load()) {
+        LOG_CRITICAL("Failed to load config file (project.xml)");
+        return false;
+    }
 
     /*!
         @brief Unset some SDL flags and set supported later.
@@ -69,11 +74,11 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
     }
 
 
+    const auto app_config = Config.get_application();
+
 #pragma region APP_METADATA
-    // TODO: Get Metadata from config file
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "Portrait");
-    SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "0", SDL_HINT_OVERRIDE);
-    SDL_SetAppMetadata("Ember Engine", "1.0", "com.ember.engine");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, Config.get_orientation_string().c_str());
+    SDL_SetAppMetadata(app_config.name, app_config.version, app_config.package_name);
 
 #pragma endregion
 
@@ -95,9 +100,8 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
 
     GEngine->Window.data = display_mode;
 
-    const char* _title = SDL_strcmp(title, "") == 0 ? GEngine->Window.title : title;
 
-    SDL_Window* _window = SDL_CreateWindow(_title, width, height, flags);
+    SDL_Window* _window = SDL_CreateWindow(app_config.name, width, height, flags);
 
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
@@ -151,7 +155,7 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
     SDL_Rect view_bounds = {};
     SDL_GetDisplayUsableBounds(displayID, &view_bounds);
 
-    LOG_INFO("Successfully created window with title: %s", _title);
+    LOG_INFO("Successfully created window with title: %s", app_config.name);
     LOG_INFO(" > Width %d, Height %d", width, height);
     LOG_INFO(" > Display ID %d", display_mode->displayID);
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
@@ -162,7 +166,6 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
 
     this->Window.width    = width;
     this->Window.height   = height;
-    this->Window.title    = _title;
     this->_renderer->Type = type;
 
     if (type == RendererType::OPENGL) {
@@ -173,6 +176,10 @@ bool Engine::initialize(const char* title, int width, int height, RendererType t
     if (type == RendererType::METAL) {
         // TODO
     }
+
+    this->set_vsync(Config.is_vsync());
+
+    this->_renderer->resize_viewport(Config.get_viewport().width, Config.get_viewport().height);
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
@@ -290,9 +297,6 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
 #endif
 
-    if (!SDL_GL_SetSwapInterval(0)) {
-        LOG_CRITICAL("Failed to disable VSYNC, %s", SDL_GetError());
-    }
 
 #if ENGINE_DEBUG
     int numExtensions = 0;

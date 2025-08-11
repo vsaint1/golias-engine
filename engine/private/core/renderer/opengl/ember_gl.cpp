@@ -664,11 +664,13 @@ void OpenglRenderer::_render_fbo() {
 
 }
 
-void OpenglRenderer::clear(const glm::vec4& color) {
+void OpenglRenderer::clear(glm::vec4 color) {
     commands.clear();
     batches.clear();
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+    color = GEngine->Config.get_environment().clear_color;
 
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT);

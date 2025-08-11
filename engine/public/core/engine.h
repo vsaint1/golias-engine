@@ -3,6 +3,7 @@
 #include "core/input/input_manager.h"
 #include "core/io/file_system.h"
 #include "core/time_manager.h"
+#include "core/engine_config.h"
 
 /**
  * @brief Graphics backend type.
@@ -35,15 +36,17 @@ class OpenglRenderer;
  */
 class Engine {
 public:
+
     struct {
         int width = 0;
         int height = 0;
-        const char* title = "[EMBER_ENGINE] - Window";
         const SDL_DisplayMode* data = nullptr;
         bool bFullscreen = false;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};
     } Window;
+
+    EngineConfig Config{};
 
     struct {
         SDL_AudioDeviceID device_id = 0;
@@ -116,9 +119,9 @@ public:
      * - Chooses Graphics Backend (`OpenGL` or `Metal`)
      * - Initializes Audio and Font subsystems
      *
-     * @param title Window title.
-     * @param width Window width.
-     * @param height Window height.
+     *
+     * @param width Virtual Window width.
+     * @param height Virtual Window height.
      * @param type Renderer type (`OPENGL` or `METAL`).
      * @param flags SDL window flags. See: https://wiki.libsdl.org/SDL_WindowFlags
      *
@@ -126,7 +129,7 @@ public:
      *
      * @version 0.0.1
      */
-    bool initialize(const char* title, int width, int height, RendererType type, Uint64 flags = 0);
+    bool initialize(int width, int height, RendererType type, Uint64 flags = 0);
 
 private:
     Renderer* _renderer = nullptr;

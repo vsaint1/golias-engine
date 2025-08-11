@@ -75,7 +75,7 @@ public:
 
     void present() override;
 
-    void clear(const glm::vec4& color) override;
+    void clear(glm::vec4 color) override;
 
     void setup_camera(const Camera2D& camera);
 

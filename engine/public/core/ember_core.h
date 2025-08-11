@@ -200,7 +200,7 @@ public:
      * @brief Clear the screen to the given color.
      * @param  color Color to clear the screen with (default is black).
      */
-    virtual void clear(const glm::vec4& color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) = 0;
+    virtual void clear(glm::vec4 color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) = 0;
 
     /**
      * @brief Resize the rendering context.
