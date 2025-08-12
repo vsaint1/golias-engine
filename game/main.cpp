@@ -27,10 +27,10 @@ int main(int argc, char* argv[]) {
 
         GEngine->get_renderer()->clear();
 
-        // GEngine->get_renderer()->draw_texture(tex.get(), {0.f, 10.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64}, 0,
-        //                                       UberShader::shadow_only());
+        GEngine->get_renderer()->draw_texture(tex.get(), {0.f, 10.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64}, 0,
+                                               UberShader::shadow_only());
 
-        GEngine->get_renderer()->draw_text("Hello [color=#FF0000]World[/color]", 20, 10, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine",
+        GEngine->get_renderer()->draw_text("Lorem [color=#FF0000]Ipsum[/color]", 20, 10, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine",
                                            0, UberShader::outline_only());
 
         GEngine->get_renderer()->flush();

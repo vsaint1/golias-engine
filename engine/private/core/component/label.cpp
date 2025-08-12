@@ -13,7 +13,7 @@ void Label::process(double delta_time) {
 
 void Label::draw(Renderer* renderer) {
     const auto& transform = get_global_transform();
-    GEngine->get_renderer()->draw_text(_text, transform.position.x,transform.position.y, transform.rotation, transform.scale.x, _color.normalize_color(), _font_alias, _z_index,_font_size,_effect);
+    GEngine->get_renderer()->draw_text(_text, transform.position.x,transform.position.y, transform.rotation, transform.scale.x, _color.normalize_color(), _font_alias, _z_index,_effect,_font_size);
 
     Node2D::draw(renderer);
 }
