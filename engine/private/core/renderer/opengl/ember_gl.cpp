@@ -257,6 +257,8 @@ void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_s
 
 void OpenglRenderer::initialize() {
 
+    Type = Backend::OPENGL;
+    
 #pragma region DEFAULT_SHADER_SETUP
     _default_shader->bind();
 
@@ -441,7 +443,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
         stbi_image_free(data);
     } else {
         LOG_WARN("Couldn't load texture from file: %s", file_path.c_str());
-        delete[] data;
+        free(data);
     }
 
 
@@ -528,6 +530,10 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
                                   const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
 
 
+    if(!texture){
+        return;
+    }
+    
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
 
     if (!src_rect.is_zero()) {
@@ -547,8 +553,11 @@ void OpenglRenderer::flush() {
     int draw_call_count = 0;
 
     // Sort batches by z_index
-    static std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
+    std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
 
+    sorted_batches.clear();
+    sorted_batches.reserve(batches.size());
+    
     for (auto& [key, batch] : batches) {
         sorted_batches.emplace_back(key, &batch);
     }
@@ -559,7 +568,7 @@ void OpenglRenderer::flush() {
 
     _default_shader->bind();
 
-    _default_shader->set_value("projection", projection);
+    _default_shader->set_value("PROJECTION", projection);
 
     glBindVertexArray(vao);
 

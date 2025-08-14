@@ -1,4 +1,4 @@
-#include "core/renderer/opengl/ember_gl.h"
+#include "core/renderer/metal/ember_mtl.h"
 #include <SDL3/SDL_main.h>
 
 
@@ -7,38 +7,52 @@ int VIRTUAL_SCREEN_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize(VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, Backend::OPENGL, SDL_WINDOW_RESIZABLE)) {
-        return SDL_APP_FAILURE;
-    }
 
+    SDL_Init(SDL_INIT_VIDEO);
 
-    auto tex = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
+    SDL_Window* window = SDL_CreateWindow("Metal Renderer Test",
+                                          VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE | SDL_WINDOW_METAL);
 
-    GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", "mine", 32);
+    MetalRenderer* mtl = new MetalRenderer();
 
-    bool quit = false;
-    SDL_Event event;
-    while (!quit) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT) {
-                quit = true;
-            }
+    mtl->Window = window;
+    mtl->Viewport[0] = 320;
+    mtl->Viewport[1] = 180;
+    mtl->initialize();
+    
+    auto sample_texture = mtl->load_texture("sprites/Character_001.png");
+
+    bool running = true;
+    while (running) {
+        SDL_Event e;
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_EVENT_QUIT) running = false;
         }
 
-        GEngine->get_renderer()->clear();
+     
+            
+            
+            mtl->clear({0.2,0.3,0.3,1});
+            
+            mtl->draw_rect({0,20,100,50}, 0,{1,0,0,1},true,0);
+            
+            mtl->draw_texture(sample_texture.get(), {50.f, 20.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64},
+                                      0, UberShader::none());
+            
+            mtl->flush();
+            
+            mtl->present();
+        
 
-        GEngine->get_renderer()->draw_texture(tex.get(), {0.f, 10.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), {0, 0, 64, 64}, 0,
-                                               UberShader::shadow_only());
 
-        GEngine->get_renderer()->draw_text("Lorem [color=#FF0000]Ipsum[/color]", 20, 10, 0, 1.f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), "mine",
-                                           0, UberShader::outline_only());
-
-        GEngine->get_renderer()->flush();
-        GEngine->get_renderer()->present();
     }
 
 
-    GEngine->shutdown();
+    SDL_DestroyWindow(window);
+
+    SDL_Quit();
+    mtl->destroy();
+    delete mtl;
 
     return 0;
 }

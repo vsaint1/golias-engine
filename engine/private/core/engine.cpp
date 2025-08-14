@@ -319,8 +319,8 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     glRenderer->set_context(glContext);
 
-    OpenglShader* defaultShader = new OpenglShader("shaders/default.vert", "shaders/default.frag");
-    OpenglShader* defaultFboShader    = new OpenglShader("shaders/default_fbo.vert", "shaders/default_fbo.frag");
+    OpenglShader* defaultShader = new OpenglShader("shaders/opengl/default.vert", "shaders/opengl/default.frag");
+    OpenglShader* defaultFboShader    = new OpenglShader("shaders/opengl/default_fbo.vert", "shaders/opengl/default_fbo.frag");
 
     glRenderer->setup_shaders(defaultShader, defaultFboShader);
 

@@ -24,7 +24,7 @@
         <scale>1.0</scale>
     </viewport>
 
-    <orientation>Landscape</orientation> <!-- landscape_left, landscape_right, portrait, portrait_upside_down-->
+    <orientation>landscape_left</orientation> <!-- landscape_left, landscape_right, portrait, portrait_upside_down-->
 
     <vsync>true</vsync>
 
