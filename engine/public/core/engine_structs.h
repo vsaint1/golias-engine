@@ -18,14 +18,10 @@ struct Texture {
     std::string path;
 
     Texture()                          = default;
-    // Texture(const Texture&)            = delete;
-    // Texture& operator=(const Texture&) = delete;
 
-    ~Texture() {
-        if (id) {
-            glDeleteTextures(1, &id);
-        }
-    }
+    
+    void* mtlTexture = nullptr; // id<MTLTexture>
+
 };
 
 
@@ -54,7 +50,7 @@ struct Recti {
     int height;
 };
 
-struct Size {
+struct Sizei {
     int width;
     int height;
 };
@@ -136,4 +132,4 @@ struct Font {
 };
 
 
-Size calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);
+Sizei calc_text_size(const std::string& text, const Font& font, float font_size = 0.0f);
