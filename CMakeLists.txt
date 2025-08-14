@@ -11,11 +11,11 @@ project(ember_engine)
 message("CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 
 # [CONFIGURATION]
-set(APP_NAME "Ember")
-set(APP_VERSION "1.0")
-set(APP_IDENTIFIER "com.emberengine.app.project")
-# [ORIENTATION] - "LandscapeLeft" - "LandscapeRight" - "Portrait" - "PortraitUpsideDown"
-set(APP_ORIENTATION "LandscapeLeft")
+#set(APP_NAME "Ember")
+#set(APP_VERSION "1.0")
+#set(APP_IDENTIFIER "com.emberengine.app.project")
+## [ORIENTATION] - "LandscapeLeft" - "LandscapeRight" - "Portrait" - "PortraitUpsideDown"
+#set(APP_ORIENTATION "LandscapeLeft")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
@@ -85,6 +85,11 @@ if(UNIX)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 endif()
 
+if(APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fobjc-arc")
+    set(METAL_SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/res/shaders/metal/default.metal)
+endif()
+
 if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 endif()
@@ -115,7 +120,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
 
     file(GLOB_RECURSE IOS_FILES "engine/private/core/platform/ios/*.mm")
 
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE  ${SOURCES} ${ENGINE_SOURCES} ${METAL_SHADERS} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
 
     find_library(IO ImageIO REQUIRED)
     find_library(CS CoreServices REQUIRED)
@@ -169,14 +174,15 @@ if(APPLE AND BUILD_SHARED_LIBS)
     message(STATUS "BUILD MACOS")
     set(RESOURCES "${CMAKE_SOURCE_DIR}/res")
     file(GLOB_RECURSE MAC_FILES "engine/private/core/platform/macos/*.mm")
+    file(GLOB_RECURSE MAC_FILES "engine/private/core/renderer/metal/*.mm")
 
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${RESOURCES} ${MAC_FILES} )
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${ENGINE_SOURCES} ${METAL_SHADERS} ${RESOURCES} ${MAC_FILES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             MACOSX_BUNDLE TRUE
             RESOURCE "${RESOURCES}")
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE objc stdc++ "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework MetalKit" "-framework IOKit")
+    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreGraphics" "-framework CoreAudio" "-framework AudioToolbox" "-framework OpenGL" "-framework QuartzCore" "-framework AppKit" "-framework Metal" "-framework IOKit")
     target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/engine/public)
 
 
