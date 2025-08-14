@@ -1,4 +1,4 @@
-﻿#include "core/renderer/opengl/ember_gl.h"
+#include "core/renderer/opengl/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
 
