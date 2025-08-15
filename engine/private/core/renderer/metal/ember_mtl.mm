@@ -85,7 +85,7 @@ void MetalRenderer::initialize() {
     sampler_ = (__bridge_retained void*)sstate;
 
     projection = glm::ortho(0.0f, float(Viewport[0]), float(Viewport[1]), 0.0f, -1.0f, 1.0f);
-    
+
 }
 
 void MetalRenderer::clear(glm::vec4 color) {
@@ -95,7 +95,7 @@ void MetalRenderer::clear(glm::vec4 color) {
     if (color == glm::vec4(0.0f)) {
         color = GEngine->Config.get_environment().clear_color;
     }
-    
+
     clear_color_ = color;
 }
 
@@ -107,13 +107,13 @@ std::shared_ptr<Texture> MetalRenderer::load_texture(const std::string& path) {
     stbi_set_flip_vertically_on_load(false);
 
     const auto buffer = _load_file_into_memory(path);
-    
+
     if (buffer.empty()) {
         LOG_INFO("Failed to load texture from file: %s", path.c_str());
     }
 
     unsigned char* data = stbi_load_from_memory((unsigned char*)buffer.data(), (int)buffer.size(), &w, &h, &nr_channels, 4);
-    
+
     bool has_error_texture = false;
     if (!data) {
         w = h = 128;
@@ -129,32 +129,32 @@ std::shared_ptr<Texture> MetalRenderer::load_texture(const std::string& path) {
     MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:w height:h mipmapped:NO];
     desc.usage = MTLTextureUsageShaderRead;
     id<MTLTexture> mtlTex = [device newTextureWithDescriptor:desc];
-   
+
     if (!mtlTex) {
         if (!has_error_texture) stbi_image_free(data); else free(data);
         LOG_ERROR("Texture creation failed for %s", path.c_str());
         return {};
     }
-    
+
     MTLRegion region = {{0,0,0},{(NSUInteger)w,(NSUInteger)h,1}};
     [mtlTex replaceRegion:region mipmapLevel:0 withBytes:data bytesPerRow:w*4];
-    
+
     if (!has_error_texture){
-        
+
         LOG_INFO("Loaded texture with ID: %d, path: %s", (Uint32)mtlTex.hash, path.c_str());
         LOG_INFO(" > Width %d, Height %d", w,h);
         LOG_INFO(" > Num. Channels %d", nr_channels);
         stbi_image_free(data);
-        
+
     } else {
         LOG_WARN("Couldn't load texture from file: %s", path.c_str());
 
         free(data);
-        
+
     }
 
     auto t = std::make_shared<Texture>();
-    
+
     t->id = (Uint32)mtlTex.hash;
     t->width = w; t->height = h; t->path = path;
     t->mtlTexture = (__bridge_retained void*)mtlTex;
@@ -185,7 +185,7 @@ void MetalRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& color
     glm::vec2 p3 = _rotate_point({rect.x + rect.width, rect.y + rect.height}, center, rotation);
 
     uint32_t base = static_cast<uint32_t>(batch.vertices.size());
-    
+
     batch.vertices.push_back({p0, {0,0}, color});
     batch.vertices.push_back({p1, {0,0}, color});
     batch.vertices.push_back({p2, {0,0}, color});
@@ -247,7 +247,7 @@ void MetalRenderer::draw_texture(const Texture* texture, const Rect2& dest, floa
 
 void MetalRenderer::flush() {
     @autoreleasepool {
-       
+
     if (!device_ || !queue_ || !pipeline_ || !metal_layer_) return;
 
     id<MTLDevice> device = (__bridge id<MTLDevice>)device_;
@@ -315,7 +315,7 @@ void MetalRenderer::flush() {
                     break;
                 }
             }
-            
+
             [encoder setFragmentTexture:tex atIndex:0];
         } else {
             [encoder setFragmentTexture:nil atIndex:0];
@@ -333,16 +333,16 @@ void MetalRenderer::flush() {
     [encoder endEncoding];
     [cmdBuffer presentDrawable:drawable];
     [cmdBuffer commit];
-    
+
     }
-    
+
 
     batches.clear();
     commands.clear();
 }
 
 void MetalRenderer::present() {
- 
+
 }
 
 void MetalRenderer::resize_viewport(int w,int h) {
@@ -355,7 +355,7 @@ void MetalRenderer::resize_viewport(int w,int h) {
 }
 
 void MetalRenderer::destroy() {
-    
+
     if (pipeline_) {
         id<MTLRenderPipelineState> p = (__bridge_transfer id<MTLRenderPipelineState>)pipeline_;
         (void)p;
@@ -379,7 +379,7 @@ void MetalRenderer::destroy() {
             it->second->mtlTexture = nullptr;
         }
     }
-    
+
     textures.clear();
     _texture_sizes.clear();
 
@@ -387,7 +387,7 @@ void MetalRenderer::destroy() {
         SDL_Metal_DestroyView(metal_view_);
         metal_view_ = 0;
     }
-    
+
     device_ = nullptr;
     metal_layer_ = nullptr;
 }

@@ -2,6 +2,7 @@
 
 #include "core/audio/ember_audio.h"
 #include "core/ember_core.h"
+#include "core/renderer/metal/ember_mtl.h"
 #include "core/renderer/opengl/ember_gl.h"
 
 // 💀
@@ -13,13 +14,14 @@ ma_engine audio_engine;
 
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
+
+
     if (type == Backend::OPENGL) {
         return _create_renderer_gl(window, view_width, view_height);
     }
 
     if (type == Backend::METAL) {
-        LOG_ERROR("Metal renderer is not supported yet");
-        return _create_renderer_metal(window,view_width,view_height);
+        return _create_renderer_metal(window, view_width, view_height);
     }
 
 
@@ -32,13 +34,11 @@ void Engine::set_vsync(const bool enabled) {
 
     if (_renderer->Type == Backend::OPENGL) {
         SDL_GL_SetSwapInterval(enabled ? 1 : 0);
-    }
-    else if (_renderer->Type == Backend::METAL) {
+    } else if (_renderer->Type == Backend::METAL) {
         // TODO
     }
 
     _vsync = enabled;
-
 }
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
@@ -58,15 +58,14 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         flags &= ~SDL_WINDOW_METAL;
     }
 
-    // flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // (APPLE)
+    // flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY; // MUST FIX HiDPI SUPPORT
     flags |= SDL_WINDOW_HIDDEN;
 
     // TODO: check if metal is supported and create MTLDevice, if fail create OPENGL/ES
     if (type == Backend::METAL) {
-        LOG_ERROR("Metal renderer is not supported yet");
+        LOG_INFO("Metal renderer is currently experimental.");
 
         flags |= SDL_WINDOW_METAL;
-        return false;
     }
 
     if (type == Backend::OPENGL) {
@@ -173,8 +172,10 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         LOG_INFO(" > Vendor: %s", (const char*) glGetString(GL_VENDOR));
     }
 
+    //TODO: get this dyn.
     if (type == Backend::METAL) {
-        // TODO
+       LOG_INFO(" > Version: %s ", "Metal 2.0+");
+       LOG_INFO(" > Vendor: %s", "Apple Inc.");
     }
 
     this->set_vsync(Config.is_vsync());
@@ -183,7 +184,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
-    this->bIsRunning = true;
+    this->bIsRunning     = true;
 
     return true;
 }
@@ -221,9 +222,32 @@ bool Engine::get_vsync() const {
 }
 
 Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
-    LOG_ERROR("Not implemented");
 
-    return nullptr;
+    MetalRenderer* mtlRenderer = new MetalRenderer();
+    mtlRenderer->Viewport[0]   = view_width;
+    mtlRenderer->Viewport[1]   = view_height;
+    mtlRenderer->Window        = window;
+    mtlRenderer->Type          = Backend::METAL;
+
+    mtlRenderer->initialize();
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.IniFilename = nullptr;
+
+    ImGui::StyleColorsDark();
+
+    // TODO: initialize impl Metal
+
+    SDL_ShowWindow(window);
+
+    this->_renderer = mtlRenderer;
+
+    return mtlRenderer;
 }
 
 
@@ -319,8 +343,8 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     glRenderer->set_context(glContext);
 
-    OpenglShader* defaultShader = new OpenglShader("shaders/opengl/default.vert", "shaders/opengl/default.frag");
-    OpenglShader* defaultFboShader    = new OpenglShader("shaders/opengl/default_fbo.vert", "shaders/opengl/default_fbo.frag");
+    OpenglShader* defaultShader    = new OpenglShader("shaders/opengl/default.vert", "shaders/opengl/default.frag");
+    OpenglShader* defaultFboShader = new OpenglShader("shaders/opengl/default_fbo.vert", "shaders/opengl/default_fbo.frag");
 
     glRenderer->setup_shaders(defaultShader, defaultFboShader);
 
