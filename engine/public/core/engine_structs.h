@@ -19,7 +19,7 @@ struct Texture {
 
     Texture()                          = default;
 
-    
+
     void* mtlTexture = nullptr; // id<MTLTexture>
 
 };
@@ -28,26 +28,30 @@ struct Texture {
 struct Rect2 {
     float x, y, width, height;
 
-    Rect2(float x = 0, float y = 0, float width = 0, float height = 0) : x(x), y(y), width(width), height(height) {
-    }
+    Rect2() : x(0), y(0), width(0), height(0) {}
 
-    bool is_zero() const {
-        return width == 0 && height == 0 && x == 0 && y == 0;
-    }
+    Rect2(float x, float y, float width, float height) : x(x), y(y), width(width), height(height) {}
 
-    glm::vec2 top_left() const {
-        return {x, y};
-    }
-    glm::vec2 bottom_right() const {
-        return {x + width, y + height};
-    }
+    [[nodiscard]] bool is_zero() const;
+
+    [[nodiscard]] glm::vec2 top_left() const;
+
+    [[nodiscard]] glm::vec2 bottom_right() const ;
+
 };
 
 struct Recti {
-    int x;
-    int y;
-    int width;
-    int height;
+    int x, y, width, height;
+
+    Recti() : x(0), y(0), width(0), height(0) {}
+
+    Recti(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
+
+    [[nodiscard]] bool is_zero() const;
+
+    [[nodiscard]] glm::ivec2 top_left() const;
+
+    [[nodiscard]] glm::ivec2 bottom_right() const ;
 };
 
 struct Sizei {
@@ -72,6 +76,8 @@ struct Color {
 
     [[nodiscard]] glm::vec4 normalize_color() const;
 
+    [[nodiscard]] Color to_rgba() const;
+
     bool operator==(const Color& other) const;
 
     static const Color RED;
@@ -85,19 +91,6 @@ struct Color {
     static const Color TRANSPARENT;
 };
 
-/*!
- *  @brief Glyph struct
- *
- *  @version 0.0.1
- */
-struct Glyph {
-    float x0, y0, x1, y1;
-    int w, h;
-    int x_offset, y_offset;
-    int advance;
-};
-
-
 
 struct Character {
     GLuint texture_id;
@@ -106,7 +99,12 @@ struct Character {
     GLuint advance;
 };
 
-struct CharData {
+/*!
+ *  @brief Glyph struct
+ *
+ *  @version 0.0.8
+ */
+struct Glyph {
     float x0, y0, w, h;
     const Character* ch;
     const glm::vec4* token_color;
@@ -119,7 +117,7 @@ struct CharData {
  *  @version 0.0.1
  */
 struct Font {
-    std::unordered_map<char, Character> characters;
+    HashMap<char, Character> characters;
     std::string font_path;
     int font_size = 48;
     float kerning = 0.0f;
