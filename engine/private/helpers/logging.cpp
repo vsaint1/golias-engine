@@ -52,15 +52,21 @@ void Logger::destroy() {
 void Logger::_log_thread() {
 
     // TODO: Get from config file
-    char* pref_path = SDL_GetPrefPath("Ember", "com.emberengine.app");
+    char* pref_path = SDL_GetPrefPath("Ember", "com.ember.engine.app");
 
     time_t now   = time(nullptr);
-    tm* timeinfo = localtime(&now);
+    tm* time =  localtime(&now);
+
+    if (!time) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time");
+        return;
+    }
+
     char buffer[80];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", timeinfo);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", time);
 
     char file_name[256];
-    SDL_snprintf(file_name, sizeof(file_name), "ember_logs.%s.txt", buffer);
+    SDL_snprintf(file_name, sizeof(file_name), "engine_logs-%s.txt", buffer);
 
     std::string log_path = std::string(pref_path).append(file_name);
 
