@@ -19,6 +19,7 @@ struct Texture {
 
     Texture()                          = default;
 
+    ~Texture();
 
     void* mtlTexture = nullptr; // id<MTLTexture>
 
@@ -127,6 +128,7 @@ struct Font {
     [[nodiscard]] bool is_valid() const;
 
     Font() = default;
+    ~Font();
 };
 
 

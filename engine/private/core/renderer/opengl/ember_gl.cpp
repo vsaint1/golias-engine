@@ -375,6 +375,9 @@ void OpenglRenderer::destroy() {
     glDeleteFramebuffers(1, &_frame_buffer_object);
     glDeleteTextures(1, &_fbo_texture);
 
+    textures.clear();
+    _texture_sizes.clear();
+
     ImGui_ImplOpenGL3_Shutdown();
 
     SDL_GL_DestroyContext(context);
@@ -530,7 +533,7 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
                                   const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
 
 
-    if(!texture){
+    if (!texture) {
         return;
     }
 

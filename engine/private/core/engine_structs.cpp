@@ -1,5 +1,8 @@
 #include "core/engine_structs.h"
 
+#include "core/ember_core.h"
+#include "core/engine.h"
+
 const Color Color::RED         = {255, 0, 0, 255};
 const Color Color::GREEN       = {0, 255, 0, 255};
 const Color Color::BLUE        = {0, 0, 255, 255};
@@ -9,6 +12,14 @@ const Color Color::YELLOW      = {255, 255, 0, 255};
 const Color Color::CYAN        = {0, 255, 255, 255};
 const Color Color::MAGENTA     = {255, 0, 255, 255};
 const Color Color::TRANSPARENT = {0, 0, 0, 0};
+
+
+Texture::~Texture() {
+
+}
+
+Font::~Font() {
+}
 
 bool Rect2::is_zero() const {
     return width == 0 && height == 0 && x == 0 && y == 0;
