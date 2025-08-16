@@ -8,7 +8,7 @@ GamepadInfo::~GamepadInfo() {
     if (controller) {
         SDL_CloseGamepad(controller);
         controller = nullptr;
-        joystick = nullptr;
+        joystick   = nullptr;
     } else if (joystick) {
         SDL_CloseJoystick(joystick);
         joystick = nullptr;
@@ -52,44 +52,46 @@ void TextInputManager::stop_input(SDL_Window* window) {
 }
 
 void TextInputManager::process_event(const SDL_Event& event) {
-    if (!_active) return;
+    if (!_active) {
+        return;
+    }
 
     switch (event.type) {
-        case SDL_EVENT_TEXT_INPUT:
-            insert_text(event.text.text);
-            break;
+    case SDL_EVENT_TEXT_INPUT:
+        insert_text(event.text.text);
+        break;
 
-        case SDL_EVENT_TEXT_EDITING:
-            _composition = event.edit.text;
-            _composition_start = event.edit.start;
-            _composition_length = event.edit.length;
-            break;
+    case SDL_EVENT_TEXT_EDITING:
+        _composition        = event.edit.text;
+        _composition_start  = event.edit.start;
+        _composition_length = event.edit.length;
+        break;
 
-        case SDL_EVENT_KEY_DOWN:
-            switch (event.key.key) {
-                case SDLK_BACKSPACE:
-                    delete_char_at_cursor();
-                    break;
-                case SDLK_RETURN:
-                case SDLK_KP_ENTER:
-                    insert_text("\n");
-                    break;
-                case SDLK_LEFT:
-                    move_cursor(-1);
-                    break;
-                case SDLK_RIGHT:
-                    move_cursor(1);
-                    break;
-                case SDLK_HOME:
-                    _cursor_pos = 0;
-                    break;
-                case SDLK_END:
-                    _cursor_pos = static_cast<int>(_text.length());
-                    break;
-            }
+    case SDL_EVENT_KEY_DOWN:
+        switch (event.key.key) {
+        case SDLK_BACKSPACE:
+            delete_char_at_cursor();
             break;
-        default:;
+        case SDLK_RETURN:
+        case SDLK_KP_ENTER:
+            insert_text("\n");
+            break;
+        case SDLK_LEFT:
+            move_cursor(-1);
+            break;
+        case SDLK_RIGHT:
+            move_cursor(1);
+            break;
+        case SDLK_HOME:
+            _cursor_pos = 0;
+            break;
+        case SDLK_END:
+            _cursor_pos = static_cast<int>(_text.length());
+            break;
         }
+        break;
+    default:;
+    }
 }
 
 void TextInputManager::clear_text() {
@@ -99,7 +101,7 @@ void TextInputManager::clear_text() {
 }
 
 void TextInputManager::set_text(const std::string& text) {
-    _text = text;
+    _text       = text;
     _cursor_pos = static_cast<int>(_text.length());
 }
 
@@ -135,9 +137,9 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
             if (SDL_IsGamepad(instance_id)) {
                 SDL_Gamepad* gamepad_device = SDL_OpenGamepad(instance_id);
                 if (gamepad_device) {
-                    auto gamepad = std::make_unique<GamepadInfo>();
-                    gamepad->controller = gamepad_device;
-                    gamepad->joystick = SDL_GetGamepadJoystick(gamepad_device);
+                    auto gamepad         = std::make_unique<GamepadInfo>();
+                    gamepad->controller  = gamepad_device;
+                    gamepad->joystick    = SDL_GetGamepadJoystick(gamepad_device);
                     gamepad->instance_id = instance_id;
                     gamepad->name = SDL_GetGamepadName(gamepad_device) != nullptr ? SDL_GetGamepadName(gamepad_device) : "UNKNOWN_GAMEPAD";
                     gamepad->is_controller = true;
@@ -148,10 +150,10 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
             } else {
                 SDL_Joystick* joystick_device = SDL_OpenJoystick(instance_id);
                 if (joystick_device) {
-                    auto gamepad = std::make_unique<GamepadInfo>();
-                    gamepad->joystick = joystick_device;
+                    auto gamepad         = std::make_unique<GamepadInfo>();
+                    gamepad->joystick    = joystick_device;
                     gamepad->instance_id = instance_id;
-                    gamepad->name = SDL_GetJoystickName(joystick_device) ? SDL_GetJoystickName(joystick_device) : "UNKNOWN_JOYSTICK";
+                    gamepad->name        = SDL_GetJoystickName(joystick_device) ? SDL_GetJoystickName(joystick_device) : "UNKNOWN_JOYSTICK";
                     gamepad->is_controller = false;
 
                     int num_axes = SDL_GetNumJoystickAxes(joystick_device);
@@ -163,7 +165,6 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
         }
         SDL_free(joystick_ids);
     }
-
 }
 
 InputManager::~InputManager() {
@@ -176,28 +177,29 @@ void InputManager::process_event(const SDL_Event& event) {
     _text_input.process_event(event);
 
     switch (event.type) {
-        case SDL_EVENT_QUIT:
-            if (GEngine) {
-                GEngine->bIsRunning = false;
-            }
-            break;
+    case SDL_EVENT_QUIT:
+        if (GEngine) {
+            GEngine->is_running = false;
+        }
+        break;
 
-        case SDL_EVENT_MOUSE_MOTION:
-            _mouse_position = glm::vec2(event.motion.x, event.motion.y);
-            _mouse_delta = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
-            break;
+    case SDL_EVENT_MOUSE_MOTION:
+        _mouse_position = glm::vec2(event.motion.x, event.motion.y);
+        _mouse_delta    = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
+        break;
 
-        case SDL_EVENT_MOUSE_WHEEL:
-            _mouse_wheel = glm::vec2(event.wheel.x, event.wheel.y);
-            break;
+    case SDL_EVENT_MOUSE_WHEEL:
+        _mouse_wheel = glm::vec2(event.wheel.x, event.wheel.y);
+        break;
 
-        case SDL_EVENT_KEY_DOWN:
-            _keys_this_frame.insert(event.key.scancode);
-            break;
+    case SDL_EVENT_KEY_DOWN:
+        _keys_this_frame.insert(event.key.scancode);
+        break;
 
-        case SDL_EVENT_FINGER_DOWN:
-        case SDL_EVENT_FINGER_MOTION:
-        case SDL_EVENT_FINGER_UP: {
+    case SDL_EVENT_FINGER_DOWN:
+    case SDL_EVENT_FINGER_MOTION:
+    case SDL_EVENT_FINGER_UP:
+        {
             SDL_FingerID finger_id = event.tfinger.fingerID;
             glm::vec2 position(event.tfinger.x, event.tfinger.y);
             float pressure = event.tfinger.pressure;
@@ -207,7 +209,7 @@ void InputManager::process_event(const SDL_Event& event) {
             } else {
                 auto it = _touch_points.find(finger_id);
                 if (it != _touch_points.end()) {
-                    it->second.position = position;
+                    it->second.position   = position;
                     it->second.pressure.x = pressure;
                 } else {
                     _touch_points[finger_id] = TouchPoint(finger_id, position, pressure);
@@ -216,10 +218,12 @@ void InputManager::process_event(const SDL_Event& event) {
             break;
         }
 
-        case SDL_EVENT_GAMEPAD_ADDED:
-        case SDL_EVENT_GAMEPAD_REMOVED:
-            handle_gamepad_connection(event);
-            break;
+    case SDL_EVENT_GAMEPAD_ADDED:
+    case SDL_EVENT_GAMEPAD_REMOVED:
+        handle_gamepad_connection(event);
+        break;
+    default:
+        break;
     }
 }
 
@@ -242,7 +246,7 @@ void InputManager::update() {
 void InputManager::late_update() {
     // Store previous states for next frame
     _prev_mouse_position = _mouse_position;
-    _mouse_delta = glm::vec2(0.0f);
+    _mouse_delta         = glm::vec2(0.0f);
 
     // Update previous key states
     for (const auto& [key, state] : _key_states) {
@@ -264,64 +268,84 @@ void InputManager::late_update() {
 
 // Keyboard functions
 bool InputManager::is_key_pressed(SDL_Scancode key) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _key_states.find(key);
     return it != _key_states.end() && it->second == InputState::PRESSED;
 }
 
 bool InputManager::is_key_held(SDL_Scancode key) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _key_states.find(key);
     return it != _key_states.end() && (it->second == InputState::PRESSED || it->second == InputState::HELD);
 }
 
 bool InputManager::is_key_released(SDL_Scancode key) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _key_states.find(key);
     return it != _key_states.end() && it->second == InputState::JUST_RELEASED;
 }
 
 InputState InputManager::get_key_state(SDL_Scancode key) const {
-    if (_input_blocked) return InputState::RELEASED;
+    if (_input_blocked) {
+        return InputState::RELEASED;
+    }
     auto it = _key_states.find(key);
     return it != _key_states.end() ? it->second : InputState::RELEASED;
 }
 
 bool InputManager::are_keys_held(const std::vector<SDL_Scancode>& keys) const {
     for (SDL_Scancode key : keys) {
-        if (!is_key_held(key)) return false;
+        if (!is_key_held(key)) {
+            return false;
+        }
     }
     return !keys.empty();
 }
 
 bool InputManager::any_key_pressed(const std::vector<SDL_Scancode>& keys) const {
     for (SDL_Scancode key : keys) {
-        if (is_key_pressed(key)) return true;
+        if (is_key_pressed(key)) {
+            return true;
+        }
     }
     return false;
 }
 
 // Mouse functions
 bool InputManager::is_mouse_button_pressed(MouseButton button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _mouse_button_states.find(button);
     return it != _mouse_button_states.end() && it->second == InputState::PRESSED;
 }
 
 bool InputManager::is_mouse_button_held(MouseButton button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _mouse_button_states.find(button);
     return it != _mouse_button_states.end() && (it->second == InputState::PRESSED || it->second == InputState::HELD);
 }
 
 bool InputManager::is_mouse_button_released(MouseButton button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     auto it = _mouse_button_states.find(button);
     return it != _mouse_button_states.end() && it->second == InputState::JUST_RELEASED;
 }
 
 InputState InputManager::get_mouse_button_state(MouseButton button) const {
-    if (_input_blocked) return InputState::RELEASED;
+    if (_input_blocked) {
+        return InputState::RELEASED;
+    }
     auto it = _mouse_button_states.find(button);
     return it != _mouse_button_states.end() ? it->second : InputState::RELEASED;
 }
@@ -353,28 +377,39 @@ bool InputManager::is_gamepad_connected(int index) const {
 }
 
 bool InputManager::is_gamepad_button_pressed(int gamepad_index, int button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     const GamepadInfo* gamepad = get_gamepad(gamepad_index);
-    if (!gamepad) return false;
+    if (!gamepad) {
+        return false;
+    }
 
     auto it = gamepad->button_states.find(button);
     return it != gamepad->button_states.end() && it->second == InputState::PRESSED;
 }
 
 bool InputManager::is_gamepad_button_held(int gamepad_index, int button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     const GamepadInfo* gamepad = get_gamepad(gamepad_index);
-    if (!gamepad) return false;
+    if (!gamepad) {
+        return false;
+    }
 
     auto it = gamepad->button_states.find(button);
-    return it != gamepad->button_states.end() &&
-           (it->second == InputState::PRESSED || it->second == InputState::HELD);
+    return it != gamepad->button_states.end() && (it->second == InputState::PRESSED || it->second == InputState::HELD);
 }
 
 bool InputManager::is_gamepad_button_released(int gamepad_index, int button) const {
-    if (_input_blocked) return false;
+    if (_input_blocked) {
+        return false;
+    }
     const GamepadInfo* gamepad = get_gamepad(gamepad_index);
-    if (!gamepad) return false;
+    if (!gamepad) {
+        return false;
+    }
 
     auto it = gamepad->button_states.find(button);
     return it != gamepad->button_states.end() && it->second == InputState::JUST_RELEASED;
@@ -411,7 +446,9 @@ glm::vec2 InputManager::get_touch_position(SDL_FingerID finger_id) const {
 size_t InputManager::get_active_touch_count() const {
     size_t count = 0;
     for (const auto& [id, touch] : _touch_points) {
-        if (touch.active) count++;
+        if (touch.active) {
+            count++;
+        }
     }
     return count;
 }
@@ -428,25 +465,33 @@ void InputManager::unregister_action(const std::string& action_name) {
 
 bool InputManager::is_action_pressed(const std::string& action_name) const {
     auto it = _input_actions.find(action_name);
-    if (it == _input_actions.end()) return false;
+    if (it == _input_actions.end()) {
+        return false;
+    }
 
     const InputAction& action = it->second;
 
     // Check keys
     for (SDL_Scancode key : action.keys) {
-        if (is_key_pressed(key)) return true;
+        if (is_key_pressed(key)) {
+            return true;
+        }
     }
 
     // Check mouse buttons
     for (MouseButton button : action.mouse_buttons) {
-        if (is_mouse_button_pressed(button)) return true;
+        if (is_mouse_button_pressed(button)) {
+            return true;
+        }
     }
 
     // Check gamepad buttons (check all connected gamepads)
     for (const auto& [index, gamepad] : _gamepads) {
         if (gamepad->is_connected()) {
             for (int button : action.gamepad_buttons) {
-                if (is_gamepad_button_pressed(index, button)) return true;
+                if (is_gamepad_button_pressed(index, button)) {
+                    return true;
+                }
             }
         }
     }
@@ -456,25 +501,33 @@ bool InputManager::is_action_pressed(const std::string& action_name) const {
 
 bool InputManager::is_action_held(const std::string& action_name) const {
     auto it = _input_actions.find(action_name);
-    if (it == _input_actions.end()) return false;
+    if (it == _input_actions.end()) {
+        return false;
+    }
 
     const InputAction& action = it->second;
 
     // Check keys
     for (SDL_Scancode key : action.keys) {
-        if (is_key_held(key)) return true;
+        if (is_key_held(key)) {
+            return true;
+        }
     }
 
     // Check mouse buttons
     for (MouseButton button : action.mouse_buttons) {
-        if (is_mouse_button_held(button)) return true;
+        if (is_mouse_button_held(button)) {
+            return true;
+        }
     }
 
     // Check gamepad buttons
     for (const auto& [index, gamepad] : _gamepads) {
         if (gamepad->is_connected()) {
             for (int button : action.gamepad_buttons) {
-                if (is_gamepad_button_held(index, button)) return true;
+                if (is_gamepad_button_held(index, button)) {
+                    return true;
+                }
             }
         }
     }
@@ -484,22 +537,30 @@ bool InputManager::is_action_held(const std::string& action_name) const {
 
 bool InputManager::is_action_released(const std::string& action_name) const {
     auto it = _input_actions.find(action_name);
-    if (it == _input_actions.end()) return false;
+    if (it == _input_actions.end()) {
+        return false;
+    }
 
     const InputAction& action = it->second;
 
     for (SDL_Scancode key : action.keys) {
-        if (is_key_released(key)) return true;
+        if (is_key_released(key)) {
+            return true;
+        }
     }
 
     for (MouseButton button : action.mouse_buttons) {
-        if (is_mouse_button_released(button)) return true;
+        if (is_mouse_button_released(button)) {
+            return true;
+        }
     }
 
     for (const auto& [index, gamepad] : _gamepads) {
         if (gamepad->is_connected()) {
             for (int button : action.gamepad_buttons) {
-                if (is_gamepad_button_released(index, button)) return true;
+                if (is_gamepad_button_released(index, button)) {
+                    return true;
+                }
             }
         }
     }
@@ -514,15 +575,15 @@ void InputManager::update_key_states() {
 
     // Update all tracked keys
     for (auto& [scancode, state] : _key_states) {
-        bool current = keyboard_state[scancode];
-        bool previous = _prev_key_states[scancode];
+        bool current          = keyboard_state[scancode];
+        bool previous         = _prev_key_states[scancode];
         _key_states[scancode] = calculate_input_state(current, previous);
     }
 
     // Add new keys that were pressed this frame
     for (SDL_Scancode key : _keys_this_frame) {
         if (_key_states.find(key) == _key_states.end()) {
-            _key_states[key] = InputState::PRESSED;
+            _key_states[key]      = InputState::PRESSED;
             _prev_key_states[key] = false;
         }
     }
@@ -532,47 +593,48 @@ void InputManager::update_mouse_states() {
     Uint32 mouse_state = SDL_GetMouseState(&_mouse_position.x, &_mouse_position.y);
 
     // Update all mouse button states
-    std::vector<MouseButton> buttons = {
-        MouseButton::LEFT, MouseButton::MIDDLE, MouseButton::RIGHT, MouseButton::BUTTON_X1, MouseButton::BUTTON_X2
-    };
+    std::vector<MouseButton> buttons = {MouseButton::LEFT, MouseButton::MIDDLE, MouseButton::RIGHT, MouseButton::BUTTON_X1,
+                                        MouseButton::BUTTON_X2};
 
     for (MouseButton button : buttons) {
-        bool current = (mouse_state & SDL_BUTTON_MASK(static_cast<int>(button))) != 0;
-        bool previous = _prev_mouse_button_states[button];
+        bool current                 = (mouse_state & SDL_BUTTON_MASK(static_cast<int>(button))) != 0;
+        bool previous                = _prev_mouse_button_states[button];
         _mouse_button_states[button] = calculate_input_state(current, previous);
     }
 }
 
 void InputManager::update_gamepad_states() {
     for (auto& [index, gamepad] : _gamepads) {
-        if (!gamepad->is_connected()) continue;
+        if (!gamepad->is_connected()) {
+            continue;
+        }
 
         if (gamepad->is_controller && gamepad->controller) {
             // Update gamepad button states
             for (int button = 0; button < SDL_GAMEPAD_BUTTON_COUNT; ++button) {
-                bool current = SDL_GetGamepadButton(gamepad->controller, static_cast<SDL_GamepadButton>(button));
-                bool previous = gamepad->prev_button_states[button];
+                bool current                   = SDL_GetGamepadButton(gamepad->controller, static_cast<SDL_GamepadButton>(button));
+                bool previous                  = gamepad->prev_button_states[button];
                 gamepad->button_states[button] = calculate_input_state(current, previous);
             }
 
             // Update axis values
             for (int axis = 0; axis < SDL_GAMEPAD_AXIS_COUNT; ++axis) {
-                Sint16 value = SDL_GetGamepadAxis(gamepad->controller, static_cast<SDL_GamepadAxis>(axis));
+                Sint16 value               = SDL_GetGamepadAxis(gamepad->controller, static_cast<SDL_GamepadAxis>(axis));
                 gamepad->axis_values[axis] = value / 32767.0f; // Normalize to -1.0 to 1.0
             }
         } else if (gamepad->joystick) {
             // Update joystick button states
             int num_buttons = SDL_GetNumJoystickButtons(gamepad->joystick);
             for (int button = 0; button < num_buttons; ++button) {
-                bool current = SDL_GetJoystickButton(gamepad->joystick, button);
-                bool previous = gamepad->prev_button_states[button];
+                bool current                   = SDL_GetJoystickButton(gamepad->joystick, button);
+                bool previous                  = gamepad->prev_button_states[button];
                 gamepad->button_states[button] = calculate_input_state(current, previous);
             }
 
             // Update axis values
             int num_axes = SDL_GetNumJoystickAxes(gamepad->joystick);
             for (int axis = 0; axis < num_axes && axis < static_cast<int>(gamepad->axis_values.size()); ++axis) {
-                Sint16 value = SDL_GetJoystickAxis(gamepad->joystick, axis);
+                Sint16 value               = SDL_GetJoystickAxis(gamepad->joystick, axis);
                 gamepad->axis_values[axis] = value / 32767.0f;
             }
         }
@@ -586,11 +648,11 @@ void InputManager::handle_gamepad_connection(const SDL_Event& event) {
         if (SDL_IsGamepad(instance_id)) {
             SDL_Gamepad* gamepad_device = SDL_OpenGamepad(instance_id);
             if (gamepad_device) {
-                auto gamepad = std::make_unique<GamepadInfo>();
-                gamepad->controller = gamepad_device;
-                gamepad->joystick = SDL_GetGamepadJoystick(gamepad_device);
-                gamepad->instance_id = instance_id;
-                gamepad->name = SDL_GetGamepadName(gamepad_device) ? SDL_GetGamepadName(gamepad_device) : "UNKNOWN_GAMEPAD";
+                auto gamepad           = std::make_unique<GamepadInfo>();
+                gamepad->controller    = gamepad_device;
+                gamepad->joystick      = SDL_GetGamepadJoystick(gamepad_device);
+                gamepad->instance_id   = instance_id;
+                gamepad->name          = SDL_GetGamepadName(gamepad_device) ? SDL_GetGamepadName(gamepad_device) : "UNKNOWN_GAMEPAD";
                 gamepad->is_controller = true;
                 gamepad->axis_values.resize(SDL_GAMEPAD_AXIS_COUNT, 0.0f);
 
@@ -626,8 +688,7 @@ InputState InputManager::calculate_input_state(bool current, bool previous) cons
 }
 
 bool InputManager::position_in_rect(glm::vec2 position, const Rect2& rect) const {
-    return position.x >= rect.x && position.x <= rect.x + rect.width &&
-           position.y >= rect.y && position.y <= rect.y + rect.height;
+    return position.x >= rect.x && position.x <= rect.x + rect.width && position.y >= rect.y && position.y <= rect.y + rect.height;
 }
 
 bool InputManager::mouse_in_rect(const Rect2& rect) const {
