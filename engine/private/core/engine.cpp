@@ -15,7 +15,6 @@ ma_engine audio_engine;
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
 
-
     if (type == Backend::OPENGL) {
         return _create_renderer_gl(window, view_width, view_height);
     }
@@ -47,8 +46,19 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     if (!Config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
-        return false;
     }
+
+    const auto app_config = Config.get_application();
+
+    if (app_config.is_fullscreen) {
+        flags |= SDL_WINDOW_FULLSCREEN;
+        this->Window.is_fullscreen = true;
+    }
+
+    if (app_config.is_resizable) {
+        flags |= SDL_WINDOW_RESIZABLE;
+    }
+
 
     /*!
         @brief Unset some SDL flags and set supported later.
@@ -63,7 +73,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     // TODO: check if metal is supported and create MTLDevice, if fail create OPENGL/ES
     if (type == Backend::METAL) {
-        LOG_INFO("Metal renderer is currently experimental.");
+        LOG_INFO("Metal renderer is currently experimental, many features are not implemented yet");
 
         flags |= SDL_WINDOW_METAL;
     }
@@ -73,20 +83,22 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     }
 
 
-    const auto app_config = Config.get_application();
-
 #pragma region APP_METADATA
     SDL_SetHint(SDL_HINT_ORIENTATIONS, Config.get_orientation_string().c_str());
     SDL_SetAppMetadata(app_config.name, app_config.version, app_config.package_name);
-
 #pragma endregion
 
-#if defined(NDEBUG)
-    Logger::initialize();
-#endif
+    if (Config.threading.is_multithreaded) {
+        Logger::initialize();
+    }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
+
+        if (Config.threading.is_multithreaded) {
+            Logger::destroy();
+        }
+
         return false;
     }
 
@@ -97,38 +109,55 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     const SDL_DisplayID displayID       = SDL_GetPrimaryDisplay();
     const SDL_DisplayMode* display_mode = SDL_GetDesktopDisplayMode(displayID);
 
-    GEngine->Window.data = display_mode;
-
+    this->Window.data = display_mode;
 
     SDL_Window* _window = SDL_CreateWindow(app_config.name, width, height, flags);
 
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
+
+        if (Config.threading.is_multithreaded) {
+            Logger::destroy();
+        }
+
         return false;
     }
 
     if (!init_audio_engine()) {
         LOG_CRITICAL("Failed to initialize Audio Engine");
+        SDL_DestroyWindow(_window);
+
+        if (Config.threading.is_multithreaded) {
+            Logger::destroy();
+        }
+
         return false;
     }
-
-    LOG_INFO("Initialized Audio Engine");
-
 
     const std::string gamepad_mappings = _load_assets_file("controller_db");
 
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
+        SDL_DestroyWindow(_window);
+        close_audio_engine();
+
+        if (Config.threading.is_multithreaded) {
+            Logger::destroy();
+        }
+
         return false;
     }
 
-    GEngine->Window.handle = _window;
+    this->Window.handle = _window;
 
     int bbWidth, bbHeight;
     SDL_GetWindowSizeInPixels(_window, &bbWidth, &bbHeight);
 
-    GEngine->Window.bbWidth  = bbWidth;
-    GEngine->Window.bbHeight = bbHeight;
+    SDL_Rect view_bounds = {};
+    SDL_GetDisplayUsableBounds(displayID, &view_bounds);
+
+    this->Window.bbWidth  = bbWidth;
+    this->Window.bbHeight = bbHeight;
 
     auto hdpi_screen = [display_mode, bbWidth, bbHeight]() {
         if (display_mode->w == bbWidth && display_mode->h == bbHeight) {
@@ -137,22 +166,20 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     };
 
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID)
-
-    SDL_SetWindowFullscreen(_window, true);
-    GEngine->Window.bFullscreen = true;
-
-#endif
 
     this->_renderer = _create_renderer_internal(_window, bbWidth, bbHeight, type);
 
     if (!this->_renderer) {
-        LOG_CRITICAL("Failed to create renderer: %s", SDL_GetError());
+        LOG_CRITICAL("Failed to create renderer: (unknown type)");
+        SDL_DestroyWindow(_window);
+        close_audio_engine();
+
+        if (Config.threading.is_multithreaded) {
+            Logger::destroy();
+        }
+
         return false;
     }
-
-    SDL_Rect view_bounds = {};
-    SDL_GetDisplayUsableBounds(displayID, &view_bounds);
 
     LOG_INFO("Successfully created window with title: %s", app_config.name);
     LOG_INFO(" > Width %d, Height %d", width, height);
@@ -174,8 +201,8 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     //TODO: get this dyn.
     if (type == Backend::METAL) {
-       LOG_INFO(" > Version: %s ", "Metal 2.0+");
-       LOG_INFO(" > Vendor: %s", "Apple Inc.");
+        LOG_INFO(" > Version: %s ", "Metal 2.0+");
+        LOG_INFO(" > Vendor: %s", "Apple Inc.");
     }
 
     this->set_vsync(Config.is_vsync());
@@ -184,7 +211,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
-    this->bIsRunning     = true;
+    this->is_running     = true;
 
     return true;
 }
@@ -206,9 +233,9 @@ void Engine::shutdown() {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-#if defined(NDEBUG)
-    Logger::destroy();
-#endif
+    if (Config.threading.is_multithreaded) {
+        Logger::destroy();
+    }
 
     SDL_DestroyWindow(Window.handle);
 

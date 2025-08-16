@@ -41,7 +41,7 @@ public:
         int width = 0;
         int height = 0;
         const SDL_DisplayMode* data = nullptr;
-        bool bFullscreen = false;
+        bool is_fullscreen = false;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};
     } Window;
@@ -56,7 +56,7 @@ public:
 
     Ember_VFS VirtualFileSystem{};
 
-    bool bIsRunning = false;
+    bool is_running = false;
 
     /**
      * @brief Resize the SDL window.

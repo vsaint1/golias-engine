@@ -130,6 +130,18 @@ bool Application::load(const tinyxml2::XMLElement* root) {
         LOG_WARN("Failed to load Application Config - max_fps element is null");
     }
 
+    if (const auto fullscreen_element = app_element->FirstChildElement("fullscreen")) {
+        fullscreen_element->QueryBoolText(&is_fullscreen);
+    } else {
+        LOG_WARN("Failed to load Application Config - fullscreen element is null");
+    }
+
+    if (const auto resizable_element = app_element->FirstChildElement("resizable")) {
+        resizable_element->QueryBoolText(&is_resizable);
+    } else {
+        LOG_WARN("Failed to load Application Config - resizable element is null");
+    }
+
     return true;
 }
 
@@ -165,7 +177,7 @@ bool EngineConfig::load() {
     }
 
     if (const auto orientation_element = config->FirstChildElement("orientation")) {
-        if (const char* orientation_str = orientation_element->Attribute("type")) {
+        if (const char* orientation_str = orientation_element->GetText()) {
             if (strcmp(orientation_str, "landscape_left") == 0) {
                 orientation = Orientation::LANDSCAPE_LEFT;
             } else if (strcmp(orientation_str, "landscape_right") == 0) {
