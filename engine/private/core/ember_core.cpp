@@ -1,12 +1,11 @@
 #include "core/ember_core.h"
 
 
-glm::vec2 Renderer::_rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation) {
-    float s           = sin(rotation);
-    float c           = cos(rotation);
-    glm::vec2 rel     = point - center;
-    glm::vec2 rot_rel = glm::vec2(rel.x * c - rel.y * s, rel.x * s + rel.y * c);
-    return center + rot_rel;
+glm::vec2 Renderer::_rotate_point(const glm::vec2& point, const glm::vec2& center, float radians) {
+    glm::vec3 p(point - center, 0.0f); // make it vec3 (z=0)
+    glm::mat4 rot = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(0, 0, 1));
+    glm::vec3 pr = rot * glm::vec4(p, 1.0f);
+    return glm::vec2(pr) + center;
 }
 
 Recti Renderer::_calc_display() {
@@ -43,23 +42,42 @@ void Renderer::_add_quad_to_batch(const BatchKey& key, float x, float y, float w
     uint32_t base    = batch.vertices.size();
     batch.mode       = is_filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
 
-    const glm::vec2 center = glm::vec2(x + w * 0.5f, y + h * 0.5f);
+    const glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(x + w * 0.5f, y + h * 0.5f, 0.0f))
+                        * glm::rotate(glm::mat4(1.0f), rotation, glm::vec3(0, 0, 1))
+                        * glm::scale(glm::mat4(1.0f), glm::vec3(w, h, 1.0f));
 
-    glm::vec2 p0 = _rotate_point({x, y + h}, center, rotation); // top-left
-    glm::vec2 p1 = _rotate_point({x + w, y + h}, center, rotation); // top-right
-    glm::vec2 p2 = _rotate_point({x + w, y}, center, rotation); // bottom-right
-    glm::vec2 p3 = _rotate_point({x, y}, center, rotation); // bottom-left
+    const glm::vec4 quad[4] = {
+        {-0.5f,  0.5f, 0.0f, 1.0f}, // top-left
+        { 0.5f,  0.5f, 0.0f, 1.0f}, // top-right
+        { 0.5f, -0.5f, 0.0f, 1.0f}, // bottom-right
+        {-0.5f, -0.5f, 0.0f, 1.0f}  // bottom-left
+    };
 
-    batch.vertices.push_back({p0, {u0, v1}, color});
-    batch.vertices.push_back({p1, {u1, v1}, color});
-    batch.vertices.push_back({p2, {u1, v0}, color});
-    batch.vertices.push_back({p3, {u0, v0}, color});
+    glm::vec2 texcoords[4] = {
+        {u0, v1},
+        {u1, v1},
+        {u1, v0},
+        {u0, v0}
+    };
 
+    for (int i = 0; i < 4; i++) {
+        glm::vec4 p = transform * quad[i];
+        batch.vertices.push_back({glm::vec2(p), texcoords[i], color});
+    }
+
+    // GL_TRIANGLES
     if (is_filled) {
-        // Two triangles
-        batch.indices.insert(batch.indices.end(), {base, base + 1, base + 2, base + 2, base + 3, base});
+        batch.indices.insert(batch.indices.end(), {
+            base, base + 1, base + 2,
+            base + 2, base + 3, base
+        });
     } else {
-        // Outline (4 lines)
-        batch.indices.insert(batch.indices.end(), {base, base + 1, base + 1, base + 2, base + 2, base + 3, base + 3, base});
+        // GL_LINES
+        batch.indices.insert(batch.indices.end(), {
+            base, base + 1,
+            base + 1, base + 2,
+            base + 2, base + 3,
+            base + 3, base
+        });
     }
 }

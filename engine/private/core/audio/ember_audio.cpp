@@ -2,6 +2,8 @@
 
 
 bool init_audio_engine() {
+    LOG_INFO("Initializing audio engine");
+
     ma_device_config* device_config = (ma_device_config*) SDL_malloc(sizeof(ma_device_config));
 
     if (!device_config) {

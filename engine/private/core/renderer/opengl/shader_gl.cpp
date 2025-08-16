@@ -13,7 +13,7 @@
 #endif
 
 OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragment) {
-    LOG_INFO("Compiling Shaders Vertex (%s) | Fragment (%s)", vertex.c_str(), fragment.c_str());
+    LOG_INFO("Compiling Shaders Sources Vertex (%s) | Fragment (%s)", vertex.c_str(), fragment.c_str());
 
 
     const std::string vertexSource   = SHADER_HEADER + _load_assets_file(vertex);
@@ -39,13 +39,14 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
 
     SDL_assert(success == GL_TRUE);
 
-    LOG_INFO("Successfully linked SHADER_PROGRAM %d", program);
 
     glDeleteShader(vs);
     glDeleteShader(fs);
 
     this->id = program;
-    LOG_INFO("Successfully created SHADER_PROGRAM %d", id);
+
+    LOG_INFO("Successfully created and linked SHADER_PROGRAM(%d)", program);
+
 }
 
 unsigned int OpenglShader::CompileShader(unsigned int type, const char* source) {
@@ -90,7 +91,7 @@ bool OpenglShader::is_valid() const {
     char infoLog[512];
     if (!status) {
         glGetProgramInfoLog(id, 512, nullptr, infoLog);
-        LOG_CRITICAL("SHADER_PROGARM validation failed: %s", infoLog);
+        LOG_CRITICAL("SHADER_PROGRAM validation failed: %s", infoLog);
         return false;
     }
 
