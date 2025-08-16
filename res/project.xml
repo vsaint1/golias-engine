@@ -8,6 +8,8 @@
         <version>0.1.0</version>
         <max_fps>60</max_fps>
         <identifier>br.com.vsaint1.ember_engine</identifier>
+        <resizable>true</resizable>
+        <fullscreen>false</fullscreen>
     </application>
 
     <window>
