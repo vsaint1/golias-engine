@@ -95,7 +95,15 @@ struct Application {
     const char* description = "EEngine";
     int max_fps = 60;
 
+    bool is_fullscreen = false;
+    bool is_resizable = true;
+
     bool load(const tinyxml2::XMLElement* root);
+};
+
+struct Threading {
+    bool is_multithreaded = false;
+    int thread_count = -1; // Default to -1 (auto-detect based on CPU cores)
 };
 
 struct EngineConfig {
@@ -105,6 +113,8 @@ struct EngineConfig {
     RendererDevice renderer_device = RendererDevice::GL_COMPATIBILITY;
 
     TextureFiltering texture_filtering = TextureFiltering::NEAREST;
+
+    Threading threading;
 
     bool load();
 
