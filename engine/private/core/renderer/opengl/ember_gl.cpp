@@ -56,7 +56,7 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
     float font_scale    = scale * size_ratio;
     bool needs_rotation = (rotation != 0.0f);
 
-    std::vector<CharData> char_data;
+    std::vector<Glyph> char_data;
     char_data.reserve(text.size());
 
     float xpos = x, ypos = y;
@@ -258,7 +258,7 @@ void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_s
 void OpenglRenderer::initialize() {
 
     Type = Backend::OPENGL;
-    
+
 #pragma region DEFAULT_SHADER_SETUP
     _default_shader->bind();
 
@@ -533,7 +533,7 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
     if(!texture){
         return;
     }
-    
+
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
 
     if (!src_rect.is_zero()) {
@@ -557,7 +557,7 @@ void OpenglRenderer::flush() {
 
     sorted_batches.clear();
     sorted_batches.reserve(batches.size());
-    
+
     for (auto& [key, batch] : batches) {
         sorted_batches.emplace_back(key, &batch);
     }

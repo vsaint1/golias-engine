@@ -143,7 +143,7 @@ public:
      * @brief Draw a textured quad.
      */
     virtual void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
-                              const Rect2& src_rect = {0, 0, 0, 0}, int z_index = 0,
+                              const Rect2& src_rect = Rect2(), int z_index = 0,
                               const UberShader& uber_shader = UberShader::none()) = 0;
 
     /**
@@ -263,7 +263,7 @@ protected:
     /**
      * @brief Rotate a point around a center point.
      */
-    glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float rotation);
+    glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float radians);
 
     /**
      * @brief Calculate the display rectangle for rendering based on the viewport and window size.
