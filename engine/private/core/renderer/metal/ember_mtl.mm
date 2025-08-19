@@ -10,7 +10,7 @@
 
 
 MetalRenderer::MetalRenderer() = default;
-MetalRenderer::~MetalRenderer() {}
+MetalRenderer::~MetalRenderer() = default;
 
 void MetalRenderer::initialize() {
     Type = Backend::METAL;
@@ -120,8 +120,12 @@ std::shared_ptr<Texture> MetalRenderer::load_texture(const std::string& path) {
         has_error_texture = true;
         data = (unsigned char*)malloc(w*h*4);
         for (int y=0;y<h;++y) for (int x=0;x<w;++x) {
-            int i=(y*w+x)*4; bool pink = ((x/8)%2)==((y/8)%2);
-            data[i+0] = pink?180:0; data[i+1]=0; data[i+2]=pink?180:0; data[i+3]=255;
+            int i=(y*w+x)*4;
+            bool pink = ((x/8)%2)==((y/8)%2);
+            data[i+0] = pink?180:0;
+            data[i+1]= 0;
+            data[i+2]= pink ? 180:0;
+            data[i+3]= 255;
         }
     }
 
