@@ -166,8 +166,9 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     };
 
+    const Viewport viewport = Config.get_viewport();
 
-    this->_renderer = _create_renderer_internal(_window, bbWidth, bbHeight, type);
+    this->_renderer = _create_renderer_internal(_window, viewport.width, viewport.height, type);
 
     if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: (unknown type)");
@@ -187,6 +188,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
     LOG_INFO(" > High DPI screen (%s), Backbuffer (%dx%d)", hdpi_screen() ? "YES" : "NO", bbWidth, bbHeight);
     LOG_INFO(" > Usable Bounds (%d, %d, %d, %d)", view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h);
+    LOG_INFO(" > Viewport (%d, %d)", viewport.width, viewport.height);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
     LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL/ES" : "Metal");
 
@@ -206,8 +208,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     }
 
     this->set_vsync(Config.is_vsync());
-
-    this->_renderer->resize_viewport(Config.get_viewport().width, Config.get_viewport().height);
 
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);

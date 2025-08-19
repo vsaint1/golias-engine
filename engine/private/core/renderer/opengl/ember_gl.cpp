@@ -349,7 +349,39 @@ void OpenglRenderer::initialize() {
 void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {
     Viewport[0] = view_width;
     Viewport[1] = view_height;
-    // glViewport(0, 0, view_width, view_height);
+
+    projection = glm::ortho(
+        0.0f, static_cast<float>(Viewport[0]),
+        static_cast<float>(Viewport[1]), 0.0f,
+        -1.0f, 1.0f
+    );
+
+    if (_frame_buffer_object == 0) glGenFramebuffers(1, &_frame_buffer_object);
+    if (_fbo_texture == 0) glGenTextures(1, &_fbo_texture);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+    glBindTexture(GL_TEXTURE_2D, _fbo_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                 Viewport[0], Viewport[1], 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    //TODO: get this from project.xml
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER,
+                           GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D,
+                           _fbo_texture, 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LOG_ERROR("Framebuffer is not complete!");
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void OpenglRenderer::set_context(const void* ctx) {
@@ -379,6 +411,8 @@ void OpenglRenderer::destroy() {
     _texture_sizes.clear();
 
     ImGui_ImplOpenGL3_Shutdown();
+
+    FT_Done_FreeType(ft);
 
     SDL_GL_DestroyContext(context);
 
@@ -514,7 +548,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
         font.characters.insert(std::pair<char, Character>(c, character));
     }
 
-
+    FT_Done_Face(face);
     glBindTexture(GL_TEXTURE_2D, 0);
     fonts[font_alias] = font;
 
@@ -531,27 +565,50 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
 void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
                                   const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
-
-
     if (!texture) {
         return;
     }
 
+    // Compute UVs
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
+    int draw_w = texture->width;
+    int draw_h = texture->height;
 
     if (!src_rect.is_zero()) {
         u0 = src_rect.x / texture->width;
         v0 = src_rect.y / texture->height;
         u1 = (src_rect.x + src_rect.width) / texture->width;
         v1 = (src_rect.y + src_rect.height) / texture->height;
+
+
+        draw_w = static_cast<int>(src_rect.width);
+        draw_h = static_cast<int>(src_rect.height);
     }
 
+    float dx = dest_rect.x;
+    float dy = dest_rect.y;
+    float dw = dest_rect.width  != 0 ? dest_rect.width  : draw_w;
+    float dh = dest_rect.height != 0 ? dest_rect.height : draw_h;
+
     BatchKey key{texture->id, z_index, DrawCommandType::TEXTURE, uber_shader};
-    _add_quad_to_batch(key, dest_rect.x, dest_rect.y, dest_rect.width, dest_rect.height, u0, v0, u1, v1, color, rotation);
+    _add_quad_to_batch(key, dx, dy, dw, dh, u0, v0, u1, v1, color, rotation);
 }
 
 void OpenglRenderer::flush() {
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
+
+
+    glViewport(0, 0, Viewport[0], Viewport[1]);
+
+
+
+    projection = glm::ortho(
+        0.0f,
+        static_cast<float>(Viewport[0]),
+        static_cast<float>(Viewport[1]),
+        0.0f,
+        -1.0f, 1.0f
+    );
 
     int draw_call_count = 0;
 
@@ -645,16 +702,19 @@ void OpenglRenderer::_render_fbo() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(x, y, width, height);
 
+    // Clear backbuffer to black (letterbox/pillarbox)
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     _fbo_shader->bind();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _fbo_texture);
+    _fbo_shader->set_value("TEXTURE", 0); // sampler2D binding
 
     glBindVertexArray(_fbo_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void OpenglRenderer::clear(glm::vec4 color) {
