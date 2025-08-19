@@ -14,6 +14,9 @@ int main(int argc, char* argv[]) {
 
     auto sample_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
 
+    GEngine->get_renderer()->load_font("fonts/OpenSans.ttf",  "default",32);
+    GEngine->get_renderer()->load_font("fonts/Minecraft.ttf",  "mine",16);
+
 
     while (GEngine->is_running) {
         SDL_Event e;
@@ -21,15 +24,28 @@ int main(int argc, char* argv[]) {
             if (e.type == SDL_EVENT_QUIT) {
                 GEngine->is_running = false;
             }
+
+            const auto* pKey = SDL_GetKeyboardState(NULL);
+
+            if (pKey[SDL_SCANCODE_E]) {
+                GEngine->resize_window(960,540);
+            }
+
+            if (pKey[SDL_SCANCODE_Q]) {
+                GEngine->resize_window(1280,720);
+            }
+
+
         }
 
 
         GEngine->get_renderer()->clear();
 
         GEngine->get_renderer()->draw_rect({10, 10, 100, 50}, 0, {1, 0, 0, 1}, false, 0);
+        GEngine->get_renderer()->draw_text("Hello, Ember Engine!", 20, 20, 0, 1.0f, {1, 1, 1, 1}, "mine", 0, UberShader::none());
 
-        GEngine->get_renderer()->draw_texture(sample_texture.get(), {0.f, 0.f, 512, 256}, 0, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-                                              {0, 0, 32, 32}, 0, UberShader::none());
+        GEngine->get_renderer()->draw_texture(sample_texture.get(), {35, 35, 0, 0}, 0, {1,1,1,1}, {0,0,32,32}, 0, UberShader::none());
+
 
         GEngine->get_renderer()->flush();
 
