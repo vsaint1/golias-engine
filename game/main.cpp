@@ -41,8 +41,9 @@ int main(int argc, char* argv[]) {
 
         GEngine->get_renderer()->clear();
 
-        GEngine->get_renderer()->draw_rect({10, 10, 100, 50}, 0, {1, 0, 0, 1}, false, 0);
-        GEngine->get_renderer()->draw_text("Hello, Ember Engine!", 20, 20, 0, 1.0f, {1, 1, 1, 1}, "mine", 0, UberShader::none());
+        GEngine->get_renderer()->draw_line(50, 50, 100, 100, 1.0f,0, glm::vec4(0.f, 1.0f, 0.0f, 1.0f), 5);
+        GEngine->get_renderer()->draw_rect({10, 10, 100, 50}, 0, {1, 1, 0, 1}, false, 0);
+        GEngine->get_renderer()->draw_text("Hello [color=#FF0000]Ember[/color], [b]no bold?[/b].", 20, 20, 0, 1.0f, {1, 1, 1, 1}, "mine", 0, UberShader::none());
 
         GEngine->get_renderer()->draw_texture(sample_texture.get(), {35, 35, 0, 0}, 0, {1,1,1,1}, {0,0,32,32}, 0, UberShader::none());
 

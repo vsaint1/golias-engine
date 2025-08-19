@@ -98,6 +98,7 @@ struct Batch {
     int z_index            = 0; ///< Render order.
     UberShader uber_shader = UberShader::none(); ///< Shader effects applied.
     DrawCommandMode mode   = DrawCommandMode::TRIANGLES;
+    float thickness = 1.0f; ///< Line thickness for lines.
 };
 
 
@@ -161,7 +162,7 @@ public:
     /**
      * @brief Draw a line.
      */
-    virtual void draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color,
+    virtual void draw_line(float x1, float y1, float x2, float y2, float thickness, float rotation, const glm::vec4& color,
                            int z_index = 0) = 0;
 
     /**
