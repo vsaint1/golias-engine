@@ -278,11 +278,12 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
 }
 
 
-void Engine::resize_window(int w, int h) const {
+void Engine::resize_window(int w, int h)  {
     SDL_assert(w > 0 && h > 0);
 
-    GEngine->Window.width  = w;
-    GEngine->Window.height = h;
+    this->Window.width  = w;
+    this->Window.height = h;
+    SDL_SetWindowSize(Window.handle, w, h);
 }
 
 Renderer* Engine::get_renderer() const {

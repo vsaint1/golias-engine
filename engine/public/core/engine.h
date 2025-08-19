@@ -64,7 +64,7 @@ public:
      * @param w New width.
      * @param h New height.
      */
-    void resize_window(int w, int h) const;
+    void resize_window(int w, int h);
 
     /**
      * @brief Get the renderer instance.
