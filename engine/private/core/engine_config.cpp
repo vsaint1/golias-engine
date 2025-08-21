@@ -145,13 +145,78 @@ bool Application::load(const tinyxml2::XMLElement* root) {
     return true;
 }
 
-std::string EngineConfig::get_orientation_string() const {
+const char* EngineConfig::get_orientation_str() const {
     switch (orientation) {
-    case Orientation::LANDSCAPE_LEFT: return "LandscapeLeft";
-    case Orientation::LANDSCAPE_RIGHT: return "LandscapeRight";
-    case Orientation::PORTRAIT: return "Portrait";
-    case Orientation::PORTRAIT_UPSIDE_DOWN: return "PortraitUpsideDown";
-    default: return "Portrait";
+    case Orientation::LANDSCAPE_LEFT:
+        return "LandscapeLeft";
+    case Orientation::LANDSCAPE_RIGHT:
+        return "LandscapeRight";
+    case Orientation::PORTRAIT:
+        return "Portrait";
+    case Orientation::PORTRAIT_UPSIDE_DOWN:
+        return "PortraitUpsideDown";
+    default:
+        return "Portrait";
+    }
+}
+
+bool RendererDevice::load(const tinyxml2::XMLElement* root) {
+
+    const auto renderer_element = root->FirstChildElement("renderer");
+
+    if (const auto method_element = renderer_element->FirstChildElement("method")) {
+        const char* method_str = method_element->GetText();
+        if (strcmp(method_str, "gl_compatibility") == 0) {
+            backend = Backend::GL_COMPATIBILITY;
+        } else if (strcmp(method_str, "metal") == 0) {
+            backend = Backend::METAL;
+        } else if (strcmp(method_str, "vk_forward") == 0) {
+            backend = Backend::VK_FORWARD;
+        } else if (strcmp(method_str, "directx12") == 0) {
+            backend = Backend::DIRECTX12;
+        } else if (strcmp(method_str, "auto") == 0) {
+            backend = Backend::AUTO;
+        } else {
+            LOG_ERROR("Unknown renderer method: %s", method_str);
+            return false;
+        }
+    } else {
+        LOG_ERROR("Failed to load Renderer Config - method element is null");
+        return false;
+    }
+
+    if (const auto filtering_element = renderer_element->FirstChildElement("texture_filtering")) {
+        const char* filtering_str = filtering_element->GetText();
+        if (strcmp(filtering_str, "nearest") == 0) {
+            texture_filtering = TextureFiltering::NEAREST;
+        } else if (strcmp(filtering_str, "linear") == 0) {
+            texture_filtering = TextureFiltering::LINEAR;
+        } else {
+            LOG_ERROR("Unknown texture filtering method: %s", filtering_str);
+            return false;
+        }
+    } else {
+        LOG_ERROR("Failed to load Renderer Config - texture_filtering element is null");
+        return false;
+    }
+
+    return true;
+}
+
+const char* RendererDevice::get_backend_str() const {
+    switch (backend) {
+    case Backend::GL_COMPATIBILITY:
+        return "OpenGL/ES 3.3 Compatibility";
+    case Backend::METAL:
+        return "Metal";
+    case Backend::VK_FORWARD:
+        return "Vulkan";
+    case Backend::DIRECTX12:
+        return "DirectX 12";
+    case Backend::AUTO:
+        return "Auto";
+    default:
+        return "Unknown";
     }
 }
 
@@ -160,8 +225,8 @@ bool EngineConfig::load() {
 
     const auto file = load_file_into_memory("project.xml");
 
-    if (_doc.Parse(file.data(),file.size()) != tinyxml2::XML_SUCCESS) {
-        LOG_ERROR("Failed to load Engine Config from %s, error: %s", "res/project.xml",_doc.ErrorStr());
+    if (_doc.Parse(file.data(), file.size()) != tinyxml2::XML_SUCCESS) {
+        LOG_ERROR("Failed to load Engine Config from %s, error: %s", "res/project.xml", _doc.ErrorStr());
         return false;
     }
 
@@ -207,6 +272,12 @@ bool EngineConfig::load() {
         LOG_ERROR("Failed to load Application Config");
         return false;
     }
+
+    if (!_renderer_device.load(config)) {
+        LOG_ERROR("Failed to load Renderer Device");
+        return false;
+    }
+
 
     return true;
 }

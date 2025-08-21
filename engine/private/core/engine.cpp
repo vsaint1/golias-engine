@@ -4,6 +4,7 @@
 #include "core/ember_core.h"
 #include "core/renderer/metal/ember_mtl.h"
 #include "core/renderer/opengl/ember_gl.h"
+#include <stb_image.h>
 
 // 💀
 
@@ -15,7 +16,7 @@ ma_engine audio_engine;
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
 
-    if (type == Backend::OPENGL) {
+    if (type == Backend::GL_COMPATIBILITY) {
         return _create_renderer_gl(window, view_width, view_height);
     }
 
@@ -31,7 +32,7 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
 
 void Engine::set_vsync(const bool enabled) {
 
-    if (_renderer->Type == Backend::OPENGL) {
+    if (_renderer->Type == Backend::GL_COMPATIBILITY) {
         SDL_GL_SetSwapInterval(enabled ? 1 : 0);
     } else if (_renderer->Type == Backend::METAL) {
         // TODO
@@ -41,6 +42,8 @@ void Engine::set_vsync(const bool enabled) {
 }
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
+
+    EMBER_TIMER_START();
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
@@ -78,24 +81,24 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         flags |= SDL_WINDOW_METAL;
     }
 
-    if (type == Backend::OPENGL) {
+    if (type == Backend::GL_COMPATIBILITY) {
         flags |= SDL_WINDOW_OPENGL;
     }
 
 
 #pragma region APP_METADATA
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, Config.get_orientation_string().c_str());
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, Config.get_orientation_str());
     SDL_SetAppMetadata(app_config.name, app_config.version, app_config.package_name);
 #pragma endregion
 
-    if (Config.threading.is_multithreaded) {
+    if (Config.get_threading().is_multithreaded) {
         Logger::initialize();
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
 
-        if (Config.threading.is_multithreaded) {
+        if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -116,18 +119,39 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
 
-        if (Config.threading.is_multithreaded) {
+        if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
         }
 
         return false;
     }
 
+#pragma region APP_ICON
+
+
+    int w, h, nr_channels;
+    unsigned char* pixels = stbi_load( Config.get_application().icon_path, &w, &h, &nr_channels, 4);
+    if (!pixels) {
+        LOG_ERROR("Failed to load default icon");
+    } else {
+
+        SDL_Surface* icon = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, pixels, w * 4);
+
+        if (icon) {
+            SDL_SetWindowIcon(_window, icon);
+            SDL_DestroySurface(icon);
+        }
+
+        stbi_image_free(pixels);
+    }
+
+#pragma endregion
+
     if (!init_audio_engine()) {
         LOG_CRITICAL("Failed to initialize Audio Engine");
         SDL_DestroyWindow(_window);
 
-        if (Config.threading.is_multithreaded) {
+        if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -141,7 +165,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         SDL_DestroyWindow(_window);
         close_audio_engine();
 
-        if (Config.threading.is_multithreaded) {
+        if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -175,7 +199,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         SDL_DestroyWindow(_window);
         close_audio_engine();
 
-        if (Config.threading.is_multithreaded) {
+        if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -190,13 +214,13 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     LOG_INFO(" > Usable Bounds (%d, %d, %d, %d)", view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h);
     LOG_INFO(" > Viewport (%d, %d)", viewport.width, viewport.height);
     LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
-    LOG_INFO(" > Renderer %s", type == OPENGL ? "OpenGL/ES" : "Metal");
+    LOG_INFO(" > Renderer %s",  Config.get_renderer_device().get_backend_str());
 
     this->Window.width    = width;
     this->Window.height   = height;
     this->_renderer->Type = type;
 
-    if (type == Backend::OPENGL) {
+    if (type == Backend::GL_COMPATIBILITY) {
         LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
         LOG_INFO(" > Vendor: %s", (const char*) glGetString(GL_VENDOR));
     }
@@ -212,6 +236,8 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
     this->is_running     = true;
+
+    EMBER_TIMER_END("Initialization");
 
     return true;
 }
@@ -233,7 +259,7 @@ void Engine::shutdown() {
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    if (Config.threading.is_multithreaded) {
+    if (Config.get_threading().is_multithreaded) {
         Logger::destroy();
     }
 
@@ -278,7 +304,7 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
 }
 
 
-void Engine::resize_window(int w, int h)  {
+void Engine::resize_window(int w, int h) {
     SDL_assert(w > 0 && h > 0);
 
     this->Window.width  = w;
@@ -368,6 +394,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     glRenderer->Viewport[0] = view_width;
     glRenderer->Viewport[1] = view_height;
     glRenderer->Window      = window;
+    glRenderer->Type       = Backend::GL_COMPATIBILITY;
 
     glRenderer->set_context(glContext);
 

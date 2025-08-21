@@ -13,7 +13,6 @@ MetalRenderer::MetalRenderer() = default;
 MetalRenderer::~MetalRenderer() = default;
 
 void MetalRenderer::initialize() {
-    Type = Backend::METAL;
 
     id<MTLDevice> device = MTLCreateSystemDefaultDevice();
     if (!device) { LOG_INFO("Failed to create Metal device, reason unknown."); return; }

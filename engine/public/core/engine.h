@@ -5,25 +5,6 @@
 #include "core/time_manager.h"
 #include "core/engine_config.h"
 
-/**
- * @brief Graphics backend type.
- *
- * Choose which backend to use.
- *
- * - Type: OpenGL
- *   - WEB: WebGL 3.0
- *   - DESKTOP: OpenGL 3.3
- *   - MOBILE: OpenGLES 3.0
- *
- * - Type: Metal
- *   - Apple devices only.
- *
- * @version 0.0.1
- */
-enum Backend {
-    OPENGL,
-    METAL
-};
 
 class Renderer;
 class OpenglShader;

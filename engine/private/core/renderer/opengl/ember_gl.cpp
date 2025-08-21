@@ -250,7 +250,6 @@ void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_s
 
 void OpenglRenderer::initialize() {
 
-    Type = Backend::OPENGL;
 
 #pragma region DEFAULT_SHADER_SETUP
     _default_shader->bind();

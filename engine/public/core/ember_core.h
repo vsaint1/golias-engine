@@ -111,7 +111,7 @@ public:
 
     int Viewport[2]    = {800, 600}; ///< Viewport size.
     SDL_Window* Window = nullptr; ///< SDL Window.
-    Backend Type  = Backend::OPENGL; ///< Default Type of renderer.
+    Backend Type  = Backend::GL_COMPATIBILITY; ///< Default Type of renderer.
 
     /** @brief Initialize the renderer and its resources. */
     virtual void initialize() = 0;

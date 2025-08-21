@@ -7,7 +7,7 @@
 /**
  * @brief Supported rendering backends for the engine.
  */
-enum class RendererDevice {
+enum class Backend {
     /**
      * @brief OpenGL-based compatibility profile.
      *
@@ -91,7 +91,7 @@ struct Application {
     const char* name = "Window - Ember Engine";
     const char* version = "1.0";
     const char* package_name = "br.com.vsaint1.ember_engine"; // identifier
-    const char* icon_path = "icon.png";
+    const char* icon_path = "res/icon.png";
     const char* description = "EEngine";
     int max_fps = 60;
 
@@ -106,19 +106,34 @@ struct Threading {
     int thread_count = -1; // Default to -1 (auto-detect based on CPU cores)
 };
 
+struct RendererDevice {
+    Backend backend = Backend::GL_COMPATIBILITY;
+    TextureFiltering texture_filtering = TextureFiltering::NEAREST;
+
+    bool load(const tinyxml2::XMLElement* root);
+
+    const char* get_backend_str() const;
+
+};
+
 struct EngineConfig {
 
     Orientation orientation = Orientation::LANDSCAPE_LEFT;
 
-    RendererDevice renderer_device = RendererDevice::GL_COMPATIBILITY;
-
     TextureFiltering texture_filtering = TextureFiltering::NEAREST;
 
-    Threading threading;
 
     bool load();
 
-    std::string get_orientation_string() const;
+    const char* get_orientation_str() const;
+
+    RendererDevice get_renderer_device() const {
+        return _renderer_device;
+    }
+
+    Threading get_threading() const {
+            return _threading;
+    }
 
     Application get_application() const {
         return _app;
@@ -143,6 +158,10 @@ private:
     Environment _environment;
 
     Viewport _viewport;
+
+    RendererDevice _renderer_device;
+
+    Threading _threading;
 
     bool _is_vsync_enabled = true;
 
