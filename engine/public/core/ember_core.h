@@ -253,13 +253,13 @@ protected:
     /**
      * @brief Process a draw command.
      */
-    virtual void _render_command(const DrawCommand& cmd) = 0;
+    virtual void render_command(const DrawCommand& cmd) = 0;
 
     /**
     * @brief Set the current font to use for rendering.
     * @param font_name Alias of the font to use.
     */
-    virtual void _set_default_font(const std::string& font_name) = 0;
+    virtual void set_default_font(const std::string& font_name) = 0;
 
     /**
      * @brief Rotate a point around a center point.
@@ -278,7 +278,7 @@ protected:
     /**
     * @brief Render the current frame buffer.
     */
-    virtual void _render_fbo() = 0;
+    virtual void render_fbo() = 0;
 
     /**
      * @brief Add a quad (textured or untextured) to the appropriate batch.
@@ -286,7 +286,7 @@ protected:
     void _add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
                             const glm::vec4& color, float rotation = 0.0f, bool is_filled = true);
 
-    virtual void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;
+    virtual void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;
 
-    [[nodiscard]] virtual glm::vec2 _get_texture_size(Uint32 texture_id) const = 0;
+    [[nodiscard]] virtual glm::vec2 get_texture_size(Uint32 texture_id) const = 0;
 };

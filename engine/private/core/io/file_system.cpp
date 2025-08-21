@@ -1,16 +1,16 @@
 #include "core/io/file_system.h"
 
 
-std::string _load_assets_file(const std::string& file_path) {
+std::string load_assets_file(const std::string& file_path) {
 
-    const auto buffer = _load_file_into_memory(file_path);
+    const auto buffer = load_file_into_memory(file_path);
 
     return std::string(buffer.begin(), buffer.end());
 
 }
 
 
-std::vector<char> _load_file_into_memory(const std::string& file_path){
+std::vector<char> load_file_into_memory(const std::string& file_path){
 
     auto path = ASSETS_PATH + file_path;
 

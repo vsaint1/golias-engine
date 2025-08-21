@@ -14,7 +14,7 @@ void Logger::initialize() {
     }
 
     auto fn_thread = [](void* data) -> int {
-        static_cast<Logger*>(data)->_log_thread();
+        static_cast<Logger*>(data)->log_thread();
         return 0;
     };
 
@@ -49,7 +49,7 @@ void Logger::destroy() {
 }
 
 
-void Logger::_log_thread() {
+void Logger::log_thread() {
 
     // TODO: Get from config file
     char* pref_path = SDL_GetPrefPath("Ember", "com.ember.engine.app");

@@ -45,7 +45,7 @@ public:
 
     bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
-    void _set_default_font(const std::string& font_name) override;
+    void set_default_font(const std::string& font_name) override;
 
     void unload_font(const Font& font) override;
 
@@ -69,7 +69,7 @@ public:
 
     void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
-    void _render_command(const DrawCommand& cmd) override;
+    void render_command(const DrawCommand& cmd) override;
 
     void flush() override;
 
@@ -94,10 +94,10 @@ private:
 
     SDL_GLContext context = nullptr;
 
-    void _render_fbo() override;
+    void render_fbo() override;
 
-    void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
+    void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
 
-    glm::vec2 _get_texture_size(Uint32 texture_id) const  override;
+    [[nodiscard]] glm::vec2 get_texture_size(Uint32 texture_id) const  override;
 
 };

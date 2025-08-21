@@ -11,7 +11,7 @@
    @param file_path the path to the file in `res` folder
    @return File content as `string`
 */
-std::string _load_assets_file(const std::string& file_path);
+std::string load_assets_file(const std::string& file_path);
 
 /*!
 
@@ -22,7 +22,7 @@ std::string _load_assets_file(const std::string& file_path);
    @param file_path the path to the file in `res` folder
    @return File content as `vector<char>`
 */
-std::vector<char> _load_file_into_memory(const std::string& file_path);
+std::vector<char> load_file_into_memory(const std::string& file_path);
 
 /*!
  *  @brief Ember file (SDL_stream)

@@ -412,17 +412,19 @@ void MetalRenderer::unload_texture(Uint32 tex_id) {
     }
 }
 
+std::shared_ptr<Texture> MetalRenderer::get_texture(const std::string& path) {
+    auto it = textures.find(path);
+    if (it != textures.end()) return it->second;
+    return load_texture(path);
+}
+
 void MetalRenderer::set_context(const void* ctx) {}
 
 void* MetalRenderer::get_context() { return device_; }
 
 // --- stubs ---
 bool MetalRenderer::load_font(const std::string&, const std::string&, int) { return false; }
-std::shared_ptr<Texture> MetalRenderer::get_texture(const std::string& path) {
-    auto it = textures.find(path);
-    if (it != textures.end()) return it->second;
-    return load_texture(path);
-}
+
 void MetalRenderer::unload_font(const Font&) {}
 void MetalRenderer::draw_text(const std::string&, float, float, float, float, const glm::vec4&,
                               const std::string&, int, const UberShader&, int) {}
@@ -431,8 +433,8 @@ void MetalRenderer::draw_triangle(float, float, float, float, float, float,
                                   float, const glm::vec4&, bool, int) {}
 void MetalRenderer::draw_circle(float, float, float, float, const glm::vec4&, bool, int, int) {}
 void MetalRenderer::draw_polygon(const std::vector<glm::vec2>&, float, const glm::vec4&, bool, int) {}
-void MetalRenderer::_render_command(const DrawCommand&) {}
-void MetalRenderer::_set_default_font(const std::string&) {}
-void MetalRenderer::_render_fbo() {}
-void MetalRenderer::_set_effect_uniforms(const UberShader&, const glm::vec2&) {}
-glm::vec2 MetalRenderer::_get_texture_size(Uint32) const { return {0,0}; }
+void MetalRenderer::render_command(const DrawCommand&) {}
+void MetalRenderer::set_default_font(const std::string&) {}
+void MetalRenderer::render_fbo() {}
+void MetalRenderer::set_effect_uniforms(const UberShader&, const glm::vec2&) {}
+glm::vec2 MetalRenderer::get_texture_size(Uint32) const { return {0,0}; }

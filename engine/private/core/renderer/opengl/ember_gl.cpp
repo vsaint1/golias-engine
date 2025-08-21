@@ -18,7 +18,7 @@ std::shared_ptr<Texture> OpenglRenderer::get_texture(const std::string& path) {
     return load_texture(path);
 }
 
-void OpenglRenderer::_set_default_font(const std::string& font_name) {
+void OpenglRenderer::set_default_font(const std::string& font_name) {
     if (fonts.contains(font_name)) {
         current_font_name = font_name;
     } else {
@@ -231,7 +231,7 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
     }
 }
 
-void OpenglRenderer::_render_command(const DrawCommand& cmd) {
+void OpenglRenderer::render_command(const DrawCommand& cmd) {
 }
 
 void OpenglRenderer::setup_camera(const Camera2D& camera) {
@@ -430,7 +430,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
     int nr_channels = 4;
     stbi_set_flip_vertically_on_load(false);
 
-    const auto buffer = _load_file_into_memory(file_path);
+    const auto buffer = load_file_into_memory(file_path);
 
     unsigned char* data =
         stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &texture->width, &texture->height, &nr_channels, 4);
@@ -487,7 +487,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
     Font font = {};
 
-    const auto font_buffer = _load_file_into_memory(file_path);
+    const auto font_buffer = load_file_into_memory(file_path);
     if (font_buffer.empty()) {
         LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
         return false;
@@ -651,8 +651,8 @@ void OpenglRenderer::flush() {
         }
 
         if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
-            auto tex_size = _get_texture_size(batch->texture_id);
-            _set_effect_uniforms(key.uber_shader, tex_size);
+            auto tex_size = get_texture_size(batch->texture_id);
+            set_effect_uniforms(key.uber_shader, tex_size);
         }
 
         if (batch->mode == DrawCommandMode::TRIANGLES) {
@@ -684,12 +684,12 @@ void OpenglRenderer::flush() {
 }
 
 void OpenglRenderer::present() {
-    _render_fbo();
+    render_fbo();
 
     SDL_GL_SwapWindow(Window);
 }
 
-void OpenglRenderer::_render_fbo() {
+void OpenglRenderer::render_fbo() {
 
     const auto [x, y, width, height] = _calc_display();
 
@@ -725,7 +725,7 @@ void OpenglRenderer::clear(glm::vec4 color) {
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-glm::vec2 OpenglRenderer::_get_texture_size(const Uint32 texture_id) const {
+glm::vec2 OpenglRenderer::get_texture_size(const Uint32 texture_id) const {
 
     auto it = _texture_sizes.find(texture_id);
 
@@ -737,7 +737,7 @@ glm::vec2 OpenglRenderer::_get_texture_size(const Uint32 texture_id) const {
 }
 
 // TODO: this must be optimized, for now it is just a simple implementation
-void OpenglRenderer::_set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) {
+void OpenglRenderer::set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) {
     _default_shader->set_value("use_outline", uber_shader.use_outline);
     _default_shader->set_value("outline_color", uber_shader.outline_color);
     _default_shader->set_value("outline_width", uber_shader.outline_width);

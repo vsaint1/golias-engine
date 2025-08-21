@@ -134,7 +134,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     }
 
-    const std::string gamepad_mappings = _load_assets_file("controller_db");
+    const std::string gamepad_mappings = load_assets_file("controller_db");
 
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());

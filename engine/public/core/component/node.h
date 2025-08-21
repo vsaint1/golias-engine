@@ -3,7 +3,7 @@
 #include "core/input/input_manager.h"
 #include "core/renderer/shader.h"
 #include "helpers/logging.h"
-#include "transform.h"
+#include "transform_node.h"
 
 class Renderer;
 
@@ -17,6 +17,7 @@ public:
     void set_z_index(int index);
 
     [[nodiscard]] int get_z_index() const;
+
     [[nodiscard]] int get_effective_z_index() const;
 
     void print_tree(int indent = 0) const;
@@ -30,11 +31,11 @@ public:
     void scale(float sx, float sy);
 
 
-    [[nodiscard]] Transform get_global_transform() const;
+    [[nodiscard]] Transform2D get_global_transform() const;
 
-    [[nodiscard]] Transform get_transform() const;
+    [[nodiscard]] Transform2D get_transform() const;
 
-    void set_transform(const Transform& transform);
+    void set_transform(const Transform2D& transform);
 
     void add_child(const std::string& name, Node2D* node);
 
@@ -51,7 +52,7 @@ public:
     virtual ~Node2D();
 
 protected:
-    Transform _transform = {};
+    Transform2D _transform = {};
 
     std::string _name = "Node";
 

@@ -53,10 +53,10 @@ public:
     void flush() override;
 
 protected:
-    void _render_command(const DrawCommand& cmd) override;
-    void _set_default_font(const std::string& font_name) override;
-    void _render_fbo() override;
-    void _set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) override;
+    void render_command(const DrawCommand& cmd) override;
+    void set_default_font(const std::string& font_name) override;
+    void render_fbo() override;
+    void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) override;
     glm::vec2 _get_texture_size(Uint32 texture_id) const override;
 
 private:
@@ -98,11 +98,11 @@ public:
     void flush() override {}
 
 protected:
-    void _render_command(const DrawCommand&) override {}
-    void _set_default_font(const std::string&) override {}
-    void _render_fbo() override {}
-    void _set_effect_uniforms(const UberShader&, const glm::vec2&) override {}
-    glm::vec2 _get_texture_size(Uint32) const override { return {0, 0}; }
+    void render_command(const DrawCommand&) override {}
+    void set_default_font(const std::string&) override {}
+    void render_fbo() override {}
+    void set_effect_uniforms(const UberShader&, const glm::vec2&) override {}
+    glm::vec2 get_texture_size(Uint32) const override { return {0, 0}; }
 };
 
 #endif

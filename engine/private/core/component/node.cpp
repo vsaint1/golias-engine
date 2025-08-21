@@ -44,11 +44,11 @@ void Node2D::print_tree(const int indent) const {
     }
 }
 
-Transform Node2D::get_global_transform() const {
+Transform2D Node2D::get_global_transform() const {
     if (_parent) {
         auto [position, scale, rotation] = _parent->get_global_transform();
 
-        Transform global;
+        Transform2D global;
         global.position = position + _transform.position;
         global.scale    = scale * _transform.scale;
         global.rotation = rotation + _transform.rotation;
@@ -59,11 +59,11 @@ Transform Node2D::get_global_transform() const {
     return _transform;
 }
 
-Transform Node2D::get_transform() const {
+Transform2D Node2D::get_transform() const {
     return _transform;
 }
 
-void Node2D::set_transform(const Transform& transform) {
+void Node2D::set_transform(const Transform2D& transform) {
     _transform = transform;
 }
 

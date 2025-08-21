@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
     GEngine->get_renderer()->load_font("fonts/OpenSans.ttf",  "default",32);
     GEngine->get_renderer()->load_font("fonts/Minecraft.ttf",  "mine",16);
 
-
     while (GEngine->is_running) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {

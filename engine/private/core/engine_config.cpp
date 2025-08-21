@@ -158,7 +158,7 @@ std::string EngineConfig::get_orientation_string() const {
 bool EngineConfig::load() {
 
 
-    const auto file = _load_file_into_memory("project.xml");
+    const auto file = load_file_into_memory("project.xml");
 
     if (_doc.Parse(file.data(),file.size()) != tinyxml2::XML_SUCCESS) {
         LOG_ERROR("Failed to load Engine Config from %s, error: %s", "res/project.xml",_doc.ErrorStr());

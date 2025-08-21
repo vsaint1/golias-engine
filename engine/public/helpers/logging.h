@@ -39,7 +39,7 @@ private:
     Logger()  = default;
     ~Logger() = default;
 
-    void _log_thread();
+    void log_thread();
 
     std::mutex _mutex                  = std::mutex();
     SDL_Thread* _thread                = nullptr;

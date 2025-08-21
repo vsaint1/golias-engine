@@ -1,5 +1,5 @@
 #pragma once
-#include "transform.h"
+#include "transform_node.h"
 
 /*!
        @brief Camera2D component
@@ -12,7 +12,7 @@
        @version 0.0.5
    */
 struct Camera2D {
-    Transform transform;
+    Transform2D transform;
 
     Camera2D(int view_width, int view_height, float zoom = 1.0f) : _width(view_width), _height(view_height), zoom(zoom) {}
 
