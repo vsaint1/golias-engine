@@ -306,6 +306,5 @@ void FileAccess::close() {
     if (_file) {
         SDL_CloseIO(_file);
         _file = nullptr;
-        LOG_INFO("CLOSING");
     }
 }

@@ -429,7 +429,9 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
     int nr_channels = 4;
     stbi_set_flip_vertically_on_load(false);
 
-    const auto buffer = load_file_into_memory(file_path);
+    FileAccess file(file_path, ModeFlags::READ);
+
+    const auto buffer = file.get_file_as_bytes();
 
     unsigned char* data =
         stbi_load_from_memory((unsigned char*) buffer.data(), buffer.size(), &texture->width, &texture->height, &nr_channels, 4);
@@ -486,7 +488,10 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
     Font font = {};
 
-    const auto font_buffer = load_file_into_memory(file_path);
+    FileAccess file(file_path, ModeFlags::READ);
+
+    const auto font_buffer = file.get_file_as_bytes();
+
     if (font_buffer.empty()) {
         LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
         return false;
