@@ -38,7 +38,8 @@ void Engine::set_vsync(const bool enabled) {
         // TODO
     }
 
-    _vsync = enabled;
+    Config.set_vsync(enabled);
+
 }
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
@@ -55,7 +56,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     if (app_config.is_fullscreen) {
         flags |= SDL_WINDOW_FULLSCREEN;
-        this->Window.is_fullscreen = true;
     }
 
     if (app_config.is_resizable) {
@@ -268,10 +268,6 @@ void Engine::shutdown() {
     close_audio_engine();
 
     SDL_Quit();
-}
-
-bool Engine::get_vsync() const {
-    return _vsync;
 }
 
 Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int view_height) {

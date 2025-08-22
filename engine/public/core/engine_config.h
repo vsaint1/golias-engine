@@ -143,33 +143,21 @@ struct EngineConfig {
 
     const char* get_orientation_str() const;
 
-    RendererDevice get_renderer_device() const {
-        return _renderer_device;
-    }
+    RendererDevice get_renderer_device() const;
 
-    Threading get_threading() const {
-            return _threading;
-    }
+    Threading get_threading() const;
 
-    Application get_application() const {
-        return _app;
-    }
+    Application get_application() const;
 
-    Environment get_environment() const {
-        return _environment;
-    }
+    Environment get_environment() const;
 
-    Viewport get_viewport() const {
-        return _viewport;
-    }
+    Viewport get_viewport() const;
 
-    Window get_window() const {
-        return _window;
-    }
+    Window get_window() const;
 
-    bool is_vsync() const {
-        return _is_vsync_enabled;
-    }
+    bool is_vsync() const;
+
+    void set_vsync(bool enabled);
 
 private:
 

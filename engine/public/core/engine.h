@@ -22,7 +22,6 @@ public:
         int width = 0;
         int height = 0;
         const SDL_DisplayMode* data = nullptr;
-        bool is_fullscreen = false;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};
     } Window;
@@ -75,14 +74,6 @@ public:
      */
     void shutdown();
 
-    /**
-        * @brief Get vsync status.
-        *
-        * @details  Returns true if vertical synchronization (VSync) is enabled, false otherwise.
-        *
-        * @version 1.0.0
-        */
-    [[nodiscard]] bool get_vsync() const;
 
     /**
      * @brief Disable or enable vertical synchronization (VSync).
@@ -117,7 +108,6 @@ private:
     InputManager* _input_manager = nullptr;
     TimeManager* _time_manager = nullptr;
 
-    bool _vsync = true;
 
     /**
      * @brief Create a renderer instance.

@@ -287,3 +287,36 @@ bool EngineConfig::load() {
 
     return true;
 }
+
+
+RendererDevice EngineConfig::get_renderer_device() const {
+    return _renderer_device;
+}
+
+Threading EngineConfig::get_threading() const {
+    return _threading;
+}
+
+Application EngineConfig::get_application() const {
+    return _app;
+}
+
+Environment EngineConfig::get_environment() const {
+    return _environment;
+}
+
+Viewport EngineConfig::get_viewport() const {
+    return _viewport;
+}
+
+Window EngineConfig::get_window() const {
+    return _window;
+}
+
+bool EngineConfig::is_vsync() const {
+    return _is_vsync_enabled;
+}
+
+void EngineConfig::set_vsync(bool enabled) {
+    _is_vsync_enabled = enabled;
+}
