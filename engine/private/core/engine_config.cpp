@@ -220,6 +220,12 @@ const char* RendererDevice::get_backend_str() const {
     }
 }
 
+// TODO
+bool Window::load(const tinyxml2::XMLElement* root) {
+
+    return true;
+}
+
 bool EngineConfig::load() {
 
 

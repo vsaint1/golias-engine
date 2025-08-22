@@ -116,12 +116,28 @@ struct RendererDevice {
 
 };
 
+enum class WindowMode {
+    WINDOWED,
+    MAXIMIZED,
+    MINIMIZED,
+    FULLSCREEN
+};
+
+struct Window {
+    glm::ivec2 size = glm::ivec2(1280,720);
+
+    WindowMode window_mode = WindowMode::WINDOWED;
+
+    float dpi_scale = 1.0f;
+
+    bool load (const tinyxml2::XMLElement* root);
+};
+
 struct EngineConfig {
 
     Orientation orientation = Orientation::LANDSCAPE_LEFT;
 
     TextureFiltering texture_filtering = TextureFiltering::NEAREST;
-
 
     bool load();
 
@@ -147,6 +163,10 @@ struct EngineConfig {
         return _viewport;
     }
 
+    Window get_window() const {
+        return _window;
+    }
+
     bool is_vsync() const {
         return _is_vsync_enabled;
     }
@@ -162,6 +182,8 @@ private:
     RendererDevice _renderer_device;
 
     Threading _threading;
+
+    Window _window;
 
     bool _is_vsync_enabled = true;
 

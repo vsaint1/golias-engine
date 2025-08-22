@@ -15,8 +15,6 @@
     <window>
         <size width="1280" height="720"/>  <!-- virtual size-->
         <mode>windowed</mode> <!-- windowed, minimized, maximized, fullscreen, exclusive-fullscreen -->
-        <resizable>true</resizable>
-        <borderless>true</borderless>
         <dpi_scale>1.0</dpi_scale>
     </window>
 
