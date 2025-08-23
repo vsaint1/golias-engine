@@ -11,15 +11,11 @@ const Color Color::BLACK       = {0, 0, 0, 255};
 const Color Color::YELLOW      = {255, 255, 0, 255};
 const Color Color::CYAN        = {0, 255, 255, 255};
 const Color Color::MAGENTA     = {255, 0, 255, 255};
-const Color Color::TRANSPARENT = {0, 0, 0, 0};
 
 
-Texture::~Texture() {
+Texture::~Texture() = default;
 
-}
-
-Font::~Font() {
-}
+Font::~Font() = default;
 
 bool Rect2::is_zero() const {
     return width == 0 && height == 0 && x == 0 && y == 0;

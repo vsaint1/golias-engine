@@ -14,6 +14,7 @@
 #include "core/audio/ember_audio.h"
 #include "core/ember_utils.h"
 #include "core/system_info.h"
+#include "core/http/http_client.h"
 
 /**
  * @brief Mode of drawing commands.
