@@ -59,8 +59,6 @@ add_subdirectory(vendor/mini_audio)
 
 add_subdirectory(vendor/freetype)
 
-set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
-add_subdirectory(vendor/curl)
 
 # [SDL] - removing unused modules
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
@@ -74,18 +72,35 @@ add_subdirectory(vendor/imgui)
 
 set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
 set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
 set(GLM_ENABLE_CXX_20 ON)
 set(GLM_TEST_ENABLE OFF)
 add_subdirectory(vendor/glm)
 
+
+set(CURL_USE_MBEDTLS ON CACHE BOOL "" FORCE)
+set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
+
+set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(vendor/mbedtls)
+
+set(MBEDX509_LIBRARY mbedx509)
+set(MBEDCRYPTO_LIBRARY mbedcrypto)
+set(MBEDTLS_LIBRARY mbedtls)
+
+set(MBEDTLS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mbedtls/include)
+set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
+
+
 add_subdirectory(engine)
+
 
 # [iOS/macOS/Android/Linux] - commons
 if(UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing" "-Wimplicit-function-declaration" )
 endif()
 
 if(APPLE)
