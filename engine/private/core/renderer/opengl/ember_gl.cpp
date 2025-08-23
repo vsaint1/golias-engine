@@ -549,7 +549,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     glBindTexture(GL_TEXTURE_2D, 0);
     fonts[font_alias] = font;
 
-    LOG_INFO("Generated font atlas. Texture ID: %d, ft_size %d, alias %s, path: %s", font.characters.begin()->second.texture_id, font_size,
+    LOG_INFO("Generated Font Atlas. Texture ID: %d, FontSize %d, Alias %s, Path: %s", font.characters.begin()->second.texture_id, font_size,
              font_alias.c_str(), file_path.c_str());
 
     if (current_font_name.empty()) {
