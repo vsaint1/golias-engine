@@ -39,4 +39,8 @@ using HashMap = std::unordered_map<K, V>;
 #include <freetype/freetype.h>
 
 
+#include "json.hpp"
+
+using Json = nlohmann::json;
+
 
