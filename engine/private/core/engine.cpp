@@ -47,7 +47,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     EMBER_TIMER_START();
 
     // Note: curl is not supported on Emscripten/WebAssembly
-#ifndef SDL_PLATFORM_EMSCRIPTEN
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_init(CURL_GLOBAL_DEFAULT);
 #endif
 
@@ -252,7 +252,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 void Engine::shutdown() {
 
-#ifndef SDL_PLATFORM_EMSCRIPTEN
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_cleanup();
 #endif
 
