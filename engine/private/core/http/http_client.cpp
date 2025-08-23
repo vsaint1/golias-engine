@@ -34,8 +34,8 @@ HttpResponse HttpClient::request(const HttpRequest& request) const {
         }
 
         curl_easy_setopt(_curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, 1L);
-        curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, 2L);
+        curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(_curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
         std::string response_data;
         curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, write_callback);
