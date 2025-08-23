@@ -59,6 +59,9 @@ add_subdirectory(vendor/mini_audio)
 
 add_subdirectory(vendor/freetype)
 
+set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
+add_subdirectory(vendor/curl)
+
 # [SDL] - removing unused modules
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
