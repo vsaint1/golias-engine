@@ -185,7 +185,7 @@ bool RendererDevice::load(const tinyxml2::XMLElement* root) {
         return false;
     }
 
-    if (const auto filtering_element = renderer_element->FirstChildElement("texture_filtering")) {
+    if (const auto filtering_element = renderer_element->FirstChildElement("texture_filter")) {
         const char* filtering_str = filtering_element->GetText();
         if (strcmp(filtering_str, "nearest") == 0) {
             texture_filtering = TextureFiltering::NEAREST;
@@ -196,7 +196,7 @@ bool RendererDevice::load(const tinyxml2::XMLElement* root) {
             return false;
         }
     } else {
-        LOG_ERROR("Failed to load Renderer Config - texture_filtering element is null");
+        LOG_ERROR("Failed to load Renderer Config - texture_filter element is null");
         return false;
     }
 
