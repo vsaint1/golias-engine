@@ -9,6 +9,8 @@ public:
       : _texture(tex), _size(size), _color(col) {
     }
 
+    [[nodiscard]] Rect2 get_region() const;
+
     void set_region(const Rect2& region, glm::vec2 size);
 
     void set_color(const Color& col);
