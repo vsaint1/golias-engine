@@ -626,6 +626,7 @@ void OpenglRenderer::flush() {
     _default_shader->bind();
 
     _default_shader->set_value("PROJECTION", projection);
+    _default_shader->set_value("VIEW",view);
 
     glBindVertexArray(vao);
 
@@ -681,8 +682,8 @@ void OpenglRenderer::flush() {
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // commands.clear();
-    // batches.clear();
+    commands.clear();
+    batches.clear();
 
     // LOG_INFO("Draw Calls %d",draw_call_count);
 }
@@ -716,8 +717,8 @@ void OpenglRenderer::render_fbo() {
 }
 
 void OpenglRenderer::clear(glm::vec4 color) {
-    commands.clear();
-    batches.clear();
+    // commands.clear();
+    // batches.clear();
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 

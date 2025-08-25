@@ -236,6 +236,8 @@ public:
      */
     virtual void unload_texture(Uint32 id) = 0;
 
+    void set_view_matrix(const glm::mat4& view_matrix) { view = view_matrix; }
+
 protected:
     HashMap<BatchKey, Batch> batches; ///< All batches by key.
 
@@ -245,6 +247,8 @@ protected:
     std::string current_font_name; ///< Currently selected font alias.
 
     glm::mat4 projection = glm::mat4(1.f); ///< Projection matrix.
+    glm::mat4 view       = glm::mat4(1.f); ///< View matrix.
+
     std::vector<DrawCommand> commands; ///< Commands to render this frame.
 
     HashMap<std::string, std::shared_ptr<Texture>> textures; ///< Cached textures.
