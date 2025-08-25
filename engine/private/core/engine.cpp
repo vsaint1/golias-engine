@@ -43,8 +43,6 @@ void Engine::set_vsync(const bool enabled) {
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
-    EMBER_TIMER_START();
-
     // Note: curl is not supported on Emscripten/WebAssembly
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -230,14 +228,14 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_renderer->Type = type;
 
     if (type == Backend::GL_COMPATIBILITY) {
-        LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
-        LOG_INFO(" > Vendor: %s", (const char*) glGetString(GL_VENDOR));
+        LOG_INFO("Version: %s", (const char*) glGetString(GL_VERSION));
+        LOG_INFO("Vendor: %s", (const char*) glGetString(GL_VENDOR));
     }
 
     //TODO: get this dyn.
     if (type == Backend::METAL) {
-        LOG_INFO(" > Version: %s ", "Metal 2.0+");
-        LOG_INFO(" > Vendor: %s", "Apple Inc.");
+        LOG_INFO("Version: %s ", "Metal 2.0+");
+        LOG_INFO("Vendor: %s", "Apple Inc.");
     }
 
     this->set_vsync(Config.is_vsync());
@@ -245,8 +243,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_time_manager  = new TimeManager();
     this->_input_manager = new InputManager(_window);
     this->is_running     = true;
-
-    EMBER_TIMER_END("Initialization");
 
     return true;
 }
