@@ -39,7 +39,6 @@ void Engine::set_vsync(const bool enabled) {
     }
 
     Config.set_vsync(enabled);
-
 }
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
@@ -135,7 +134,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 
     int w, h, nr_channels;
-    unsigned char* pixels = stbi_load( Config.get_application().icon_path, &w, &h, &nr_channels, 4);
+    unsigned char* pixels = stbi_load(Config.get_application().icon_path, &w, &h, &nr_channels, 4);
     if (!pixels) {
         LOG_ERROR("Failed to load default icon");
     } else {
@@ -213,15 +212,18 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     }
 
-    LOG_INFO("Successfully created window with title: %s", app_config.name);
-    LOG_INFO(" > Width %d, Height %d", width, height);
-    LOG_INFO(" > Display ID %d", display_mode->displayID);
-    LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
-    LOG_INFO(" > High DPI screen (%s), Backbuffer (%dx%d)", hdpi_screen() ? "YES" : "NO", bbWidth, bbHeight);
-    LOG_INFO(" > Usable Bounds (%d, %d, %d, %d)", view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h);
-    LOG_INFO(" > Viewport (%d, %d)", viewport.width, viewport.height);
-    LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
-    LOG_INFO(" > Renderer %s",  Config.get_renderer_device().get_backend_str());
+    LOG_INFO(R"(Successfully created window with title: %s
+     > Width %d, Height %d
+     > Display ID %d
+     > Display Width %d, Display Height %d
+     > High DPI screen (%s), Backbuffer (%dx%d)
+     > Usable Bounds (%d, %d, %d, %d)
+     > Viewport (%d, %d)
+     > Refresh Rate %.2f
+     > Renderer %s)",
+             app_config.name, width, height, display_mode->displayID, display_mode->w, display_mode->h, hdpi_screen() ? "YES" : "NO",
+             bbWidth, bbHeight, view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h, viewport.width, viewport.height,
+             display_mode->refresh_rate, Config.get_renderer_device().get_backend_str());
 
     this->Window.width    = width;
     this->Window.height   = height;
@@ -401,7 +403,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     glRenderer->Viewport[0] = view_width;
     glRenderer->Viewport[1] = view_height;
     glRenderer->Window      = window;
-    glRenderer->Type       = Backend::GL_COMPATIBILITY;
+    glRenderer->Type        = Backend::GL_COMPATIBILITY;
 
     glRenderer->set_context(glContext);
 

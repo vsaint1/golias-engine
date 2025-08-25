@@ -2,12 +2,12 @@
 
 
 bool init_audio_engine() {
-    LOG_INFO("Initializing audio engine");
+    LOG_INFO("Initializing Audio engine");
 
     ma_device_config* device_config = (ma_device_config*) SDL_malloc(sizeof(ma_device_config));
 
     if (!device_config) {
-        LOG_ERROR("Failed to allocate memory for device config");
+        LOG_ERROR("Failed to allocate memory for device config %s", SDL_GetError());
         return false;
     }
 
@@ -28,7 +28,7 @@ bool init_audio_engine() {
     SDL_free(device_config);
 
     if (res != MA_SUCCESS) {
-        LOG_ERROR("Failed to initialize MA engine backend %d", res);
+        LOG_ERROR("Failed to initialize Audio engine backend %d", res);
         return false;
     }
 
@@ -40,7 +40,7 @@ bool init_audio_engine() {
 
     res = ma_engine_start(&audio_engine);
     if (res != MA_SUCCESS) {
-        LOG_ERROR("Failed to start MA engine backend %d", res);
+        LOG_ERROR("Failed to start Audio engine backend %d", res);
         return false;
     }
 
@@ -48,7 +48,7 @@ bool init_audio_engine() {
 
     res = _ember_init_vfs(&GEngine->VirtualFileSystem);
     if (res != MA_SUCCESS) {
-        LOG_ERROR("Failed to initialize MA engineVFS %d", res);
+        LOG_ERROR("Failed to initialize engine VFS %d", res);
         return false;
     }
 
@@ -114,9 +114,10 @@ Audio* Audio::load(const std::string& file_Path) {
     audio->duration = len;
     audio->volume   = 0.5f;
 
-    LOG_INFO("Audio loaded %s", file_Path.c_str());
-    LOG_INFO(" > Duration %.2f seconds", audio->duration);
-    LOG_INFO(" > Default Volume %.2f (0.0 - 1.0)", audio->volume);
+    LOG_INFO(R"(Audio loaded %s
+    > Duration %.2f seconds
+    > Default Volume %.2f (0.0 - 1.0))",
+             file_Path.c_str(), audio->duration, audio->volume);
 
     audios.emplace(file_Path, audio);
 
@@ -191,14 +192,14 @@ void close_audio_engine() {
 
 
     if (!audios.empty()) {
-        LOG_INFO("Cleaning allocated Audios");
+        LOG_INFO("Cleaning allocated Sounds");
     }
 
     for (const auto& [_, audio] : audios) {
         audio->destroy();
     }
 
-    LOG_INFO("Closing MA engine backend");
+    LOG_INFO("Closing Audio engine backend");
 
     ma_engine_uninit(&audio_engine);
 
