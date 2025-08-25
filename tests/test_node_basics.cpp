@@ -1,33 +1,31 @@
-﻿#include "core/renderer/opengl/ember_gl.h"
+#include "core/renderer/opengl/ember_gl.h"
 #include <SDL3/SDL_main.h>
 
-
-int SCREEN_WIDTH  = 1366;
-int SCREEN_HEIGHT = 768;
-
+int WINDOW_WIDTH  = 1280;
+int WINDOW_HEIGHT = 720;
 
 int main(int argc, char* argv[]) {
-    if (!GEngine->initialize("Node System", SCREEN_WIDTH, SCREEN_HEIGHT, OPENGL)) {
-        return -1;
+
+    if (!GEngine->initialize(WINDOW_WIDTH, WINDOW_HEIGHT, Backend::GL_COMPATIBILITY)) {
+        return SDL_APP_FAILURE;
     }
 
-    GEngine->time_manager()->set_target_fps(60);
+    auto renderer = GEngine->get_renderer();
 
-    InputAction move_left("move_left");
-    move_left
-    .bind_key(SDL_SCANCODE_A)
-    .bind_key(SDL_SCANCODE_LEFT)
-    .bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
 
-    GEngine->input_manager()->register_action(move_left);
+    GEngine->set_vsync(true);
 
-    InputAction move_right("move_right");
-    move_right.bind_key(SDL_SCANCODE_D).bind_key(SDL_SCANCODE_RIGHT).bind_gamepad_button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
-    GEngine->input_manager()->register_action(move_right);
+    if (!renderer->load_font("fonts/Minecraft.ttf", "mine", 16)) {
+        LOG_ERROR("failed to load mine font");
+        return SDL_APP_FAILURE;
+    }
 
-    auto player_texture = GEngine->get_renderer()->load_texture("sprites/Character_001.png");
-    auto enemy_texture  = GEngine->get_renderer()->load_texture("sprites/Character_002.png");
-    auto mine_font      = GEngine->get_renderer()->load_font("fonts/Minecraft.ttf", 32);
+    auto sample_texture  = renderer->load_texture("sprites/Character_001.png");
+    auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
+
+    bool quit = false;
+    SDL_Event e;
+    float angle = 0.0f;
 
     Node2D* root = new Node2D("Root");
 
@@ -35,99 +33,57 @@ int main(int argc, char* argv[]) {
     player->set_z_index(5);
     player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 0.0f});
 
-    std::vector<glm::vec2> hexagon;
-
-    for (int i = 0; i < 6; ++i) {
-        const float angle = glm::radians(60.0f * i);
-        glm::vec2 point   = glm::vec2(cos(angle), sin(angle)) * 50.f;
-        hexagon.push_back(point);
-    }
-
-    Polygon2D* polygon = new Polygon2D(hexagon, true);
-    polygon->translate(200, 100);
-
-
-    Label* name = new Label(mine_font, "golias_bento", 64);
-    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\n Player Health  [color=#028900]%d[/color] %s", 100, "robson");
-    name->set_outline(true);
+    Label* name = new Label("mine", "golias_bento");
+    name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\nPlayer Health  [color=#028900]%d[/color] %s", 100, "robson");
     name->set_shadow(true);
+    name->set_transform({glm::vec2(100.f, 110.f), glm::vec2(1.f), 0.0f});
 
-    name->translate(0, -50);
-    // name->set_font_size(64.f);
-
-
-    Sprite2D* player_sprite = new Sprite2D(player_texture);
-    player_sprite->set_region({0, 0, 32, 32}, glm::vec2(128));
-    player_sprite->translate(100, 150);
-
-    // sprite->change_visibility(false);
-
-    Node2D* enemy = new Node2D();
-    enemy->set_transform({glm::vec2(600.f, 110.f), glm::vec2(1.f), 320.0f});
-    enemy->set_z_index(2);
-
-    Label* enemy_name = new Label(mine_font, "golias_bento", 32);
-    enemy_name->set_text("Gingerbread %d",500);
-    enemy->add_child("Name",enemy_name);
-    enemy_name->set_z_index(100);
-
-    Sprite2D* enemy_sprite = new Sprite2D(enemy_texture);
-
-    Circle2D* circle = new Circle2D();
-    circle->set_filled(true);
-    circle->change_visibility(false);
-
-    root->add_child("Player", player);
-    root->add_child("Enemy", enemy);
-
-    if (Node2D* playerT = root->get_node("Player")) {
-        playerT->print_tree();
-    }
+    Sprite2D* player_sprite = new Sprite2D(sample_texture2);
+    player_sprite->set_region({0, 0, 32, 32}, glm::vec2(32));
+    player_sprite->set_z_index(10);
 
     player->add_child("Image", player_sprite);
-    player->add_child("CollisionShape", polygon);
-    player->add_child("Name", name);
 
-    enemy->add_child("Image", enemy_sprite);
-    enemy->add_child("CollisionShape", circle);
-
-    root->print_tree();
+    root->add_child("Player", player);
+    root->add_child("Text",name);
 
     root->ready();
+    root->print_tree();
 
-    SDL_Event e;
-    while (GEngine->bIsRunning) {
+    bool is_filled = true;
+
+    while (!quit) {
         while (SDL_PollEvent(&e)) {
-            GEngine->input_manager()->process_event(e);
+            if (e.type == SDL_EVENT_QUIT) {
+                quit = true;
+            }
+
+            const auto& pKey = SDL_GetKeyboardState(nullptr);
+            if (pKey[SDL_SCANCODE_SPACE]) {
+                is_filled = !is_filled;
+            }
         }
 
-        GEngine->input_manager()->update();
-        GEngine->time_manager()->update();
+        angle += 0.01f;
+        if (angle > 2 * M_PI) angle -= 2 * M_PI;
 
-        GEngine->get_renderer()->clear_background({120, 100, 100, 255});
+        renderer->clear(glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
 
+        root->draw(renderer);
 
-        if (GEngine->input_manager()->is_action_pressed("move_right")) {
-            player->translate(200.f * GEngine->time_manager()->get_delta_time(), 0);
-        }
+        renderer->draw_rect({100, 50, 50, 30}, 0.0f, glm::vec4(1.0f,0.5f,0.2f,1.0f), is_filled,1);
+        renderer->draw_circle(160, 90, 0, 20, glm::vec4(0.2f,0.8f,0.2f,1.0f), is_filled, 32, 2);
+        renderer->draw_line(10, 10, 300, 170, 1.0f, 0, glm::vec4(1.0f,1.0f,0.0f,1.0f), 2);
 
-        if (GEngine->input_manager()->is_action_pressed("move_left")) {
-            player->translate(-200.f * GEngine->time_manager()->get_delta_time(), 0);
-        }
+        renderer->draw_texture(sample_texture.get(), {50,50,32,32}, 0, glm::vec4(1.0f), {192,0,32,32}, 0, UberShader::outline_only());
 
+        renderer->draw_texture(sample_texture2.get(), {50,100,32,32}, 0, glm::vec4(1.0f), {0,0,32,32}, 0, UberShader::shadow_only());
 
-
-        root->input(GEngine->input_manager());
-
-        GEngine->get_renderer()->begin_drawing();
-
-        root->draw(GEngine->get_renderer());
-
-        GEngine->get_renderer()->end_drawing();
+        renderer->flush();
+        renderer->present();
     }
 
     delete root;
-
     GEngine->shutdown();
 
     return 0;
