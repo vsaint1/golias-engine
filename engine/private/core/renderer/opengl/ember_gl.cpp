@@ -601,39 +601,30 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
 void OpenglRenderer::flush() {
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 
-
     glViewport(0, 0, Viewport[0], Viewport[1]);
-
-
-    _projection = glm::ortho(0.0f, static_cast<float>(Viewport[0]), static_cast<float>(Viewport[1]), 0.0f, -1.0f, 1.0f);
+    _projection = glm::ortho(0.f, float(Viewport[0]), float(Viewport[1]), 0.f, -1.f, 1.f);
 
     int draw_call_count = 0;
 
     // Sort batches by z_index
     std::vector<std::pair<BatchKey, Batch*>> sorted_batches;
-
-    sorted_batches.clear();
     sorted_batches.reserve(_batches.size());
-
     for (auto& [key, batch] : _batches) {
         sorted_batches.emplace_back(key, &batch);
     }
 
-    std::ranges::sort(sorted_batches, [](const std::pair<BatchKey, Batch*>& a, const std::pair<BatchKey, Batch*>& b) {
+    std::ranges::sort(sorted_batches, [](auto& a, auto& b) {
         return a.second->z_index < b.second->z_index;
     });
 
     _default_shader->bind();
-
     _default_shader->set_value("PROJECTION", _projection);
     _default_shader->set_value("VIEW", _view);
 
     glBindVertexArray(vao);
 
     for (auto& [key, batch] : sorted_batches) {
-        if (batch->vertices.empty() || batch->indices.empty()) {
-            continue;
-        }
+        if (batch->vertices.empty() || batch->indices.empty()) continue;
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, batch->vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
@@ -643,21 +634,22 @@ void OpenglRenderer::flush() {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, batch->indices.size() * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, batch->indices.size() * sizeof(uint32_t), batch->indices.data());
 
-
         const bool use_texture =
-            (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
+            (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT)
+            && batch->texture_id != 0;
 
         _default_shader->set_value("use_texture", use_texture);
-
         if (use_texture) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, batch->texture_id);
             _default_shader->set_value("TEXTURE", 0);
         }
 
-        if (batch->type == DrawCommandType::TEXT || batch->type == DrawCommandType::TEXTURE) {
+        if (!key.uber_shader.is_none()) {
             auto tex_size = get_texture_size(batch->texture_id);
             set_effect_uniforms(key.uber_shader, tex_size);
+        } else {
+            set_effect_uniforms(UberShader::none(), glm::vec2(1,1));
         }
 
         if (batch->mode == DrawCommandMode::TRIANGLES) {
@@ -667,26 +659,18 @@ void OpenglRenderer::flush() {
             glDrawElements(GL_LINES, batch->indices.size(), GL_UNSIGNED_INT, 0);
         }
 
-        if (use_texture) {
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+        if (use_texture) glBindTexture(GL_TEXTURE_2D, 0);
 
         draw_call_count++;
     }
-
-    // for (const auto& cmd : commands) {
-    //     _render_command(cmd);
-    // draw_call_count++;
-    // }
 
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     _commands.clear();
     _batches.clear();
-
-    // LOG_INFO("Draw Calls %d",draw_call_count);
 }
+
 
 void OpenglRenderer::present() {
     render_fbo();
