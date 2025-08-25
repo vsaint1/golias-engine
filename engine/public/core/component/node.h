@@ -9,7 +9,7 @@ class Renderer;
 
 class Node2D {
 public:
-    Node2D() = default;
+    Node2D();
 
     explicit Node2D(std::string name) : _name(std::move(name)) {
     }
@@ -41,6 +41,9 @@ public:
 
     Node2D* get_node(const std::string& path);
 
+    template <typename T>
+    T* get_node();
+
     virtual void ready();
 
     virtual void process(double delta_time);
@@ -64,5 +67,18 @@ private:
     Node2D* _parent = nullptr;
 
     HashMap<std::string, Node2D*> _nodes;
-
 };
+
+
+template <typename T>
+T* Node2D::get_node() {
+    for (auto& [name, node] : _nodes) {
+        if (auto val = dynamic_cast<T*>(node)) {
+            return val;
+        }
+    }
+
+    LOG_WARN("Node of requested type %s was not found.", typeid(T).name());
+
+    return nullptr;
+}

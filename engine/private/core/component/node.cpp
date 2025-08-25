@@ -13,11 +13,14 @@ void Node2D::scale(float sx, float sy) {
     _transform.scale *= glm::vec2(sx, sy);
 }
 
+Node2D::Node2D() = default;
+
 void Node2D::set_z_index(int index) {
-    if (_z_index == index) return;
+    if (_z_index == index) {
+        return;
+    }
 
     _z_index = index;
-
 }
 
 
@@ -79,7 +82,6 @@ void Node2D::add_child(const std::string& name, Node2D* node) {
     node->_name   = name;
 
     _nodes.emplace(name, node);
-
 }
 
 
@@ -117,8 +119,9 @@ void Node2D::ready() {
 
 void Node2D::process(double delta_time) {
     for (const auto& [name, child] : _nodes) {
-        if (!child->_is_visible)
+        if (!child->_is_visible) {
             continue;
+        }
 
         child->process(delta_time);
     }
@@ -132,10 +135,8 @@ void Node2D::draw(Renderer* renderer) {
             continue;
         }
 
-       child->draw(renderer);
+        child->draw(renderer);
     }
-
-
 }
 
 
