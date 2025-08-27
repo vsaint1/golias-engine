@@ -294,7 +294,11 @@ void Engine::shutdown() {
 
     SDL_DestroyWindow(Window.handle);
 
-    close_audio_engine();
+    for (const auto& [name, system] : _systems) {
+        system->shutdown();
+    }
+
+    _systems.clear();
 
     SDL_Quit();
 }

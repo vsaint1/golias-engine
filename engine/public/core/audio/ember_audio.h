@@ -74,5 +74,8 @@ public:
 
     void update(double delta_time) override ;
 
+    void shutdown() override;
+
+    AudioSystem() = default;
     ~AudioSystem() override;
 };

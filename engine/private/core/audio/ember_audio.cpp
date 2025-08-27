@@ -223,5 +223,9 @@ bool AudioSystem::initialize() {
 void AudioSystem::update(double delta_time) {
 }
 
+void AudioSystem::shutdown() {
+    close_audio_engine();
+}
+
 AudioSystem::~AudioSystem() = default;
 

@@ -19,6 +19,8 @@ public:
 
     void update(double delta_time = 0) override;
 
+    void shutdown() override;
+
     CollisionSystem()  = default;
     ~CollisionSystem() override = default;
 

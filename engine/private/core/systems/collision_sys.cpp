@@ -107,3 +107,7 @@ void CollisionSystem::update(double delta_time) {
         }
     }
 }
+
+void CollisionSystem::shutdown() {
+
+}
