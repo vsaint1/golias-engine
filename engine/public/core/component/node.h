@@ -58,6 +58,8 @@ public:
 
     [[nodiscard]] bool is_visible() const;
 
+    bool is_effective_visible() const;
+
 protected:
     Transform2D _transform = {};
 

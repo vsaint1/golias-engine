@@ -115,6 +115,12 @@ bool Node2D::is_visible() const {
     return _is_visible;
 }
 
+bool Node2D::is_effective_visible() const {
+        if (!_is_visible) return false;
+        if (_parent) return _parent->is_effective_visible();
+        return true;
+}
+
 void Node2D::change_visibility(bool visible) {
     _is_visible = visible;
 }
@@ -128,27 +134,20 @@ void Node2D::ready() {
 
 
 void Node2D::process(double delta_time) {
-    for (const auto& [name, child] : _nodes) {
-        if (!child->_is_visible) {
-            continue;
-        }
+    if (!is_effective_visible()) return;
 
+    for (const auto& [name, child] : _nodes) {
         child->process(delta_time);
     }
 }
 
-
 void Node2D::draw(Renderer* renderer) {
+    if (!is_effective_visible()) return;
 
     for (const auto& [name, child] : _nodes) {
-        if (!child->_is_visible) {
-            continue;
-        }
-
         child->draw(renderer);
     }
 }
-
 
 void Node2D::input(const InputManager* input) {
     for (const auto& [name, child] : _nodes) {
