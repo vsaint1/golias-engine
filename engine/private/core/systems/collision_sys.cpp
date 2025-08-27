@@ -1,6 +1,5 @@
 #include "core/systems/collision_sys.h"
 
-#include "core/ember_core.h"
 
 
 std::vector<CollisionShape2D*> CollisionSystem::objects;
@@ -67,6 +66,10 @@ void CollisionSystem::update() {
             CollisionShape2D* a = objects[i];
             CollisionShape2D* b = objects[j];
 
+            if (a->is_disabled || b->is_disabled) {
+                continue;
+            }
+
             bool colliding_now = check_collision(a, b);
             bool was_colliding = a->currently_colliding.contains(b);
 
@@ -94,28 +97,6 @@ void CollisionSystem::update() {
                     cb(a);
                 }
             }
-        }
-    }
-}
-
-void CollisionSystem::draw(Renderer* renderer) {
-    for (auto* shape : objects) {
-        if (!shape->is_visible()) continue;
-
-        switch (shape->type) {
-        case ShapeType::RECTANGLE: {
-            Rect2 aabb = shape->get_aabb();
-            renderer->draw_rect({aabb.x, aabb.y, aabb.width, aabb.height},0,{1.0f, 0.0f, 0.0f, 0.5f},true,100);
-            break;
-        }
-        case ShapeType::CIRCLE: {
-            const glm::vec2 center = shape->get_center();
-            renderer->draw_circle(center.x, center.y, 0,shape->radius, {0.0f, 1.0f, 0.0f, 0.5f},true,32,100);
-            break;
-        }
-        case ShapeType::POLYGON:
-        case ShapeType::CAPSULE:
-            break;
         }
     }
 }

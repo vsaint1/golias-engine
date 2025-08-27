@@ -17,7 +17,9 @@ public:
     glm::vec2 size{32, 32};
     float radius = 16.0f;
     glm::vec2 offset{0, 0};
-    bool is_trigger = false;
+    bool is_disabled = false;
+    bool one_way_collision = false;
+    glm::vec4 color = glm::vec4(1, 0,0, 0.5f);
 
 
     std::vector<std::function<void(CollisionShape2D*)>> on_enter_callbacks;

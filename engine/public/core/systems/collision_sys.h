@@ -16,5 +16,4 @@ public:
 
     static void update();
 
-    static void draw(Renderer* renderer);
 };
