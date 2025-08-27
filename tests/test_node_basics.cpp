@@ -74,8 +74,9 @@ int main(int argc, char* argv[]) {
         renderer->draw_rect({100, 50, 50, 30}, 0.0f, glm::vec4(1.0f,0.5f,0.2f,1.0f), is_filled,1);
         renderer->draw_circle(160, 90, 0, 20, glm::vec4(0.2f,0.8f,0.2f,1.0f), is_filled, 32, 2);
         renderer->draw_line(10, 10, 300, 170, 1.0f, 0, glm::vec4(1.0f,1.0f,0.0f,1.0f), 2);
-
         renderer->draw_texture(sample_texture.get(), {50,50,32,32}, 0, glm::vec4(1.0f), {192,0,32,32}, 0, UberShader::outline_only());
+
+        renderer->draw_triangle(0, 30, 40, 30, 20, 0, 0.0f, glm::vec4(0.8f, 0.1f, 0.5f, 1.0f), is_filled, 5);
 
         renderer->draw_texture(sample_texture2.get(), {50,100,32,32}, 0, glm::vec4(1.0f), {0,0,32,32}, 0, UberShader::shadow_only());
 
