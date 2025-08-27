@@ -16,6 +16,10 @@ public:
     ShapeType type = ShapeType::RECTANGLE;
     glm::vec2 size{32, 32};
     float radius = 16.0f;
+    glm::vec2 offset{0, 0};
+    bool is_trigger = false;
+
+
     std::vector<std::function<void(CollisionShape2D*)>> on_enter_callbacks;
     std::vector<std::function<void(CollisionShape2D*)>> on_exit_callbacks;
     std::unordered_set<Node2D*> currently_colliding;

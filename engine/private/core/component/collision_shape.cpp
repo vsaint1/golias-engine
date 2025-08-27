@@ -11,12 +11,12 @@ CollisionShape2D::~CollisionShape2D() {
 }
 
 Rect2 CollisionShape2D::get_aabb() const {
-    const glm::vec2 pos = get_global_transform().position;
+    const glm::vec2 pos = get_global_transform().position + offset;
     return Rect2(pos.x, pos.y, size.x, size.y);
 }
 
 glm::vec2 CollisionShape2D::get_center() const {
-    const glm::vec2 pos = get_global_transform().position;
+    const glm::vec2 pos = get_global_transform().position + offset;
     return pos + size * 0.5f;
 }
 
