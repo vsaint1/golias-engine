@@ -244,6 +244,8 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_input_manager = new InputManager(_window);
     this->is_running     = true;
 
+    this->_time_manager->set_target_fps(Config.get_application().max_fps);
+
     return true;
 }
 
