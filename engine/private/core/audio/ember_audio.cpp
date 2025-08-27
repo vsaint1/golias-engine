@@ -215,3 +215,15 @@ void close_audio_engine() {
     LOG_INFO("Audio Engine Shutdown");
 }
 
+bool AudioSystem::initialize() {
+    return init_audio_engine();
+}
+
+// PASS
+void AudioSystem::update(double delta_time) {
+}
+
+AudioSystem::~AudioSystem() {
+    close_audio_engine();
+}
+

@@ -159,24 +159,14 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 #pragma endregion
 
-    if (!init_audio_engine()) {
-        LOG_CRITICAL("Failed to initialize Audio Engine");
-        SDL_DestroyWindow(_window);
-
-        if (Config.get_threading().is_multithreaded) {
-            Logger::destroy();
-        }
-
-        return false;
-    }
 #pragma region ENGINE_SYS
     _systems["CollisionSystem"] = std::make_unique<CollisionSystem>();
+    _systems["AudioSystem"]     = std::make_unique<AudioSystem>();
 
     for (const auto& [name, system] : _systems) {
         if (!system->initialize()) {
             LOG_CRITICAL("Failed to initialize system: %s", name.c_str());
             SDL_DestroyWindow(_window);
-            close_audio_engine();
 
             if (Config.get_threading().is_multithreaded) {
                 Logger::destroy();
@@ -195,7 +185,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
         SDL_DestroyWindow(_window);
-        close_audio_engine();
 
         if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
@@ -229,7 +218,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: (unknown type)");
         SDL_DestroyWindow(_window);
-        close_audio_engine();
 
         if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
@@ -306,7 +294,7 @@ void Engine::shutdown() {
 
     SDL_DestroyWindow(Window.handle);
 
-    close_audio_engine();
+    // close_audio_engine();
 
     SDL_Quit();
 }

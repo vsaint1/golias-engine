@@ -81,7 +81,7 @@ void CollisionSystem::update(double delta_time) {
             bool was_colliding = a->currently_colliding.contains(b);
 
             if (colliding_now && !was_colliding) {
-                LOG_INFO("Collision started between objects %s and %s", a->get_name().c_str(), b->get_name().c_str());
+                // LOG_INFO("Collision started between objects %s and %s", a->get_name().c_str(), b->get_name().c_str());
 
                 a->currently_colliding.insert(b);
                 b->currently_colliding.insert(a);

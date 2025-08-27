@@ -67,3 +67,12 @@ private:
 bool init_audio_engine();
 void close_audio_engine();
 
+class AudioSystem final : public EngineSystem {
+public:
+
+    bool initialize() override;
+
+    void update(double delta_time) override ;
+
+    ~AudioSystem() override;
+};
