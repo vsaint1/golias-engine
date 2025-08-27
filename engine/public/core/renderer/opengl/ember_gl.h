@@ -77,10 +77,6 @@ public:
 
     void clear(glm::vec4 color) override;
 
-    void setup_camera(const Camera2D& camera);
-
-    void setup_canvas(const int width, const int height);
-
 private:
     OpenglShader* _default_shader = nullptr;
     OpenglShader* _fbo_shader    = nullptr;
