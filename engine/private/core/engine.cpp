@@ -294,7 +294,7 @@ void Engine::shutdown() {
 
     SDL_DestroyWindow(Window.handle);
 
-    // close_audio_engine();
+    close_audio_engine();
 
     SDL_Quit();
 }

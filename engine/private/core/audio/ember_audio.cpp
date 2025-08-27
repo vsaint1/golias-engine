@@ -92,7 +92,7 @@ void Audio::destroy() {
 
 // ===================== AUDIOBUS ===================== //
 
-std::unordered_map<std::string, AudioBus> audioBuses;
+static std::unordered_map<std::string, AudioBus> audioBuses;
 
 AudioBus::AudioBus(std::string name) : _name(std::move(name)) {
 }
@@ -204,7 +204,7 @@ bool init_audio_engine() {
 
 void close_audio_engine() {
 
-    for (auto [_, bus] : audioBuses) {
+    for (auto& [_, bus] : audioBuses) {
         LOG_INFO("Destroying audios from bus [%s]", bus._name.c_str());
         for (auto* audio : bus.get_sounds()) {
             audio->destroy();
@@ -223,7 +223,5 @@ bool AudioSystem::initialize() {
 void AudioSystem::update(double delta_time) {
 }
 
-AudioSystem::~AudioSystem() {
-    close_audio_engine();
-}
+AudioSystem::~AudioSystem() = default;
 
