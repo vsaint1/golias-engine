@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
     Node2D* player = new Node2D();
     player->set_z_index(5);
-    player->set_transform({glm::vec2(150.f, 100.f), glm::vec2(1.f), 0.0f});
+    player->set_transform({glm::vec2(20.f, 100.f), glm::vec2(1.f), 0.0f});
 
     Label* name = new Label("mine", "golias_bento");
     name->set_text("Hello [color=#FF0000]World[/color], [b]no bold?[/b].\nPlayer Health  [color=#028900]%d[/color] %s", 100, "robson");
@@ -43,6 +43,13 @@ int main(int argc, char* argv[]) {
     player_sprite->set_z_index(10);
 
     player->add_child("Image", player_sprite);
+
+    CollisionShape2D * player_collider = new CollisionShape2D();
+    player_collider->type = ShapeType::CIRCLE;
+    player_collider->translate(0,2);
+    player_collider->radius = 6;
+
+    player->add_child("Collision", player_collider);
 
     root->add_child("Player", player);
     root->add_child("Text",name);
@@ -63,6 +70,9 @@ int main(int argc, char* argv[]) {
                 is_filled = !is_filled;
             }
         }
+
+        const double dt = GEngine->time_manager()->get_delta_time();
+        GEngine->update(dt);
 
         angle += 0.01f;
         if (angle > 2 * M_PI) angle -= 2 * M_PI;
