@@ -38,15 +38,16 @@ bool CollisionSystem::check_circle_aabb(const glm::vec2& center, float radius, c
 }
 
 bool CollisionSystem::check_collision(CollisionShape2D* a, CollisionShape2D* b) {
-    if (!a || !b) return false;
+    if (!a || !b) {
+        return false;
+    }
 
     if (a->type == ShapeType::RECTANGLE && b->type == ShapeType::RECTANGLE) {
         return check_aabb(a->get_aabb(), b->get_aabb());
     }
 
     if (a->type == ShapeType::CIRCLE && b->type == ShapeType::CIRCLE) {
-        return check_circle(a->get_center(), a->radius,
-                            b->get_center(), b->radius);
+        return check_circle(a->get_center(), a->radius, b->get_center(), b->radius);
     }
 
     if (a->type == ShapeType::CIRCLE && b->type == ShapeType::RECTANGLE) {
@@ -60,7 +61,13 @@ bool CollisionSystem::check_collision(CollisionShape2D* a, CollisionShape2D* b) 
     return false;
 }
 
-void CollisionSystem::update() {
+bool CollisionSystem::initialize() {
+
+    return true;
+}
+
+
+void CollisionSystem::update(double delta_time) {
     for (size_t i = 0; i < objects.size(); ++i) {
         for (size_t j = i + 1; j < objects.size(); ++j) {
             CollisionShape2D* a = objects[i];

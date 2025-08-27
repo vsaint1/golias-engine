@@ -12,6 +12,16 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
+void Engine::update(double delta_time) {
+
+    this->_input_manager->update();
+    this->_time_manager->update();
+
+    for (const auto& [name,system] : _systems) {
+        system->update(delta_time);
+    }
+}
+
 
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
@@ -159,6 +169,24 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
         return false;
     }
+#pragma region ENGINE_SYS
+    _systems["CollisionSystem"] = std::make_unique<CollisionSystem>();
+
+    for (const auto& [name, system] : _systems) {
+        if (!system->initialize()) {
+            LOG_CRITICAL("Failed to initialize system: %s", name.c_str());
+            SDL_DestroyWindow(_window);
+            close_audio_engine();
+
+            if (Config.get_threading().is_multithreaded) {
+                Logger::destroy();
+            }
+
+            return false;
+        }
+    }
+
+#pragma endregion
 
     FileAccess file("controller_db", ModeFlags::READ);
 
@@ -245,6 +273,8 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->is_running     = true;
 
     this->_time_manager->set_target_fps(Config.get_application().max_fps);
+
+
 
     return true;
 }
@@ -437,3 +467,4 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     return _renderer;
 }
+

@@ -5,6 +5,9 @@
 #include "core/time_manager.h"
 #include "core/engine_config.h"
 
+#pragma region  ENGINE_SYSTEMS
+#include "core/systems/collision_sys.h"
+#pragma endregion
 
 class Renderer;
 class OpenglShader;
@@ -103,7 +106,11 @@ public:
      */
     bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
+    void update(double delta_time);
+
 private:
+    std::unordered_map<std::string, std::unique_ptr<EngineSystem>> _systems{};
+
     Renderer* _renderer = nullptr;
     InputManager* _input_manager = nullptr;
     TimeManager* _time_manager = nullptr;
