@@ -238,7 +238,7 @@ public:
 
     void set_view_matrix(const glm::mat4& view_matrix  = glm::mat4(1.f));
 
-    glm::mat4 get_view_matrix() const;
+    [[nodiscard]] glm::mat4 get_view_matrix() const;
 
 protected:
     HashMap<BatchKey, Batch> _batches; ///< All batches by key.
