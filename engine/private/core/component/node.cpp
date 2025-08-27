@@ -105,6 +105,16 @@ Node2D* Node2D::get_node(const std::string& path) {
     return it->second->get_node(tail);
 }
 
+
+
+const std::string& Node2D::get_name() const {
+    return _name;
+}
+
+bool Node2D::is_visible() const {
+    return _is_visible;
+}
+
 void Node2D::change_visibility(bool visible) {
     _is_visible = visible;
 }

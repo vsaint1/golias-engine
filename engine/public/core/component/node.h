@@ -54,6 +54,10 @@ public:
 
     virtual ~Node2D();
 
+    [[nodiscard]] const std::string& get_name() const;
+
+    [[nodiscard]] bool is_visible() const;
+
 protected:
     Transform2D _transform = {};
 
@@ -72,8 +76,18 @@ private:
 
 template <typename T>
 T* Node2D::get_node() {
-    for (auto& [name, node] : _nodes) {
-        if (auto val = dynamic_cast<T*>(node)) {
+    if (auto self_as_t = dynamic_cast<T*>(this)) {
+        return self_as_t;
+    }
+
+    for (auto& [name, child] : _nodes) {
+        if (auto val = dynamic_cast<T*>(child)) {
+            return val;
+        }
+    }
+
+    for (auto& [name, child] : _nodes) {
+        if (auto val = child->get_node<T>()) {
             return val;
         }
     }
