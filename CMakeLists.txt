@@ -97,6 +97,10 @@ add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/json)
 
+add_subdirectory(vendor/box2d)
+
+set_target_properties(box2d PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 add_subdirectory(engine)
 
 
