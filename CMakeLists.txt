@@ -92,6 +92,7 @@ set(MBEDTLS_LIBRARY mbedtls)
 set(MBEDTLS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mbedtls/include)
 set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/json)
