@@ -5,6 +5,13 @@
 #include "helpers/logging.h"
 #include "transform_node.h"
 
+enum class ShapeType {
+    RECTANGLE,
+    CIRCLE,
+    POLYGON,
+    CAPSULE
+
+};
 class Renderer;
 
 class Node2D {

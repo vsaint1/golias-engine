@@ -44,4 +44,5 @@ using HashMap = std::unordered_map<K, V>;
 
 using Json = nlohmann::json;
 
+#include <box2d/box2d.h>
 

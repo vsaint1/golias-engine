@@ -2,13 +2,7 @@
 
 #include "node.h"
 
-enum class ShapeType {
-    RECTANGLE,
-    CIRCLE,
-    POLYGON,
-    CAPSULE
 
-};
 
 
 class CollisionShape2D final : public Node2D {

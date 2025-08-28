@@ -14,6 +14,10 @@ class Renderer;
 class OpenglShader;
 class OpenglRenderer;
 
+
+constexpr float PIXELS_PER_METER = 32.0f;
+constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
+
 /**
  * @brief Core Engine singleton.
  *
@@ -21,8 +25,7 @@ class OpenglRenderer;
  */
 class Engine {
 public:
-    Engine() : _thread_pool(2) {
-    }
+    Engine();
 
     struct {
         int width                   = 0;
@@ -113,6 +116,8 @@ public:
 
     ThreadPool& get_thread_pool();
 
+    b2WorldId get_physics_world() const;
+
 private:
     std::unordered_map<std::string, std::unique_ptr<EngineSystem>> _systems{};
 
@@ -121,6 +126,7 @@ private:
     InputManager* _input_manager = nullptr;
     TimeManager* _time_manager   = nullptr;
 
+    b2WorldId _world;
 
     /**
      * @brief Create a renderer instance.
@@ -165,3 +171,10 @@ extern std::unique_ptr<Engine> GEngine;
 
 // Global audio engine instance (Miniaudio)
 extern ma_engine audio_engine;
+
+
+
+b2Vec2 pixels_to_world(const glm::vec2& pixelPos);
+
+glm::vec2 world_to_pixels(const b2Vec2& worldPos);
+

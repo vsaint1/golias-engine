@@ -17,13 +17,19 @@ void Engine::update(double delta_time) {
     this->_input_manager->update();
     this->_time_manager->update();
 
+    b2World_Step(this->_world, SDL_min(delta_time, 1 / 60.f), 8);
+
     for (const auto& [name, system] : _systems) {
         system->update(delta_time);
     }
 }
 
-  ThreadPool& Engine::get_thread_pool()   {
+ThreadPool& Engine::get_thread_pool() {
     return _thread_pool;
+}
+
+b2WorldId Engine::get_physics_world() const {
+    return _world;
 }
 
 
@@ -268,7 +274,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_time_manager->set_target_fps(Config.get_application().max_fps);
 
 
-
     return true;
 }
 
@@ -296,6 +301,8 @@ void Engine::shutdown() {
     if (Config.get_threading().is_multithreaded) {
         Logger::destroy();
     }
+
+    b2DestroyWorld(this->_world);
 
     SDL_DestroyWindow(Window.handle);
 
@@ -337,6 +344,12 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
     this->_renderer = mtlRenderer;
 
     return mtlRenderer;
+}
+
+
+Engine::Engine() : _thread_pool(2) {
+    const b2WorldDef world_def = b2DefaultWorldDef();
+    _world                     = b2CreateWorld(&world_def);
 }
 
 
@@ -467,3 +480,13 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     return _renderer;
 }
 
+
+b2Vec2 pixels_to_world(const glm::vec2& pixelPos) {
+    const  float viewportHeight = GEngine->Config.get_viewport().height;
+    return b2Vec2(pixelPos.x * METERS_PER_PIXEL, (viewportHeight - pixelPos.y) * METERS_PER_PIXEL);
+}
+
+glm::vec2 world_to_pixels(const b2Vec2& worldPos) {
+    const float viewportHeight = GEngine->Config.get_viewport().height;
+    return glm::vec2(worldPos.x * PIXELS_PER_METER, viewportHeight - worldPos.y * PIXELS_PER_METER);
+}
