@@ -171,25 +171,21 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
     }
 
     if (filled) {
-        batch.vertices.push_back({center, {0.5f, 0.5f}, color});
-        uint32_t center_index = base + segments;
-
-
         for (const auto& p : points) {
-            batch.vertices.push_back({p, {0.5f + (p.x - center_x) / (2*radius), 0.5f + (p.y - center_y) / (2*radius)}, color});
+            batch.vertices.push_back({
+                p,
+                {0.5f + (p.x - center_x) / (2*radius),
+                 0.5f + (p.y - center_y) / (2*radius)},
+                color
+            });
         }
 
+        batch.vertices.push_back({center, {0.5f, 0.5f}, color});
+        uint32_t center_index = base + points.size();
 
         for (int i = 0; i < segments; ++i) {
             uint32_t next = (i + 1) % segments;
             batch.indices.push_back(center_index);
-            batch.indices.push_back(base + i);
-            batch.indices.push_back(base + next);
-        }
-
-    } else {
-        for (int i = 0; i < segments; ++i) {
-            uint32_t next = (i + 1) % segments;
             batch.indices.push_back(base + i);
             batch.indices.push_back(base + next);
         }
