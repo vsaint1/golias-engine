@@ -1,13 +1,14 @@
 #pragma once
 #include "helpers/logging.h"
 #include <curl/curl.h>
-#include <future>
 
 struct HttpRequest {
     const char* url    = ""; ///< URL to send the request to.
     std::string method = "GET"; ///< HTTP method (GET, POST, PUT, PATCH, DELETE).
     std::map<std::string, std::string> headers;
     std::string body; ///< Request body for POST/PUT requests.
+
+    explicit HttpRequest(const char* url = "", const std::string& method = "GET") : url(url), method(method) {}
 };
 
 struct HttpResponse {
@@ -43,7 +44,7 @@ public:
     [[nodiscard]] HttpResponse request(const HttpRequest& request) const;
 
     /// Non-blocking (cross-platform)
-    void request_async(const HttpRequest& request, const std::function<void(HttpResponse)>& callback) const;
+    void request_async(HttpRequest request, const std::function<void(const HttpResponse&)>& callback) const;
 
 private:
     CURL* _curl = nullptr;

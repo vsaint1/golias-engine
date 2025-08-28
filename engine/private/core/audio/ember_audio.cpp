@@ -198,7 +198,7 @@ bool init_audio_engine() {
     // core.Audio.bInitialized = true;
     AudioBus::get_or_create("Master");
 
-    LOG_INFO("Successfully initialized Audio Engine, Default bus [Master]", GEngine->Audio.global_volume);
+    LOG_INFO("Successfully initialized Audio Engine, Default bus [Master] Volume %.2f", GEngine->Audio.global_volume);
     return true;
 }
 

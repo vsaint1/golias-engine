@@ -1,12 +1,13 @@
 #pragma once
 
+#include "core/engine_config.h"
 #include "core/input/input_manager.h"
 #include "core/io/file_system.h"
 #include "core/time_manager.h"
-#include "core/engine_config.h"
 
-#pragma region  ENGINE_SYSTEMS
+#pragma region ENGINE_SYSTEMS
 #include "core/systems/collision_sys.h"
+#include "core/systems/thread_pool.h"
 #pragma endregion
 
 class Renderer;
@@ -20,10 +21,12 @@ class OpenglRenderer;
  */
 class Engine {
 public:
+    Engine() : _thread_pool(2) {
+    }
 
     struct {
-        int width = 0;
-        int height = 0;
+        int width                   = 0;
+        int height                  = 0;
         const SDL_DisplayMode* data = nullptr;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};
@@ -108,12 +111,15 @@ public:
 
     void update(double delta_time);
 
+    ThreadPool& get_thread_pool();
+
 private:
     std::unordered_map<std::string, std::unique_ptr<EngineSystem>> _systems{};
 
-    Renderer* _renderer = nullptr;
+    ThreadPool _thread_pool;
+    Renderer* _renderer          = nullptr;
     InputManager* _input_manager = nullptr;
-    TimeManager* _time_manager = nullptr;
+    TimeManager* _time_manager   = nullptr;
 
 
     /**

@@ -1,5 +1,6 @@
 #include "core/http/http_client.h"
 
+#include "core/engine.h"
 
 static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdata) {
     std::string* s = static_cast<std::string*>(userdata);
@@ -78,7 +79,7 @@ HttpResponse HttpClient::request(const HttpRequest& request) const {
     return res;
 }
 
-void HttpClient::request_async(const HttpRequest& request, const std::function<void(HttpResponse)>& callback) const {
+void HttpClient::request_async(HttpRequest request, const std::function<void(const HttpResponse&)>& callback) const {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
@@ -134,11 +135,10 @@ void HttpClient::request_async(const HttpRequest& request, const std::function<v
     }
 
 #else
-    // TODO: we should use a thread pool, simpler for now...
-    const auto fut = std::async(std::launch::async, [this, request, callback]() {
+    const auto fut = GEngine->get_thread_pool().enqueue([this, request = std::move(request), callback = std::move(callback)] {
         try {
-            const HttpResponse res = this->request(request);
-            callback(res);
+            HttpResponse res = this->request(request);
+            callback(std::move(res));
         } catch (const std::exception& e) {
             LOG_ERROR("HttpRequest async exception: %s", e.what());
         }

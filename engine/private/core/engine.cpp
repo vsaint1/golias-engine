@@ -17,9 +17,13 @@ void Engine::update(double delta_time) {
     this->_input_manager->update();
     this->_time_manager->update();
 
-    for (const auto& [name,system] : _systems) {
+    for (const auto& [name, system] : _systems) {
         system->update(delta_time);
     }
+}
+
+  ThreadPool& Engine::get_thread_pool()   {
+    return _thread_pool;
 }
 
 
@@ -254,6 +258,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         LOG_INFO("Vendor: %s", "Apple Inc.");
     }
 
+
     this->set_vsync(Config.is_vsync());
 
     this->_time_manager  = new TimeManager();
@@ -293,6 +298,8 @@ void Engine::shutdown() {
     }
 
     SDL_DestroyWindow(Window.handle);
+
+    _thread_pool.shutdown();
 
     for (const auto& [name, system] : _systems) {
         system->shutdown();

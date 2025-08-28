@@ -23,6 +23,10 @@ private:
 
 template <class F, class... Args>
 auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    LOG_INFO("ThreadPool not supported on Web builds.");
+#else
+
     using return_type = decltype(f(args...));
 
     auto task = std::make_shared<std::packaged_task<return_type()>>(
@@ -41,5 +45,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args..
     }
 
     condition.notify_one();
-    return res;
+    return res
+#endif
+
 }

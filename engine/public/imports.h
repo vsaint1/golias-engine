@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "definitions.h"
+#include <future>
 
 template <typename K, typename V>
 using HashMap = std::unordered_map<K, V>;
