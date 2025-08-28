@@ -119,7 +119,7 @@ public:
     b2WorldId get_physics_world() const;
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<EngineSystem>> _systems{};
+    std::vector<std::unique_ptr<EngineSystem>> _systems{};
 
     ThreadPool _thread_pool;
     Renderer* _renderer          = nullptr;

@@ -19,7 +19,7 @@ void Engine::update(double delta_time) {
 
     b2World_Step(this->_world, SDL_min(delta_time, 1 / 60.f), 8);
 
-    for (const auto& [name, system] : _systems) {
+    for (const auto&  system : _systems) {
         system->update(delta_time);
     }
 }
@@ -170,12 +170,11 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 #pragma endregion
 
 #pragma region ENGINE_SYS
-    _systems["CollisionSystem"] = std::make_unique<CollisionSystem>();
-    _systems["AudioSystem"]     = std::make_unique<AudioSystem>();
+    _systems.emplace_back(std::make_unique<AudioSystem>());
 
-    for (const auto& [name, system] : _systems) {
+    for (const auto& system : _systems) {
         if (!system->initialize()) {
-            LOG_CRITICAL("Failed to initialize system: %s", name.c_str());
+            LOG_CRITICAL("Failed to initialize system: %s", system->get_name());
             SDL_DestroyWindow(_window);
 
             if (Config.get_threading().is_multithreaded) {
@@ -308,7 +307,7 @@ void Engine::shutdown() {
 
     _thread_pool.shutdown();
 
-    for (const auto& [name, system] : _systems) {
+    for (const auto&  system : _systems) {
         system->shutdown();
     }
 

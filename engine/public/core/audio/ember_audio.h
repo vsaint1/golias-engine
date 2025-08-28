@@ -78,4 +78,6 @@ public:
 
     AudioSystem() = default;
     ~AudioSystem() override;
+protected:
+    const char* name = "AudioSystem";
 };
