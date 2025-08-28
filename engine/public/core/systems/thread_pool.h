@@ -45,7 +45,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args..
     }
 
     condition.notify_one();
-    return res
+    return res;
 #endif
 
 }

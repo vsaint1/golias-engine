@@ -46,6 +46,4 @@ public:
     /// Non-blocking (cross-platform)
     void request_async(HttpRequest request, const std::function<void(const HttpResponse&)>& callback) const;
 
-private:
-    CURL* _curl = nullptr;
 };

@@ -14,18 +14,11 @@ static size_t write_callback(char* ptr, size_t size, size_t nmemb, void* userdat
 
 
 HttpClient::HttpClient() {
-#if !defined(SDL_PLATFORM_EMSCRIPTEN)
-    _curl = curl_easy_init();
-#endif
+
 }
 
 HttpClient::~HttpClient() {
-#if !defined(SDL_PLATFORM_EMSCRIPTEN)
-    if (_curl) {
-        curl_easy_cleanup(_curl);
-        _curl = nullptr;
-    }
-#endif
+
 }
 
 HttpResponse HttpClient::request(const HttpRequest& request) const {
@@ -34,6 +27,7 @@ HttpResponse HttpClient::request(const HttpRequest& request) const {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     LOG_ERROR("Sync. HTTP/s not supported on Web builds.");
 #else
+     CURL* _curl = curl_easy_init();
     if (_curl) {
         curl_easy_setopt(_curl, CURLOPT_URL, request.url);
 
@@ -74,6 +68,7 @@ HttpResponse HttpClient::request(const HttpRequest& request) const {
         }
 
         curl_slist_free_all(headers);
+        curl_easy_cleanup(_curl);
     }
 #endif
     return res;
