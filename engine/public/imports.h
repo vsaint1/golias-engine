@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "definitions.h"
+#include <future>
 
 template <typename K, typename V>
 using HashMap = std::unordered_map<K, V>;
@@ -39,4 +40,9 @@ using HashMap = std::unordered_map<K, V>;
 #include <freetype/freetype.h>
 
 
+#include "json.hpp"
+
+using Json = nlohmann::json;
+
+#include <box2d/box2d.h>
 

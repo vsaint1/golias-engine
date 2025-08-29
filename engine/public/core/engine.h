@@ -1,14 +1,22 @@
 #pragma once
 
+#include "core/engine_config.h"
 #include "core/input/input_manager.h"
 #include "core/io/file_system.h"
 #include "core/time_manager.h"
-#include "core/engine_config.h"
 
+#pragma region ENGINE_SYSTEMS
+#include "core/systems/physics_sys.h"
+#include "core/systems/thread_pool.h"
+#pragma endregion
 
 class Renderer;
 class OpenglShader;
 class OpenglRenderer;
+
+
+constexpr float PIXELS_PER_METER = 32.0f;
+constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
 
 /**
  * @brief Core Engine singleton.
@@ -17,10 +25,11 @@ class OpenglRenderer;
  */
 class Engine {
 public:
+    Engine();
 
     struct {
-        int width = 0;
-        int height = 0;
+        int width                   = 0;
+        int height                  = 0;
         const SDL_DisplayMode* data = nullptr;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};
@@ -103,11 +112,24 @@ public:
      */
     bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
-private:
-    Renderer* _renderer = nullptr;
-    InputManager* _input_manager = nullptr;
-    TimeManager* _time_manager = nullptr;
+    void update(double delta_time);
 
+    ThreadPool& get_thread_pool();
+
+    b2WorldId get_physics_world() const;
+
+    template <typename T>
+    T* get_system();
+
+private:
+    std::vector<std::unique_ptr<EngineManager>> _systems{};
+
+    ThreadPool _thread_pool;
+    Renderer* _renderer          = nullptr;
+    InputManager* _input_manager = nullptr;
+    TimeManager* _time_manager   = nullptr;
+
+    b2WorldId _world;
 
     /**
      * @brief Create a renderer instance.
@@ -147,8 +169,25 @@ private:
     Renderer* _create_renderer_metal(SDL_Window* window, int view_width, int view_height);
 };
 
+template <typename T>
+T* Engine::get_system() {
+
+    for (auto& sys : _systems) {
+        if (T* casted = dynamic_cast<T*>(sys.get())) {
+            return casted;
+        }
+    }
+
+    return nullptr;
+}
+
 // Global engine instance
 extern std::unique_ptr<Engine> GEngine;
 
 // Global audio engine instance (Miniaudio)
 extern ma_engine audio_engine;
+
+
+b2Vec2 pixels_to_world(const glm::vec2& pixelPos);
+
+glm::vec2 world_to_pixels(const b2Vec2& worldPos);

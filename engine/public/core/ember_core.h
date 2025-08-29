@@ -14,6 +14,7 @@
 #include "core/audio/ember_audio.h"
 #include "core/ember_utils.h"
 #include "core/system_info.h"
+#include "core/http/http_client.h"
 
 /**
  * @brief Mode of drawing commands.
@@ -235,18 +236,24 @@ public:
      */
     virtual void unload_texture(Uint32 id) = 0;
 
-protected:
-    HashMap<BatchKey, Batch> batches; ///< All batches by key.
+    void set_view_matrix(const glm::mat4& view_matrix  = glm::mat4(1.f));
 
-    FT_Library ft = {}; ///< FreeType library instance.
+    [[nodiscard]] glm::mat4 get_view_matrix() const;
+
+protected:
+    HashMap<BatchKey, Batch> _batches; ///< All batches by key.
+
+    FT_Library _ft = {}; ///< FreeType library instance.
 
     HashMap<std::string, Font> fonts; ///< Loaded fonts.
     std::string current_font_name; ///< Currently selected font alias.
 
-    glm::mat4 projection = glm::mat4(1.f); ///< Projection matrix.
-    std::vector<DrawCommand> commands; ///< Commands to render this frame.
+    glm::mat4 _projection = glm::mat4(1.f); ///< Projection matrix.
+    glm::mat4 _view       = glm::mat4(1.f); ///< View matrix.
 
-    HashMap<std::string, std::shared_ptr<Texture>> textures; ///< Cached textures.
+    std::vector<DrawCommand> _commands; ///< Commands to render this frame.
+
+    HashMap<std::string, std::shared_ptr<Texture>> _textures; ///< Cached textures.
 
     HashMap<Uint32, glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
 
@@ -264,7 +271,7 @@ protected:
     /**
      * @brief Rotate a point around a center point.
      */
-    glm::vec2 _rotate_point(const glm::vec2& point, const glm::vec2& center, float radians);
+    glm::vec2 rotate_point(const glm::vec2& point, const glm::vec2& center, float radians);
 
     /**
      * @brief Calculate the display rectangle for rendering based on the viewport and window size.
@@ -273,7 +280,7 @@ protected:
      *
      * @version  1.0.0
      */
-    Recti _calc_display();
+    Recti calc_display();
 
     /**
     * @brief Render the current frame buffer.
@@ -283,7 +290,7 @@ protected:
     /**
      * @brief Add a quad (textured or untextured) to the appropriate batch.
      */
-    void _add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
+    void submit(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
                             const glm::vec4& color, float rotation = 0.0f, bool is_filled = true);
 
     virtual void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) = 0;

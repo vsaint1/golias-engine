@@ -13,11 +13,14 @@ void Node2D::scale(float sx, float sy) {
     _transform.scale *= glm::vec2(sx, sy);
 }
 
+Node2D::Node2D() = default;
+
 void Node2D::set_z_index(int index) {
-    if (_z_index == index) return;
+    if (_z_index == index) {
+        return;
+    }
 
     _z_index = index;
-
 }
 
 
@@ -79,7 +82,6 @@ void Node2D::add_child(const std::string& name, Node2D* node) {
     node->_name   = name;
 
     _nodes.emplace(name, node);
-
 }
 
 
@@ -103,6 +105,22 @@ Node2D* Node2D::get_node(const std::string& path) {
     return it->second->get_node(tail);
 }
 
+
+
+const std::string& Node2D::get_name() const {
+    return _name;
+}
+
+bool Node2D::is_visible() const {
+    return _is_visible;
+}
+
+bool Node2D::is_effective_visible() const {
+        if (!_is_visible) return false;
+        if (_parent) return _parent->is_effective_visible();
+        return true;
+}
+
 void Node2D::change_visibility(bool visible) {
     _is_visible = visible;
 }
@@ -116,28 +134,20 @@ void Node2D::ready() {
 
 
 void Node2D::process(double delta_time) {
-    for (const auto& [name, child] : _nodes) {
-        if (!child->_is_visible)
-            continue;
+    if (!is_effective_visible()) return;
 
+    for (const auto& [name, child] : _nodes) {
         child->process(delta_time);
     }
 }
 
-
 void Node2D::draw(Renderer* renderer) {
+    if (!is_effective_visible()) return;
 
     for (const auto& [name, child] : _nodes) {
-        if (!child->_is_visible) {
-            continue;
-        }
-
-       child->draw(renderer);
+        child->draw(renderer);
     }
-
-
 }
-
 
 void Node2D::input(const InputManager* input) {
     for (const auto& [name, child] : _nodes) {

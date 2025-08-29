@@ -59,6 +59,7 @@ add_subdirectory(vendor/mini_audio)
 
 add_subdirectory(vendor/freetype)
 
+
 # [SDL] - removing unused modules
 set(SDL_RENDER OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
@@ -71,14 +72,37 @@ add_subdirectory(vendor/imgui)
 
 set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
 set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
-set(GLM_BUILD_TESTS OFF)
 set(GLM_ENABLE_CXX_20 ON)
 set(GLM_TEST_ENABLE OFF)
 add_subdirectory(vendor/glm)
 
+
+set(CURL_USE_MBEDTLS ON CACHE BOOL "" FORCE)
+set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
+
+set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(vendor/mbedtls)
+
+set(MBEDX509_LIBRARY mbedx509)
+set(MBEDCRYPTO_LIBRARY mbedcrypto)
+set(MBEDTLS_LIBRARY mbedtls)
+
+set(MBEDTLS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mbedtls/include)
+set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
+
+add_subdirectory(vendor/json)
+
+add_subdirectory(vendor/box2d)
+
+set_target_properties(box2d PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 add_subdirectory(engine)
+
 
 # [iOS/macOS/Android/Linux] - commons
 if(UNIX)
@@ -224,7 +248,7 @@ if(EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FETCH=1 -s  FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
 
 
 endif()

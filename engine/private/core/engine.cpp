@@ -12,6 +12,26 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
+void Engine::update(double delta_time) {
+
+    this->_input_manager->update();
+    this->_time_manager->update();
+
+    b2World_Step(this->_world, SDL_min(delta_time, 1 / 60.f), 8);
+
+    for (const auto&  system : _systems) {
+        system->update(delta_time);
+    }
+}
+
+ThreadPool& Engine::get_thread_pool() {
+    return _thread_pool;
+}
+
+b2WorldId Engine::get_physics_world() const {
+    return _world;
+}
+
 
 Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
@@ -39,12 +59,14 @@ void Engine::set_vsync(const bool enabled) {
     }
 
     Config.set_vsync(enabled);
-
 }
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
-    EMBER_TIMER_START();
+    // Note: curl is not supported on Emscripten/WebAssembly
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+#endif
 
     LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
@@ -130,7 +152,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 
     int w, h, nr_channels;
-    unsigned char* pixels = stbi_load( Config.get_application().icon_path, &w, &h, &nr_channels, 4);
+    unsigned char* pixels = stbi_load(Config.get_application().icon_path, &w, &h, &nr_channels, 4);
     if (!pixels) {
         LOG_ERROR("Failed to load default icon");
     } else {
@@ -147,16 +169,24 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 #pragma endregion
 
-    if (!init_audio_engine()) {
-        LOG_CRITICAL("Failed to initialize Audio Engine");
-        SDL_DestroyWindow(_window);
+#pragma region ENGINE_SYS
+    _systems.emplace_back(std::make_unique<AudioManager>());
+    _systems.emplace_back(std::make_unique<PhysicsManager>());
 
-        if (Config.get_threading().is_multithreaded) {
-            Logger::destroy();
+    for (const auto& system : _systems) {
+        if (!system->initialize()) {
+            LOG_CRITICAL("Failed to initialize system: %s", system->get_name());
+            SDL_DestroyWindow(_window);
+
+            if (Config.get_threading().is_multithreaded) {
+                Logger::destroy();
+            }
+
+            return false;
         }
-
-        return false;
     }
+
+#pragma endregion
 
     FileAccess file("controller_db", ModeFlags::READ);
 
@@ -165,7 +195,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (SDL_AddGamepadMapping(gamepad_mappings.c_str()) == -1) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
         SDL_DestroyWindow(_window);
-        close_audio_engine();
 
         if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
@@ -199,7 +228,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: (unknown type)");
         SDL_DestroyWindow(_window);
-        close_audio_engine();
 
         if (Config.get_threading().is_multithreaded) {
             Logger::destroy();
@@ -208,30 +236,34 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     }
 
-    LOG_INFO("Successfully created window with title: %s", app_config.name);
-    LOG_INFO(" > Width %d, Height %d", width, height);
-    LOG_INFO(" > Display ID %d", display_mode->displayID);
-    LOG_INFO(" > Display Width %d, Display Height %d", display_mode->w, display_mode->h);
-    LOG_INFO(" > High DPI screen (%s), Backbuffer (%dx%d)", hdpi_screen() ? "YES" : "NO", bbWidth, bbHeight);
-    LOG_INFO(" > Usable Bounds (%d, %d, %d, %d)", view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h);
-    LOG_INFO(" > Viewport (%d, %d)", viewport.width, viewport.height);
-    LOG_INFO(" > Refresh Rate %.2f", display_mode->refresh_rate);
-    LOG_INFO(" > Renderer %s",  Config.get_renderer_device().get_backend_str());
+    LOG_INFO(R"(Successfully created window with title: %s
+     > Width %d, Height %d
+     > Display ID %d
+     > Display Width %d, Display Height %d
+     > High DPI screen (%s), Backbuffer (%dx%d)
+     > Usable Bounds (%d, %d, %d, %d)
+     > Viewport (%d, %d)
+     > Refresh Rate %.2f
+     > Renderer %s)",
+             app_config.name, width, height, display_mode->displayID, display_mode->w, display_mode->h, hdpi_screen() ? "YES" : "NO",
+             bbWidth, bbHeight, view_bounds.x, view_bounds.y, view_bounds.w, view_bounds.h, viewport.width, viewport.height,
+             display_mode->refresh_rate, Config.get_renderer_device().get_backend_str());
 
     this->Window.width    = width;
     this->Window.height   = height;
     this->_renderer->Type = type;
 
     if (type == Backend::GL_COMPATIBILITY) {
-        LOG_INFO(" > Version: %s", (const char*) glGetString(GL_VERSION));
-        LOG_INFO(" > Vendor: %s", (const char*) glGetString(GL_VENDOR));
+        LOG_INFO("Version: %s", (const char*) glGetString(GL_VERSION));
+        LOG_INFO("Vendor: %s", (const char*) glGetString(GL_VENDOR));
     }
 
     //TODO: get this dyn.
     if (type == Backend::METAL) {
-        LOG_INFO(" > Version: %s ", "Metal 2.0+");
-        LOG_INFO(" > Vendor: %s", "Apple Inc.");
+        LOG_INFO("Version: %s ", "Metal 2.0+");
+        LOG_INFO("Vendor: %s", "Apple Inc.");
     }
+
 
     this->set_vsync(Config.is_vsync());
 
@@ -239,13 +271,18 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     this->_input_manager = new InputManager(_window);
     this->is_running     = true;
 
-    EMBER_TIMER_END("Initialization");
+    this->_time_manager->set_target_fps(Config.get_application().max_fps);
+
 
     return true;
 }
 
 
 void Engine::shutdown() {
+
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
+    curl_global_cleanup();
+#endif
 
     this->_renderer->destroy();
 
@@ -265,9 +302,17 @@ void Engine::shutdown() {
         Logger::destroy();
     }
 
+    b2DestroyWorld(this->_world);
+
     SDL_DestroyWindow(Window.handle);
 
-    close_audio_engine();
+    _thread_pool.shutdown();
+
+    for (const auto&  system : _systems) {
+        system->shutdown();
+    }
+
+    _systems.clear();
 
     SDL_Quit();
 }
@@ -299,6 +344,12 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
     this->_renderer = mtlRenderer;
 
     return mtlRenderer;
+}
+
+
+Engine::Engine() : _thread_pool(2) {
+    const b2WorldDef world_def = b2DefaultWorldDef();
+    _world                     = b2CreateWorld(&world_def);
 }
 
 
@@ -392,7 +443,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     glRenderer->Viewport[0] = view_width;
     glRenderer->Viewport[1] = view_height;
     glRenderer->Window      = window;
-    glRenderer->Type       = Backend::GL_COMPATIBILITY;
+    glRenderer->Type        = Backend::GL_COMPATIBILITY;
 
     glRenderer->set_context(glContext);
 
@@ -427,4 +478,15 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
 
     return _renderer;
+}
+
+
+b2Vec2 pixels_to_world(const glm::vec2& pixelPos) {
+    const  float viewportHeight = GEngine->Config.get_viewport().height;
+    return b2Vec2(pixelPos.x * METERS_PER_PIXEL, (viewportHeight - pixelPos.y) * METERS_PER_PIXEL);
+}
+
+glm::vec2 world_to_pixels(const b2Vec2& worldPos) {
+    const float viewportHeight = GEngine->Config.get_viewport().height;
+    return glm::vec2(worldPos.x * PIXELS_PER_METER, viewportHeight - worldPos.y * PIXELS_PER_METER);
 }

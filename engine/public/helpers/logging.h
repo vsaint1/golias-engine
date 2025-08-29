@@ -6,9 +6,9 @@
 #define TO_STRING(x) STRINGIFY(x)
 #define TRACE_FILE_LOG \
     "[" __TIME__ "]"   \
-    "[EMBER_ENGINE - " __FILE__ ":" TO_STRING(__LINE__) "] - "
+    "[EMBER_ENGINE][" __FILE__ ":" TO_STRING(__LINE__) "]: "
 
-/*
+/*!
    @brief Class for logging, tracing and debugging
 
    - Web - Output to javascript console

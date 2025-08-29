@@ -1,5 +1,5 @@
 #pragma once
-#include "transform_node.h"
+#include "node.h"
 
 /*!
        @brief Camera2D component
@@ -11,77 +11,34 @@
 
        @version 0.0.5
    */
-struct Camera2D {
-    Transform2D transform;
-
-    Camera2D(int view_width, int view_height, float zoom = 1.0f) : _width(view_width), _height(view_height), zoom(zoom) {}
-
-    glm::mat4 get_view_matrix() const;
-
-    /*!
-        @brief Get the viewport
+class Camera2D : public Node2D {
+public:
+    Camera2D();
+    explicit Camera2D(const std::string& name) : Node2D(name) {}
 
 
-        @version 0.0.4
+    void set_offset(const glm::vec2& offset);
 
-        @return glm::vec4 Viewport
+    [[nodiscard]] glm::vec2 get_offset() const;
 
-    */
-    glm::vec4 get_viewport() const;
+    void set_zoom(const glm::vec2& zoom);
 
-    /*!
-        @brief Check if the position is visible by the camera
+    [[nodiscard]] glm::vec2 get_zoom() const;
 
-        @param position Object position Transform (position)
+    void set_viewport(int width, int height);
 
-        @version 0.0.4
+    [[nodiscard]] glm::vec2 get_viewport() const;
 
-        @return bool
+    void follow(Node2D* target);
 
-    */
-    bool is_visible(const glm::vec3& position);
+    void process(double dt) override;
 
-    /*!
-       @brief Resize the camera view
+    [[nodiscard]] glm::mat4 get_view_matrix() const;
 
-       @param view_width Viewport width
-       @param view_height Viewport height
-
-       @version 0.0.4
-
-       @return void
-
-   */
-    void resize(int view_width, int view_height);
-
-    /*!
-      @brief Get the projection matrix (orthographic)
-
-
-      @version 0.0.4
-
-      @return glm::mat4 Matrix
-
-  */
-    glm::mat4 get_projection_matrix() const;
-
-    int get_height() const {
-        return _height;
-    }
-
-    int get_width() const {
-        return _width;
-    }
-
-    void set_zoom(float zoom) {
-        this->zoom = SDL_clamp(zoom, 0.10f, 10.0f); // ENSURE CAMERA ZOOM NEVER HITS 0
-    }
-
-    float get_zoom() const {
-        return this->zoom;
-    }
-
-    float zoom = 1.0f; // MAX_ZOOM = 10.0f
 private:
-    int _width = 0, _height = 0;
+    glm::vec2 _offset = {0.f, 0.f};
+    glm::vec2 _zoom = {1.f, 1.f};
+    glm::vec2 _viewport_size = {0.f, 0.f};
+    glm::mat4 _view_matrix = glm::mat4(1.f);
+    Node2D* _follow_target = nullptr;
 };

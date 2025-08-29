@@ -17,6 +17,10 @@ struct UberShader {
         return UberShader{};
     }
 
+    bool is_none() const  {
+        return !use_outline && !use_shadow;
+    }
+
     static UberShader outline_only(const glm::vec4& color = glm::vec4(0,0,0,1), float width = 1.0f) {
         UberShader effects;
         effects.use_outline = true;

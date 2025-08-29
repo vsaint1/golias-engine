@@ -3,6 +3,10 @@
 #include "core/ember_core.h"
 
 
+Rect2 Sprite2D::get_region() const {
+    return _source;
+}
+
 void Sprite2D::set_region(const Rect2& region, glm::vec2 size) {
     _source     = region;
     _size       = size;

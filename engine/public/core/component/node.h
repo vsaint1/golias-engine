@@ -5,11 +5,18 @@
 #include "helpers/logging.h"
 #include "transform_node.h"
 
+enum class ShapeType {
+    RECTANGLE,
+    CIRCLE,
+    POLYGON,
+    CAPSULE
+
+};
 class Renderer;
 
 class Node2D {
 public:
-    Node2D() = default;
+    Node2D();
 
     explicit Node2D(std::string name) : _name(std::move(name)) {
     }
@@ -41,6 +48,9 @@ public:
 
     Node2D* get_node(const std::string& path);
 
+    template <typename T>
+    T* get_node();
+
     virtual void ready();
 
     virtual void process(double delta_time);
@@ -50,6 +60,12 @@ public:
     virtual void input(const InputManager* input);
 
     virtual ~Node2D();
+
+    [[nodiscard]] const std::string& get_name() const;
+
+    [[nodiscard]] bool is_visible() const;
+
+    bool is_effective_visible() const;
 
 protected:
     Transform2D _transform = {};
@@ -64,5 +80,28 @@ private:
     Node2D* _parent = nullptr;
 
     HashMap<std::string, Node2D*> _nodes;
-
 };
+
+
+template <typename T>
+T* Node2D::get_node() {
+    if (auto self_as_t = dynamic_cast<T*>(this)) {
+        return self_as_t;
+    }
+
+    for (auto& [name, child] : _nodes) {
+        if (auto val = dynamic_cast<T*>(child)) {
+            return val;
+        }
+    }
+
+    for (auto& [name, child] : _nodes) {
+        if (auto val = child->get_node<T>()) {
+            return val;
+        }
+    }
+
+    LOG_WARN("Node of requested type %s was not found.", typeid(T).name());
+
+    return nullptr;
+}

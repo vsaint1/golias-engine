@@ -5,14 +5,11 @@
 class Label final : public Node2D {
 
 public:
-    explicit Label(const std::string& font_alias, const std::string& text, const float ft_size, const Color& color = Color::WHITE)
+    explicit Label(const std::string& font_alias, const std::string& text, const int ft_size = 0, const Color& color = Color::WHITE)
         : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
     }
 
-    Label(const std::string& font_path, const std::string& font_alias, const std::string& text, int ft_size, const Color& color = Color::WHITE)
-        : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
-        _path = font_path;
-    }
+    Label(const std::string& font_path, const std::string& font_alias, const std::string& text, int ft_size = 16, const Color& color = Color::WHITE);
 
     void ready() override;
 
@@ -36,7 +33,7 @@ private:
     std::string _text    = "";
     Color _color         = Color::WHITE;
     UberShader _effect = UberShader::none();
-    int _font_size       = 16;
+    int _font_size       = 0;
     float _kerning       = 0.0f; // spacing between characters
     std::string _path    = "";
 };

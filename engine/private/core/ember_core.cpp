@@ -1,14 +1,22 @@
 #include "core/ember_core.h"
 
 
-glm::vec2 Renderer::_rotate_point(const glm::vec2& point, const glm::vec2& center, float radians) {
+void Renderer::set_view_matrix(const glm::mat4& view_matrix) {
+    _view = view_matrix;
+}
+
+glm::mat4 Renderer::get_view_matrix() const {
+    return _view;
+}
+
+glm::vec2 Renderer::rotate_point(const glm::vec2& point, const glm::vec2& center, float radians) {
     glm::vec3 p(point - center, 0.0f); // make it vec3 (z=0)
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(0, 0, 1));
     glm::vec3 pr = rot * glm::vec4(p, 1.0f);
     return glm::vec2(pr) + center;
 }
 
-Recti Renderer::_calc_display() {
+Recti Renderer::calc_display() {
     int window_width, window_height;
     SDL_GetWindowSize(Window, &window_width, &window_height);
 
@@ -31,11 +39,11 @@ Recti Renderer::_calc_display() {
     return {draw_x,draw_y, draw_width, draw_height};
 }
 
-void Renderer::_add_quad_to_batch(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
+void Renderer::submit(const BatchKey& key, float x, float y, float w, float h, float u0, float v0, float u1, float v1,
                                   const glm::vec4& color, float rotation, bool is_filled ) {
 
 
-    Batch& batch     = batches[key];
+    Batch& batch     = _batches[key];
     batch.texture_id = key.texture_id;
     batch.type       = key.type;
     batch.z_index    = key.z_index;
