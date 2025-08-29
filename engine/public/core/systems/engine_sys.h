@@ -1,10 +1,10 @@
 #pragma once
 
 
-class EngineSystem {
+class EngineManager {
 
 public:
-    virtual ~EngineSystem() = default;
+    virtual ~EngineManager() = default;
 
     virtual bool initialize() = 0;
 

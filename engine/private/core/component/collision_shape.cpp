@@ -1,14 +1,12 @@
 #include "core/component/collision_shape.h"
 
 #include "core/ember_core.h"
-#include "core/systems/collision_sys.h"
+#include "core/systems/physics_sys.h"
 
 CollisionShape2D::CollisionShape2D() {
-    CollisionSystem::register_object(this);
 }
 
 CollisionShape2D::~CollisionShape2D() {
-    CollisionSystem::unregister_object(this);
 }
 
 Rect2 CollisionShape2D::get_aabb() const {

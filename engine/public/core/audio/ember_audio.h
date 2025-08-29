@@ -67,7 +67,7 @@ private:
 bool init_audio_engine();
 void close_audio_engine();
 
-class AudioSystem final : public EngineSystem {
+class AudioManager final : public EngineManager {
 public:
 
     bool initialize() override;
@@ -76,8 +76,8 @@ public:
 
     void shutdown() override;
 
-    AudioSystem() = default;
-    ~AudioSystem() override;
+    AudioManager() = default;
+    ~AudioManager() override;
 protected:
     const char* name = "AudioSystem";
 };

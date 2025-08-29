@@ -22,6 +22,8 @@ void RigidBody2D::ready() {
 
     body_id = b2CreateBody(GEngine->get_physics_world(), &body_def);
 
+    GEngine->get_system<PhysicsManager>()->register_body(this);
+
     b2ShapeDef shapeDef = b2DefaultShapeDef();
 
 
@@ -55,67 +57,7 @@ void RigidBody2D::ready() {
 void RigidBody2D::process(double delta_time) {
     Node2D::process(delta_time);
 
-    if (!B2_IS_NON_NULL(body_id)) {
-        return;
-    }
 
-    b2Vec2 world_pos    = b2Body_GetPosition(body_id);
-    glm::vec2 pixel_pos = world_to_pixels(world_pos) - offset;
-    b2Rot rot = b2Body_GetRotation(body_id);
-    float angle = std::atan2(rot.s, rot.c);
-
-    set_transform({pixel_pos, get_transform().scale, -angle});
-
-    b2ContactData contacts[16];
-    int numContacts = b2Body_GetContactData(body_id, contacts, 16);
-
-    std::unordered_set<RigidBody2D*> nowColliding;
-
-    for (int i = 0; i < numContacts; ++i) {
-        b2BodyId bodyA = b2Shape_GetBody(contacts[i].shapeIdA);
-        b2BodyId bodyB = b2Shape_GetBody(contacts[i].shapeIdB);
-
-        RigidBody2D* rbA = static_cast<RigidBody2D*>(b2Body_GetUserData(bodyA));
-        RigidBody2D* rbB = static_cast<RigidBody2D*>(b2Body_GetUserData(bodyB));
-
-        RigidBody2D* otherRB = (rbA == this) ? rbB : rbA;
-        if (!otherRB) {
-            continue;
-        }
-
-        nowColliding.insert(otherRB);
-
-        if (!currently_colliding.contains(otherRB)) {
-            currently_colliding.insert(otherRB);
-            otherRB->currently_colliding.insert(this);
-
-            for (auto& cb : on_enter_callbacks) {
-                cb(otherRB);
-            }
-            for (auto& cb : otherRB->on_enter_callbacks) {
-                cb(this);
-            }
-        }
-    }
-
-    std::vector<RigidBody2D*> exited;
-    for (RigidBody2D* otherRB : currently_colliding) {
-        if (!nowColliding.contains(otherRB)) {
-            exited.push_back(otherRB);
-        }
-    }
-
-    for (RigidBody2D* otherRB : exited) {
-        currently_colliding.erase(otherRB);
-        otherRB->currently_colliding.erase(this);
-
-        for (auto& cb : on_exit_callbacks) {
-            cb(otherRB);
-        }
-        for (auto& cb : otherRB->on_exit_callbacks) {
-            cb(this);
-        }
-    }
 }
 
 void RigidBody2D::draw(Renderer* renderer) {
@@ -131,6 +73,8 @@ void RigidBody2D::draw(Renderer* renderer) {
 }
 
 RigidBody2D::~RigidBody2D() {
+    GEngine->get_system<PhysicsManager>()->unregister_body(this);
+
 }
 
 

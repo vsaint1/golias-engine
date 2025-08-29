@@ -170,7 +170,8 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 #pragma endregion
 
 #pragma region ENGINE_SYS
-    _systems.emplace_back(std::make_unique<AudioSystem>());
+    _systems.emplace_back(std::make_unique<AudioManager>());
+    _systems.emplace_back(std::make_unique<PhysicsManager>());
 
     for (const auto& system : _systems) {
         if (!system->initialize()) {

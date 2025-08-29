@@ -215,17 +215,17 @@ void close_audio_engine() {
     LOG_INFO("Audio Engine Shutdown");
 }
 
-bool AudioSystem::initialize() {
+bool AudioManager::initialize() {
     return init_audio_engine();
 }
 
 // PASS
-void AudioSystem::update(double delta_time) {
+void AudioManager::update(double delta_time) {
 }
 
-void AudioSystem::shutdown() {
+void AudioManager::shutdown() {
     close_audio_engine();
 }
 
-AudioSystem::~AudioSystem() = default;
+AudioManager::~AudioManager() = default;
 

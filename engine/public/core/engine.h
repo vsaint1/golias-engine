@@ -6,7 +6,7 @@
 #include "core/time_manager.h"
 
 #pragma region ENGINE_SYSTEMS
-#include "core/systems/collision_sys.h"
+#include "core/systems/physics_sys.h"
 #include "core/systems/thread_pool.h"
 #pragma endregion
 
@@ -118,8 +118,11 @@ public:
 
     b2WorldId get_physics_world() const;
 
+    template <typename T>
+    T* get_system();
+
 private:
-    std::vector<std::unique_ptr<EngineSystem>> _systems{};
+    std::vector<std::unique_ptr<EngineManager>> _systems{};
 
     ThreadPool _thread_pool;
     Renderer* _renderer          = nullptr;
@@ -166,6 +169,18 @@ private:
     Renderer* _create_renderer_metal(SDL_Window* window, int view_width, int view_height);
 };
 
+template <typename T>
+T* Engine::get_system() {
+
+    for (auto& sys : _systems) {
+        if (T* casted = dynamic_cast<T*>(sys.get())) {
+            return casted;
+        }
+    }
+
+    return nullptr;
+}
+
 // Global engine instance
 extern std::unique_ptr<Engine> GEngine;
 
@@ -173,8 +188,6 @@ extern std::unique_ptr<Engine> GEngine;
 extern ma_engine audio_engine;
 
 
-
 b2Vec2 pixels_to_world(const glm::vec2& pixelPos);
 
 glm::vec2 world_to_pixels(const b2Vec2& worldPos);
-

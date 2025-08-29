@@ -42,8 +42,8 @@ public:
 
     ~RigidBody2D() override;
 
-private:
+    std::unordered_set<RigidBody2D*> currently_colliding;
     std::vector<std::function<void(Node2D*)>> on_enter_callbacks;
     std::vector<std::function<void(Node2D*)>> on_exit_callbacks;
-    std::unordered_set<RigidBody2D*> currently_colliding;
+
 };
