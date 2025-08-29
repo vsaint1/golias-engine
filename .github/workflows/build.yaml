@@ -1,5 +1,4 @@
-name: build 
-description: 'build CI workflow' 
+name: build
 
 on:
   pull_request:
@@ -21,7 +20,7 @@ jobs:
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
-          git submodule update --init --recursive 
+          git submodule update --init --recursive
 
 
       - name: Install emscripten SDK
@@ -63,4 +62,3 @@ jobs:
        - name: Build windows
          run: cmake --build build/windows/debug --config Release
 
-  

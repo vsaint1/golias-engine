@@ -97,6 +97,7 @@ struct Application {
 
     bool is_fullscreen = false;
     bool is_resizable = true;
+    bool is_debug = true;
 
     bool load(const tinyxml2::XMLElement* root);
 };
