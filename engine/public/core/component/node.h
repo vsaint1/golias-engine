@@ -33,7 +33,7 @@ public:
 
     void translate(float dx, float dy);
 
-    void rotate(float degrees);
+    void rotate(float radians);
 
     void scale(float sx, float sy);
 

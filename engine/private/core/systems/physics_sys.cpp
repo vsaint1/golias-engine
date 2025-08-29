@@ -26,7 +26,7 @@ void PhysicsManager::update(double delta_time) {
             b2Vec2 world_pos = b2Body_GetPosition(body->body_id);
             glm::vec2 pixel_pos = world_to_pixels(world_pos) - body->offset;
             b2Rot rot = b2Body_GetRotation(body->body_id);
-            float angle = std::atan2(rot.s, rot.c);
+            float angle = b2Rot_GetAngle(rot);
             body->set_transform({pixel_pos, body->get_transform().scale, -angle});
 
             b2ContactData contacts[16];

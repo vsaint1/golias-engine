@@ -5,8 +5,8 @@ void Node2D::translate(float dx, float dy) {
     _transform.position += glm::vec2(dx, dy);
 }
 
-void Node2D::rotate(float degrees) {
-    _transform.rotation = glm::radians(degrees);
+void Node2D::rotate(float radians) {
+    _transform.rotation = radians;
 }
 
 void Node2D::scale(float sx, float sy) {
