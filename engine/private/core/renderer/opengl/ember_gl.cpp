@@ -406,12 +406,7 @@ void OpenglRenderer::destroy() {
     delete _fbo_shader;
     _fbo_shader = nullptr;
 }
-const auto fmt = R"(
-        Failed to load texture from file: %s
-        Using error checkerboard texture instead.
-        To avoid this, ensure the file exists and is a valid image format.
-        Supported formats include PNG, JPEG, BMP, etc.
-        )";
+
 
 std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_path) {
 
@@ -467,8 +462,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
     if (!has_error_texture) {
         LOG_INFO(R"(Loaded texture with ID: %d, path: %s
          > Width %d, Height %d
-         > Num. Channels %d
-        )",
+         > Num. Channels %d)",
                  texture->id, file_path.c_str(), texture->width, texture->height, nr_channels);
         stbi_image_free(data);
     } else {
