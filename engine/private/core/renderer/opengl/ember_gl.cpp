@@ -559,12 +559,10 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
 
 void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                  const Rect2& src_rect, int z_index, const UberShader& uber_shader) {
-    if (!texture) {
-        return;
-    }
+                                  const Rect2& src_rect, int z_index,
+                                  bool flip_h, bool flip_v, const UberShader& uber_shader) {
+    if (!texture) return;
 
-    // Compute UVs
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
     int draw_w = texture->width;
     int draw_h = texture->height;
@@ -575,10 +573,13 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
         u1 = (src_rect.x + src_rect.width) / texture->width;
         v1 = (src_rect.y + src_rect.height) / texture->height;
 
-
         draw_w = static_cast<int>(src_rect.width);
         draw_h = static_cast<int>(src_rect.height);
     }
+
+    // Aplica flip
+    if (flip_h) std::swap(u0, u1);
+    if (flip_v) std::swap(v0, v1);
 
     float dx = dest_rect.x;
     float dy = dest_rect.y;

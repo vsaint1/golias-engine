@@ -88,7 +88,10 @@ public:
     std::shared_ptr<Texture> get_texture(const std::string&) override { return nullptr; }
     void unload_font(const Font&) override {}
     void unload_texture(Uint32) override {}
-    void draw_texture(const Texture*, const Rect2&, float, const glm::vec4&, const Rect2&, int, const UberShader&) override {}
+    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
+                                   const Rect2& src_rect, int z_index,
+                                   bool flip_h, bool flip_v, const UberShader& uber_shader) override{}
+
     void draw_rect(Rect2, float, const glm::vec4&, bool, int) override {}
     void draw_text(const std::string&, float, float, float, float, const glm::vec4&, const std::string&, int, const UberShader&, int) override {}
     void draw_line(float, float, float, float, float, float, const glm::vec4&, int) override {}

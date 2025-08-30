@@ -23,6 +23,13 @@ public:
 
     void input(const InputManager* input) override;
 
+    void set_flip_horizontal(bool flip) { _flip_h = flip; }
+    void set_flip_vertical(bool flip) { _flip_v = flip; }
+
+    bool is_flipped_horizontal() const { return _flip_h; }
+    bool is_flipped_vertical() const { return _flip_v; }
+
+
 private:
     std::weak_ptr<Texture> _texture;
     glm::vec2 _size          = glm::vec2(0.f);
@@ -31,4 +38,7 @@ private:
     Rect2 _dest   = {};
     glm::vec2 _origin        = {};
     bool _use_region         = false;
+
+    bool _flip_h = false;
+    bool _flip_v = false;
 };

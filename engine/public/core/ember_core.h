@@ -144,9 +144,9 @@ public:
     /**
      * @brief Draw a textured quad.
      */
-    virtual void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color = glm::vec4(1.0f),
-                              const Rect2& src_rect = Rect2(), int z_index = 0,
-                              const UberShader& uber_shader = UberShader::none()) = 0;
+    virtual void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
+                                      const Rect2& src_rect, int z_index,
+                                      bool flip_h = false, bool flip_v = false, const UberShader& uber_shader = {}) = 0;
 
     /**
      * @brief Draw a rectangle (filled or outlined).

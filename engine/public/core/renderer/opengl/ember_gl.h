@@ -51,8 +51,9 @@ public:
 
     void unload_texture(Uint32 id) override;
 
-    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
-                      int z_index, const UberShader& uber_shader) override;
+    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
+                                   const Rect2& src_rect, int z_index,
+                                   bool flip_h, bool flip_v, const UberShader& uber_shader) override;
 
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 

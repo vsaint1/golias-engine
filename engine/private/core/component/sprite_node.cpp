@@ -53,9 +53,9 @@ void Sprite2D::draw(Renderer* renderer) {
         SDL_assert(tex->id > 0);
 
         if (_use_region) {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), _source, _z_index);
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), _source, _z_index,_flip_h, _flip_v);
         } else {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), {}, _z_index);
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), {}, _z_index,_flip_h, _flip_v);
         }
 
     } else {
