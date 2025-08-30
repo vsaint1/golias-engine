@@ -50,6 +50,7 @@ void game_update() {
     }
 
     GEngine->update(dt);
+    ctx.root->ready();
     ctx.root->process(dt);
 
     ctx.renderer->clear({0.2f, 0.3f, 0.3f, 1.0f});
