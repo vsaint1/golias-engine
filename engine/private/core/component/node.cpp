@@ -196,6 +196,10 @@ void Node2D::draw(Renderer* renderer) {
 }
 
 void Node2D::input(const InputManager* input) {
+    if (!is_alive() || !input) {
+        return;
+    }
+
     for (const auto& [name, child] : _nodes) {
         child->input(input);
     }

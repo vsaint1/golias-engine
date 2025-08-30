@@ -72,4 +72,5 @@ void Sprite2D::draw(Renderer* renderer) {
 }
 
 void Sprite2D::input(const InputManager* input) {
+    Node2D::input(input);
 }
