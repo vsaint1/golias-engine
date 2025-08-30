@@ -28,11 +28,9 @@ public:
     glm::vec4 color = glm::vec4(1, 0, 0, 0.5f);
 
 
-    void set_layer(uint8_t new_layer) {
-        if (new_layer < 16) {
-            layer = new_layer;
-        }
-    }
+    void set_layer(uint8_t new_layer);
+
+    void set_collision_mask(uint8_t bit_mask);
 
     void add_collision_layer(uint8_t target_layer);
 

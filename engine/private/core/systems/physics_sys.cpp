@@ -47,11 +47,6 @@ void PhysicsManager::update(double delta_time) {
 
             RigidBody2D* other = (rbA == body) ? rbB : rbA;
 
-
-            if ((body->get_collision_layer() & other->get_collision_mask()) == 0 || (other->get_collision_layer() & body->get_collision_mask()) == 0) {
-                continue;
-            }
-
             collidingWith.insert(other);
         }
 

@@ -90,6 +90,10 @@ void Node2D::add_child(const std::string& base_name, Node2D* node) {
     node->_name   = name;
 
     _nodes.emplace(name, node);
+
+    if (_is_ready && !node->_is_ready) {
+        node->ready();
+    }
 }
 
 

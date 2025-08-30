@@ -11,6 +11,15 @@ void RigidBody2D::on_body_exited(const std::function<void(Node2D*)>& callback) {
 }
 
 
+void RigidBody2D::set_layer(uint8_t new_layer) {
+    if (new_layer < 16) {
+        layer = new_layer;
+    }
+}
+
+void RigidBody2D::set_collision_mask(uint8_t bit_mask) {
+    collision_mask = bit_mask;
+}
 void RigidBody2D::add_collision_layer(uint8_t target_layer) {
     if (target_layer < 16) {
         collision_mask |= (1 << target_layer);
