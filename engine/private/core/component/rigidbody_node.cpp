@@ -55,7 +55,7 @@ void RigidBody2D::ready() {
 
     _is_ready = true;
 
-    LOG_INFO("Rigidbody::ready()");
+    // LOG_INFO("Rigidbody::ready()");
 
     Node2D::ready();
 

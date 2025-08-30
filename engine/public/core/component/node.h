@@ -69,9 +69,9 @@ public:
 
     [[nodiscard]] bool is_effective_visible() const;
 
-    HashMap<std::string, Node2D*>& get_tree()  {
-        return _nodes;
-    }
+    HashMap<std::string, Node2D*>& get_tree();
+
+    bool is_alive() const;
 
 protected:
     Transform2D _transform = {};
@@ -84,6 +84,7 @@ protected:
 
     bool _is_ready = false;
 
+    bool _to_free = false;
 private:
     Node2D* _parent = nullptr;
     HashMap<std::string, Node2D*> _nodes;

@@ -6,7 +6,7 @@ void Node2D::translate(float dx, float dy) {
 }
 
 void Node2D::rotate(float radians) {
-    _transform.rotation = radians;
+    _transform.rotation += radians;
 }
 
 void Node2D::scale(float sx, float sy) {
@@ -72,9 +72,14 @@ void Node2D::set_transform(const Transform2D& transform) {
 
 
 Node2D::~Node2D() {
-    for (auto it = _nodes.begin(); it != _nodes.end(); ++it) {
-        delete it->second;
+    for (auto& [name, child] : _nodes) {
+        if (child) {
+            child->queue_free();
+            delete child;
+        }
     }
+
+    _nodes.clear();
 }
 
 void Node2D::add_child(const std::string& base_name, Node2D* node) {
@@ -135,6 +140,14 @@ bool Node2D::is_effective_visible() const {
     }
     return true;
 }
+HashMap<std::string, Node2D*>& Node2D::get_tree() {
+    return _nodes;
+}
+
+bool Node2D::is_alive() const {
+
+    return !_to_free;
+}
 
 void Node2D::change_visibility(bool visible) {
     _is_visible = visible;
@@ -159,8 +172,16 @@ void Node2D::process(double delta_time) {
         return;
     }
 
-    for (const auto& [name, child] : _nodes) {
+    for (auto it = _nodes.begin(); it != _nodes.end();) {
+        Node2D* child = it->second;
         child->process(delta_time);
+
+        if (child->is_alive()) {
+            delete child;
+            it = _nodes.erase(it);
+        } else {
+            ++it;
+        }
     }
 }
 
@@ -181,11 +202,6 @@ void Node2D::input(const InputManager* input) {
 }
 
 void Node2D::queue_free() {
-    LOG_INFO("Node2D::free()");
-
-    for (auto it = _nodes.begin(); it != _nodes.end(); ++it) {
-        delete it->second;
-    }
-
-    _nodes.clear();
+    // LOG_INFO("Node2D::free()");
+    _to_free = true;
 }
