@@ -29,7 +29,9 @@ public:
     bool is_flipped_horizontal() const { return _flip_h; }
     bool is_flipped_vertical() const { return _flip_v; }
 
+    glm::vec2 get_size() const { return _size; }
 
+    void set_texture(const std::weak_ptr<Texture>& tex) { _texture = tex; }
 private:
     std::weak_ptr<Texture> _texture;
     glm::vec2 _size          = glm::vec2(0.f);
