@@ -176,7 +176,7 @@ void Node2D::process(double delta_time) {
         Node2D* child = it->second;
         child->process(delta_time);
 
-        if (child->is_alive()) {
+        if (!child->is_alive()) {
             delete child;
             it = _nodes.erase(it);
         } else {
