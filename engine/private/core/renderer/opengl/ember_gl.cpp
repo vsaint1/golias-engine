@@ -577,7 +577,6 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
         draw_h = static_cast<int>(src_rect.height);
     }
 
-    // Aplica flip
     if (flip_h) std::swap(u0, u1);
     if (flip_v) std::swap(v0, v1);
 

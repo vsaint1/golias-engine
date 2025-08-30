@@ -66,7 +66,6 @@ void TextInputManager::process_event(const SDL_Event& event) {
         _composition_start  = event.edit.start;
         _composition_length = event.edit.length;
         break;
-
     case SDL_EVENT_KEY_DOWN:
         switch (event.key.key) {
         case SDLK_BACKSPACE:
@@ -363,6 +362,26 @@ void InputManager::set_relative_mouse_mode(bool enabled) {
 
 bool InputManager::is_relative_mouse_mode() const {
     return true;
+}
+
+glm::vec2 InputManager::screen_to_world(const glm::vec2& screen_pos) const {
+    int w, h;
+    SDL_GetWindowSize(_window, &w, &h);
+
+    float vw = GEngine->Config.get_viewport().width;
+    float vh = GEngine->Config.get_viewport().height;
+
+    return {screen_pos.x * (vw / (float) w), screen_pos.y * (vh / (float) h)};
+}
+
+glm::vec2 InputManager::world_to_screen(const glm::vec2& world_pos) const {
+    int w, h;
+    SDL_GetWindowSize(_window, &w, &h);
+
+    float vw = GEngine->Config.get_viewport().width;
+    float vh = GEngine->Config.get_viewport().height;
+
+    return {world_pos.x * ((float) w / vw), world_pos.y * ((float) h / vh)};
 }
 
 // Gamepad functions

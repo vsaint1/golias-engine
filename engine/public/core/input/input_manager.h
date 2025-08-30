@@ -142,6 +142,9 @@ public:
     void set_mouse_position(int x, int y);
     void set_relative_mouse_mode(bool enabled);
     [[nodiscard]] bool is_relative_mouse_mode() const;
+    glm::vec2 screen_to_world(const glm::vec2& screen_pos) const;
+    glm::vec2 world_to_screen(const glm::vec2& world_pos) const;
+
 
     // === GAMEPAD INPUT ===
     [[nodiscard]] size_t get_gamepad_count() const { return _gamepads.size(); }
