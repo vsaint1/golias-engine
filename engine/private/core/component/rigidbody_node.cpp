@@ -11,7 +11,42 @@ void RigidBody2D::on_body_exited(const std::function<void(Node2D*)>& callback) {
 }
 
 
+void RigidBody2D::add_collision_layer(uint8_t target_layer) {
+    if (target_layer < 16) {
+        collision_mask |= (1 << target_layer);
+    }
+}
+
+void RigidBody2D::remove_collision_layer(uint8_t target_layer) {
+    if (target_layer < 16) {
+        collision_mask &= ~(1 << target_layer);
+    }
+}
+
+void RigidBody2D::set_collision_layers(const std::initializer_list<uint8_t>& layers) {
+    collision_mask = 0;
+    for (uint8_t l : layers) {
+        if (l < 16) collision_mask |= (1 << l);
+    }
+}
+
+uint8_t RigidBody2D::get_collision_layer() const {
+    return layer;
+}
+
+uint16_t RigidBody2D::get_collision_mask() const {
+
+    return collision_mask;
+}
+
+
 void RigidBody2D::ready() {
+
+    if (_is_ready) return;
+
+    _is_ready = true;
+
+    LOG_INFO("Rigidbody::ready()");
 
     Node2D::ready();
 
@@ -22,10 +57,17 @@ void RigidBody2D::ready() {
 
     body_id = b2CreateBody(GEngine->get_physics_world(), &body_def);
 
+    if (B2_IS_NULL(body_id)) {
+        LOG_ERROR("Failed to create RigidBody2D");
+        return;
+    }
+
     GEngine->get_system<PhysicsManager>()->register_body(this);
 
     b2ShapeDef shapeDef = b2DefaultShapeDef();
 
+    shapeDef.filter.categoryBits = 1 << layer;
+    shapeDef.filter.maskBits     = collision_mask;
 
     shapeDef.density              = density;
     shapeDef.material.friction    = friction;
@@ -35,7 +77,6 @@ void RigidBody2D::ready() {
     if (body_type == BodyType::DYNAMIC) {
         b2Body_SetFixedRotation(body_id, is_fixed_rotation);
     }
-
 
     if (shape_type == ShapeType::RECTANGLE) {
         b2Polygon shape = b2MakeBox(body_size.x * METERS_PER_PIXEL * 0.5f, body_size.y * METERS_PER_PIXEL * 0.5f);
@@ -56,20 +97,26 @@ void RigidBody2D::ready() {
 
 void RigidBody2D::process(double delta_time) {
     Node2D::process(delta_time);
+    b2Vec2 world_pos    = b2Body_GetPosition(body_id);
+    glm::vec2 pixel_pos = world_to_pixels(world_pos) - offset;
+    b2Rot rot           = b2Body_GetRotation(body_id);
+    float angle         = b2Rot_GetAngle(rot);
+    set_transform({pixel_pos, get_transform().scale, -angle});
+
 }
 
 void RigidBody2D::draw(Renderer* renderer) {
     Node2D::draw(renderer);
 
-    if (!GEngine->Config.get_application().is_debug) {
-        return;
-    }
 
-    const glm::vec2 pos = world_to_pixels(b2Body_GetPosition(body_id));
+    if (!GEngine->Config.get_application().is_debug) return;
+    if (!B2_IS_NON_NULL(body_id)) return;
+
+    glm::vec2 pos = world_to_pixels(b2Body_GetPosition(body_id));
 
     if (shape_type == ShapeType::RECTANGLE) {
-        renderer->draw_rect({pos.x - body_size.x / 2, pos.y - body_size.y / 2, body_size.x, body_size.y}, get_transform().rotation, color,
-                            true, 1000);
+        renderer->draw_rect({pos.x - body_size.x / 2, pos.y - body_size.y / 2, body_size.x, body_size.y},
+                            get_transform().rotation, color, true, 1000);
     } else if (shape_type == ShapeType::CIRCLE) {
         renderer->draw_circle(pos.x, pos.y, get_transform().rotation, radius, color, true, 32, 1000);
     }

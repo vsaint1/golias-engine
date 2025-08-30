@@ -20,6 +20,11 @@ void Sprite2D::set_color(const Color& col) {
 
 void Sprite2D::ready() {
 
+    if (_is_ready) {
+        return;
+    }
+ _is_ready = true;
+
     const auto tex = _texture.lock();
 
     if (!tex) {

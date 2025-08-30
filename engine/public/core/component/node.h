@@ -44,7 +44,7 @@ public:
 
     void set_transform(const Transform2D& transform);
 
-    void add_child(const std::string& name, Node2D* node);
+    void add_child(const std::string& base_name, Node2D* node);
 
     Node2D* get_node(const std::string& path);
 
@@ -59,13 +59,19 @@ public:
 
     virtual void input(const InputManager* input);
 
+    void queue_free();
+
     virtual ~Node2D();
 
     [[nodiscard]] const std::string& get_name() const;
 
     [[nodiscard]] bool is_visible() const;
 
-    bool is_effective_visible() const;
+    [[nodiscard]] bool is_effective_visible() const;
+
+    HashMap<std::string, Node2D*>& get_tree()  {
+        return _nodes;
+    }
 
 protected:
     Transform2D _transform = {};
@@ -76,9 +82,10 @@ protected:
 
     bool _is_visible = true;
 
+    bool _is_ready = false;
+
 private:
     Node2D* _parent = nullptr;
-
     HashMap<std::string, Node2D*> _nodes;
 };
 

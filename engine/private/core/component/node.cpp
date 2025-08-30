@@ -77,7 +77,15 @@ Node2D::~Node2D() {
     }
 }
 
-void Node2D::add_child(const std::string& name, Node2D* node) {
+void Node2D::add_child(const std::string& base_name, Node2D* node) {
+    std::string name = base_name;
+
+    int index = 1;
+    while (_nodes.contains(name)) {
+        name = base_name + std::to_string(index);
+        ++index;
+    }
+
     node->_parent = this;
     node->_name   = name;
 
@@ -106,7 +114,6 @@ Node2D* Node2D::get_node(const std::string& path) {
 }
 
 
-
 const std::string& Node2D::get_name() const {
     return _name;
 }
@@ -116,9 +123,13 @@ bool Node2D::is_visible() const {
 }
 
 bool Node2D::is_effective_visible() const {
-        if (!_is_visible) return false;
-        if (_parent) return _parent->is_effective_visible();
-        return true;
+    if (!_is_visible) {
+        return false;
+    }
+    if (_parent) {
+        return _parent->is_effective_visible();
+    }
+    return true;
 }
 
 void Node2D::change_visibility(bool visible) {
@@ -126,15 +137,23 @@ void Node2D::change_visibility(bool visible) {
 }
 
 void Node2D::ready() {
-    for (const auto& [name, child] : _nodes) {
 
+    if (_is_ready) {
+        return;
+    }
+
+    _is_ready = true;
+
+    for (const auto& [name, child] : _nodes) {
         child->ready();
     }
 }
 
 
 void Node2D::process(double delta_time) {
-    if (!is_effective_visible()) return;
+    if (!is_effective_visible()) {
+        return;
+    }
 
     for (const auto& [name, child] : _nodes) {
         child->process(delta_time);
@@ -142,7 +161,9 @@ void Node2D::process(double delta_time) {
 }
 
 void Node2D::draw(Renderer* renderer) {
-    if (!is_effective_visible()) return;
+    if (!is_effective_visible()) {
+        return;
+    }
 
     for (const auto& [name, child] : _nodes) {
         child->draw(renderer);
@@ -153,4 +174,14 @@ void Node2D::input(const InputManager* input) {
     for (const auto& [name, child] : _nodes) {
         child->input(input);
     }
+}
+
+void Node2D::queue_free() {
+    LOG_INFO("Node2D::free()");
+
+    for (auto it = _nodes.begin(); it != _nodes.end(); ++it) {
+        delete it->second;
+    }
+
+    _nodes.clear();
 }
