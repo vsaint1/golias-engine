@@ -63,7 +63,7 @@ All dependencies are included as git submodules.
 
 ## Engine Core Architecture
 
-> ⚠️ **Note:** This diagram is a work in progress and may change in future versions.
+> ⚠️ **Note:**  This diagram is a work in progress and may not reflect the current state of the engine.
 ![Engine Architecture](docs/architecture.png)
 
 
