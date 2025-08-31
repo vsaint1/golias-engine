@@ -186,7 +186,7 @@ void Node2D::process(double delta_time) {
 }
 
 void Node2D::draw(Renderer* renderer) {
-    if (!is_effective_visible()) {
+    if (!is_effective_visible() || !is_alive()) {
         return;
     }
 

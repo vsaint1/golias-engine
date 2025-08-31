@@ -50,6 +50,11 @@ void Sprite2D::process(double delta_time) {
 }
 
 void Sprite2D::draw(Renderer* renderer) {
+
+    if (!is_effective_visible() || !is_alive()) {
+        return;
+    }
+
     const auto transform = get_global_transform();
 
     _dest.x = transform.position.x;
