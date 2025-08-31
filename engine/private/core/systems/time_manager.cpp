@@ -1,4 +1,4 @@
-#include "core/time_manager.h"
+#include "../../../public/core/systems/time_manager.h"
 
 TimeManager::TimeManager() {
     _frequency = SDL_GetPerformanceFrequency();

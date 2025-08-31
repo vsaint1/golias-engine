@@ -1,4 +1,4 @@
-#include "core/input/input_manager.h"
+#include "../../../public/core/systems/input_manager.h"
 
 #include "core/engine.h"
 #include "helpers/logging.h"

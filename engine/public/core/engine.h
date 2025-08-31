@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/engine_config.h"
-#include "core/input/input_manager.h"
 #include "core/io/file_system.h"
-#include "core/time_manager.h"
+#include "systems/input_manager.h"
+#include "systems/time_manager.h"
 
 #pragma region ENGINE_SYSTEMS
 #include "core/systems/physics_sys.h"

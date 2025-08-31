@@ -14,12 +14,14 @@ ma_engine audio_engine;
 
 void Engine::update(double delta_time) {
 
-    this->_input_manager->update();
     this->_time_manager->update();
 
-    b2World_Step(this->_world, SDL_min(delta_time, 1 / 60.f), 8);
+    this->_input_manager->update();
 
-    for (const auto&  system : _systems) {
+    constexpr float fixed_dt = 1.0f / 60.0f;
+    b2World_Step(this->_world, SDL_min(delta_time, fixed_dt), 8);
+
+    for (const auto& system : _systems) {
         system->update(delta_time);
     }
 }
