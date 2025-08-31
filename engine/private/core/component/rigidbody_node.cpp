@@ -143,6 +143,13 @@ void RigidBody2D::apply_impulse(const glm::vec2& impulse) const {
     }
 }
 
+void RigidBody2D::apply_force(const glm::vec2& force) const {
+    if (B2_IS_NON_NULL(body_id)) {
+        b2Vec2 world_force = {force.x * METERS_PER_PIXEL, force.y * METERS_PER_PIXEL};
+        b2Body_ApplyForceToCenter(body_id, world_force, true);
+    }
+}
+
 void RigidBody2D::set_velocity(const glm::vec2& velocity) const {
     if (B2_IS_NON_NULL(body_id)) {
         b2Vec2 world_velocity = {velocity.x * METERS_PER_PIXEL, velocity.y * METERS_PER_PIXEL};

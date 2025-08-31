@@ -48,9 +48,11 @@ public:
     void draw(Renderer* renderer) override;
 
     void apply_impulse(const glm::vec2& impulse) const;
+    void apply_force(const glm::vec2& force) const;
+
     void set_velocity(const glm::vec2& velocity) const;
-    glm::vec2 get_velocity() const;
-    bool is_on_ground() const;
+    [[nodiscard]] glm::vec2 get_velocity() const;
+    [[nodiscard]] bool is_on_ground() const;
 
     void on_body_entered(const std::function<void(Node2D*)>& callback);
     void on_body_exited(const std::function<void(Node2D*)>& callback);
