@@ -22,11 +22,19 @@ void Label::process(double delta_time) {
 }
 
 void Label::draw(Renderer* renderer) {
+    Node2D::draw(renderer);
+
+    if (!_is_visible) {
+        return;
+    }
+
     const auto& transform = get_global_transform();
     GEngine->get_renderer()->draw_text(_text, transform.position.x, transform.position.y, transform.rotation, transform.scale.x,
                                        _color.normalize_color(), _font_alias, _z_index, _effect, _font_size);
+}
 
-    Node2D::draw(renderer);
+std::string Label::get_text() const {
+    return _text;
 }
 
 void Label::set_text(const char* fmt, ...) {

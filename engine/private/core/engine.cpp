@@ -63,6 +63,8 @@ void Engine::set_vsync(const bool enabled) {
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
     // Note: curl is not supported on Emscripten/WebAssembly
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_init(CURL_GLOBAL_DEFAULT);

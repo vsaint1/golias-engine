@@ -9,6 +9,7 @@
 #include "core/systems/physics_sys.h"
 #include "core/systems/thread_pool.h"
 #pragma endregion
+#include <random>
 
 class Renderer;
 class OpenglShader;
@@ -191,3 +192,20 @@ extern ma_engine audio_engine;
 b2Vec2 pixels_to_world(const glm::vec2& pixelPos);
 
 glm::vec2 world_to_pixels(const b2Vec2& worldPos);
+
+template <typename T>
+T random(T min, T max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    if constexpr (std::is_integral_v<T>) {
+        std::uniform_int_distribution<T> dist(min, max);
+        return dist(gen);
+    } else if constexpr (std::is_floating_point_v<T>) {
+        std::uniform_real_distribution<T> dist(min, max);
+        return dist(gen);
+    } else {
+        static_assert("Unsupported type for random function");
+    }
+
+    return T{0};
+}

@@ -17,6 +17,8 @@ public:
 
     void draw(Renderer* renderer) override;
 
+    std::string get_text() const;
+
     void set_text(const char* fmt, ...);
 
     void set_font_size(float size);

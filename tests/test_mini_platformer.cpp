@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     root->add_child("Platform3", platform3);
 
     RigidBody2D* ice_platform = new RigidBody2D();
-    ice_platform->body_type = BodyType::STATIC;
+    ice_platform->body_type = BodyType::DYNAMIC;
     ice_platform->body_size = {100, 20};
     ice_platform->shape_type = ShapeType::RECTANGLE;
     ice_platform->color = {0.5f, 0.8f, 1.0f, 0.5f};
@@ -112,8 +112,9 @@ int main(int argc, char* argv[]) {
     player->offset = glm::vec2(16);
     player->shape_type = ShapeType::CIRCLE;
     player->radius = 8.0f;
-    player->restitution = 0.5f;
     player->set_transform({{50, 50}, {1.f, 1.f}, 0.0f});
+    player->is_fixed_rotation = false;
+
     ctx.player = player;
 
     RigidBody2D* ice_block = new RigidBody2D();
@@ -140,6 +141,27 @@ int main(int argc, char* argv[]) {
     colliding->set_transform({{10, 20}, {1.f, 1.f}, 0.0f});
     ctx.colliding = colliding;
     root->add_child("CollidingTxt", colliding);
+
+    player->set_layer(0);
+    player->set_collision_layers({2, 3});
+
+    ice_block->set_layer(1);
+    ice_block->set_collision_layers({2, 3});
+
+    ice_platform->set_layer(1);
+    ice_platform->set_collision_layers({2, 3});
+
+    platform1->set_layer(2);
+    platform1->set_collision_layers({0, 1});
+
+    platform2->set_layer(2);
+    platform2->set_collision_layers({0, 1});
+
+    platform3->set_layer(2);
+    platform3->set_collision_layers({0, 1});
+
+    ground->set_layer(3);
+    ground->set_collision_layers({0, 1});
 
     root->ready();
 

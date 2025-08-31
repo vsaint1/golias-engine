@@ -20,6 +20,12 @@ void Sprite2D::set_color(const Color& col) {
 
 void Sprite2D::ready() {
 
+    if (_is_ready) {
+        return;
+    }
+
+    _is_ready = true;
+
     const auto tex = _texture.lock();
 
     if (!tex) {
@@ -44,6 +50,11 @@ void Sprite2D::process(double delta_time) {
 }
 
 void Sprite2D::draw(Renderer* renderer) {
+
+    if (!is_effective_visible() || !is_alive()) {
+        return;
+    }
+
     const auto transform = get_global_transform();
 
     _dest.x = transform.position.x;
@@ -53,9 +64,9 @@ void Sprite2D::draw(Renderer* renderer) {
         SDL_assert(tex->id > 0);
 
         if (_use_region) {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), _source, _z_index);
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, _color.normalize_color(), _source, _z_index,_flip_h, _flip_v);
         } else {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, glm::vec4(1.0f), {}, _z_index);
+            renderer->draw_texture(tex.get(), _dest, transform.rotation, _color.normalize_color(), {}, _z_index,_flip_h, _flip_v);
         }
 
     } else {
@@ -66,4 +77,5 @@ void Sprite2D::draw(Renderer* renderer) {
 }
 
 void Sprite2D::input(const InputManager* input) {
+    Node2D::input(input);
 }
