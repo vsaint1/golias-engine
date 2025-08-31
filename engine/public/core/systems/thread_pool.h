@@ -1,6 +1,6 @@
 #pragma once
 #include "engine_sys.h"
-#include "helpers/logging.h"
+#include "logging_sys.h"
 
 class ThreadManager final: public EngineManager {
 public:

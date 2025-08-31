@@ -1,7 +1,7 @@
 #include "../../../public/core/systems/input_manager.h"
 
+#include "../../../public/core/systems/logging_sys.h"
 #include "core/engine.h"
-#include "helpers/logging.h"
 
 
 GamepadInfo::~GamepadInfo() {
