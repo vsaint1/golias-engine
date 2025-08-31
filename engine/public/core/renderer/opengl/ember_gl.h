@@ -70,8 +70,6 @@ public:
 
     void draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
-    void render_command(const DrawCommand& cmd) override;
-
     void flush() override;
 
     void present() override;
