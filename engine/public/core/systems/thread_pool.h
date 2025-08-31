@@ -1,15 +1,20 @@
 #pragma once
+#include "engine_sys.h"
 #include "helpers/logging.h"
 
-class ThreadPool {
+class ThreadManager final: public EngineManager {
 public:
-    explicit ThreadPool(size_t threads);
-    ~ThreadPool();
+    explicit ThreadManager(size_t threads);
+    ~ThreadManager() override;
 
     template <class F, class... Args>
     auto enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args...))>;
 
-    void shutdown();
+    bool initialize() override;
+
+    void update(double delta_time) override;
+
+    void shutdown() override;
 
 private:
     std::vector<std::thread> _workers;
@@ -22,7 +27,7 @@ private:
 
 
 template <class F, class... Args>
-auto ThreadPool::enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
+auto ThreadManager::enqueue(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     LOG_INFO("ThreadPool not supported on Web builds.");
 #else

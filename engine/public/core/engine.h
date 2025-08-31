@@ -115,8 +115,6 @@ public:
 
     void update(double delta_time);
 
-    ThreadPool& get_thread_pool();
-
     b2WorldId get_physics_world() const;
 
     template <typename T>
@@ -125,7 +123,6 @@ public:
 private:
     std::vector<std::unique_ptr<EngineManager>> _systems{};
 
-    ThreadPool _thread_pool;
     Renderer* _renderer          = nullptr;
     InputManager* _input_manager = nullptr;
     TimeManager* _time_manager   = nullptr;

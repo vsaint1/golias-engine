@@ -145,8 +145,6 @@ std::vector<Audio*> AudioBus::get_sounds() {
 // ===================== ENGINE ===================== //
 
 bool init_audio_engine() {
-    LOG_INFO("Initializing audio engine");
-
     ma_device_config* device_config = (ma_device_config*) SDL_malloc(sizeof(ma_device_config));
 
     if (!device_config) {
@@ -212,10 +210,10 @@ void close_audio_engine() {
     }
 
     ma_engine_uninit(&audio_engine);
-    LOG_INFO("Audio Engine Shutdown");
 }
 
 bool AudioManager::initialize() {
+    LOG_INFO("AudioManager::initialize()");
     return init_audio_engine();
 }
 
@@ -224,6 +222,8 @@ void AudioManager::update(double delta_time) {
 }
 
 void AudioManager::shutdown() {
+    LOG_INFO("AudioManager::shutdown()");
+
     close_audio_engine();
 }
 

@@ -1,8 +1,7 @@
 #include "core/systems/thread_pool.h"
 
 
-ThreadPool::ThreadPool(size_t threads) : is_running(true) {
-
+ThreadManager::ThreadManager(size_t threads) : is_running(true) {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     LOG_INFO("ThreadPool not supported on Web builds.");
     return;
@@ -32,11 +31,18 @@ ThreadPool::ThreadPool(size_t threads) : is_running(true) {
 #endif
 }
 
-ThreadPool::~ThreadPool() {
-    // shutdown();
+ThreadManager::~ThreadManager()  = default;
+
+bool ThreadManager::initialize() {
+    LOG_INFO("ThreadManager::initialize() - Available Workers %zu", _workers.size());
+
+    return true;
 }
 
-void ThreadPool::shutdown() {
+void ThreadManager::update(double delta_time) {
+}
+
+void ThreadManager::shutdown() {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     LOG_INFO("ThreadPool not supported on Web builds.");
     return;

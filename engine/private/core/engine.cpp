@@ -24,10 +24,6 @@ void Engine::update(double delta_time) {
     }
 }
 
-ThreadPool& Engine::get_thread_pool() {
-    return _thread_pool;
-}
-
 b2WorldId Engine::get_physics_world() const {
     return _world;
 }
@@ -63,14 +59,14 @@ void Engine::set_vsync(const bool enabled) {
 
 bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
+    LOG_INFO("Engine::initialize() -  %s,  version %s", ENGINE_NAME, ENGINE_VERSION_STR);
+
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     // Note: curl is not supported on Emscripten/WebAssembly
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_init(CURL_GLOBAL_DEFAULT);
 #endif
-
-    LOG_INFO("Initializing %s, version %s", ENGINE_NAME, ENGINE_VERSION_STR);
 
     if (!Config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
@@ -174,6 +170,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 #pragma region ENGINE_SYS
     _systems.emplace_back(std::make_unique<AudioManager>());
     _systems.emplace_back(std::make_unique<PhysicsManager>());
+    _systems.emplace_back(std::make_unique<ThreadManager>(2));
 
     for (const auto& system : _systems) {
         if (!system->initialize()) {
@@ -281,6 +278,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
 
 void Engine::shutdown() {
+    LOG_INFO("Engine::shutdown()");
 
 #if !defined(SDL_PLATFORM_EMSCRIPTEN)
     curl_global_cleanup();
@@ -307,8 +305,6 @@ void Engine::shutdown() {
     b2DestroyWorld(this->_world);
 
     SDL_DestroyWindow(Window.handle);
-
-    _thread_pool.shutdown();
 
     for (const auto&  system : _systems) {
         system->shutdown();
@@ -349,7 +345,7 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
 }
 
 
-Engine::Engine() : _thread_pool(2) {
+Engine::Engine() {
     const b2WorldDef world_def = b2DefaultWorldDef();
     _world                     = b2CreateWorld(&world_def);
 }
