@@ -4,6 +4,7 @@
 #include "core/io/file_system.h"
 #include "systems/input_manager.h"
 #include "systems/time_manager.h"
+#include "systems/audio_manager.h"
 
 #pragma region ENGINE_SYSTEMS
 #include "core/systems/physics_sys.h"
@@ -113,7 +114,7 @@ public:
      */
     bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
-    void update(double delta_time);
+    void update(double delta_time) const;
 
     b2WorldId get_physics_world() const;
 

@@ -1,6 +1,5 @@
 #include "core/engine.h"
 
-#include "core/audio/ember_audio.h"
 #include "core/ember_core.h"
 #include "core/renderer/metal/ember_mtl.h"
 #include "core/renderer/opengl/ember_gl.h"
@@ -12,7 +11,7 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
-void Engine::update(double delta_time) {
+void Engine::update(double delta_time) const {
 
     this->_time_manager->update();
 
