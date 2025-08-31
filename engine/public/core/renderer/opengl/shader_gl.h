@@ -51,7 +51,7 @@ public:
     bool is_valid() const override;
 
 private:
-    unsigned int _get_uniform_location(const std::string& name);
+    unsigned int get_uniform_location(const std::string& name);
 
     unsigned int CompileShader(unsigned int type, const char* source);
 };
@@ -59,7 +59,7 @@ private:
 
 template <typename T>
 inline T OpenglShader::get_value(const std::string& name) {
-    unsigned int location = _get_uniform_location(name);
+    unsigned int location = get_uniform_location(name);
     if (location == -1) {
         LOG_ERROR("Shader variable not found: %s", name.c_str());
         return T();

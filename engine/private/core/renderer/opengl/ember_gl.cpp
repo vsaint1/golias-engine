@@ -233,10 +233,6 @@ void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float ro
     }
 }
 
-void OpenglRenderer::render_command(const DrawCommand& cmd) {
-}
-
-
 void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_shader) {
 
     this->_default_shader = dynamic_cast<OpenglShader*>(default_shader);
@@ -247,6 +243,7 @@ void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_s
 
 void OpenglRenderer::initialize() {
 
+    LOG_INFO("OpenglRenderer::initialize()");
 
 #pragma region DEFAULT_SHADER_SETUP
     _default_shader->bind();
@@ -377,6 +374,8 @@ void* OpenglRenderer::get_context() {
 }
 
 void OpenglRenderer::destroy() {
+    LOG_INFO("OpenglRenderer::destroy()");
+
     _default_shader->destroy();
     _fbo_shader->destroy();
 
@@ -658,7 +657,6 @@ void OpenglRenderer::flush() {
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    _commands.clear();
     _batches.clear();
 }
 

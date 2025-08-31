@@ -46,10 +46,13 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     this->id = program;
 
     LOG_INFO("Successfully created and linked SHADER_PROGRAM(%d)", program);
-
 }
 
 unsigned int OpenglShader::CompileShader(unsigned int type, const char* source) {
+    LOG_INFO("OpenglShader::CompileShader()");
+
+    EMBER_TIMER_START();
+
     unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
@@ -63,12 +66,15 @@ unsigned int OpenglShader::CompileShader(unsigned int type, const char* source) 
         LOG_CRITICAL("[%s] - Shader compilation failed: %s", type_str, info_log);
     }
 
-    LOG_INFO("Successfully compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
+
+    EMBER_TIMER_END("Compiling Shaders");
+
+    LOG_INFO("Compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
 
     return shader;
 }
 
-unsigned int OpenglShader::_get_uniform_location(const std::string& name) {
+unsigned int OpenglShader::get_uniform_location(const std::string& name) {
     if (_uniforms.find(name) != _uniforms.end()) {
         return _uniforms[name];
     }
@@ -112,46 +118,46 @@ unsigned int OpenglShader::get_id() const {
 
 
 void OpenglShader::set_value(const std::string& name, float value) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform1f(location, value);
 }
 
 void OpenglShader::set_value(const std::string& name, int value) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform1i(location, value);
 }
 void OpenglShader::set_value(const std::string& name, unsigned int value) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform1i(location, value);
 }
 
 void OpenglShader::set_value(const std::string& name, const int* value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform1iv(location, count, value);
 }
 
 void OpenglShader::set_value(const std::string& name, const float* value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform1fv(location, count, value);
 }
 
 
 void OpenglShader::set_value(const std::string& name, glm::mat4 value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(value));
 }
 
 void OpenglShader::set_value(const std::string& name, glm::vec2 value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform2fv(location, count, glm::value_ptr(value));
 }
 
 void OpenglShader::set_value(const std::string& name, glm::vec3 value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform3fv(location, count, glm::value_ptr(value));
 }
 
 void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 count) {
-    const unsigned int location = _get_uniform_location(name);
+    const unsigned int location = get_uniform_location(name);
     glUniform4fv(location, count, glm::value_ptr(value));
 }

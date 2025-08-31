@@ -251,16 +251,9 @@ protected:
     glm::mat4 _projection = glm::mat4(1.f); ///< Projection matrix.
     glm::mat4 _view       = glm::mat4(1.f); ///< View matrix.
 
-    std::vector<DrawCommand> _commands; ///< Commands to render this frame.
-
     HashMap<std::string, std::shared_ptr<Texture>> _textures; ///< Cached textures.
 
     HashMap<Uint32, glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
-
-    /**
-     * @brief Process a draw command.
-     */
-    virtual void render_command(const DrawCommand& cmd) = 0;
 
     /**
     * @brief Set the current font to use for rendering.

@@ -53,7 +53,6 @@ public:
     void flush() override;
 
 protected:
-    void render_command(const DrawCommand& cmd) override;
     void set_default_font(const std::string& font_name) override;
     void render_fbo() override;
     void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) override;
@@ -101,7 +100,6 @@ public:
     void flush() override {}
 
 protected:
-    void render_command(const DrawCommand&) override {}
     void set_default_font(const std::string&) override {}
     void render_fbo() override {}
     void set_effect_uniforms(const UberShader&, const glm::vec2&) override {}

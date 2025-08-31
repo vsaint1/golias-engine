@@ -432,7 +432,6 @@ void MetalRenderer::draw_triangle(float, float, float, float, float, float,
                                   float, const glm::vec4&, bool, int) {}
 void MetalRenderer::draw_circle(float, float, float, float, const glm::vec4&, bool, int, int) {}
 void MetalRenderer::draw_polygon(const std::vector<glm::vec2>&, float, const glm::vec4&, bool, int) {}
-void MetalRenderer::render_command(const DrawCommand&) {}
 void MetalRenderer::set_default_font(const std::string&) {}
 void MetalRenderer::render_fbo() {}
 void MetalRenderer::set_effect_uniforms(const UberShader&, const glm::vec2&) {}
