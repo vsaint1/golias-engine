@@ -31,10 +31,10 @@ ThreadManager::ThreadManager(size_t threads) : is_running(true) {
 #endif
 }
 
-ThreadManager::~ThreadManager()  = default;
+ThreadManager::~ThreadManager() = default;
 
 bool ThreadManager::initialize() {
-    LOG_INFO("ThreadManager::initialize() - Available Workers %zu", _workers.size());
+    LOG_INFO("ThreadManager::initialize() - Available Workers %zu | Total CPU Cores %d", _workers.size(), get_cpu_cores_num());
 
     return true;
 }

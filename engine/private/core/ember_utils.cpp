@@ -24,3 +24,11 @@ std::string text_format(const char* fmt, ...) {
 int get_memory_usage() {
     return 0;
 }
+
+int get_available_memory() {
+    return SDL_GetSystemRAM();
+}
+
+int get_cpu_cores_num() {
+    return SDL_GetNumLogicalCPUCores();
+}
