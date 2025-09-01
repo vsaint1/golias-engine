@@ -50,7 +50,6 @@ void Sprite2D::process(double delta_time) {
 }
 
 void Sprite2D::draw(Renderer* renderer) {
-
     if (!is_effective_visible() || !is_alive()) {
         return;
     }
@@ -60,15 +59,25 @@ void Sprite2D::draw(Renderer* renderer) {
     _dest.x = transform.position.x;
     _dest.y = transform.position.y;
 
+
     if (const auto tex = _texture.lock()) {
         SDL_assert(tex->id > 0);
 
         if (_use_region) {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, _color.normalize_color(), _source, _z_index,_flip_h, _flip_v);
-        } else {
-            renderer->draw_texture(tex.get(), _dest, transform.rotation, _color.normalize_color(), {}, _z_index,_flip_h, _flip_v);
-        }
+            _dest.width = _size.x * transform.scale.x;
+            _dest.height = _size.y * transform.scale.y;
 
+            renderer->draw_texture(tex.get(), _dest, transform.rotation,
+                                   _color.normalize_color(), _source, _z_index,
+                                   _flip_h, _flip_v);
+        } else {
+            _dest.width = tex->width * transform.scale.x;
+            _dest.height = tex->height * transform.scale.y;
+
+            renderer->draw_texture(tex.get(), _dest, transform.rotation,
+                                   _color.normalize_color(), {}, _z_index,
+                                   _flip_h, _flip_v);
+        }
     } else {
         LOG_ERROR("Failed to access texture in Sprite2D, it might have been unloaded or not set.");
     }
