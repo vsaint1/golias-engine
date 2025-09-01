@@ -73,10 +73,11 @@ All dependencies are included as git submodules.
 
 Showcase some projects and demos made with Ember Engine:
 
-| Game        | Screenshot                 | Description                                   |
-|-------------|----------------------------|-----------------------------------------------|
-| Flappy Bird | ![Flappy](docs/flappy.png) | Simplest Flappy Bird clone using Ember Engine |
-| ...         | ...                        | ...                                           |
+| Game                 | Screenshot                          | Description                                   |
+|----------------------|-------------------------------------|-----------------------------------------------|
+| Flappy Bird          | ![Flappy](docs/flappy.png)          | Simplest Flappy Bird clone using Ember Engine |
+| Node Physics Example | ![Node Physics](docs/node_phys.png) | Simple node-based physics simulation demo     |
+| ...                  | ...                                 | ...                                           |
 
 ---
 
