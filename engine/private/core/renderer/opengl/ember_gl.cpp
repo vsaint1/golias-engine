@@ -556,7 +556,6 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     return true;
 }
 
-
 void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
                                   const Rect2& src_rect, int z_index,
                                   bool flip_h, bool flip_v, const UberShader& uber_shader) {
@@ -579,14 +578,18 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
     if (flip_h) std::swap(u0, u1);
     if (flip_v) std::swap(v0, v1);
 
-    float dx = dest_rect.x;
-    float dy = dest_rect.y;
+    float cx = dest_rect.x;
+    float cy = dest_rect.y;
     float dw = dest_rect.width != 0 ? dest_rect.width : draw_w;
     float dh = dest_rect.height != 0 ? dest_rect.height : draw_h;
+
+    float dx = cx - dw * 0.5f;
+    float dy = cy - dh * 0.5f;
 
     BatchKey key{texture->id, z_index, DrawCommandType::TEXTURE, uber_shader};
     submit(key, dx, dy, dw, dh, u0, v0, u1, v1, color, rotation);
 }
+
 
 void OpenglRenderer::flush() {
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
