@@ -5,6 +5,8 @@
 
 /**
  * @brief Supported rendering backends for the engine.
+ *
+ * @note  Not all backends were implemented.
  */
 enum class Backend {
     /**
@@ -112,7 +114,7 @@ struct RendererDevice {
 
     bool load(const tinyxml2::XMLElement* root);
 
-    const char* get_backend_str() const;
+    [[nodiscard]] const char* get_backend_str() const;
 
 };
 

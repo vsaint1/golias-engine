@@ -2,6 +2,15 @@
 #include "engine_sys.h"
 #include "logging_sys.h"
 
+/**
+ * @brief ThreadManager class
+ *
+ * @note By default, the number of thread is set to 2
+ *
+ * @details Manages a pool of threads for concurrent task execution.
+ *
+ * @version 1.2.0
+ */
 class ThreadManager final: public EngineManager {
 public:
     explicit ThreadManager(size_t threads);

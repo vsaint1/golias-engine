@@ -18,6 +18,7 @@ struct Vertex {
     - VAO, VBO and EBO related to the mesh
     - Material (SOON)
 
+    @deprecated
     @version 0.0.3
 */
 class Mesh {

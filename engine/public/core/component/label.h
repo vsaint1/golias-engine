@@ -2,6 +2,14 @@
 #include "node.h"
 
 
+/* *  @brief 2D Label Node
+ *
+ *  @details A 2D label node that can be added to the scene graph.
+ *  - Supports custom fonts, font sizes, and colors.
+ *  - Can apply  UberShader effects like outline and shadow.
+ *
+ *  @version 1.1.0
+ */
 class Label final : public Node2D {
 
 public:
@@ -9,7 +17,8 @@ public:
         : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
     }
 
-    Label(const std::string& font_path, const std::string& font_alias, const std::string& text, int ft_size = 16, const Color& color = Color::WHITE);
+    Label(const std::string& font_path, const std::string& font_alias, const std::string& text, int ft_size = 16,
+          const Color& color = Color::WHITE);
 
     void ready() override;
 
@@ -32,10 +41,10 @@ public:
 
 private:
     std::string _font_alias = "default";
-    std::string _text    = "";
-    Color _color         = Color::WHITE;
-    UberShader _effect = UberShader::none();
-    int _font_size       = 0;
-    float _kerning       = 0.0f; // spacing between characters
-    std::string _path    = "";
+    std::string _text       = "";
+    Color _color            = Color::WHITE;
+    UberShader _effect      = UberShader::none();
+    int _font_size          = 0;
+    float _kerning          = 0.0f; // spacing between characters
+    std::string _path       = "";
 };

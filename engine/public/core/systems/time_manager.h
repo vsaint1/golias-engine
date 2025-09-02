@@ -1,7 +1,13 @@
 #pragma once
 #include "logging_sys.h"
 
-
+/**
+ * @brief TimeManager class
+ *
+ * @details Manages time, delta time, frame rate, and time scaling.
+ *
+ * @version 0.0.1
+ */
 class TimeManager {
 public:
     TimeManager();

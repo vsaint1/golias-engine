@@ -2,9 +2,9 @@
 
 #include "core/engine_config.h"
 #include "core/io/file_system.h"
+#include "systems/audio_manager.h"
 #include "systems/input_manager.h"
 #include "systems/time_manager.h"
-#include "systems/audio_manager.h"
 
 #pragma region ENGINE_SYSTEMS
 #include "core/systems/physics_sys.h"
@@ -114,10 +114,29 @@ public:
      */
     bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
+    /*!
+     * @brief Update all engine systems.
+     *
+     * @param delta_time Time elapsed since last frame (in seconds).
+     *
+     * @version 0.0.1
+     */
     void update(double delta_time) const;
 
-    b2WorldId get_physics_world() const;
+    /*! @brief Get the created physics world.
+     *
+     * @return b2WorldId Physics world ID.
+     *
+     */
+    [[nodiscard]] b2WorldId get_physics_world() const;
 
+    /*! Get a specific engine system by type.
+     *
+     * @param T System type to retrieve.
+     * @return T* Pointer to the requested system, or nullptr if not found.
+     *
+     * @example  PhysicsSystem* physics = GEngine->get_system<PhysicsSystem>();
+     */
     template <typename T>
     T* get_system();
 
@@ -186,11 +205,24 @@ extern std::unique_ptr<Engine> GEngine;
 // Global audio engine instance (Miniaudio)
 extern ma_engine audio_engine;
 
+/*!
+ * @brief Convert pixel coordinates to Physics world coordinates.
+ *
+ * @param pixel_pos Position in pixels.
+ * @return b2Vec2 Position in Physics world units.
+ */
+b2Vec2 pixels_to_world(const glm::vec2& pixel_pos);
 
-b2Vec2 pixels_to_world(const glm::vec2& pixelPos);
+/*!
+ * @brief Convert pixel coordinates to Physics world coordinates.
+ *
+ * @return b2Vec2 Position in Physics world units.
+ */
+glm::vec2 world_to_pixels(const b2Vec2& world_pos);
 
-glm::vec2 world_to_pixels(const b2Vec2& worldPos);
-
+/*!
+ * @brief Generate a random number between min and max.
+ */
 template <typename T>
 T random(T min, T max) {
     static std::random_device rd;

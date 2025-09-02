@@ -107,6 +107,13 @@ private:
     int _composition_length = 0;
 };
 
+/* !
+ * @brief InputManager class
+ *
+ * @details Manages keyboard, mouse, gamepad, and touch input.
+ *
+ * @version 1.0.0
+ */
 class InputManager {
 public:
     InputManager() = default;

@@ -14,6 +14,18 @@ enum class ShapeType {
 };
 class Renderer;
 
+/**
+ * @brief 2D Node base class for scene graph.
+ *
+ * @details
+ * - Supports hierarchical transformations (position, rotation, scale).
+ * - Manages child nodes and parent-child relationships.
+ * - Handles visibility and z-index for rendering order.
+ * - Provides lifecycle methods: ready(), process(), draw(), input().
+ *
+ * @version 0.5.0
+ *
+ */
 class Node2D {
 public:
     Node2D();

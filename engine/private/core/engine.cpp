@@ -482,12 +482,12 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 }
 
 
-b2Vec2 pixels_to_world(const glm::vec2& pixelPos) {
+b2Vec2 pixels_to_world(const glm::vec2& pixel_pos) {
     const  float viewportHeight = GEngine->Config.get_viewport().height;
-    return b2Vec2(pixelPos.x * METERS_PER_PIXEL, (viewportHeight - pixelPos.y) * METERS_PER_PIXEL);
+    return b2Vec2(pixel_pos.x * METERS_PER_PIXEL, (viewportHeight - pixel_pos.y) * METERS_PER_PIXEL);
 }
 
-glm::vec2 world_to_pixels(const b2Vec2& worldPos) {
+glm::vec2 world_to_pixels(const b2Vec2& world_pos) {
     const float viewportHeight = GEngine->Config.get_viewport().height;
-    return glm::vec2(worldPos.x * PIXELS_PER_METER, viewportHeight - worldPos.y * PIXELS_PER_METER);
+    return glm::vec2(world_pos.x * PIXELS_PER_METER, viewportHeight - world_pos.y * PIXELS_PER_METER);
 }

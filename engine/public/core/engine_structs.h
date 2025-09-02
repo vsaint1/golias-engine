@@ -25,7 +25,11 @@ struct Texture {
 
 };
 
-
+/*!
+ *  @brief Float rectangle struct
+ *
+ *  @version 0.0.1
+ */
 struct Rect2 {
     float x, y, width, height;
 
@@ -41,6 +45,11 @@ struct Rect2 {
 
 };
 
+/*!
+ *  @brief Integer rectangle struct
+ *
+ *  @version 0.0.1
+ */
 struct Recti {
     int x, y, width, height;
 
@@ -55,6 +64,11 @@ struct Recti {
     [[nodiscard]] glm::ivec2 bottom_right() const ;
 };
 
+/*!
+ *  @brief Integer Size struct
+ *
+ *  @version 0.0.1
+ */
 struct Sizei {
     int width;
     int height;
@@ -68,7 +82,6 @@ struct Sizei {
  *
  *  @version 0.0.1
  */
-
 struct Color {
     unsigned char r;
     unsigned char g;
@@ -92,7 +105,11 @@ struct Color {
     // static const Color TRANSPARENT;
 };
 
-
+/*!
+ *  @brief Font Character struct
+ *
+ *  @version 0.0.1
+ */
 struct Character {
     GLuint texture_id;
     glm::ivec2 size;
@@ -108,7 +125,7 @@ struct Character {
 struct Glyph {
     float x0, y0, w, h;
     const Character* ch;
-    const glm::vec4* token_color;
+    const glm::vec4 token_color = glm::vec4(1.f);
 };
 /*!
  *  @brief Font struct
