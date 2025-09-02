@@ -23,8 +23,6 @@ int main(int argc, char* argv[]) {
     auto sample_texture  = renderer->load_texture("sprites/Character_001.png");
     auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
 
-    bool quit = false;
-    SDL_Event e;
     float angle = 0.0f;
 
     Node2D* root = new Node2D("Root");
@@ -44,31 +42,22 @@ int main(int argc, char* argv[]) {
 
     player->add_child("Image", player_sprite);
 
-    CollisionShape2D * player_collider = new CollisionShape2D();
-    player_collider->type = ShapeType::CIRCLE;
-    player_collider->translate(0,2);
-    player_collider->radius = 6;
-
-    player->add_child("Collision", player_collider);
-
     root->add_child("Player", player);
     root->add_child("Text",name);
 
-    root->ready();
     root->print_tree();
 
     bool is_filled = true;
 
-    while (!quit) {
+    SDL_Event e;
+    while (GEngine->is_running) {
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_EVENT_QUIT) {
-                quit = true;
-            }
+          GEngine->input_manager()->process_event(e);
 
-            const auto& pKey = SDL_GetKeyboardState(nullptr);
-            if (pKey[SDL_SCANCODE_SPACE]) {
+            if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_SPACE)) {
                 is_filled = !is_filled;
             }
+
         }
 
         const double dt = GEngine->time_manager()->get_delta_time();
@@ -84,11 +73,11 @@ int main(int argc, char* argv[]) {
         renderer->draw_rect({100, 50, 50, 30}, 0.0f, glm::vec4(1.0f,0.5f,0.2f,1.0f), is_filled,1);
         renderer->draw_circle(160, 90, 0, 20, glm::vec4(0.2f,0.8f,0.2f,1.0f), is_filled, 32, 2);
         renderer->draw_line(10, 10, 300, 170, 1.0f, 0, glm::vec4(1.0f,1.0f,0.0f,1.0f), 2);
-        renderer->draw_texture(sample_texture.get(), {50,50,32,32}, 0, glm::vec4(1.0f), {192,0,32,32}, 0, UberShader::outline_only());
+        renderer->draw_texture(sample_texture.get(), {50,50,32,32}, 0, glm::vec4(1.0f), {192,0,32,32}, 0, false,false,UberShader::outline_only());
 
         renderer->draw_triangle(0, 30, 40, 30, 20, 0, 0.0f, glm::vec4(0.8f, 0.1f, 0.5f, 1.0f), is_filled, 5);
 
-        renderer->draw_texture(sample_texture2.get(), {50,100,32,32}, 0, glm::vec4(1.0f), {0,0,32,32}, 0, UberShader::shadow_only());
+        renderer->draw_texture(sample_texture2.get(), {50,100,32,32}, 0, glm::vec4(1.0f), {0,0,32,32}, 0, false,false,UberShader::shadow_only());
 
         renderer->flush();
         renderer->present();
