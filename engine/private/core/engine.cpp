@@ -337,6 +337,7 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
     ImGui::StyleColorsDark();
 
     // TODO: initialize impl Metal
+    ImGui_ImplSDL3_InitForMetal(window);
 
     SDL_ShowWindow(window);
 
