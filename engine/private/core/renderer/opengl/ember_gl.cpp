@@ -75,13 +75,15 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
             }
 
             auto it = font.characters.find(c);
-            if (it == font.characters.end()) continue;
+            if (it == font.characters.end()) {
+                continue;
+            }
 
             const Character& ch = it->second;
-            float w = ch.size.x * font_scale;
-            float h = ch.size.y * font_scale;
-            float x0 = xpos + ch.bearing.x * font_scale;
-            float y0 = ypos + (font.font_size - ch.bearing.y) * font_scale;
+            float w             = ch.size.x * font_scale;
+            float h             = ch.size.y * font_scale;
+            float x0            = xpos + ch.bearing.x * font_scale;
+            float y0            = ypos + (font.font_size - ch.bearing.y) * font_scale;
 
             BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT, uber_shader};
             submit(key, x0, y0, w, h, 0, 0, 1, 1, tcolor, 0.0f);
@@ -146,11 +148,12 @@ void OpenglRenderer::draw_triangle(float x1, float y1, float x2, float y2, float
 void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation, float radius, const glm::vec4& color, bool filled,
                                  int segments, int z_index) {
 
-    if (segments < 3) return;
+    if (segments < 3) {
+        return;
+    }
 
-    glm::vec2 center(center_x, center_y);
     BatchKey key{0, z_index, DrawCommandType::CIRCLE, filled};
-    Batch& batch = _batches[key];
+    Batch& batch  = _batches[key];
     batch.z_index = z_index;
     batch.mode    = filled ? DrawCommandMode::TRIANGLES : DrawCommandMode::LINES;
 
@@ -161,31 +164,26 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
 
 
     for (int i = 0; i < segments; ++i) {
-        float a = i * angle_step;
-        glm::vec2 p = rotate_point({center_x + radius * cos(a), center_y + radius * sin(a)}, center, rotation);
-        points[i] = p;
+        float a     = i * angle_step;
+        glm::vec2 p = rotate_point({center_x + radius * cos(a), center_y + radius * sin(a)}, {center_x, center_y}, rotation);
+        points[i]   = p;
 
-        if (!filled) {
-            batch.vertices.push_back({p, {0.0f, 0.0f}, color});
-        }
+        batch.vertices.push_back({p, {0.5f + (p.x - center_x) / (2 * radius), 0.5f + (p.y - center_y) / (2 * radius)}, color});
     }
 
     if (filled) {
-        for (const auto& p : points) {
-            batch.vertices.push_back({
-                p,
-                {0.5f + (p.x - center_x) / (2*radius),
-                 0.5f + (p.y - center_y) / (2*radius)},
-                color
-            });
-        }
-
-        batch.vertices.push_back({center, {0.5f, 0.5f}, color});
+        batch.vertices.push_back({{center_x, center_y}, {0.5f, 0.5f}, color});
         uint32_t center_index = base + points.size();
 
         for (int i = 0; i < segments; ++i) {
             uint32_t next = (i + 1) % segments;
             batch.indices.push_back(center_index);
+            batch.indices.push_back(base + i);
+            batch.indices.push_back(base + next);
+        }
+    } else {
+        for (int i = 0; i < segments; ++i) {
+            uint32_t next = (i + 1) % segments;
             batch.indices.push_back(base + i);
             batch.indices.push_back(base + next);
         }
@@ -557,9 +555,10 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 }
 
 void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                  const Rect2& src_rect, int z_index,
-                                  bool flip_h, bool flip_v, const UberShader& uber_shader) {
-    if (!texture) return;
+                                  const Rect2& src_rect, int z_index, bool flip_h, bool flip_v, const UberShader& uber_shader) {
+    if (!texture) {
+        return;
+    }
 
     float u0 = 0.0f, v0 = 0.0f, u1 = 1.0f, v1 = 1.0f;
     int draw_w = texture->width;
@@ -575,8 +574,12 @@ void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect
         draw_h = static_cast<int>(src_rect.height);
     }
 
-    if (flip_h) std::swap(u0, u1);
-    if (flip_v) std::swap(v0, v1);
+    if (flip_h) {
+        std::swap(u0, u1);
+    }
+    if (flip_v) {
+        std::swap(v0, v1);
+    }
 
     float cx = dest_rect.x;
     float cy = dest_rect.y;
@@ -606,9 +609,7 @@ void OpenglRenderer::flush() {
         sorted_batches.emplace_back(key, &batch);
     }
 
-    std::ranges::sort(sorted_batches, [](auto& a, auto& b) {
-        return a.second->z_index < b.second->z_index;
-    });
+    std::ranges::sort(sorted_batches, [](auto& a, auto& b) { return a.second->z_index < b.second->z_index; });
 
     _default_shader->bind();
     _default_shader->set_value("PROJECTION", _projection);
@@ -617,7 +618,9 @@ void OpenglRenderer::flush() {
     glBindVertexArray(vao);
 
     for (auto& [key, batch] : sorted_batches) {
-        if (batch->vertices.empty() || batch->indices.empty()) continue;
+        if (batch->vertices.empty() || batch->indices.empty()) {
+            continue;
+        }
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, batch->vertices.size() * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
@@ -628,8 +631,7 @@ void OpenglRenderer::flush() {
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, batch->indices.size() * sizeof(uint32_t), batch->indices.data());
 
         const bool use_texture =
-            (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT)
-            && batch->texture_id != 0;
+            (batch->type == DrawCommandType::TEXTURE || batch->type == DrawCommandType::TEXT) && batch->texture_id != 0;
 
         _default_shader->set_value("use_texture", use_texture);
         if (use_texture) {
@@ -642,7 +644,7 @@ void OpenglRenderer::flush() {
             auto tex_size = get_texture_size(batch->texture_id);
             set_effect_uniforms(key.uber_shader, tex_size);
         } else {
-            set_effect_uniforms(UberShader::none(), glm::vec2(1,1));
+            set_effect_uniforms(UberShader::none(), glm::vec2(1, 1));
         }
 
         if (batch->mode == DrawCommandMode::TRIANGLES) {
@@ -652,7 +654,9 @@ void OpenglRenderer::flush() {
             glDrawElements(GL_LINES, batch->indices.size(), GL_UNSIGNED_INT, 0);
         }
 
-        if (use_texture) glBindTexture(GL_TEXTURE_2D, 0);
+        if (use_texture) {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
         draw_call_count++;
     }
