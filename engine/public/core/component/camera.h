@@ -2,16 +2,16 @@
 #include "node.h"
 
 /*!
-       @brief Camera2D component
-       - Projection type `orthographic`
+   @brief Camera2D component
+   - Projection type `orthographic`
 
-       @param view_width Viewport width
-       @param view_height Viewport height
-       @param zoom Camera zoom between (0.0f - 10.0f)
+   @param view_width Viewport width
+   @param view_height Viewport height
+   @param zoom Camera zoom between (0.0f - 10.0f)
 
-       @version 0.0.5
+   @version 0.0.5
    */
-class Camera2D : public Node2D {
+class Camera2D final : public Node2D {
 public:
     Camera2D();
     explicit Camera2D(const std::string& name) : Node2D(name) {}

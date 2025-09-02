@@ -7,7 +7,12 @@ enum class BodyType { STATIC, DYNAMIC, KINEMATIC };
 /**
  * @brief 2D rigid body with physics properties.
  *
- * Supports 12 layers (0-11) and collision masks.
+ * @details
+ * - Supports 16 layers (0-16) and collision masks.
+ * - Can be static, dynamic, or kinematic.
+ * - Supports rectangle, circle and polygon shapes.
+ *
+ * @version  1.2.0
  */
 class RigidBody2D final : public Node2D {
 public:

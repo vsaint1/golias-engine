@@ -1,6 +1,15 @@
 #pragma once
 #include "node.h"
 
+/*!
+ *  @brief 2D Sprite Node
+ *
+ *  @details  A 2D sprite node that can be added to the scene graph.
+ *  - Supports texture, color tinting, and region selection.
+ *  - Can be flipped horizontally and vertically.
+ *
+ *  @version 1.1.0
+ */
 class Sprite2D final : public Node2D {
 
 public:

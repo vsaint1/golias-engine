@@ -1,5 +1,5 @@
 #pragma once
-#include "../systems/logging_sys.h"
+#include "core/systems/logging_sys.h"
 #include <curl/curl.h>
 
 struct HttpRequest {

@@ -3,6 +3,11 @@
 // #include "core/renderer/shader.h"
 
 #if defined(__APPLE__)
+/*!
+   @brief  Metal Renderer implementation
+
+    @version 1.2.0
+*/
 class MetalRenderer final : public Renderer {
 public:
     MetalRenderer();

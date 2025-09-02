@@ -60,4 +60,4 @@ private:
 };
 
 
-inline std::unordered_map<std::string, AudioBus> audioBuses;
+inline std::unordered_map<std::string, AudioBus> audioBuses; ///< Global audio buses
