@@ -38,7 +38,8 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
     }
 
     if (type == Backend::METAL) {
-        return _create_renderer_metal(window, view_width, view_height);
+        LOG_WARN("Metal renderer is not fully supported yet");
+        return _create_renderer_metal(window,view_width,view_height);
     }
 
 

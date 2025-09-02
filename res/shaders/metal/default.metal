@@ -1,9 +1,6 @@
 #include <metal_stdlib>
 using namespace metal;
 
-// ======================
-// Vertex Shader
-// ======================
 struct VertexIn {
     float2 position [[attribute(0)]];
     float2 texCoord [[attribute(1)]];
@@ -18,21 +15,20 @@ struct VertexOut {
 
 struct VertexUniforms {
     float4x4 projection;
+    float4x4 view;
 };
 
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
                              constant VertexUniforms& uniforms [[buffer(1)]])
 {
     VertexOut out;
-    out.position = uniforms.projection * float4(in.position, 0.0, 1.0);
+    float4 pos = float4(in.position, 0.0, 1.0);
+    out.position = uniforms.projection * uniforms.view * pos;
     out.texCoord = in.texCoord;
-    out.color    = in.color;
+    out.color = in.color;
     return out;
 }
 
-// ======================
-// Fragment Shader
-// ======================
 struct FragmentUniforms {
     bool use_texture;
 };
@@ -43,9 +39,9 @@ fragment float4 fragment_main(VertexOut in [[stage_in]],
                               constant FragmentUniforms& uniforms [[buffer(0)]])
 {
     if (uniforms.use_texture) {
-           float4 tex_color = TEXTURE.sample(samp, in.texCoord);
-           return tex_color * in.color;
-       } else {
-           return in.color;
-       }
+        float4 tex_color = TEXTURE.sample(samp, in.texCoord);
+        return tex_color * in.color;
+    } else {
+        return in.color;
+    }
 }
