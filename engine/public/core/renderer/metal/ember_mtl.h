@@ -24,6 +24,7 @@ public:
 
     bool load_font(const std::string&, const std::string&, int) override;
 
+
     std::shared_ptr<Texture> load_texture(const std::string& path) override;
 
     std::shared_ptr<Texture> get_texture(const std::string& path) override;
@@ -33,7 +34,7 @@ public:
     void unload_texture(Uint32 id) override;
 
     void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
-                      int z_index, const UberShader& uber_shader) override;
+                      int z_index, bool flip_h, bool flip_v, const UberShader& uber_shader) override;
 
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
 
@@ -56,7 +57,7 @@ protected:
     void set_default_font(const std::string& font_name) override;
     void render_fbo() override;
     void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size) override;
-    glm::vec2 _get_texture_size(Uint32 texture_id) const override;
+    glm::vec2 get_texture_size(Uint32 texture_id) const override;
 
 private:
     void* device_      = nullptr; // id<MTLDevice>
@@ -72,38 +73,69 @@ private:
 
 class MetalRenderer final : public Renderer {
 public:
-    MetalRenderer() {}
-    ~MetalRenderer() override {}
+    MetalRenderer() {
+    }
+    ~MetalRenderer() override {
+    }
 
-    void initialize() override {}
-    void clear(glm::vec4) override {}
-    void present() override {}
-    void resize_viewport(int, int) override {}
-    void set_context(const void*) override {}
-    void* get_context() override { return nullptr; }
-    void destroy() override {}
-    bool load_font(const std::string&, const std::string&, int) override { return false; }
-    std::shared_ptr<Texture> load_texture(const std::string&) override { return nullptr; }
-    std::shared_ptr<Texture> get_texture(const std::string&) override { return nullptr; }
-    void unload_font(const Font&) override {}
-    void unload_texture(Uint32) override {}
-    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                   const Rect2& src_rect, int z_index,
-                                   bool flip_h, bool flip_v, const UberShader& uber_shader) override{}
+    void initialize() override {
+    }
+    void clear(glm::vec4) override {
+    }
+    void present() override {
+    }
+    void resize_viewport(int, int) override {
+    }
+    void set_context(const void*) override {
+    }
+    void* get_context() override {
+        return nullptr;
+    }
+    void destroy() override {
+    }
+    bool load_font(const std::string&, const std::string&, int) override {
+        return false;
+    }
+    std::shared_ptr<Texture> load_texture(const std::string&) override {
+        return nullptr;
+    }
+    std::shared_ptr<Texture> get_texture(const std::string&) override {
+        return nullptr;
+    }
+    void unload_font(const Font&) override {
+    }
+    void unload_texture(Uint32) override {
+    }
+    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
+                      int z_index, bool flip_h, bool flip_v, const UberShader& uber_shader) override {
+    }
 
-    void draw_rect(Rect2, float, const glm::vec4&, bool, int) override {}
-    void draw_text(const std::string&, float, float, float, float, const glm::vec4&, const std::string&, int, const UberShader&, int) override {}
-    void draw_line(float, float, float, float, float, float, const glm::vec4&, int) override {}
-    void draw_triangle(float, float, float, float, float, float, float, const glm::vec4&, bool, int) override {}
-    void draw_circle(float, float, float, float, const glm::vec4&, bool, int, int) override {}
-    void draw_polygon(const std::vector<glm::vec2>&, float, const glm::vec4&, bool, int) override {}
-    void flush() override {}
+    void draw_rect(Rect2, float, const glm::vec4&, bool, int) override {
+    }
+    void draw_text(const std::string&, float, float, float, float, const glm::vec4&, const std::string&, int, const UberShader&,
+                   int) override {
+    }
+    void draw_line(float, float, float, float, float, float, const glm::vec4&, int) override {
+    }
+    void draw_triangle(float, float, float, float, float, float, float, const glm::vec4&, bool, int) override {
+    }
+    void draw_circle(float, float, float, float, const glm::vec4&, bool, int, int) override {
+    }
+    void draw_polygon(const std::vector<glm::vec2>&, float, const glm::vec4&, bool, int) override {
+    }
+    void flush() override {
+    }
 
 protected:
-    void set_default_font(const std::string&) override {}
-    void render_fbo() override {}
-    void set_effect_uniforms(const UberShader&, const glm::vec2&) override {}
-    glm::vec2 get_texture_size(Uint32) const override { return {0, 0}; }
+    void set_default_font(const std::string&) override {
+    }
+    void render_fbo() override {
+    }
+    void set_effect_uniforms(const UberShader&, const glm::vec2&) override {
+    }
+    glm::vec2 get_texture_size(Uint32) const override {
+        return {0, 0};
+    }
 };
 
 #endif
