@@ -109,7 +109,6 @@ int main(int argc, char* argv[]) {
     RigidBody2D* player = new RigidBody2D();
     player->body_type = BodyType::DYNAMIC;
     player->body_size = {16, 16};
-    player->offset = glm::vec2(16);
     player->shape_type = ShapeType::CIRCLE;
     player->radius = 8.0f;
     player->set_transform({{50, 50}, {1.f, 1.f}, 0.0f});
