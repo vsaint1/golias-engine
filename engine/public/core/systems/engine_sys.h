@@ -1,6 +1,12 @@
 #pragma once
 
-
+/*!
+ * @brief Base class for all engine systems.
+ *
+ * @details All engine systems should inherit from this class and implement the virtual methods.
+ *
+ * @version 1.1.0
+ */
 class EngineManager {
 
 public:
