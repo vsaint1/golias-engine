@@ -208,6 +208,9 @@ void Node2D::input(const InputManager* input) {
 
 
 void Node2D::draw_inspector() {
+#if !defined(WITH_EDITOR)
+    return;
+#else
     if (this != g_selected_node) {
         return;
     }
@@ -247,9 +250,13 @@ void Node2D::draw_inspector() {
     //         }
     //     }
     // }
+#endif
 }
 
 void Node2D::draw_hierarchy() {
+#if !defined(WITH_EDITOR)
+    return;
+#else
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     if (_nodes.empty()) {
@@ -272,7 +279,6 @@ void Node2D::draw_hierarchy() {
         }
 
         if (ImGui::MenuItem("Rename")) {
-
         }
 
         ImGui::BeginDisabled();
@@ -284,7 +290,6 @@ void Node2D::draw_hierarchy() {
         ImGui::EndDisabled();
 
 
-
         ImGui::EndPopup();
     }
 
@@ -294,6 +299,8 @@ void Node2D::draw_hierarchy() {
         }
         ImGui::TreePop();
     }
+
+#endif
 }
 
 void Node2D::queue_free() {

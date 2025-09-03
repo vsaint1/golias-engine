@@ -30,7 +30,7 @@ endif()
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
 
-add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
+#add_compile_definitions(WITH_EDITOR)
 
 # [iOS/Emscripten] - disable shared libs
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)

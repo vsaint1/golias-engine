@@ -391,7 +391,9 @@ void OpenglRenderer::destroy() {
     _textures.clear();
     _texture_sizes.clear();
 
+#if defined(WITH_EDITOR)
     ImGui_ImplOpenGL3_Shutdown();
+#endif
 
     FT_Done_FreeType(_ft);
 
@@ -669,14 +671,14 @@ void OpenglRenderer::flush() {
 
 
 void OpenglRenderer::present() {
-    if (GEngine->Config.get_application().is_debug) {
-
+#if defined(WITH_EDITOR)
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    } else {
-        // render_fbo();
-    }
+
+#else
+        render_fbo();
+#endif
 
     SDL_GL_SwapWindow(Window);
 }
@@ -702,12 +704,14 @@ void OpenglRenderer::render_fbo() {
 void OpenglRenderer::clear(glm::vec4 color) {
     // commands.clear();
     // batches.clear();
-    if (GEngine->Config.get_application().is_debug) {
+
+#if defined(WITH_EDITOR)
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
-    }
+
+#endif
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 

@@ -203,20 +203,21 @@ void RigidBody2D::draw(Renderer* renderer) {
     Node2D::draw(renderer);
 
 
-    if (!GEngine->Config.get_application().is_debug) {
-        return;
-    }
-    if (!B2_IS_NON_NULL(body_id)) {
-        return;
-    }
+    if (GEngine->Config.get_application().is_debug) {
 
-    glm::vec2 pos = world_to_pixels(b2Body_GetPosition(body_id));
+        if (!B2_IS_NON_NULL(body_id)) {
+            return;
+        }
 
-    if (shape_type == ShapeType::RECTANGLE) {
-        renderer->draw_rect({pos.x - body_size.x / 2, pos.y - body_size.y / 2, body_size.x, body_size.y}, get_transform().rotation, color,
-                            true, 1000);
-    } else if (shape_type == ShapeType::CIRCLE) {
-        renderer->draw_circle(pos.x, pos.y, get_transform().rotation, radius, color, true, 32, 1000);
+        glm::vec2 pos = world_to_pixels(b2Body_GetPosition(body_id));
+
+        if (shape_type == ShapeType::RECTANGLE) {
+            renderer->draw_rect({pos.x - body_size.x / 2, pos.y - body_size.y / 2, body_size.x, body_size.y}, get_transform().rotation,
+                                color, true, 1000);
+        } else if (shape_type == ShapeType::CIRCLE) {
+            renderer->draw_circle(pos.x, pos.y, get_transform().rotation, radius, color, true, 32, 1000);
+        }
+
     }
 }
 
