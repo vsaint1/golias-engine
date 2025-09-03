@@ -17,6 +17,9 @@ void Engine::update(double delta_time) const {
 
     this->_input_manager->update();
 
+    if (this->_time_manager->is_paused())
+        return;
+
     constexpr float fixed_dt = 1.0f / 60.0f;
     b2World_Step(this->_world, SDL_min(delta_time, fixed_dt), 8);
 
