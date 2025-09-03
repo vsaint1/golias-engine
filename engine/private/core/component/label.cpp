@@ -4,7 +4,7 @@
 
 
 Label::Label(const std::string& font_path, const std::string& font_alias, const std::string& text, const int ft_size, const Color& color)
-    : _font_alias(font_alias), _text(text), _color(color), _font_size(ft_size) {
+    : _font_alias(font_alias), _text(text), _color(color.normalize_color()), _font_size(ft_size) {
     _path = font_path;
 
     if (!GEngine->get_renderer()->load_font(font_path, font_alias, ft_size)) {
@@ -29,7 +29,7 @@ void Label::draw(Renderer* renderer) {
 
     const auto& transform = get_global_transform();
     GEngine->get_renderer()->draw_text(_text, transform.position.x, transform.position.y, transform.rotation, transform.scale.x,
-                                       _color.normalize_color(), _font_alias, _z_index, _effect, _font_size);
+                                       _color, _font_alias, _z_index, _effect, _font_size);
 }
 
 std::string Label::get_text() const {
@@ -62,7 +62,7 @@ void Label::set_font_size(float size) {
 }
 
 void Label::set_text_color(const Color& color) {
-    _color = color;
+    _color = color.normalize_color();
 }
 
 void Label::set_outline(bool enabled, float thickness, const Color& color) {
@@ -84,7 +84,10 @@ void Label::input(const InputManager* input) {
 void Label::draw_inspector() {
     Node2D::draw_inspector();
 
-    ImGui::Separator();
+#if !defined(WITH_EDITOR)
+
+    return;
+#else
 
     if (ImGui::CollapsingHeader("Font", ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -120,13 +123,9 @@ void Label::draw_inspector() {
 
     ImGui::Checkbox("Enable BBCode", &bb_code_enabled);
 
-    float col[4] = {_color.r / 255.f, _color.g / 255.f, _color.b / 255.f, _color.a / 255.f};
 
-    if (ImGui::ColorEdit4("Color", col)) {
-        _color.r = static_cast<Uint8>(col[0] * 255.f);
-        _color.g = static_cast<Uint8>(col[1] * 255.f);
-        _color.b = static_cast<Uint8>(col[2] * 255.f);
-        _color.a = static_cast<Uint8>(col[3] * 255.f);
+    if (ImGui::ColorEdit4("Color", &_color.r)) {
+
     }
 
 
@@ -159,6 +158,7 @@ void Label::draw_inspector() {
             ImGui::DragFloat2("Shadow Offset", &_effect.shadow_offset.x, 0.5f);
         }
     }
+#endif
 }
 
 

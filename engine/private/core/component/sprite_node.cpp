@@ -92,6 +92,10 @@ void Sprite2D::draw_hierarchy() {
 void Sprite2D::draw_inspector() {
     Node2D::draw_inspector();
 
+#if !defined(WITH_EDITOR)
+    return;
+
+#else
     if (ImGui::CollapsingHeader("Texture")) {
         ImGui::Text("Path: %s", (_texture.lock() ? _texture.lock()->path : "None").c_str());
         if (ImGui::Button("Select Texture")) {
@@ -140,4 +144,7 @@ void Sprite2D::draw_inspector() {
         ImGui::Checkbox("Horizontal", &_flip_h);
         ImGui::Checkbox("Vertical", &_flip_v);
     }
+
+#endif
+
 }

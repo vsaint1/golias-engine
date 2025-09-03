@@ -18,4 +18,3 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 
 #define ENGINE_NAME        "EMBER_ENGINE"
 #define ENGINE_VERSION_STR "1.2.0"
-#define WITH_EDITOR

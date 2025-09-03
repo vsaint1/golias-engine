@@ -16,7 +16,10 @@ void RigidBody2D::input(const InputManager* input) {
 
 void RigidBody2D::draw_inspector() {
     Node2D::draw_inspector();
+#if !defined(WITH_EDITOR)
 
+    return;
+#else
     ImGui::Checkbox("Disabled", &is_disabled);
 
     const char* body_types[] = {"Static", "Dynamic", "Kinematic"};
@@ -81,6 +84,8 @@ void RigidBody2D::draw_inspector() {
             }
         }
     }
+#endif
+
 }
 
 void RigidBody2D::draw_hierarchy() {
