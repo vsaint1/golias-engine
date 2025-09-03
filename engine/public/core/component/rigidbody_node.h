@@ -62,6 +62,10 @@ public:
     void on_body_entered(const std::function<void(Node2D*)>& callback);
     void on_body_exited(const std::function<void(Node2D*)>& callback);
 
+    void input(const InputManager* input) override;
+    void draw_inspector() override;
+    void draw_hierarchy() override;
+
     ~RigidBody2D() override;
 
     std::unordered_set<RigidBody2D*> currently_colliding;

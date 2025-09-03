@@ -38,6 +38,10 @@ public:
 
     void set_shadow(bool enabled, glm::vec2 offset = glm::vec2(-1.f), const Color& color = Color::BLACK);
 
+    void input(const InputManager* input) override;
+    void draw_inspector() override;
+    void draw_hierarchy() override;
+    ~Label() override;
 
 private:
     std::string _font_alias = "default";
@@ -47,4 +51,5 @@ private:
     int _font_size          = 0;
     float _kerning          = 0.0f; // spacing between characters
     std::string _path       = "";
+    bool bb_code_enabled     = false;
 };

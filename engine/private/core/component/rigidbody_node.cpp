@@ -10,6 +10,83 @@ void RigidBody2D::on_body_exited(const std::function<void(Node2D*)>& callback) {
     on_exit_callbacks.push_back(callback);
 }
 
+void RigidBody2D::input(const InputManager* input) {
+    Node2D::input(input);
+}
+
+void RigidBody2D::draw_inspector() {
+    Node2D::draw_inspector();
+
+    ImGui::Checkbox("Disabled", &is_disabled);
+
+    const char* body_types[] = {"Static", "Dynamic", "Kinematic"};
+    int type_idx             = static_cast<int>(body_type);
+    if (ImGui::Combo("Body Type", &type_idx, body_types, IM_ARRAYSIZE(body_types))) {
+        body_type = static_cast<BodyType>(type_idx);
+    }
+
+    const char* shape_types[] = {"Rectangle", "Circle", "Polygon", "Capsule"};
+    int shape_idx             = static_cast<int>(shape_type);
+    if (ImGui::Combo("Shape Type", &shape_idx, shape_types, IM_ARRAYSIZE(shape_types))) {
+        shape_type = static_cast<ShapeType>(shape_idx);
+    }
+
+    if (shape_type == ShapeType::RECTANGLE) {
+        ImGui::DragFloat2("Size", &body_size.x, 1.0f, 0.0f, FLT_MAX, "%.2f");
+    } else if (shape_type == ShapeType::CIRCLE) {
+        ImGui::DragFloat("Radius", &radius, 0.5f, 0.0f, FLT_MAX, "%.2f");
+    }
+
+    if (ImGui::CollapsingHeader("Material")) {
+
+        ImGui::DragFloat("Density", &density, 0.1f, 0.0f, FLT_MAX);
+        ImGui::DragFloat("Friction", &friction, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Restitution", &restitution, 0.01f, 0.0f, 1.0f);
+    }
+
+    ImGui::Checkbox("Sensor (?)", &is_sensor);
+    ImGui::Checkbox("Fixed Rotation", &is_fixed_rotation);
+
+    ImGui::DragFloat2("Offset", &offset.x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+    float col[4] = {color.r, color.g, color.b, color.a};
+    if (ImGui::ColorEdit4("Debug Color", col)) {
+        color = glm::vec4(col[0], col[1], col[2], col[3]);
+    }
+
+    if (ImGui::CollapsingHeader("Collision")) {
+
+        int l = static_cast<int>(layer);
+        if (ImGui::InputInt("Layer", &l)) {
+            if (l >= 0 && l < 16) {
+                layer = static_cast<uint8_t>(l);
+            }
+        }
+
+        ImGui::Text("Mask");
+        for (int i = 0; i < 16; i++) {
+            bool bit = (collision_mask & (1 << i)) != 0;
+
+            if (ImGui::Checkbox(("" + std::to_string(i)).c_str(), &bit)) {
+                if (bit) {
+                    collision_mask |= (1 << i);
+                } else {
+                    collision_mask &= ~(1 << i);
+                }
+            }
+
+            // Arrange in 4 columns
+            if (i % 4 != 3) {
+                ImGui::SameLine();
+            }
+        }
+    }
+}
+
+void RigidBody2D::draw_hierarchy() {
+    Node2D::draw_hierarchy();
+}
+
 
 void RigidBody2D::set_layer(uint8_t new_layer) {
     if (new_layer < 16) {

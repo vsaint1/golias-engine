@@ -235,18 +235,18 @@ void Node2D::draw_inspector() {
         ImGui::Checkbox("Mark for Deletion", &_to_free);
     }
 
-    ImGui::Separator();
-
-    if (!_nodes.empty()) {
-        if (ImGui::CollapsingHeader("Childrens")) {
-            for (const auto& [name, child] : _nodes) {
-                if (ImGui::TreeNode(name.c_str())) {
-                    child->draw_inspector();
-                    ImGui::TreePop();
-                }
-            }
-        }
-    }
+    // ImGui::Separator();
+    //
+    // if (!_nodes.empty()) {
+    //     if (ImGui::CollapsingHeader("Children")) {
+    //         for (const auto& [name, child] : _nodes) {
+    //             if (ImGui::TreeNode(name.c_str())) {
+    //                 child->draw_inspector();
+    //                 ImGui::TreePop();
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 void Node2D::draw_hierarchy() {
@@ -260,14 +260,32 @@ void Node2D::draw_hierarchy() {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    const bool node_open = ImGui::TreeNodeEx(this, flags, _name.c_str());
+    const bool node_open = ImGui::TreeNodeEx((void*) this, flags, _name.c_str());
 
-    if (ImGui::IsItemClicked()) {
-        if (g_selected_node == this) {
-            g_selected_node = nullptr;
-        } else {
-            g_selected_node = this;
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        g_selected_node = (g_selected_node == this) ? nullptr : this;
+    }
+
+    if (ImGui::BeginPopupContextItem(("NodeContext_" + _name).c_str())) {
+
+        if (ImGui::MenuItem("Add child")) {
         }
+
+        if (ImGui::MenuItem("Rename")) {
+
+        }
+
+        ImGui::BeginDisabled();
+
+        if (ImGui::MenuItem("Remove")) {
+            _to_free = true;
+        }
+
+        ImGui::EndDisabled();
+
+
+
+        ImGui::EndPopup();
     }
 
     if (node_open) {

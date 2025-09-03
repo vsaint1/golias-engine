@@ -63,19 +63,26 @@ void game_update() {
 
         // --- File Menu ---
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("New Scene")) { /* TODO: create new scene */ }
-            if (ImGui::MenuItem("Open Scene")) { /* TODO: open file dialog */ }
-            if (ImGui::MenuItem("Save Scene")) { /* TODO: save current scene */ }
+            if (ImGui::MenuItem("New Scene")) { /* TODO: create new scene */
+            }
+            if (ImGui::MenuItem("Open Scene")) { /* TODO: open file dialog */
+            }
+            if (ImGui::MenuItem("Save Scene")) { /* TODO: save current scene */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit")) { GEngine->is_running = false; }
+            if (ImGui::MenuItem("Exit")) {
+                GEngine->is_running = false;
+            }
             ImGui::EndMenu();
         }
 
         // --- Project Menu ---
         if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Settings")) { /* TODO: open project settings */ }
+            if (ImGui::MenuItem("Settings")) { /* TODO: open project settings */
+            }
             ImGui::Separator();
-            if (ImGui::MenuItem("Show Debug")) { /* toggle debug overlays */ }
+            if (ImGui::MenuItem("Show Debug")) { /* toggle debug overlays */
+            }
             ImGui::EndMenu();
         }
 
@@ -94,7 +101,9 @@ void game_update() {
         ImGui::Text("Ember Engine Example\nVersion 1.2.0\nAuthor: vsantos1");
         ImGui::Text("Source Code");
         ImGui::TextLink("https://github.com/vsaint1/ember_engine");
-        if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 
@@ -146,7 +155,6 @@ void game_update() {
     }
 
     ImGui::EndChild();
-
 
 
     ImGui::EndChild();
@@ -209,10 +217,16 @@ int main(int argc, char* argv[]) {
 
     player->on_body_entered([&](const Node2D* other) {
         if (other) {
-            colliding->set_text("Colliding with: %s", other->get_name().c_str());
+            if (colliding) {
+                colliding->set_text("Colliding with: %s", other->get_name().c_str());
+            }
         }
     });
-    player->on_body_exited([&](const Node2D* _) { colliding->set_text("Colliding with: None"); });
+    player->on_body_exited([&](const Node2D* _) {
+        if (colliding) {
+            colliding->set_text("Colliding with: None");
+        }
+    });
 
     // ---- Main loop ----
     while (GEngine->is_running) {
