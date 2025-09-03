@@ -87,18 +87,29 @@ void Label::draw_inspector() {
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Font", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputInt("Size", &_font_size);
 
-        ImGui::Text("Path: %s", _path.c_str());
-        if (ImGui::Button("Select Font")) {
 
+        const std::vector<std::string>& font_names = GEngine->get_renderer()->get_loaded_fonts_name();
+
+        static int selected_font_index = 0;
+
+        if (!font_names.empty()) {
+            if (ImGui::BeginCombo("Alias", font_names[selected_font_index].c_str())) {
+                for (int i = 0; i < font_names.size(); ++i) {
+                    bool is_selected = (selected_font_index == i);
+                    if (ImGui::Selectable(font_names[i].c_str(), is_selected)) {
+                        selected_font_index = i;
+                        _path               = font_names[i];
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
 
-        char font_buf[256];
-        SDL_strlcpy(font_buf, _font_alias.c_str(), sizeof(font_buf));
-        if (ImGui::InputText("Alias", font_buf, sizeof(font_buf))) {
-            _font_alias = std::string(font_buf);
-        }
+        ImGui::InputInt("Override", &_font_size);
     }
 
     char buf[1024];
@@ -109,12 +120,7 @@ void Label::draw_inspector() {
 
     ImGui::Checkbox("Enable BBCode", &bb_code_enabled);
 
-    float col[4] = {
-        _color.r / 255.f,
-        _color.g / 255.f,
-        _color.b / 255.f,
-        _color.a / 255.f
-    };
+    float col[4] = {_color.r / 255.f, _color.g / 255.f, _color.b / 255.f, _color.a / 255.f};
 
     if (ImGui::ColorEdit4("Color", col)) {
         _color.r = static_cast<Uint8>(col[0] * 255.f);
@@ -126,21 +132,21 @@ void Label::draw_inspector() {
 
     if (ImGui::CollapsingHeader("Effects")) {
         static const char* effects[] = {"None", "Outline", "Shadow"};
-        static int current_effect = 0;
+        static int current_effect    = 0;
 
         if (ImGui::Combo("Effect", &current_effect, effects, IM_ARRAYSIZE(effects))) {
             switch (current_effect) {
-                case 0: // None
-                    _effect = UberShader::none();
-                    break;
-                case 1: // Outline
-                    _effect = UberShader::outline_only();
-                    break;
-                case 2: // Shadow
-                    _effect = UberShader::shadow_only();
-                    break;
-                default:;
-                }
+            case 0: // None
+                _effect = UberShader::none();
+                break;
+            case 1: // Outline
+                _effect = UberShader::outline_only();
+                break;
+            case 2: // Shadow
+                _effect = UberShader::shadow_only();
+                break;
+            default:;
+            }
         }
 
         if (current_effect == 1) {
