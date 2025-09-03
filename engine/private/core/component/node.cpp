@@ -140,6 +140,7 @@ bool Node2D::is_effective_visible() const {
     }
     return true;
 }
+
 HashMap<std::string, Node2D*>& Node2D::get_tree() {
     return _nodes;
 }
@@ -205,7 +206,79 @@ void Node2D::input(const InputManager* input) {
     }
 }
 
+
+void Node2D::draw_inspector() {
+    if (this != g_selected_node) {
+        return;
+    }
+
+    ImGui::Text("Name: %s", _name.c_str());
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat2("Position", &_transform.position.x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+        ImGui::DragFloat2("Scale", &_transform.scale.x, 0.1f, 0.0f, FLT_MAX, "%.2f");
+        ImGui::DragFloat("Rotation", &_transform.rotation, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+        if (ImGui::Button("Reset")) {
+            _transform.position = {0.0f, 0.0f};
+            _transform.scale    = {1.0f, 1.0f};
+            _transform.rotation = 0.0f;
+        }
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Visible", &_is_visible);
+        ImGui::InputInt("Z-Index", &_z_index);
+        ImGui::Checkbox("Mark for Deletion", &_to_free);
+    }
+
+    ImGui::Separator();
+
+    if (!_nodes.empty()) {
+        if (ImGui::CollapsingHeader("Childrens")) {
+            for (const auto& [name, child] : _nodes) {
+                if (ImGui::TreeNode(name.c_str())) {
+                    child->draw_inspector();
+                    ImGui::TreePop();
+                }
+            }
+        }
+    }
+}
+
+void Node2D::draw_hierarchy() {
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+
+    if (_nodes.empty()) {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (this == g_selected_node) {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    const bool node_open = ImGui::TreeNodeEx(this, flags, _name.c_str());
+
+    if (ImGui::IsItemClicked()) {
+        if (g_selected_node == this) {
+            g_selected_node = nullptr;
+        } else {
+            g_selected_node = this;
+        }
+    }
+
+    if (node_open) {
+        for (auto& [name, child] : _nodes) {
+            child->draw_hierarchy();
+        }
+        ImGui::TreePop();
+    }
+}
+
 void Node2D::queue_free() {
-    // LOG_INFO("Node2D::free()");
+    LOG_INFO("Node2D::free()");
     _to_free = true;
 }

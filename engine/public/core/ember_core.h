@@ -240,6 +240,9 @@ public:
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
 
+   virtual   Uint32 get_framebuffer_texture() const  {
+       return 0;
+   }
 protected:
     HashMap<BatchKey, Batch> _batches; ///< All batches by key.
 

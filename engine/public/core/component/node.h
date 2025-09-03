@@ -4,6 +4,10 @@
 #include "core/engine_structs.h"
 #include "core/renderer/shader.h"
 #include "transform_node.h"
+#include "core/systems/imgui_manager.h"
+
+
+
 
 enum class ShapeType {
     RECTANGLE,
@@ -71,6 +75,10 @@ public:
 
     virtual void input(const InputManager* input);
 
+    virtual void draw_inspector();
+
+    virtual void draw_hierarchy();
+
     void queue_free();
 
     virtual ~Node2D();
@@ -125,3 +133,6 @@ T* Node2D::get_node() {
 
     return nullptr;
 }
+
+
+inline Node2D* g_selected_node = nullptr;

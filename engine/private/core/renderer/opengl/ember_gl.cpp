@@ -669,7 +669,14 @@ void OpenglRenderer::flush() {
 
 
 void OpenglRenderer::present() {
-    render_fbo();
+    if (GEngine->Config.get_application().is_debug) {
+
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    } else {
+        // render_fbo();
+    }
 
     SDL_GL_SwapWindow(Window);
 }
@@ -695,6 +702,12 @@ void OpenglRenderer::render_fbo() {
 void OpenglRenderer::clear(glm::vec4 color) {
     // commands.clear();
     // batches.clear();
+    if (GEngine->Config.get_application().is_debug) {
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, _frame_buffer_object);
 
