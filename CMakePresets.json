@@ -14,6 +14,7 @@
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Linux",
         "BUILD_SHARED_LIBS": "ON",
+        "WITH_EDITOR": "ON",
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
@@ -37,6 +38,7 @@
         "CMAKE_SYSTEM_NAME": "Darwin",
         "BUILD_SHARED_LIBS": "ON",
         "CMAKE_BUILD_TYPE": "Debug",
+        "WITH_EDITOR": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
     },
@@ -72,6 +74,7 @@
         "CMAKE_SYSTEM_NAME": "iOS",
         "CMAKE_OSX_ARCHITECTURES": "x86_64;arm64",
         "BUILD_SHARED_LIBS": "OFF",
+        "WITH_EDITOR": "ON",
         "CMAKE_OSX_SYSROOT": "iphonesimulator",
         "CMAKE_BUILD_TYPE": "Debug"
       }
@@ -84,6 +87,7 @@
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Emscripten",
         "CMAKE_BUILD_TYPE": "Debug",
+        "WITH_EDITOR": "ON",
         "CURL_DISABLE_INSTALL":"ON"
       }
     },
@@ -105,7 +109,8 @@
       "binaryDir": "${sourceDir}/build/windows/debug",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Windows",
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "WITH_EDITOR": "ON"
       }
     },
     {
