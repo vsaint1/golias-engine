@@ -40,3 +40,15 @@ int get_available_memory();
     @version 1.2.0
 */
 int get_cpu_cores_num();
+
+
+/*!
+    @brief Get MIME type from file extension
+
+    @param ext File extension
+
+    @return MIME type string or "application/octet-stream"
+
+    @version 1.2.0
+*/
+const char* file_extension_to_mime_type(const char* ext);

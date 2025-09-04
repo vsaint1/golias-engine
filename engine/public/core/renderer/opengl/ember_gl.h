@@ -76,6 +76,9 @@ public:
 
     void clear(glm::vec4 color) override;
 
+    Uint32 get_framebuffer_texture() const override {
+        return _fbo_texture;
+    }
 private:
     OpenglShader* _default_shader = nullptr;
     OpenglShader* _fbo_shader    = nullptr;

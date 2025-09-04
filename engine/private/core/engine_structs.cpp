@@ -3,14 +3,14 @@
 #include "core/ember_core.h"
 #include "core/engine.h"
 
-const Color Color::RED         = {255, 0, 0, 255};
-const Color Color::GREEN       = {0, 255, 0, 255};
-const Color Color::BLUE        = {0, 0, 255, 255};
-const Color Color::WHITE       = {255, 255, 255, 255};
-const Color Color::BLACK       = {0, 0, 0, 255};
-const Color Color::YELLOW      = {255, 255, 0, 255};
-const Color Color::CYAN        = {0, 255, 255, 255};
-const Color Color::MAGENTA     = {255, 0, 255, 255};
+const Color Color::RED     = {255, 0, 0, 255};
+const Color Color::GREEN   = {0, 255, 0, 255};
+const Color Color::BLUE    = {0, 0, 255, 255};
+const Color Color::WHITE   = {255, 255, 255, 255};
+const Color Color::BLACK   = {0, 0, 0, 255};
+const Color Color::YELLOW  = {255, 255, 0, 255};
+const Color Color::CYAN    = {0, 255, 255, 255};
+const Color Color::MAGENTA = {255, 0, 255, 255};
 
 
 Texture::~Texture() = default;
@@ -55,7 +55,12 @@ glm::vec4 Color::normalize_color() const {
     return norm_color;
 }
 
-Color Color::to_rgba() const {
+Color Color::to_rgba(float r, float g, float b, float a) const {
+
+    r = r * 255.0f;
+    g = g * 255.0f;
+    b = b * 255.0f;
+    a = a * 255.0f;
 
     return *this;
 }

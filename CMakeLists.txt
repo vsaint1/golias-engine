@@ -29,8 +29,10 @@ endif()
 
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
-
-add_compile_definitions(BUILD_SHIPPING=${BUILD_SHIPPING})
+if(WITH_EDITOR)
+    add_subdirectory(vendor/imgui)
+    add_compile_definitions(WITH_EDITOR)
+endif ()
 
 # [iOS/Emscripten] - disable shared libs
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
@@ -68,7 +70,6 @@ add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/tinyxml)
 
-add_subdirectory(vendor/imgui)
 
 set(GLM_BUILD_LIBRARY OFF CACHE BOOL "" FORCE)
 set(GLM_BUILD_TESTS OFF)

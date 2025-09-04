@@ -17,6 +17,9 @@ void Engine::update(double delta_time) const {
 
     this->_input_manager->update();
 
+    if (this->_time_manager->is_paused())
+        return;
+
     constexpr float fixed_dt = 1.0f / 60.0f;
     b2World_Step(this->_world, SDL_min(delta_time, fixed_dt), 8);
 
@@ -297,8 +300,12 @@ void Engine::shutdown() {
     delete this->_time_manager;
     this->_time_manager = nullptr;
 
+#if defined(WITH_EDITOR)
+
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+
+#endif
 
     if (Config.get_threading().is_multithreaded) {
         Logger::destroy();
@@ -327,6 +334,8 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
 
     mtlRenderer->initialize();
 
+#if defined(WITH_EDITOR)
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -339,6 +348,7 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
 
     // TODO: initialize impl Metal
     ImGui_ImplSDL3_InitForMetal(window);
+#endif
 
     SDL_ShowWindow(window);
 
@@ -455,6 +465,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     glRenderer->initialize();
 
+#if defined(WITH_EDITOR)
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -467,6 +478,8 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
     ImGui::StyleColorsDark();
     ImGui_ImplSDL3_InitForOpenGL(window, glContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
+#endif
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

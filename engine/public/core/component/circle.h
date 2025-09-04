@@ -7,8 +7,8 @@ class Circle2D final : public Node2D {
 public:
 
 
-    explicit Circle2D(float radius = 10.0f, bool fill = false, Color color = Color::WHITE)
-        : _radius(radius), _color(color), _is_filled(fill) {
+    explicit Circle2D(float radius = 10.0f, bool fill = false, const Color& col = Color::WHITE)
+        : _radius(radius), _color(col.normalize_color()), _is_filled(fill) {
     }
 
     void ready() override;
@@ -22,6 +22,7 @@ public:
 private:
     float _radius = 10.0f;
     int _segments = 32;
-    Color _color  = Color::WHITE;
+    glm::vec4 _color  = glm::vec4(1.f);
+
     bool _is_filled = true;
 };

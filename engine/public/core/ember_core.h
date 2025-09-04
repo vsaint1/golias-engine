@@ -240,6 +240,26 @@ public:
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
 
+   virtual   Uint32 get_framebuffer_texture() const  {
+       return 0;
+   }
+
+    virtual HashMap<std::string, std::shared_ptr<Texture>>& get_loaded_textures() {
+        return _textures;
+    }
+
+    virtual std::vector<std::string>& get_loaded_fonts_name() {
+        static std::vector<std::string> font_names;
+        font_names.clear();
+
+        for (const auto& [name, font] : fonts) {
+            font_names.push_back(name);
+        }
+
+        return font_names;
+    }
+
+
 protected:
     HashMap<BatchKey, Batch> _batches; ///< All batches by key.
 

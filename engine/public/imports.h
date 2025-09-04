@@ -30,8 +30,12 @@ using HashMap = std::unordered_map<K, V>;
 #include <miniaudio.h>
 #include <tinyxml2.h>
 
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl3.h"
+// TODO: Disable imgui on builds
+#if defined(WITH_EDITOR)
+    #include "imgui_impl_opengl3.h"
+    #include "imgui_impl_sdl3.h"
+    #include "imgui_internal.h"
+#endif
 
 #include <mutex>
 #include <condition_variable>

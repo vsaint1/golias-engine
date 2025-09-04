@@ -30,8 +30,8 @@ public:
     Engine();
 
     struct {
-        int width                   = 0;
-        int height                  = 0;
+        float width                 = 0;
+        float height                = 0;
         const SDL_DisplayMode* data = nullptr;
         int bbWidth = 0, bbHeight = 0; // backbuffer
         SDL_Window* handle{};

@@ -90,7 +90,7 @@ struct Color {
 
     [[nodiscard]] glm::vec4 normalize_color() const;
 
-    [[nodiscard]] Color to_rgba() const;
+    [[nodiscard]] Color to_rgba(float r, float g, float b, float a) const;
 
     bool operator==(const Color& other) const;
 

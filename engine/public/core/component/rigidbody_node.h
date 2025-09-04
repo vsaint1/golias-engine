@@ -25,6 +25,7 @@ public:
     float friction = 0.3f;
     float density = 1.0f;
     float restitution = 0.0f;
+
     float radius = 16.0f;
     bool is_sensor = false;
     bool is_disabled = false;
@@ -62,6 +63,10 @@ public:
     void on_body_entered(const std::function<void(Node2D*)>& callback);
     void on_body_exited(const std::function<void(Node2D*)>& callback);
 
+    void input(const InputManager* input) override;
+    void draw_inspector() override;
+    void draw_hierarchy() override;
+
     ~RigidBody2D() override;
 
     std::unordered_set<RigidBody2D*> currently_colliding;
@@ -70,6 +75,8 @@ public:
 
 
 private:
+    void update_body();
+    b2ShapeId shape_id = b2_nullShapeId;
     uint8_t layer = 0;          // < (0-15)
     uint16_t collision_mask = 0xFFFF; // 16 bits for layers
 };
