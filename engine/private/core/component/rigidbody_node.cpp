@@ -17,40 +17,58 @@ void RigidBody2D::input(const InputManager* input) {
 void RigidBody2D::draw_inspector() {
     Node2D::draw_inspector();
 #if !defined(WITH_EDITOR)
-
     return;
 #else
+
+    bool needs_update = false;
+
     ImGui::Checkbox("Disabled", &is_disabled);
 
-    const char* body_types[] = {"Static", "Dynamic", "Kinematic"};
-    int type_idx             = static_cast<int>(body_type);
-    if (ImGui::Combo("Body Type", &type_idx, body_types, IM_ARRAYSIZE(body_types))) {
-        body_type = static_cast<BodyType>(type_idx);
+    if (ImGui::CollapsingHeader("Type")) {
+
+        const char* body_types[] = {"Static", "Dynamic", "Kinematic"};
+        int type_idx             = static_cast<int>(body_type);
+        if (ImGui::Combo("Body", &type_idx, body_types, IM_ARRAYSIZE(body_types))) {
+            body_type    = static_cast<BodyType>(type_idx);
+            needs_update = true;
+        }
+
+        const char* shape_types[] = {"Rectangle", "Circle", "Polygon", "Capsule"};
+        int shape_idx             = static_cast<int>(shape_type);
+        if (ImGui::Combo("Shape", &shape_idx, shape_types, IM_ARRAYSIZE(shape_types))) {
+            shape_type   = static_cast<ShapeType>(shape_idx);
+            needs_update = true;
+        }
+
+        if (shape_type == ShapeType::RECTANGLE) {
+            if (ImGui::DragFloat2("Size", &body_size.x, 1.0f, 0.0f, FLT_MAX, "%.2f")) {
+                needs_update = true;
+            }
+        } else if (shape_type == ShapeType::CIRCLE) {
+            if (ImGui::DragFloat("Radius", &radius, 0.5f, 0.0f, FLT_MAX, "%.2f")) {
+                needs_update = true;
+            }
+        }
+
+        if (ImGui::DragFloat2("Offset", &offset.x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
+        }
     }
 
-    const char* shape_types[] = {"Rectangle", "Circle", "Polygon", "Capsule"};
-    int shape_idx             = static_cast<int>(shape_type);
-    if (ImGui::Combo("Shape Type", &shape_idx, shape_types, IM_ARRAYSIZE(shape_types))) {
-        shape_type = static_cast<ShapeType>(shape_idx);
-    }
-
-    if (shape_type == ShapeType::RECTANGLE) {
-        ImGui::DragFloat2("Size", &body_size.x, 1.0f, 0.0f, FLT_MAX, "%.2f");
-    } else if (shape_type == ShapeType::CIRCLE) {
-        ImGui::DragFloat("Radius", &radius, 0.5f, 0.0f, FLT_MAX, "%.2f");
-    }
 
     if (ImGui::CollapsingHeader("Material")) {
-
-        ImGui::DragFloat("Density", &density, 0.1f, 0.0f, FLT_MAX);
-        ImGui::DragFloat("Friction", &friction, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Restitution", &restitution, 0.01f, 0.0f, 1.0f);
+        if (ImGui::DragFloat("Density", &density, 0.1f, 0.0f, FLT_MAX) || ImGui::DragFloat("Friction", &friction, 0.01f, 0.0f, 1.0f)
+            || ImGui::DragFloat("Restitution", &restitution, 0.01f, 0.0f, 1.0f)) {
+            needs_update = true;
+        }
     }
 
-    ImGui::Checkbox("Sensor (?)", &is_sensor);
-    ImGui::Checkbox("Fixed Rotation", &is_fixed_rotation);
+    if (ImGui::Checkbox("Sensor (?)", &is_sensor)) {
+        needs_update = true;
+    }
+    if (ImGui::Checkbox("Fixed Rotation", &is_fixed_rotation)) {
+        needs_update = true;
+    }
 
-    ImGui::DragFloat2("Offset", &offset.x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
     float col[4] = {color.r, color.g, color.b, color.a};
     if (ImGui::ColorEdit4("Debug Color", col)) {
@@ -58,35 +76,39 @@ void RigidBody2D::draw_inspector() {
     }
 
     if (ImGui::CollapsingHeader("Collision")) {
-
         int l = static_cast<int>(layer);
         if (ImGui::InputInt("Layer", &l)) {
             if (l >= 0 && l < 16) {
-                layer = static_cast<uint8_t>(l);
+                layer        = static_cast<uint8_t>(l);
+                needs_update = true;
             }
         }
 
         ImGui::Text("Mask");
         for (int i = 0; i < 16; i++) {
             bool bit = (collision_mask & (1 << i)) != 0;
-
             if (ImGui::Checkbox(("" + std::to_string(i)).c_str(), &bit)) {
                 if (bit) {
                     collision_mask |= (1 << i);
                 } else {
                     collision_mask &= ~(1 << i);
                 }
+                needs_update = true;
             }
 
-            // Arrange in 4 columns
             if (i % 4 != 3) {
                 ImGui::SameLine();
             }
         }
     }
-#endif
 
+    if (needs_update) {
+        update_body();
+    }
+
+#endif
 }
+
 
 void RigidBody2D::draw_hierarchy() {
     Node2D::draw_hierarchy();
@@ -176,7 +198,7 @@ void RigidBody2D::ready() {
     if (shape_type == ShapeType::RECTANGLE) {
         b2Polygon shape = b2MakeBox(body_size.x * METERS_PER_PIXEL * 0.5f, body_size.y * METERS_PER_PIXEL * 0.5f);
 
-        b2CreatePolygonShape(body_id, &shapeDef, &shape);
+        shape_id = b2CreatePolygonShape(body_id, &shapeDef, &shape);
     }
 
     if (shape_type == ShapeType::CIRCLE) {
@@ -184,7 +206,7 @@ void RigidBody2D::ready() {
         shape.center = {0, 0};
         shape.radius = radius * METERS_PER_PIXEL;
 
-        b2CreateCircleShape(body_id, &shapeDef, &shape);
+        shape_id = b2CreateCircleShape(body_id, &shapeDef, &shape);
     }
 
     b2Body_SetUserData(body_id, this);
@@ -222,7 +244,6 @@ void RigidBody2D::draw(Renderer* renderer) {
         } else if (shape_type == ShapeType::CIRCLE) {
             renderer->draw_circle(pos.x, pos.y, get_transform().rotation, radius, color, true, 32, 1000);
         }
-
     }
 }
 
@@ -230,6 +251,46 @@ RigidBody2D::~RigidBody2D() {
     GEngine->get_system<PhysicsManager>()->unregister_body(this);
 }
 
+void RigidBody2D::update_body() {
+    if (!B2_IS_NON_NULL(body_id)) {
+        return;
+    }
+
+
+    b2Body_SetType(body_id, (body_type == BodyType::STATIC)    ? b2_staticBody
+                            : (body_type == BodyType::DYNAMIC) ? b2_dynamicBody
+                                                               : b2_kinematicBody);
+
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+    shapeDef.filter.categoryBits = 1 << layer;
+    shapeDef.filter.maskBits     = collision_mask;
+
+    shapeDef.density              = density;
+    shapeDef.material.friction    = friction;
+    shapeDef.material.restitution = restitution;
+    shapeDef.isSensor             = is_sensor;
+
+    if (body_type == BodyType::DYNAMIC) {
+        b2Body_SetFixedRotation(body_id, is_fixed_rotation);
+    }
+
+    if (shape_type == ShapeType::RECTANGLE) {
+        b2Polygon shape = b2MakeBox(body_size.x * METERS_PER_PIXEL * 0.5f, body_size.y * METERS_PER_PIXEL * 0.5f);
+
+        b2DestroyShape(shape_id, false);
+        shape_id = b2CreatePolygonShape(body_id, &shapeDef, &shape);
+    }
+
+
+    if (shape_type == ShapeType::CIRCLE) {
+        b2Circle shape;
+        shape.center = {0, 0};
+        shape.radius = radius * METERS_PER_PIXEL;
+        b2DestroyShape(shape_id, false);
+        shape_id = b2CreateCircleShape(body_id, &shapeDef, &shape);
+    }
+}
 
 void RigidBody2D::apply_impulse(const glm::vec2& impulse) const {
     if (B2_IS_NON_NULL(body_id)) {
