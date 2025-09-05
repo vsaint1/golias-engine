@@ -215,7 +215,7 @@ void Node2D::draw_inspector() {
         return;
     }
 
-    ImGui::Text("Name: %s", _name.c_str());
+    ImGui::Text("%s",typeid(*this).name());
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {

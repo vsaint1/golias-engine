@@ -12,11 +12,11 @@
  */
 class PhysicsManager final : public EngineManager {
 public:
-    std::unordered_set<RigidBody2D*> rigid_bodies;
+    std::unordered_set<PhysicsObject2D*> rigid_bodies;
 
-    void register_body(RigidBody2D* body);
+    void register_body(PhysicsObject2D* body);
 
-    void unregister_body(RigidBody2D* body);
+    void unregister_body(PhysicsObject2D* body);
 
     bool initialize() override;
 
