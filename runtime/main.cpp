@@ -15,10 +15,12 @@ GameContext ctx;
 SDL_Event e;
 
 const float MOVE_SPEED = 200.0f; // px/s
-const float JUMP_FORCE = 10.0f; // px impulse
+const float JUMP_FORCE = 2.0f; // px impulse
 
 
 void game_update() {
+    const double dt = GEngine->time_manager()->get_delta_time();
+
     while (SDL_PollEvent(&e)) {
 #if defined(WITH_EDITOR)
         ImGui_ImplSDL3_ProcessEvent(&e);
@@ -29,23 +31,24 @@ void game_update() {
         GEngine->input_manager()->process_event(e);
     }
 
-    const bool* state = SDL_GetKeyboardState(nullptr);
-    const double dt   = GEngine->time_manager()->get_delta_time();
 
     glm::vec2 vel = ctx.player->get_velocity();
-    if (state[SDL_SCANCODE_A]) {
+
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_A)) {
         vel.x -= MOVE_SPEED * dt;
     }
-    if (state[SDL_SCANCODE_D]) {
+
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_D)) {
         vel.x += MOVE_SPEED * dt;
     }
+
     ctx.player->set_velocity(vel);
 
-    if (state[SDL_SCANCODE_SPACE] && ctx.player->is_on_ground()) {
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_SPACE) && ctx.player->is_on_ground()) {
         ctx.player->apply_impulse({0.0f, JUMP_FORCE});
     }
 
-    GEngine->update(dt);
+    GEngine->update();
     ctx.root->ready();
     ctx.root->process(dt);
 
@@ -67,6 +70,8 @@ int main(int argc, char* argv[]) {
 
     const auto renderer = GEngine->get_renderer();
     ctx.renderer        = renderer;
+
+    GEngine->time_manager()->print_debug_info();
 
     if (!renderer->load_font("fonts/Minecraft.ttf", "mine", 16)) {
         return SDL_APP_FAILURE;
