@@ -15,7 +15,7 @@ GameContext ctx;
 SDL_Event e;
 
 const float MOVE_SPEED = 200.0f; // px/s
-const float JUMP_FORCE = 2.0f; // px impulse
+const float JUMP_FORCE = 10.0f; // px impulse
 
 
 void game_update() {
@@ -59,6 +59,8 @@ void game_update() {
     draw_editor(ctx.root);
 
     ctx.renderer->present();
+
+    // GEngine->time_manager()->limit_frame_rate();
 }
 
 
