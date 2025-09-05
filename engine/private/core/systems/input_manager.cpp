@@ -601,7 +601,7 @@ void InputManager::update_key_states() {
 
     // Add new keys that were pressed this frame
     for (SDL_Scancode key : _keys_this_frame) {
-        if (_key_states.find(key) == _key_states.end()) {
+        if (!_key_states.contains(key)) {
             _key_states[key]      = InputState::PRESSED;
             _prev_key_states[key] = false;
         }
@@ -610,6 +610,7 @@ void InputManager::update_key_states() {
 
 void InputManager::update_mouse_states() {
     Uint32 mouse_state = SDL_GetMouseState(&_mouse_position.x, &_mouse_position.y);
+
 
     // Update all mouse button states
     std::vector<MouseButton> buttons = {MouseButton::LEFT, MouseButton::MIDDLE, MouseButton::RIGHT, MouseButton::BUTTON_X1,

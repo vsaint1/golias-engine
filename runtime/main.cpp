@@ -8,7 +8,7 @@ struct GameContext {
     Node2D* root;
     RigidBody2D* player;
     Renderer* renderer;
-    Label* colliding;
+    Control* ui_node;
 };
 
 GameContext ctx;
@@ -53,6 +53,7 @@ void game_update() {
     ctx.root->process(dt);
 
     ctx.renderer->clear({0.2f, 0.3f, 0.3f, 1.0f});
+    ctx.root->input(GEngine->input_manager());
     ctx.root->draw(ctx.renderer);
     ctx.renderer->flush();
 
@@ -101,13 +102,25 @@ int main(int argc, char* argv[]) {
     player_sprite->set_z_index(10);
     player->add_child("Sprite", player_sprite);
 
-    Label* colliding = new Label("mine", "colliding");
-    colliding->set_text("Colliding with: None");
-    colliding->set_transform({{10, 20}, {1.f, 1.f}, 0.0f});
-    ctx.colliding = colliding;
+    Control* ui_control = new Control();
 
+    Button* test_button         = new Button("Hello world", glm::vec2(10, 5), glm::vec2(90, 30));
+    test_button->on_hover_enter = [] { LOG_INFO("im entering"); };
+    test_button->on_pressed     = [] { LOG_INFO("clicked"); };
+
+    Label* colliding = new Label("mine", "colliding");
+
+    colliding->set_text("Colliding with: None");
+    colliding->set_transform({{10, 50}, {1.f, 1.f}, 0.0f});
+
+    ui_control->add_child("Button", test_button);
+    ui_control->add_child("Label", colliding);
+
+    ctx.ui_node = ui_control;
+
+
+    root->add_child("UI", ui_control);
     root->add_child("Player", player);
-    root->add_child("CollidingTxt", colliding);
     root->add_child("Ground", ground);
 
     player->on_body_entered([&](const Node2D* other) {
@@ -117,6 +130,7 @@ int main(int argc, char* argv[]) {
             }
         }
     });
+
     player->on_body_exited([&](const Node2D* _) {
         if (colliding) {
             colliding->set_text("Colliding with: None");
