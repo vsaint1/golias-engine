@@ -9,13 +9,13 @@ bool PhysicsManager::initialize() {
     return true;
 }
 
-void PhysicsManager::register_body(RigidBody2D* body) {
+void PhysicsManager::register_body(PhysicsObject2D* body) {
     if (body) {
         this->rigid_bodies.insert(body);
     }
 }
 
-void PhysicsManager::unregister_body(RigidBody2D* body) {
+void PhysicsManager::unregister_body(PhysicsObject2D* body) {
     if (body) {
         rigid_bodies.erase(body);
     }
@@ -23,7 +23,7 @@ void PhysicsManager::unregister_body(RigidBody2D* body) {
 
 
 void PhysicsManager::update(double delta_time) {
-    for (RigidBody2D* body : rigid_bodies) {
+    for (PhysicsObject2D* body : rigid_bodies) {
         if (!body || !B2_IS_NON_NULL(body->body_id)) {
             continue;
         }
@@ -32,28 +32,28 @@ void PhysicsManager::update(double delta_time) {
         b2ContactData contacts[16];
         int numContacts = b2Body_GetContactData(body->body_id, contacts, 16);
 
-        std::unordered_set<RigidBody2D*> collidingWith;
+        std::unordered_set<PhysicsObject2D*> collidingWith;
 
         for (int i = 0; i < numContacts; ++i) {
             b2BodyId bodyA = b2Shape_GetBody(contacts[i].shapeIdA);
             b2BodyId bodyB = b2Shape_GetBody(contacts[i].shapeIdB);
 
-            RigidBody2D* rbA = static_cast<RigidBody2D*>(b2Body_GetUserData(bodyA));
-            RigidBody2D* rbB = static_cast<RigidBody2D*>(b2Body_GetUserData(bodyB));
+            PhysicsObject2D* rbA = static_cast<PhysicsObject2D*>(b2Body_GetUserData(bodyA));
+            PhysicsObject2D* rbB = static_cast<PhysicsObject2D*>(b2Body_GetUserData(bodyB));
 
             if (!rbA || !rbB) {
                 continue;
             }
 
-            RigidBody2D* other = (rbA == body) ? rbB : rbA;
+            PhysicsObject2D* other = (rbA == body) ? rbB : rbA;
 
             collidingWith.insert(other);
         }
 
-        for (RigidBody2D* other : collidingWith) {
-            if (!body->currently_colliding.contains(other)) {
-                body->currently_colliding.insert(other);
-                other->currently_colliding.insert(body);
+        for (PhysicsObject2D* other : collidingWith) {
+            if (!body->overlapping.contains(other)) {
+                body->overlapping.insert(other);
+                other->overlapping.insert(body);
 
                 for (auto& cb : body->on_enter_callbacks) {
                     cb(other);
@@ -64,16 +64,16 @@ void PhysicsManager::update(double delta_time) {
             }
         }
 
-        std::vector<RigidBody2D*> exited;
-        for (RigidBody2D* other : body->currently_colliding) {
+        std::vector<PhysicsObject2D*> exited;
+        for (PhysicsObject2D* other : body->overlapping) {
             if (!collidingWith.contains(other)) {
                 exited.push_back(other);
             }
         }
 
-        for (RigidBody2D* other : exited) {
-            body->currently_colliding.erase(other);
-            other->currently_colliding.erase(body);
+        for (PhysicsObject2D* other : exited) {
+            body->overlapping.erase(other);
+            other->overlapping.erase(body);
 
             for (auto& cb : body->on_exit_callbacks) {
                 cb(other);

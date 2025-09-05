@@ -50,7 +50,7 @@ endif()
 
 
 # [SOURCE_FILES] - add all game source files
-file(GLOB_RECURSE SOURCES "game/*.cpp" "game/*.c")
+file(GLOB_RECURSE SOURCES "runtime/*.cpp" "runtime/*.c")
 
 
 add_subdirectory(vendor/glad)

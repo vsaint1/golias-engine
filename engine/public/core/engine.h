@@ -121,7 +121,7 @@ public:
      *
      * @version 0.0.1
      */
-    void update(double delta_time) const;
+    void update(double delta_time = 0);
 
     /*! @brief Get the created physics world.
      *
@@ -141,6 +141,8 @@ public:
     T* get_system();
 
 private:
+    double _physics_accumulator = 0.0;
+
     std::vector<std::unique_ptr<EngineManager>> _systems{};
 
     Renderer* _renderer          = nullptr;

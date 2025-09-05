@@ -19,27 +19,36 @@ const float JUMP_FORCE = 10.0f; // px impulse
 
 
 void game_update() {
+    const double dt = GEngine->time_manager()->get_delta_time();
+
     while (SDL_PollEvent(&e)) {
 #if defined(WITH_EDITOR)
         ImGui_ImplSDL3_ProcessEvent(&e);
 #endif
-        if (e.type == SDL_EVENT_QUIT) { GEngine->is_running = false; }
+        if (e.type == SDL_EVENT_QUIT) {
+            GEngine->is_running = false;
+        }
         GEngine->input_manager()->process_event(e);
     }
 
-    const bool* state = SDL_GetKeyboardState(nullptr);
-    const double dt   = GEngine->time_manager()->get_delta_time();
 
     glm::vec2 vel = ctx.player->get_velocity();
-    if (state[SDL_SCANCODE_A]) vel.x -= MOVE_SPEED * dt;
-    if (state[SDL_SCANCODE_D]) vel.x += MOVE_SPEED * dt;
+
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_A)) {
+        vel.x -= MOVE_SPEED * dt;
+    }
+
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_D)) {
+        vel.x += MOVE_SPEED * dt;
+    }
+
     ctx.player->set_velocity(vel);
 
-    if (state[SDL_SCANCODE_SPACE] && ctx.player->is_on_ground()) {
+    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_SPACE) && ctx.player->is_on_ground()) {
         ctx.player->apply_impulse({0.0f, JUMP_FORCE});
     }
 
-    GEngine->update(dt);
+    GEngine->update();
     ctx.root->ready();
     ctx.root->process(dt);
 
@@ -50,6 +59,8 @@ void game_update() {
     draw_editor(ctx.root);
 
     ctx.renderer->present();
+
+    // GEngine->time_manager()->limit_frame_rate();
 }
 
 
@@ -62,6 +73,8 @@ int main(int argc, char* argv[]) {
     const auto renderer = GEngine->get_renderer();
     ctx.renderer        = renderer;
 
+    GEngine->time_manager()->print_debug_info();
+
     if (!renderer->load_font("fonts/Minecraft.ttf", "mine", 16)) {
         return SDL_APP_FAILURE;
     }
@@ -72,30 +85,30 @@ int main(int argc, char* argv[]) {
     Node2D* root = new Node2D("Root");
     ctx.root     = root;
 
-    RigidBody2D* ground = new RigidBody2D();
-    ground->body_size   = glm::vec2(320, 20.0f);
-    ground->set_transform({glm::vec2(160, 160), glm::vec2(1.f), 0.0f});
-    root->add_child("Ground", ground);
 
-    RigidBody2D* player = new RigidBody2D();
-    player->body_type   = BodyType::DYNAMIC;
-    player->body_size   = {16, 16};
-    player->shape_type  = ShapeType::CIRCLE;
-    player->radius      = 8.0f;
+    RigidBody2D* ground     = new RigidBody2D();
+    ground->collision_shape = std::make_unique<RectangleShape>(glm::vec2(320, 32));
+    ground->set_transform({glm::vec2(160, 160), glm::vec2(1.f), 0.0f});
+
+    RigidBody2D* player     = new RigidBody2D();
+    player->collision_shape = std::make_unique<CircleShape>(8.f, BodyType::DYNAMIC);
     player->set_transform({{50, 50}, {1.f, 1.f}, 0.0f});
+
     ctx.player = player;
 
     Sprite2D* player_sprite = new Sprite2D(sample_texture2);
     player_sprite->set_region({0, 0, 32, 32}, {32, 32});
     player_sprite->set_z_index(10);
     player->add_child("Sprite", player_sprite);
-    root->add_child("Player", player);
 
     Label* colliding = new Label("mine", "colliding");
     colliding->set_text("Colliding with: None");
     colliding->set_transform({{10, 20}, {1.f, 1.f}, 0.0f});
     ctx.colliding = colliding;
+
+    root->add_child("Player", player);
     root->add_child("CollidingTxt", colliding);
+    root->add_child("Ground", ground);
 
     player->on_body_entered([&](const Node2D* other) {
         if (other) {

@@ -11,20 +11,25 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
-void Engine::update(double delta_time) const {
+constexpr double FIXED_TIMESTEP = 1.0 / 60.0;
+constexpr double MAX_FRAME_TIME = 0.25;
+
+void Engine::update(double delta_time) {
+
+    if (this->_time_manager->is_paused()) {
+        return;
+    }
 
     this->_time_manager->update();
 
+    const double dt = this->_time_manager->get_delta_time();
+
+    b2World_Step(this->_world, SDL_min(dt, FIXED_TIMESTEP), 4);
+
     this->_input_manager->update();
 
-    if (this->_time_manager->is_paused())
-        return;
-
-    constexpr float fixed_dt = 1.0f / 60.0f;
-    b2World_Step(this->_world, SDL_min(delta_time, fixed_dt), 8);
-
     for (const auto& system : _systems) {
-        system->update(delta_time);
+        system->update();
     }
 }
 
@@ -42,7 +47,7 @@ Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, 
 
     if (type == Backend::METAL) {
         LOG_WARN("Metal renderer is not fully supported yet");
-        return _create_renderer_metal(window,view_width,view_height);
+        return _create_renderer_metal(window, view_width, view_height);
     }
 
 
@@ -277,7 +282,6 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     this->_time_manager->set_target_fps(Config.get_application().max_fps);
 
-
     return true;
 }
 
@@ -315,7 +319,7 @@ void Engine::shutdown() {
 
     SDL_DestroyWindow(Window.handle);
 
-    for (const auto&  system : _systems) {
+    for (const auto& system : _systems) {
         system->shutdown();
     }
 
@@ -496,7 +500,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
 
 b2Vec2 pixels_to_world(const glm::vec2& pixel_pos) {
-    const  float viewportHeight = GEngine->Config.get_viewport().height;
+    const float viewportHeight = GEngine->Config.get_viewport().height;
     return b2Vec2(pixel_pos.x * METERS_PER_PIXEL, (viewportHeight - pixel_pos.y) * METERS_PER_PIXEL);
 }
 

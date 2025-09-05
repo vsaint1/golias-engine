@@ -1,4 +1,4 @@
-#include "../../../public/core/systems/time_manager.h"
+#include  "core/systems/time_manager.h"
 
 TimeManager::TimeManager() {
     _frequency = SDL_GetPerformanceFrequency();
@@ -89,20 +89,27 @@ void TimeManager::toggle_pause() {
 void TimeManager::limit_frame_rate() {
     if (_target_fps == 0) return;
 
-    float frame_time = static_cast<float>(_current_tick - _last_tick) / _frequency;
-    float sleep_time = _target_frame_time - frame_time;
+    double frame_time = static_cast<double>(SDL_GetPerformanceCounter() - _last_tick) / _frequency;
 
-    if (sleep_time > 0.0f) {
-        Uint32 sleep_ms = static_cast<Uint32>(sleep_time * 1000.0f);
-        if (sleep_ms > 0) {
-            SDL_Delay(sleep_ms);
-            _current_tick = SDL_GetPerformanceCounter();
-        }
+    double sleep_time = _target_frame_time - frame_time;
+    static double leftover_time = 0.0;
+    sleep_time += leftover_time;
+
+    if (sleep_time > 0.0) {
+        Uint32 sleep_ms = static_cast<Uint32>(sleep_time * 1000.0);
+        if (sleep_ms > 0) SDL_Delay(sleep_ms);
+
+        double slept = sleep_ms / 1000.0;
+        leftover_time = sleep_time - slept;
+    } else {
+        leftover_time = 0.0;
     }
+
+    _current_tick = SDL_GetPerformanceCounter();
 }
 
 void TimeManager::update() {
-    _current_tick = SDL_GetPerformanceCounter();
+    _current_tick   = SDL_GetPerformanceCounter();
     _raw_delta_time = static_cast<float>(_current_tick - _last_tick) / _frequency;
     _raw_delta_time = _raw_delta_time > _max_delta_time ? _max_delta_time : _raw_delta_time;
 

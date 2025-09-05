@@ -107,11 +107,11 @@ void draw_viewport(float width, float height) {
                  viewport_size, ImVec2(0, 1), ImVec2(1, 0));
 
     // Overlay info
-    ImGui::SetCursorScreenPos(centered_pos);
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddText(ImVec2(centered_pos.x + 10, centered_pos.y + 10),
-                       IM_COL32(255, 255, 0, 255),
-                       std::format("FPS: {:.1f}", ImGui::GetIO().Framerate).c_str());
+    // ImGui::SetCursorScreenPos(centered_pos);
+    // ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    // draw_list->AddText(ImVec2(centered_pos.x + 10, centered_pos.y + 10),
+    //                    IM_COL32(255, 255, 0, 255),
+    //                    std::format("FPS: {:.1f}", ImGui::GetIO().Framerate).c_str());
 
     if (ImGui::IsWindowHovered()) {
         ImVec2 mouse_pos = ImGui::GetMousePos();
