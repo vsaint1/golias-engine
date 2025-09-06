@@ -80,6 +80,10 @@ int main(int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
+    if (!renderer->load_font("fonts/Default.ttf", "Default", 16)) {
+        return SDL_APP_FAILURE;
+    }
+
     // ---- Scene setup ----
     auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
 
@@ -104,11 +108,18 @@ int main(int argc, char* argv[]) {
 
     Control* ui_control = new Control();
 
-    Button* test_button         = new Button("Hello world", glm::vec2(10, 5), glm::vec2(90, 30));
-    test_button->on_hover_enter = [] { LOG_INFO("im entering"); };
-    test_button->on_pressed     = [] { LOG_INFO("clicked"); };
+    Button* test_button      = new Button("Olá [color=#FF0000] Mundo [/color]", glm::vec2(10, 5));
+    test_button->on_enter    = [&] {
 
-    Label* colliding = new Label("mine", "colliding");
+        test_button->text = "Hovered";
+    };
+
+
+    test_button->on_pressed  = [&] {
+        test_button->text = "i clicked THIS";
+    };
+
+    Label* colliding = new Label("Default", "colliding");
 
     colliding->set_text("Colliding with: None");
     colliding->set_transform({{10, 50}, {1.f, 1.f}, 0.0f});

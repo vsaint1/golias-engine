@@ -6,7 +6,10 @@ struct Style {
     glm::vec4 hover_color      = {0.4f, 0.4f, 0.4f, 1.0f};
     glm::vec4 pressed_color    = {0.2f, 0.6f, 0.8f, 1.0f};
     glm::vec4 text_color       = {1.0f, 1.0f, 1.0f, 1.0f};
-    float corner_radius        = 6.0f;
+    float radius_tl         = 0.0f;
+    float radius_tr         = 0.0f;
+    float radius_br         = 0.0f;
+    float radius_bl         = 0.0f;
     float padding              = 8.0f;
 };
 
@@ -32,6 +35,7 @@ public:
 
 protected:
     Rect2 rect;
+    float rotation = 0.0f;
     Sizei viewport = {0,0};
     glm::vec2 scale = {1.0f, 1.0f};
     Style style;

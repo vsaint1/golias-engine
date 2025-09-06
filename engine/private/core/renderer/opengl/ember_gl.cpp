@@ -32,20 +32,19 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
 
     submit(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation, filled);
 }
-
-
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
     Font font = {};
 
     FileAccess file(file_path, ModeFlags::READ);
     const auto font_buffer = file.get_file_as_bytes();
     if (font_buffer.empty()) {
-        LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
+        LOG_ERROR("Failed to load font file into memory: %s", file_path.c_str());
         return false;
     }
 
     FT_Face face = {};
-    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
+    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()),
+                           static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
         LOG_ERROR("Failed to load font face from memory.");
         return false;
     }
@@ -55,31 +54,47 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     font.font_path = file_path;
     font.font_size = font_size;
 
-    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // ASCII + Latin-1 + basic Cyrillic
+    // Load character ranges: ASCII + Latin-1 + Cyrillic
     std::vector<std::pair<uint32_t, uint32_t>> ranges = {
-        {0x0020, 0x007F}, // Basic Latin
+        {0x0020, 0x007E}, // Basic Latin (printable ASCII)
         {0x00A0, 0x00FF}, // Latin-1 Supplement
+        {0x0100, 0x017F}, // Latin Extended-A
+        {0x0180, 0x024F}, // Latin Extended-B
         {0x0400, 0x04FF}, // Cyrillic
+        {0x1E00, 0x1EFF}, // Latin Extended Additional
+
     };
 
     for (auto [start, end] : ranges) {
         for (uint32_t codepoint = start; codepoint <= end; ++codepoint) {
             if (FT_Load_Char(face, codepoint, FT_LOAD_RENDER)) {
+                LOG_WARN("Failed to load char 0x%X", codepoint);
                 continue;
             }
 
-            int w                 = face->glyph->bitmap.width;
-            int h                 = face->glyph->bitmap.rows;
+            int w = face->glyph->bitmap.width;
+            int h = face->glyph->bitmap.rows;
+
+            // Ensure minimum size for thin glyphs
+            if (w == 0) w = 1;
+            if (h == 0) h = 1;
+
             unsigned char* buffer = face->glyph->bitmap.buffer;
 
-            std::vector<unsigned char> rgba_buffer(w * h * 4);
-            for (int i = 0; i < w * h; ++i) {
-                rgba_buffer[4 * i + 0] = 255;
-                rgba_buffer[4 * i + 1] = 255;
-                rgba_buffer[4 * i + 2] = 255;
-                rgba_buffer[4 * i + 3] = buffer[i];
+            std::vector<unsigned char> rgba_buffer(w * h * 4, 0); // init to transparent
+
+            for (int y = 0; y < face->glyph->bitmap.rows; ++y) {
+                for (int x = 0; x < face->glyph->bitmap.width; ++x) {
+                    int src_idx = y * face->glyph->bitmap.width + x;
+                    int dst_idx = y * w + x;
+
+                    rgba_buffer[4 * dst_idx + 0] = 255;
+                    rgba_buffer[4 * dst_idx + 1] = 255;
+                    rgba_buffer[4 * dst_idx + 2] = 255;
+                    rgba_buffer[4 * dst_idx + 3] = buffer[src_idx];
+                }
             }
 
             GLuint texture_id;
@@ -91,23 +106,29 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            Character character = {texture_id, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                                   static_cast<GLuint>(face->glyph->advance.x)};
+            Character character = {
+                texture_id,
+                glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                static_cast<GLuint>(face->glyph->advance.x)
+            };
 
             _texture_sizes[texture_id] = glm::vec2(w, h);
-            font.characters.insert({codepoint, character});
+            font.characters[codepoint] = character;
         }
     }
 
     FT_Done_Face(face);
     glBindTexture(GL_TEXTURE_2D, 0);
-    fonts[font_alias] = std::move(font);
+
+    fonts[font_alias] = font;
 
     if (current_font_name.empty()) {
         current_font_name = font_alias;
     }
 
-    LOG_INFO("Font loaded: %s, Size %d, Alias %s, (%zu glyphs)", file_path.c_str(), font_size, font_alias.c_str(),
+    LOG_INFO("Font loaded: %s, Size %d, Alias %s, (%zu glyphs)",
+             file_path.c_str(), font_size, font_alias.c_str(),
              fonts[font_alias].characters.size());
 
     return true;

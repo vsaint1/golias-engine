@@ -126,6 +126,8 @@ public:
      */
     virtual bool load_font(const std::string& font_path, const std::string& font_alias, int font_size = 48) = 0;
 
+    virtual glm::vec2 calc_text_size(const std::string& text, float scale, const std::string& font_name);
+
 
     /**
      * @brief Load a texture from disk.
@@ -246,7 +248,7 @@ public:
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
 
-   virtual   Uint32 get_framebuffer_texture() const  {
+   [[nodiscard]] virtual   Uint32 get_framebuffer_texture() const  {
        return 0;
    }
 
