@@ -148,6 +148,12 @@ public:
                                       const Rect2& src_rect, int z_index,
                                       bool flip_h = false, bool flip_v = false, const UberShader& uber_shader = {}) = 0;
 
+
+   virtual void draw_rect_rounded(
+        const Rect2& rect, float rotation, const glm::vec4& color,
+        float radius_tl, float radius_tr, float radius_br, float radius_bl,
+        bool filled, int z_index, int corner_segments = 8) {}
+
     /**
      * @brief Draw a rectangle (filled or outlined).
      */

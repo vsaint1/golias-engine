@@ -33,24 +33,100 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
     submit(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation, filled);
 }
 
+
+bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
+    Font font = {};
+
+    FileAccess file(file_path, ModeFlags::READ);
+    const auto font_buffer = file.get_file_as_bytes();
+    if (font_buffer.empty()) {
+        LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
+        return false;
+    }
+
+    FT_Face face = {};
+    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
+        LOG_ERROR("Failed to load font face from memory.");
+        return false;
+    }
+
+    FT_Set_Pixel_Sizes(face, 0, font_size);
+
+    font.font_path = file_path;
+    font.font_size = font_size;
+
+    // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // ASCII + Latin-1 + basic Cyrillic
+    std::vector<std::pair<uint32_t, uint32_t>> ranges = {
+        {0x0020, 0x007F}, // Basic Latin
+        {0x00A0, 0x00FF}, // Latin-1 Supplement
+        {0x0400, 0x04FF}, // Cyrillic
+    };
+
+    for (auto [start, end] : ranges) {
+        for (uint32_t codepoint = start; codepoint <= end; ++codepoint) {
+            if (FT_Load_Char(face, codepoint, FT_LOAD_RENDER)) {
+                continue;
+            }
+
+            int w                 = face->glyph->bitmap.width;
+            int h                 = face->glyph->bitmap.rows;
+            unsigned char* buffer = face->glyph->bitmap.buffer;
+
+            std::vector<unsigned char> rgba_buffer(w * h * 4);
+            for (int i = 0; i < w * h; ++i) {
+                rgba_buffer[4 * i + 0] = 255;
+                rgba_buffer[4 * i + 1] = 255;
+                rgba_buffer[4 * i + 2] = 255;
+                rgba_buffer[4 * i + 3] = buffer[i];
+            }
+
+            GLuint texture_id;
+            glGenTextures(1, &texture_id);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            Character character = {texture_id, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                                   static_cast<GLuint>(face->glyph->advance.x)};
+
+            _texture_sizes[texture_id] = glm::vec2(w, h);
+            font.characters.insert({codepoint, character});
+        }
+    }
+
+    FT_Done_Face(face);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    fonts[font_alias] = std::move(font);
+
+    if (current_font_name.empty()) {
+        current_font_name = font_alias;
+    }
+
+    LOG_INFO("Font loaded: %s, Size %d, Alias %s, (%zu glyphs)", file_path.c_str(), font_size, font_alias.c_str(),
+             fonts[font_alias].characters.size());
+
+    return true;
+}
+
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
                                const std::string& font_alias, int z_index, const UberShader& uber_shader, int ft_size) {
-
     const std::string& use_font_name = font_alias.empty() ? current_font_name : font_alias;
-
     if (use_font_name.empty()) {
         return;
     }
 
     auto font_it = fonts.find(use_font_name);
-
     if (font_it == fonts.end()) {
         return;
     }
 
     const Font& font  = font_it->second;
     const auto tokens = TextToken::parse_bbcode(text, color);
-
     if (tokens.empty()) {
         return;
     }
@@ -58,40 +134,61 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
     float size_ratio = ft_size > 0 ? static_cast<float>(ft_size) / static_cast<float>(font.font_size) : 1.0f;
     float font_scale = scale * size_ratio;
 
-    float xpos = x, ypos = y;
-
-    float min_x = x, max_x = x, min_y = y, max_y = y;
-
-    const glm::vec2 text_center = glm::vec2((min_x + max_x) * 0.5f, (min_y + max_y) * 0.5f);
+    float xpos = x;
+    float ypos = y;
 
     for (const auto& token : tokens) {
-        const auto& tcolor = token.color;
+        const auto& tcolor      = token.color;
+        const std::string& utf8 = token.text;
 
-        for (const auto& text_ref = token.text; unsigned char c : text_ref) {
-            if (c == '\n') {
+        for (size_t i = 0; i < utf8.size();) {
+            uint32_t codepoint = 0;
+            unsigned char c    = utf8[i];
+
+            // --- UTF-8 decode ---
+            if (c < 0x80) { // 1-byte
+                codepoint = c;
+                i += 1;
+            } else if ((c >> 5) == 0x6 && i + 1 < utf8.size()) { // 2-byte
+                codepoint = ((c & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
+                i += 2;
+            } else if ((c >> 4) == 0xE && i + 2 < utf8.size()) { // 3-byte
+                codepoint = ((c & 0x0F) << 12) | ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
+                i += 3;
+            } else if ((c >> 3) == 0x1E && i + 3 < utf8.size()) { // 4-byte
+                codepoint = ((c & 0x07) << 18) | ((utf8[i + 1] & 0x3F) << 12) | ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
+                i += 4;
+            } else {
+                i += 1; // skip invalid byte
+                continue;
+            }
+
+            if (codepoint == '\n') {
                 xpos = x;
                 ypos += font.font_size * font_scale;
                 continue;
             }
 
-            auto it = font.characters.find(c);
+            auto it = font.characters.find(codepoint);
             if (it == font.characters.end()) {
                 continue;
             }
 
             const Character& ch = it->second;
-            float w             = ch.size.x * font_scale;
-            float h             = ch.size.y * font_scale;
-            float x0            = xpos + ch.bearing.x * font_scale;
-            float y0            = ypos + (font.font_size - ch.bearing.y) * font_scale;
+
+            float w  = ch.size.x * font_scale;
+            float h  = ch.size.y * font_scale;
+            float x0 = xpos + ch.bearing.x * font_scale;
+            float y0 = ypos + (font.font_size - ch.bearing.y) * font_scale;
 
             BatchKey key{ch.texture_id, z_index, DrawCommandType::TEXT, uber_shader};
-            submit(key, x0, y0, w, h, 0, 0, 1, 1, tcolor, 0.0f);
+            submit(key, x0, y0, w, h, 0, 0, 1, 1, tcolor, rotation);
 
             xpos += (ch.advance >> 6) * font_scale;
         }
     }
 }
+
 
 void OpenglRenderer::draw_line(float x1, float y1, float x2, float y2, float width, float rotation, const glm::vec4& color, int z_index) {
     glm::vec2 start(x1, y1);
@@ -188,6 +285,45 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
             batch.indices.push_back(base + next);
         }
     }
+}
+
+void OpenglRenderer::draw_rect_rounded(
+    const Rect2& rect, float rotation, const glm::vec4& color,
+    float radius_tl, float radius_tr, float radius_br, float radius_bl,
+    bool filled, int z_index, int corner_segments)
+{
+
+    if (radius_tl <= 0.0f || radius_tr <= 0.0f || radius_br <= 0.0f || radius_bl <= 0.0f) {
+        draw_rect(rect, rotation, color, filled, z_index);
+        return;
+    }
+
+    radius_tl = SDL_min(radius_tl, SDL_min(rect.width, rect.height) * 0.5f);
+    radius_tr = SDL_min(radius_tr, SDL_min(rect.width, rect.height) * 0.5f);
+    radius_br = SDL_min(radius_br, SDL_min(rect.width, rect.height) * 0.5f);
+    radius_bl = SDL_min(radius_bl, SDL_min(rect.width, rect.height) * 0.5f);
+
+    std::vector<glm::vec2> vertices;
+
+    glm::vec2 topLeft     = {rect.x + radius_tl, rect.y + radius_tl};
+    glm::vec2 topRight    = {rect.x + rect.width - radius_tr, rect.y + radius_tr};
+    glm::vec2 bottomRight = {rect.x + rect.width - radius_br, rect.y + rect.height - radius_br};
+    glm::vec2 bottomLeft  = {rect.x + radius_bl, rect.y + rect.height - radius_bl};
+
+    auto add_corner = [&](glm::vec2 center, float start_angle, float radius) {
+        for (int i = 0; i <= corner_segments; i++) {
+            float t = (float)i / (float)corner_segments;
+            float angle = start_angle + t * glm::half_pi<float>(); // 90deg step
+            vertices.emplace_back(center + glm::vec2(glm::cos(angle), glm::sin(angle)) * radius);
+        }
+    };
+
+    add_corner(topLeft, glm::pi<float>(), radius_tl);
+    add_corner(topRight, 1.5f * glm::pi<float>(), radius_tr);
+    add_corner(bottomRight, 0.0f, radius_br);
+    add_corner(bottomLeft, 0.5f * glm::pi<float>(), radius_bl);
+
+    draw_polygon(vertices, rotation, color, filled, z_index);
 }
 
 void OpenglRenderer::draw_polygon(const std::vector<glm::vec2>& points, float rotation, const glm::vec4& color, bool filled, int z_index) {
@@ -478,84 +614,6 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& file_pa
     return tex->second;
 }
 
-bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
-    Font font = {};
-
-    FileAccess file(file_path, ModeFlags::READ);
-
-    const auto font_buffer = file.get_file_as_bytes();
-
-    if (font_buffer.empty()) {
-        LOG_ERROR("Failed to load font file into memory %s", file_path.c_str());
-        return false;
-    }
-
-    FT_Face face = {};
-
-    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
-        LOG_ERROR("Failed to load font face from memory.");
-        return false;
-    }
-
-
-    FT_Set_Pixel_Sizes(face, 0, font_size);
-    font.font_path = file_path;
-    font.font_size = font_size;
-    // font.face = face;
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    for (unsigned char c = 0; c < 128; c++) {
-
-        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            continue;
-        }
-
-        int w                 = face->glyph->bitmap.width;
-        int h                 = face->glyph->bitmap.rows;
-        unsigned char* buffer = face->glyph->bitmap.buffer;
-        std::vector<unsigned char> rgba_buffer(w * h * 4);
-        for (int i = 0; i < w * h; ++i) {
-            rgba_buffer[4 * i + 0] = 255;
-            rgba_buffer[4 * i + 1] = 255;
-            rgba_buffer[4 * i + 2] = 255;
-            rgba_buffer[4 * i + 3] = buffer[i];
-        }
-
-        GLuint texture_id;
-        glGenTextures(1, &texture_id);
-        glBindTexture(GL_TEXTURE_2D, texture_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_buffer.data());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        Character character = {texture_id, glm::ivec2(w, h), glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                               static_cast<GLuint>(face->glyph->advance.x)};
-
-        _texture_sizes[texture_id] = glm::vec2(w, h);
-
-        font.characters.insert(std::pair<char, Character>(c, character));
-    }
-
-    FT_Done_Face(face);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    fonts[font_alias] = font;
-
-    LOG_INFO(R"(Generated Font Atlas
-    > Texture ID: %d
-    > FontSize %d,
-    > Alias %s
-    > Path: %s)",
-             font.characters.begin()->second.texture_id, font_size, font_alias.c_str(), file_path.c_str());
-
-    if (current_font_name.empty()) {
-        current_font_name = font_alias;
-    }
-
-    return true;
-}
-
 void OpenglRenderer::draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
                                   const Rect2& src_rect, int z_index, bool flip_h, bool flip_v, const UberShader& uber_shader) {
     if (!texture) {
@@ -673,11 +731,11 @@ void OpenglRenderer::flush() {
 void OpenglRenderer::present() {
 #if defined(WITH_EDITOR)
 
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 #else
-        render_fbo();
+    render_fbo();
 #endif
 
     SDL_GL_SwapWindow(Window);
@@ -707,9 +765,9 @@ void OpenglRenderer::clear(glm::vec4 color) {
 
 #if defined(WITH_EDITOR)
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
 
 #endif
 
