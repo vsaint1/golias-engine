@@ -28,7 +28,6 @@ public:
     std::function<void()> on_exit;
     std::function<void()> on_pressed;
 
-    // TODO: this need to be fixed, changing the button affects other ???
     void set_text(const std::string& new_text);
 
     void ready() override;
