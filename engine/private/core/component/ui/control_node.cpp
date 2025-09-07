@@ -16,15 +16,20 @@ void Control::update_layout(const glm::vec2& viewport_size) {
     set_transform({{rect.x + pivot.x, rect.y + pivot.y}, {1.0f, 1.0f}, get_transform().rotation});
 }
 
-void Control::process(double delta_time)  {
-    Node2D::process(delta_time);
-    auto vp = GEngine->Config.get_viewport();
-    viewport.width = vp.width;
-    viewport.height = vp.height;
-
-    update_layout({vp.width, vp.height});
+void Control::set_style(const Style& new_style) {
+    _style = new_style;
 }
 
-void Control::draw(Renderer* renderer)  {
+void Control::process(double delta_time) {
+    Node2D::process(delta_time);
+    auto vp = GEngine->Config.get_viewport();
+
+    if (viewport.width != vp.width || viewport.height != vp.height) {
+        viewport  = {vp.width, vp.height};
+        update_layout({vp.width, vp.height});
+    }
+}
+
+void Control::draw(Renderer* renderer) {
     Node2D::draw(renderer);
 }

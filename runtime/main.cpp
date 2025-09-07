@@ -84,7 +84,6 @@ int main(int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    // ---- Scene setup ----
     auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
 
     Node2D* root = new Node2D("Root");
@@ -108,15 +107,21 @@ int main(int argc, char* argv[]) {
 
     Control* ui_control = new Control();
 
-    Button* test_button      = new Button("Olá [color=#FF0000] Mundo [/color]", glm::vec2(10, 5));
-    test_button->on_enter    = [&] {
+    Button* test_button      = new Button("Save File", glm::vec2(10, 5));
 
-        test_button->text = "Hovered";
+    test_button->on_pressed = [&] {
+        FileAccess save("user://savefile.txt", ModeFlags::WRITE);
+
+        save.store_string("hello world");
+
+        LOG_INFO("Saved file to disk");
+
     };
 
+    Button* test_button2     = new Button("Robson", glm::vec2(300, 5),"mine");
 
-    test_button->on_pressed  = [&] {
-        test_button->text = "i clicked THIS";
+    test_button2->on_enter = [btn = test_button2]() {
+        LOG_INFO("adwadwa");
     };
 
     Label* colliding = new Label("Default", "colliding");
@@ -124,6 +129,7 @@ int main(int argc, char* argv[]) {
     colliding->set_text("Colliding with: None");
     colliding->set_transform({{10, 50}, {1.f, 1.f}, 0.0f});
 
+    ui_control->add_child("Button2", test_button2);
     ui_control->add_child("Button", test_button);
     ui_control->add_child("Label", colliding);
 
@@ -137,7 +143,7 @@ int main(int argc, char* argv[]) {
     player->on_body_entered([&](const Node2D* other) {
         if (other) {
             if (colliding) {
-                colliding->set_text("Colliding with: %s", other->get_name().c_str());
+                colliding->set_text("Colliding with: [color=#AC1C50]%s[/color]", other->get_name().c_str());
             }
         }
     });

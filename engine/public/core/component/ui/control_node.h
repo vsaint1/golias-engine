@@ -29,6 +29,8 @@ public:
 
     glm::vec2 pivot = {0.0f, 0.0f};
 
+    void set_style(const Style& new_style);
+
     void process(double delta_time) override;
 
     void draw(Renderer* renderer) override;
@@ -38,7 +40,9 @@ protected:
     float rotation = 0.0f;
     Sizei viewport = {0,0};
     glm::vec2 scale = {1.0f, 1.0f};
-    Style style;
+    Style _style;
+    bool _is_dirty = false;
+
 private:
 
     void update_layout(const glm::vec2& viewport_size);

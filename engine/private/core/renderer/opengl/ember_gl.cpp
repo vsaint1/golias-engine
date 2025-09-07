@@ -301,7 +301,7 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
 void OpenglRenderer::draw_rect_rounded(const Rect2& rect, float rotation, const glm::vec4& color, float radius_tl, float radius_tr,
                                        float radius_br, float radius_bl, bool filled, int z_index, int corner_segments) {
 
-    if (radius_tl <= 0.0f || radius_tr <= 0.0f || radius_br <= 0.0f || radius_bl <= 0.0f) {
+    if (radius_tl <= 0.0f && radius_tr <= 0.0f && radius_br <= 0.0f && radius_bl <= 0.0f) {
         draw_rect(rect, rotation, color, filled, z_index);
         return;
     }
