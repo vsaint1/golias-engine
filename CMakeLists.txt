@@ -63,7 +63,7 @@ add_subdirectory(vendor/freetype)
 
 
 # [SDL] - removing unused modules
-set(SDL_RENDER OFF CACHE BOOL "" FORCE)
+set(SDL_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
 set(SDL_DIRECTX OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
@@ -86,6 +86,7 @@ set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(vendor/mbedtls)
 
+
 set(MBEDX509_LIBRARY mbedx509)
 set(MBEDCRYPTO_LIBRARY mbedcrypto)
 set(MBEDTLS_LIBRARY mbedtls)
@@ -94,6 +95,7 @@ set(MBEDTLS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/mbedtls/include)
 set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/json)

@@ -1,7 +1,7 @@
 #include "core/systems/input_manager.h"
 
-#include "core/systems/logging_sys.h"
 #include "core/engine.h"
+#include "core/systems/logging_sys.h"
 
 
 GamepadInfo::~GamepadInfo() {
@@ -167,10 +167,12 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
 }
 
 #if defined(WITH_EDITOR)
-glm::vec4 get_editor_viewport_rect()  {
+glm::vec4 get_editor_viewport_rect() {
 
     ImGuiWindow* window = ImGui::FindWindowByName("ViewportPane");
-    if (!window) return glm::vec4(0,0,0,0);
+    if (!window) {
+        return glm::vec4(0, 0, 0, 0);
+    }
 
     ImVec2 top_left = window->Pos;
     ImVec2 size     = window->Size;
@@ -197,21 +199,24 @@ void InputManager::process_event(const SDL_Event& event) {
         break;
 
     case SDL_EVENT_MOUSE_MOTION:
-        glm::vec2 raw_pos(event.motion.x, event.motion.y);
+        {
+
+            glm::vec2 raw_pos(event.motion.x, event.motion.y);
 
 #if defined(WITH_EDITOR)
-        glm::vec4 vp = get_editor_viewport_rect();
-        _mouse_position = raw_pos - glm::vec2(vp.x, vp.y);
+            glm::vec4 vp    = get_editor_viewport_rect();
+            _mouse_position = raw_pos - glm::vec2(vp.x, vp.y);
 
-        _mouse_position.x = glm::clamp(_mouse_position.x, 0.0f, vp.z);
-        _mouse_position.y = glm::clamp(_mouse_position.y, 0.0f, vp.w);
+            _mouse_position.x = glm::clamp(_mouse_position.x, 0.0f, vp.z);
+            _mouse_position.y = glm::clamp(_mouse_position.y, 0.0f, vp.w);
 
 #else
-        _mouse_position = raw_pos;
+            _mouse_position = raw_pos;
 #endif
 
-        _mouse_delta = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
-        break;
+            _mouse_delta = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
+            break;
+        }
 
     case SDL_EVENT_MOUSE_WHEEL:
         _mouse_wheel = glm::vec2(event.wheel.x, event.wheel.y);
