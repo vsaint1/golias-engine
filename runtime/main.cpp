@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
 
     Control* ui_control = new Control();
 
-    Button* test_button      = new Button("Save File", glm::vec2(10, 5));
+    Button* test_button      = new Button("Olá, Mundo!", glm::vec2(10, 5));
 
     test_button->on_pressed = [&] {
         FileAccess save("user://savefile.txt", ModeFlags::WRITE);
@@ -120,8 +120,10 @@ int main(int argc, char* argv[]) {
 
     Button* test_button2     = new Button("Robson", glm::vec2(300, 5),"mine");
 
-    test_button2->on_enter = [btn = test_button2]() {
-        LOG_INFO("adwadwa");
+    test_button2->set_disabled(true);
+
+    test_button2->on_enter = [&]() {
+        test_button2->set_text("Yes?");
     };
 
     Label* colliding = new Label("Default", "colliding");

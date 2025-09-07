@@ -4,7 +4,7 @@ glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const s
     glm::vec2 size(0.0f);
 
     const std::string& use_font_name = font_alias.empty() ? "Default" : font_alias;
-    auto it = fonts.find(use_font_name);
+    auto it                          = fonts.find(use_font_name);
     if (it == fonts.end()) {
         return size;
     }
@@ -20,24 +20,7 @@ glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const s
         uint32_t codepoint = 0;
         unsigned char c    = text[i];
 
-        // --- UTF-8 decode ---
-        if (c < 0x80) { // 1-byte
-            codepoint = c;
-            i += 1;
-        } else if ((c >> 5) == 0x6 && i + 1 < text.size()) { // 2-byte
-            codepoint = ((c & 0x1F) << 6) | (text[i + 1] & 0x3F);
-            i += 2;
-        } else if ((c >> 4) == 0xE && i + 2 < text.size()) { // 3-byte
-            codepoint = ((c & 0x0F) << 12) | ((text[i + 1] & 0x3F) << 6) | (text[i + 2] & 0x3F);
-            i += 3;
-        } else if ((c >> 3) == 0x1E && i + 3 < text.size()) { // 4-byte
-            codepoint = ((c & 0x07) << 18) |
-                        ((text[i + 1] & 0x3F) << 12) |
-                        ((text[i + 2] & 0x3F) << 6) |
-                        (text[i + 3] & 0x3F);
-            i += 4;
-        } else {
-            i += 1; // skip invalid byte
+        if (utf8_to_unicode(text, i, codepoint, c)) {
             continue;
         }
 
@@ -56,8 +39,8 @@ glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const s
 
         const Character& ch = glyph_it->second;
 
-        x_cursor   += (ch.advance >> 6) * font_scale;
-        max_height  = SDL_max(max_height, ch.size.y * font_scale);
+        x_cursor += (ch.advance >> 6) * font_scale;
+        max_height = SDL_max(max_height, ch.size.y * font_scale);
     }
 
     size.x = SDL_max(size.x, x_cursor);

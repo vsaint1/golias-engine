@@ -156,21 +156,8 @@ void OpenglRenderer::draw_text(const std::string& text, float x, float y, float 
             uint32_t codepoint = 0;
             unsigned char c    = utf8[i];
 
-            // --- UTF-8 decode ---
-            if (c < 0x80) { // 1-byte
-                codepoint = c;
-                i += 1;
-            } else if ((c >> 5) == 0x6 && i + 1 < utf8.size()) { // 2-byte
-                codepoint = ((c & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
-                i += 2;
-            } else if ((c >> 4) == 0xE && i + 2 < utf8.size()) { // 3-byte
-                codepoint = ((c & 0x0F) << 12) | ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
-                i += 3;
-            } else if ((c >> 3) == 0x1E && i + 3 < utf8.size()) { // 4-byte
-                codepoint = ((c & 0x07) << 18) | ((utf8[i + 1] & 0x3F) << 12) | ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
-                i += 4;
-            } else {
-                i += 1; // skip invalid byte
+
+            if (utf8_to_unicode(utf8, i, codepoint, c)) {
                 continue;
             }
 
