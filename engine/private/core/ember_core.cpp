@@ -1,79 +1,71 @@
 #include "core/ember_core.h"
 
-glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const std::string& font_name) {
+glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const std::string& font_alias) {
     glm::vec2 size(0.0f);
 
-    const std::string& use_font_name = font_name.empty() ? current_font_name : font_name;
-    auto it                          = fonts.find(use_font_name);
+    const std::string& use_font_name = font_alias.empty() ? "Default" : font_alias;
+    auto it = fonts.find(use_font_name);
     if (it == fonts.end()) {
         return size;
     }
 
-    const Font& font  = it->second;
-    const auto tokens = TextToken::parse_bbcode(text, glm::vec4(1.0f));
-    if (tokens.empty()) {
-        return size;
-    }
+    const Font& font = it->second;
 
-    float font_scale = scale * 1.f;
-
+    float font_scale   = scale;
     float x_cursor     = 0.0f;
     float max_height   = 0.0f;
     float total_height = 0.0f;
 
-    for (const auto& token : tokens) {
-        const std::string& utf8 = token.text;
+    for (size_t i = 0; i < text.size();) {
+        uint32_t codepoint = 0;
+        unsigned char c    = text[i];
 
-        for (size_t i = 0; i < utf8.size();) {
-            uint32_t codepoint = 0;
-            unsigned char c    = utf8[i];
-
-            if (c < 0x80) {
-                codepoint = c;
-                i += 1;
-            } else if ((c >> 5) == 0x6 && i + 1 < utf8.size()) {
-                codepoint = ((c & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
-                i += 2;
-            } else if ((c >> 4) == 0xE && i + 2 < utf8.size()) {
-                codepoint = ((c & 0x0F) << 12) | ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
-                i += 3;
-            } else if ((c >> 3) == 0x1E && i + 3 < utf8.size()) {
-                codepoint = ((c & 0x07) << 18) | ((utf8[i + 1] & 0x3F) << 12) | ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
-                i += 4;
-            } else {
-                i += 1;
-                continue;
-            }
-
-            if (codepoint == '\n') {
-                size.x = SDL_max(size.x, x_cursor);
-                total_height += max_height;
-                x_cursor   = 0.0f;
-                max_height = 0.0f;
-                continue;
-            }
-
-            auto glyph_it = font.characters.find(codepoint);
-            if (glyph_it == font.characters.end()) {
-                continue;
-            }
-
-            const Character& ch = glyph_it->second;
-
-            float w       = ch.size.x * font_scale;
-            float h       = ch.size.y * font_scale;
-            float x_left  = x_cursor + ch.bearing.x * font_scale;
-            float x_right = x_left + w;
-
-            x_cursor += (ch.advance >> 6) * font_scale;
-            size.x     = SDL_max(size.x, x_right);
-            max_height = SDL_max(max_height, h);
+        // --- UTF-8 decode ---
+        if (c < 0x80) { // 1-byte
+            codepoint = c;
+            i += 1;
+        } else if ((c >> 5) == 0x6 && i + 1 < text.size()) { // 2-byte
+            codepoint = ((c & 0x1F) << 6) | (text[i + 1] & 0x3F);
+            i += 2;
+        } else if ((c >> 4) == 0xE && i + 2 < text.size()) { // 3-byte
+            codepoint = ((c & 0x0F) << 12) | ((text[i + 1] & 0x3F) << 6) | (text[i + 2] & 0x3F);
+            i += 3;
+        } else if ((c >> 3) == 0x1E && i + 3 < text.size()) { // 4-byte
+            codepoint = ((c & 0x07) << 18) |
+                        ((text[i + 1] & 0x3F) << 12) |
+                        ((text[i + 2] & 0x3F) << 6) |
+                        (text[i + 3] & 0x3F);
+            i += 4;
+        } else {
+            i += 1; // skip invalid byte
+            continue;
         }
+
+        if (codepoint == '\n') {
+            size.x = SDL_max(size.x, x_cursor);
+            total_height += max_height;
+            x_cursor   = 0.0f;
+            max_height = 0.0f;
+            continue;
+        }
+
+        auto glyph_it = font.characters.find(codepoint);
+        if (glyph_it == font.characters.end()) {
+            continue;
+        }
+
+        const Character& ch = glyph_it->second;
+
+        x_cursor   += (ch.advance >> 6) * font_scale;
+        max_height  = SDL_max(max_height, ch.size.y * font_scale);
     }
 
+    size.x = SDL_max(size.x, x_cursor);
     size.y = total_height + max_height;
+
     return size;
 }
+
 
 void Renderer::set_view_matrix(const glm::mat4& view_matrix) {
     _view = view_matrix;

@@ -126,7 +126,7 @@ public:
      */
     virtual bool load_font(const std::string& font_path, const std::string& font_alias, int font_size = 48) = 0;
 
-    virtual glm::vec2 calc_text_size(const std::string& text, float scale, const std::string& font_name);
+    virtual glm::vec2 calc_text_size(const std::string& text, float scale, const std::string& font_alias);
 
 
     /**
@@ -274,7 +274,6 @@ protected:
     FT_Library _ft = {}; ///< FreeType library instance.
 
     HashMap<std::string, Font> fonts; ///< Loaded fonts.
-    std::string current_font_name; ///< Currently selected font alias.
 
     glm::mat4 _projection = glm::mat4(1.f); ///< Projection matrix.
     glm::mat4 _view       = glm::mat4(1.f); ///< View matrix.
@@ -283,11 +282,6 @@ protected:
 
     HashMap<Uint32, glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
 
-    /**
-    * @brief Set the current font to use for rendering.
-    * @param font_name Alias of the font to use.
-    */
-    virtual void set_default_font(const std::string& font_name) = 0;
 
     /**
      * @brief Rotate a point around a center point.

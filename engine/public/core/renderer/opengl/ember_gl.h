@@ -45,8 +45,6 @@ public:
 
     bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
-    void set_default_font(const std::string& font_name) override;
-
     void unload_font(const Font& font) override;
 
     void unload_texture(Uint32 id) override;

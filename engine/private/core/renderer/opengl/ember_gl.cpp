@@ -18,13 +18,6 @@ std::shared_ptr<Texture> OpenglRenderer::get_texture(const std::string& path) {
     return it->second;
 }
 
-void OpenglRenderer::set_default_font(const std::string& font_name) {
-    if (fonts.contains(font_name)) {
-        current_font_name = font_name;
-    } else {
-        LOG_ERROR("Font not found: %s", font_name.c_str());
-    }
-}
 
 void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) {
 
@@ -32,6 +25,7 @@ void OpenglRenderer::draw_rect(Rect2 rect, float rotation, const glm::vec4& colo
 
     submit(key, rect.x, rect.y, rect.width, rect.height, 0, 0, 1, 1, color, rotation, filled);
 }
+
 bool OpenglRenderer::load_font(const std::string& file_path, const std::string& font_alias, int font_size) {
     Font font = {};
 
@@ -43,8 +37,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
     }
 
     FT_Face face = {};
-    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()),
-                           static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
+    if (FT_New_Memory_Face(_ft, reinterpret_cast<const FT_Byte*>(font_buffer.data()), static_cast<FT_Long>(font_buffer.size()), 0, &face)) {
         LOG_ERROR("Failed to load font face from memory.");
         return false;
     }
@@ -78,8 +71,12 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
             int h = face->glyph->bitmap.rows;
 
             // Ensure minimum size for thin glyphs
-            if (w == 0) w = 1;
-            if (h == 0) h = 1;
+            if (w == 0) {
+                w = 1;
+            }
+            if (h == 0) {
+                h = 1;
+            }
 
             unsigned char* buffer = face->glyph->bitmap.buffer;
 
@@ -106,12 +103,9 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            Character character = {
-                texture_id,
-                glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-                glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                static_cast<GLuint>(face->glyph->advance.x)
-            };
+            Character character = {texture_id, glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+                                   glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+                                   static_cast<GLuint>(face->glyph->advance.x)};
 
             _texture_sizes[texture_id] = glm::vec2(w, h);
             font.characters[codepoint] = character;
@@ -123,12 +117,8 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
     fonts[font_alias] = font;
 
-    if (current_font_name.empty()) {
-        current_font_name = font_alias;
-    }
 
-    LOG_INFO("Font loaded: %s, Size %d, Alias %s, (%zu glyphs)",
-             file_path.c_str(), font_size, font_alias.c_str(),
+    LOG_INFO("Font loaded: %s, Size %d, Alias %s, (%zu glyphs)", file_path.c_str(), font_size, font_alias.c_str(),
              fonts[font_alias].characters.size());
 
     return true;
@@ -136,7 +126,7 @@ bool OpenglRenderer::load_font(const std::string& file_path, const std::string& 
 
 void OpenglRenderer::draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
                                const std::string& font_alias, int z_index, const UberShader& uber_shader, int ft_size) {
-    const std::string& use_font_name = font_alias.empty() ? current_font_name : font_alias;
+    const std::string& use_font_name = font_alias.empty() ? "Default" : font_alias;
     if (use_font_name.empty()) {
         return;
     }
@@ -308,11 +298,8 @@ void OpenglRenderer::draw_circle(float center_x, float center_y, float rotation,
     }
 }
 
-void OpenglRenderer::draw_rect_rounded(
-    const Rect2& rect, float rotation, const glm::vec4& color,
-    float radius_tl, float radius_tr, float radius_br, float radius_bl,
-    bool filled, int z_index, int corner_segments)
-{
+void OpenglRenderer::draw_rect_rounded(const Rect2& rect, float rotation, const glm::vec4& color, float radius_tl, float radius_tr,
+                                       float radius_br, float radius_bl, bool filled, int z_index, int corner_segments) {
 
     if (radius_tl <= 0.0f || radius_tr <= 0.0f || radius_br <= 0.0f || radius_bl <= 0.0f) {
         draw_rect(rect, rotation, color, filled, z_index);
@@ -333,7 +320,7 @@ void OpenglRenderer::draw_rect_rounded(
 
     auto add_corner = [&](glm::vec2 center, float start_angle, float radius) {
         for (int i = 0; i <= corner_segments; i++) {
-            float t = (float)i / (float)corner_segments;
+            float t     = (float) i / (float) corner_segments;
             float angle = start_angle + t * glm::half_pi<float>(); // 90deg step
             vertices.emplace_back(center + glm::vec2(glm::cos(angle), glm::sin(angle)) * radius);
         }
@@ -485,6 +472,10 @@ void OpenglRenderer::initialize() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 #pragma endregion
+
+    if (!this->load_font("fonts/Default.ttf", "Default", 16)) {
+        LOG_WARN("Failed to load default font.");
+    }
 }
 
 void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {
