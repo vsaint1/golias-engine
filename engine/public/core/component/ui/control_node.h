@@ -6,6 +6,8 @@ struct Style {
     glm::vec4 hover_color      = {0.4f, 0.4f, 0.4f, 1.0f};
     glm::vec4 pressed_color    = {0.2f, 0.6f, 0.8f, 1.0f};
     glm::vec4 text_color       = {1.0f, 1.0f, 1.0f, 1.0f};
+    glm::vec4 disabled_color   = {0.f, 0.f, 0.f, 0.5f};
+
     float radius_tl         = 0.0f;
     float radius_tr         = 0.0f;
     float radius_br         = 0.0f;
@@ -42,6 +44,8 @@ protected:
     glm::vec2 scale = {1.0f, 1.0f};
     Style _style;
     bool _is_dirty = false;
+
+    bool _is_disabled = false;
 
 private:
 

@@ -28,6 +28,8 @@ public:
     std::function<void()> on_exit;
     std::function<void()> on_pressed;
 
+    void set_disabled(bool disabled);
+
     void set_text(const std::string& new_text);
 
     void ready() override;

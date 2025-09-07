@@ -2,6 +2,10 @@
 
 #include "core/ember_core.h"
 
+void Button::set_disabled(bool disabled) {
+    _is_disabled = disabled;
+}
+
 void Button::set_text(const std::string& new_text) {
     if (_text != new_text) {
         _text     = new_text;
@@ -16,6 +20,9 @@ void Button::ready() {
 }
 
 void Button::input(const InputManager* input) {
+    if (_is_disabled)
+        return;
+
     const glm::vec2 mouse_world = input->screen_to_world(input->get_mouse_position());
     const bool inside           = input->position_in_rect(mouse_world, _btn_rect);
 
@@ -57,6 +64,8 @@ void Button::draw(Renderer* renderer) {
         color = _style.pressed_color;
     } else if (_is_hovered) {
         color = _style.hover_color;
+    }else if (_is_disabled) {
+        color = _style.disabled_color;
     }
 
     if (!_text.empty() && _is_dirty) {
@@ -73,7 +82,7 @@ void Button::draw(Renderer* renderer) {
 
     if (!is_flat) {
         renderer->draw_rect_rounded(_btn_rect, rotation, color, _style.radius_tl, _style.radius_tr, _style.radius_br, _style.radius_bl,
-                                    false, _z_index, 2);
+                                    true, _z_index, 2);
     }
 
     if (!_text.empty()) {
