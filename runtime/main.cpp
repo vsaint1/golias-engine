@@ -107,24 +107,31 @@ int main(int argc, char* argv[]) {
 
     Control* ui_control = new Control();
 
-    Button* test_button      = new Button("Olá, Mundo!", glm::vec2(10, 5));
+    Button* test_button = new Button("Olá, Mundo!", glm::vec2(10, 5));
 
     test_button->on_pressed = [&] {
         FileAccess save("user://savefile.txt", ModeFlags::WRITE);
 
-        save.store_string("hello world");
+        if (save.store_string("hello world")) {
+            LOG_INFO("Saved file to disk");
+        }
 
-        LOG_INFO("Saved file to disk");
-
+        HttpRequest json("https://jsonplaceholder.typicode.com/todos/1");
+        HttpClient client;
+        client.request_async(json, [&](const HttpResponse& response) {
+            if (response.status_code == 200) {
+                LOG_INFO("HTTP Response: %s", response.body.c_str());
+            } else {
+                LOG_ERROR("HTTP Error: %d", response.status_code);
+            }
+        });
     };
 
-    Button* test_button2     = new Button("Robson", glm::vec2(300, 5),"mine");
+    Button* test_button2 = new Button("Robson", glm::vec2(300, 5), "mine");
 
     test_button2->set_disabled(true);
 
-    test_button2->on_enter = [&]() {
-        test_button2->set_text("Yes?");
-    };
+    test_button2->on_enter = [&]() { test_button2->set_text("Yes?"); };
 
     Label* colliding = new Label("Default", "colliding");
 
