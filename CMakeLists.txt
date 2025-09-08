@@ -71,6 +71,9 @@ if(MSVC)
     endif()
 endif ()
 
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
+endif()
 
 # =========================================================
 #  SOURCE FILES
@@ -143,7 +146,7 @@ if(ANDROID)
 
     file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
 
-    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ENGINE_SOURCES} ${ANDROID_FILES})
+    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ANDROID_FILES})
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 endif()
 
@@ -158,7 +161,7 @@ if(APPLE AND NOT BUILD_SHARED_LIBS)
     set(METAL_SHADERS "${CMAKE_SOURCE_DIR}/res/shaders/metal/default.metal")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
-            ${SOURCES} ${ENGINE_SOURCES} ${METAL_SHADERS} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
+            ${SOURCES} ${METAL_SHADERS} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
 
     find_library(IO ImageIO REQUIRED)
     find_library(CS CoreServices REQUIRED)
@@ -212,7 +215,7 @@ if(APPLE AND BUILD_SHARED_LIBS)
     file(GLOB_RECURSE METAL_FILES "engine/private/core/renderer/metal/*.mm")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
-            ${SOURCES} ${ENGINE_SOURCES} ${METAL_SHADERS} ${RESOURCES} ${MAC_FILES} ${METAL_FILES})
+            ${SOURCES}  ${METAL_SHADERS} ${RESOURCES} ${MAC_FILES} ${METAL_FILES})
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             MACOSX_BUNDLE TRUE
@@ -239,7 +242,7 @@ if(MSVC)
 
     file(GLOB_RECURSE WIN_FILES "engine/private/core/platform/windows/*.c")
 
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES} ${WIN_FILES})
+    add_executable(${PROJECT_NAME} ${SOURCES} ${WIN_FILES})
 
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -259,23 +262,19 @@ if(EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     file(GLOB_RECURSE WEB_FILES "engine/private/core/platform/web/*.c")
 
-    add_executable(${PROJECT_NAME} ${SOURCES} ${ENGINE_SOURCES} ${WEB_FILES})
+    add_executable(${PROJECT_NAME} ${SOURCES} ${WEB_FILES})
 
     set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
+
     if(NOT EXISTS ${SHELL_HTML_FILE})
         message(FATAL_ERROR "Shell file not found: ${SHELL_HTML_FILE}")
     endif()
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}
-        --shell-file ${SHELL_HTML_FILE}
-        -s USE_WEBGL2=1
-        -s FETCH=1
-        -s FULL_ES3=1
-        -s MIN_WEBGL_VERSION=2
-        -s MAX_WEBGL_VERSION=2
-        -s STACK_SIZE=10MB
-        -s ALLOW_MEMORY_GROWTH=1
-        --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${SHELL_HTML_FILE} -s USE_WEBGL2=1 -s FETCH=1 -s  FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
+
+
 endif()
 
 # =========================================================
