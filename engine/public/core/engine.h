@@ -9,6 +9,7 @@
 #pragma region ENGINE_SYSTEMS
 #include "core/systems/physics_sys.h"
 #include "core/systems/thread_pool.h"
+#include "core/systems/scene_manager.h"
 #pragma endregion
 #include <random>
 
