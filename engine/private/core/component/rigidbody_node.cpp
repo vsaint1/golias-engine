@@ -68,9 +68,9 @@ void RigidBody2D::draw_inspector() {
         }
     }
 
-    float col[4] = {color.r, color.g, color.b, color.a};
+    float col[4] = {debug_color.r, debug_color.g, debug_color.b, debug_color.a};
     if (ImGui::ColorEdit4("Debug Color", col)) {
-        color = glm::vec4(col[0], col[1], col[2], col[3]);
+        debug_color = glm::vec4(col[0], col[1], col[2], col[3]);
     }
 
     if (ImGui::CollapsingHeader("Collision")) {
@@ -206,14 +206,14 @@ void RigidBody2D::draw(Renderer* renderer) {
         if (collision_shape->shape_type == ShapeType::RECTANGLE) {
             if (const auto rect = dynamic_cast<RectangleShape*>(this->collision_shape.get()); rect) {
                 renderer->draw_rect({pos.x - rect->size.x / 2, pos.y - rect->size.y / 2, rect->size.x, rect->size.y},
-                                    get_transform().rotation, color, true, 1000);
+                                    get_transform().rotation, debug_color, true, 1000);
             }
 
 
         } else if (collision_shape->shape_type == ShapeType::CIRCLE) {
             if (const auto circ = dynamic_cast<CircleShape*>(this->collision_shape.get()); circ) {
 
-                renderer->draw_circle(pos.x, pos.y, get_transform().rotation, circ->radius, color, true, 32, 1000);
+                renderer->draw_circle(pos.x, pos.y, get_transform().rotation, circ->radius, debug_color, true, 32, 1000);
             }
         }
     }
