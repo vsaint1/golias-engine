@@ -28,29 +28,26 @@ void Button::input(const InputManager* input) {
 
     if (inside && !_is_hovered) {
         SDL_SetCursor(_pointer_cursor);
-
-        if (on_enter) {
-            on_enter();
-        }
+        if (on_enter) on_enter();
     }
 
     if (!inside && _is_hovered) {
         SDL_SetCursor(_default_cursor);
-
-        if (on_exit) {
-            on_exit();
-        }
+        if (on_exit) on_exit();
     }
 
     _is_hovered = inside;
 
-    if (inside && input->is_mouse_button_pressed(mask) && !_was_pressed) {
-        if (on_pressed) {
-            on_pressed();
-        }
+    if (inside && input->is_mouse_button_pressed(mask)) {
+        _was_pressed = true;
     }
 
-    _was_pressed = inside && input->is_mouse_button_held(mask);
+    if (_was_pressed && !input->is_mouse_button_held(mask)) {
+        if (inside && on_pressed) {
+            on_pressed();
+        }
+        _was_pressed = false;
+    }
 }
 
 void Button::process(double delta_time) {
