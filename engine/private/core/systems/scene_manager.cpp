@@ -14,7 +14,6 @@ void Scene::setup() {
         did_load = true;
 
         on_ready();
-
         _root->ready();
     }
 }
@@ -22,8 +21,9 @@ void Scene::setup() {
 void Scene::update(double dt) {
     if (_root && did_load) {
 
-        _root->process(dt);
         on_update(dt);
+        _root->process(dt);
+
     }
 }
 
