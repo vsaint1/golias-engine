@@ -193,10 +193,16 @@ void InputManager::process_event(const SDL_Event& event) {
 
     switch (event.type) {
     case SDL_EVENT_QUIT:
-        if (GEngine) {
-            GEngine->is_running = false;
+        {
+            if (GEngine) {
+                GEngine->is_running = false;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+                emscripten_cancel_main_loop();
+#endif
+            }
+
+            break;
         }
-        break;
 
     case SDL_EVENT_MOUSE_MOTION:
         {

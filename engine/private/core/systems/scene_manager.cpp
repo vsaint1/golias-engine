@@ -72,9 +72,9 @@ void SceneManager::update(double delta_time) {
         _current->setup();
 
         // CALLED EVERY FRAME
-        _current->input(GEngine->input_manager());
-
         _current->update(delta_time);
+        
+        _current->input(GEngine->input_manager());
 
         _current->draw(GEngine->get_renderer());
 

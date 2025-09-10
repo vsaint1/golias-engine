@@ -22,14 +22,12 @@ void Engine::update(double delta_time) {
 
     this->_time_manager->update();
 
-    const double dt = this->_time_manager->get_delta_time();
-
-    b2World_Step(this->_world, SDL_min(dt, FIXED_TIMESTEP), 4);
-
     this->_input_manager->update();
 
+    b2World_Step(this->_world, FIXED_TIMESTEP, 4);
+
     for (const auto& system : _systems) {
-        system->update();
+        system->update(delta_time);
     }
 }
 
