@@ -123,7 +123,6 @@ void RigidBody2D::ready() {
 
     // LOG_INFO("Rigidbody::ready()");
 
-    Node2D::ready();
 
     b2BodyDef body_def = b2DefaultBodyDef();
     body_def.type      = (collision_shape->body_type == BodyType::STATIC)  ? b2_staticBody
@@ -174,7 +173,8 @@ void RigidBody2D::ready() {
 
     b2Body_SetUserData(body_id, this);
 
-    GEngine->get_system<PhysicsManager>()->register_body(this);
+    Node2D::ready();
+
 }
 
 void RigidBody2D::process(double delta_time) {
@@ -220,7 +220,6 @@ void RigidBody2D::draw(Renderer* renderer) {
 }
 
 RigidBody2D::~RigidBody2D() {
-    GEngine->get_system<PhysicsManager>()->unregister_body(this);
 }
 
 void RigidBody2D::update_body() {

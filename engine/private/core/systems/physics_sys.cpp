@@ -23,11 +23,12 @@ void PhysicsManager::unregister_body(PhysicsObject2D* body) {
 
 
 void PhysicsManager::update(double delta_time) {
-    for (PhysicsObject2D* body : rigid_bodies) {
+    for (auto it = rigid_bodies.begin(); it != rigid_bodies.end();) {
+        PhysicsObject2D* body = *it;
         if (!body || !B2_IS_NON_NULL(body->body_id)) {
+            it = rigid_bodies.erase(it);
             continue;
         }
-
 
         b2ContactData contacts[16];
         int numContacts = b2Body_GetContactData(body->body_id, contacts, 16);
@@ -51,6 +52,10 @@ void PhysicsManager::update(double delta_time) {
         }
 
         for (PhysicsObject2D* other : collidingWith) {
+            if (!other) {
+                continue;
+            }
+
             if (!body->overlapping.contains(other)) {
                 body->overlapping.insert(other);
                 other->overlapping.insert(body);
@@ -66,12 +71,20 @@ void PhysicsManager::update(double delta_time) {
 
         std::vector<PhysicsObject2D*> exited;
         for (PhysicsObject2D* other : body->overlapping) {
+            if (!other) {
+                continue;
+            }
+
             if (!collidingWith.contains(other)) {
                 exited.push_back(other);
             }
         }
 
         for (PhysicsObject2D* other : exited) {
+            if (!other) {
+                continue;
+            }
+
             body->overlapping.erase(other);
             other->overlapping.erase(body);
 
@@ -82,6 +95,8 @@ void PhysicsManager::update(double delta_time) {
                 cb(body);
             }
         }
+
+        ++it;
     }
 }
 

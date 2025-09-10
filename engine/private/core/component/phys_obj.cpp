@@ -1,12 +1,16 @@
 #include "core/component/phys_obj.h"
 
+#include "core/engine.h"
+
 
 PhysicsObject2D::PhysicsObject2D() {
-
+    GEngine->get_system<PhysicsManager>()->register_body(this);
 }
 
 PhysicsObject2D::~PhysicsObject2D() {
+    GEngine->get_system<PhysicsManager>()->unregister_body(this);
 }
+
 void PhysicsObject2D::set_layer(uint8_t new_layer) {
     if (new_layer < 16) {
         layer = new_layer;
