@@ -169,7 +169,7 @@ void Node2D::ready() {
 
 
 void Node2D::process(double delta_time) {
-    if (!is_effective_visible()) {
+    if (!is_effective_visible() || !is_alive() || !_is_ready) {
         return;
     }
 
@@ -187,7 +187,7 @@ void Node2D::process(double delta_time) {
 }
 
 void Node2D::draw(Renderer* renderer) {
-    if (!is_effective_visible() || !is_alive()) {
+    if (!is_effective_visible() || !is_alive() ||  !_is_ready) {
         return;
     }
 
@@ -197,7 +197,7 @@ void Node2D::draw(Renderer* renderer) {
 }
 
 void Node2D::input(const InputManager* input) {
-    if (!is_alive() || !input) {
+    if (!is_alive() || !input || !_is_ready) {
         return;
     }
 

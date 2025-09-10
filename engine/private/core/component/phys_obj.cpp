@@ -8,7 +8,12 @@ PhysicsObject2D::PhysicsObject2D() {
 }
 
 PhysicsObject2D::~PhysicsObject2D() {
+
     GEngine->get_system<PhysicsManager>()->unregister_body(this);
+
+    if (b2Body_IsValid(body_id)) {
+        b2DestroyBody(body_id);
+    }
 }
 
 void PhysicsObject2D::set_layer(uint8_t new_layer) {

@@ -25,7 +25,7 @@ void PhysicsManager::unregister_body(PhysicsObject2D* body) {
 void PhysicsManager::update(double delta_time) {
     for (auto it = rigid_bodies.begin(); it != rigid_bodies.end();) {
         PhysicsObject2D* body = *it;
-        if (!body || !B2_IS_NON_NULL(body->body_id)) {
+        if (!body || !b2Body_IsValid(body->body_id)) {
             it = rigid_bodies.erase(it);
             continue;
         }
@@ -52,13 +52,21 @@ void PhysicsManager::update(double delta_time) {
         }
 
         for (PhysicsObject2D* other : collidingWith) {
-            if (!other) {
+            if (!other || !b2Body_IsValid(other->body_id)) {
+                continue;
+            }
+
+            if (!b2Body_IsValid(body->body_id)) {
                 continue;
             }
 
             if (!body->overlapping.contains(other)) {
+
                 body->overlapping.insert(other);
-                other->overlapping.insert(body);
+
+                if (b2Body_IsValid(other->body_id)) {
+                    other->overlapping.insert(body);
+                }
 
                 for (auto& cb : body->on_enter_callbacks) {
                     cb(other);
