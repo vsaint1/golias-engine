@@ -10,12 +10,16 @@ void Scene::set_root(Node2D* node) {
 
 void Scene::setup() {
 
-    if (_root && !did_load) {
-        did_load = true;
+    if (!_root) {
+        _root = new Node2D("Root");
+    }
 
+    if (!did_load) {
+        did_load = true;
         on_ready();
         _root->ready();
     }
+
 }
 
 void Scene::update(double dt) {
@@ -45,6 +49,7 @@ void Scene::destroy() {
     on_destroy();
     delete _root;
     _root = nullptr;
+    did_load = false;
 }
 
 Node2D* Scene::get_root() const {
@@ -69,7 +74,7 @@ void SceneManager::update(double delta_time) {
     if (_current) {
 
         // CALLED ONCE
-        _current->setup();
+        // _current->setup();
 
         // CALLED EVERY FRAME
         _current->update(delta_time);
@@ -85,33 +90,41 @@ void SceneManager::update(double delta_time) {
 void SceneManager::set_scene(const std::string& name) {
     auto it = _scenes.find(name);
     if (it != _scenes.end()) {
+        if (_current == it->second.get()) {
+            return;
+        }
+
         if (_current) {
             _current->destroy();
         }
+
         _current = it->second.get();
         if (_current) {
             _current->setup();
         }
+
     } else {
         LOG_WARN("Scene '%s' not found", name.c_str());
     }
 }
 
-
 void SceneManager::set_scene(Scene* scene) {
 
     auto it = std::ranges::find_if(_scenes, [scene](const auto& pair) { return pair.second.get() == scene; });
     if (it != _scenes.end()) {
+        if (_current == it->second.get()) {
+            return;
+        }
+
         if (_current) {
             _current->destroy();
         }
 
         _current = it->second.get();
-
         if (_current) {
             _current->setup();
-
         }
+
 
     } else {
         LOG_WARN("Scene not found in the manager");

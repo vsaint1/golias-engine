@@ -304,6 +304,6 @@ void Node2D::draw_hierarchy() {
 }
 
 void Node2D::queue_free() {
-    LOG_INFO("Node2D::free()");
+    LOG_INFO("Node2D::free() - %s", _name.c_str());
     _to_free = true;
 }

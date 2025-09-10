@@ -43,7 +43,6 @@ public:
     bool did_load = false;
 
 protected:
-    // std::string _scene_name = "Scene";
     Node2D* _root = nullptr;
 };
 
