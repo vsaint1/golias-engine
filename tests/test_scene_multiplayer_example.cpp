@@ -165,8 +165,8 @@ int main(int argc, char* argv[]) {
     auto client = new ENetClient("127.0.0.1",1234);
 
     struct PlayerPos {
-        int x;
-        int y;
+        Uint32 x;
+        Uint32 y;
     };
 
     auto pos = PlayerPos{100,200};
@@ -177,6 +177,7 @@ int main(int argc, char* argv[]) {
     emscripten_set_main_loop(engine_core_loop, 0, true);
 #else
     while (GEngine->is_running) {
+        client->pool();
         engine_core_loop();
     }
 #endif
