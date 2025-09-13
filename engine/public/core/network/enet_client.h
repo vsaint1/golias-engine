@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/systems/logging_sys.h"
+#include "enet_server.h"
 
 
 class ENetClient {
@@ -17,7 +17,12 @@ public:
     template <typename T>
     void send(uint8_t type, const T& obj);
 
+    void on_message(uint8_t type, std::function<void(ENetPeer*, const Packet&)> handler);
+
 private:
+    bool _is_connected = false;
+    HashMap<uint8_t, std::function<void(ENetPeer*, const Packet&)>> _handlers;
+
     ENetHost* client = nullptr;
     ENetPeer* peer   = nullptr;
 
