@@ -123,6 +123,7 @@ add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/tinyxml)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/mbedtls)
+add_subdirectory(vendor/enet-1.3.18)
 add_subdirectory(vendor/curl EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/json)
 

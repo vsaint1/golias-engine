@@ -16,6 +16,8 @@
 #include "core/system_info.h"
 #include "core/http/http_client.h"
 
+#include "core/network/enet_client.h"
+
 /**
  * @brief Mode of drawing commands.
  *
