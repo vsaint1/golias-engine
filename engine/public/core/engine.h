@@ -12,6 +12,7 @@
 #include "core/systems/thread_pool.h"
 #pragma endregion
 #include <random>
+#include "core/network/enet_client.h"
 
 class Renderer;
 class OpenglShader;
@@ -22,10 +23,6 @@ constexpr float PIXELS_PER_METER = 32.0f;
 constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
 
 
-struct Packet {
-    uint8_t type;
-    std::vector<uint8_t> data;
-};
 
 
 /**
