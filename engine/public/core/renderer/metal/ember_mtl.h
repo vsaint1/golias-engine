@@ -132,12 +132,12 @@ public:
     }
 
 protected:
-    void set_default_font(const std::string&) override {
-    }
+
     void render_fbo() override {
     }
     void set_effect_uniforms(const UberShader&, const glm::vec2&) override {
     }
+
     glm::vec2 get_texture_size(Uint32) const override {
         return {0, 0};
     }

@@ -16,6 +16,7 @@
 #include "core/system_info.h"
 #include "core/http/http_client.h"
 
+
 /**
  * @brief Mode of drawing commands.
  *
@@ -126,6 +127,8 @@ public:
      */
     virtual bool load_font(const std::string& font_path, const std::string& font_alias, int font_size = 48) = 0;
 
+    virtual glm::vec2 calc_text_size(const std::string& text, float scale, const std::string& font_alias);
+
 
     /**
      * @brief Load a texture from disk.
@@ -147,6 +150,12 @@ public:
     virtual void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
                                       const Rect2& src_rect, int z_index,
                                       bool flip_h = false, bool flip_v = false, const UberShader& uber_shader = {}) = 0;
+
+
+   virtual void draw_rect_rounded(
+        const Rect2& rect, float rotation, const glm::vec4& color,
+        float radius_tl, float radius_tr, float radius_br, float radius_bl,
+        bool filled, int z_index, int corner_segments = 8) {}
 
     /**
      * @brief Draw a rectangle (filled or outlined).
@@ -240,7 +249,7 @@ public:
 
     [[nodiscard]] glm::mat4 get_view_matrix() const;
 
-   virtual   Uint32 get_framebuffer_texture() const  {
+   [[nodiscard]] virtual   Uint32 get_framebuffer_texture() const  {
        return 0;
    }
 
@@ -266,7 +275,6 @@ protected:
     FT_Library _ft = {}; ///< FreeType library instance.
 
     HashMap<std::string, Font> fonts; ///< Loaded fonts.
-    std::string current_font_name; ///< Currently selected font alias.
 
     glm::mat4 _projection = glm::mat4(1.f); ///< Projection matrix.
     glm::mat4 _view       = glm::mat4(1.f); ///< View matrix.
@@ -275,11 +283,6 @@ protected:
 
     HashMap<Uint32, glm::vec2> _texture_sizes; ///< HACK_FIX: Cached texture sizes by ID.
 
-    /**
-    * @brief Set the current font to use for rendering.
-    * @param font_name Alias of the font to use.
-    */
-    virtual void set_default_font(const std::string& font_name) = 0;
 
     /**
      * @brief Rotate a point around a center point.

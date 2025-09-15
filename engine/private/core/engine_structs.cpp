@@ -69,7 +69,7 @@ bool Color::operator==(const Color& other) const {
     return r == other.r && g == other.g && b == other.b && a == other.a;
 }
 
-Sizei _calc_text_size(const std::string& text, const Font& font, float font_size) {
+Sizei calc_text_size(const std::string& text, const Font& font, float font_size) {
     float scale_factor = (font.font_size > 0.0f) ? (font_size / font.font_size) : 1.0f;
     int text_width     = 0;
     int text_height    = 0;
@@ -78,7 +78,8 @@ Sizei _calc_text_size(const std::string& text, const Font& font, float font_size
         if (c == '\n') {
             continue;
         }
-        if (font.characters.find(c) == font.characters.end()) {
+
+        if (!font.characters.contains(c)) {
             continue;
         }
 

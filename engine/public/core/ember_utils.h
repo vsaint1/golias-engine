@@ -52,3 +52,15 @@ int get_cpu_cores_num();
     @version 1.2.0
 */
 const char* file_extension_to_mime_type(const char* ext);
+
+
+/*!
+ * @brief Decode a UTF-8 string to a Unicode codepoint.
+ * @param utf8 Input UTF-8 string.
+ * @param i Current index in the string (will be updated).
+ * @param codepoint Output Unicode codepoint.
+ * @param c Current byte
+ * @return true if an invalid byte was encountered, false otherwise.
+ *
+ */
+bool utf8_to_unicode(const std::string& utf8, size_t& i, uint32_t& codepoint, unsigned char c);

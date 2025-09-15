@@ -45,17 +45,17 @@ public:
 
     bool load_font(const std::string& file_path, const std::string& font_alias, int font_size) override;
 
-    void set_default_font(const std::string& font_name) override;
-
     void unload_font(const Font& font) override;
 
     void unload_texture(Uint32 id) override;
 
-    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color,
-                                   const Rect2& src_rect, int z_index,
-                                   bool flip_h, bool flip_v, const UberShader& uber_shader) override;
+    void draw_texture(const Texture* texture, const Rect2& dest_rect, float rotation, const glm::vec4& color, const Rect2& src_rect,
+                      int z_index, bool flip_h, bool flip_v, const UberShader& uber_shader) override;
 
     void draw_rect(Rect2 rect, float rotation, const glm::vec4& color, bool filled, int z_index) override;
+
+    void draw_rect_rounded(const Rect2& rect, float rotation, const glm::vec4& color, float radius_tl, float radius_tr, float radius_br,
+                           float radius_bl, bool filled, int z_index, int corner_segments) override;
 
     void draw_text(const std::string& text, float x, float y, float rotation, float scale, const glm::vec4& color,
                    const std::string& font_alias, int z_index, const UberShader& uber_shader, int ft_size) override;
@@ -79,16 +79,17 @@ public:
     Uint32 get_framebuffer_texture() const override {
         return _fbo_texture;
     }
+
 private:
     OpenglShader* _default_shader = nullptr;
-    OpenglShader* _fbo_shader    = nullptr;
+    OpenglShader* _fbo_shader     = nullptr;
 
     // DEFAULT shader (text/texture/primitives)
     GLuint vao, vbo, ebo;
     GLuint shader_program;
 
     // DEFAULT FBO shader
-    GLuint _fbo_vao,_fbo_vbo,_frame_buffer_object, _fbo_texture;
+    GLuint _fbo_vao, _fbo_vbo, _frame_buffer_object, _fbo_texture;
 
     SDL_GLContext context = nullptr;
 
@@ -96,6 +97,5 @@ private:
 
     void set_effect_uniforms(const UberShader& uber_shader, const glm::vec2& texture_size = glm::vec2(1, 1)) override;
 
-    [[nodiscard]] glm::vec2 get_texture_size(Uint32 texture_id) const  override;
-
+    [[nodiscard]] glm::vec2 get_texture_size(Uint32 texture_id) const override;
 };

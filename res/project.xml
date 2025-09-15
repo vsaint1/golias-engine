@@ -19,7 +19,7 @@
     </window>
 
     <viewport>
-        <size width="320" height="180"/>
+        <size width="640" height="360"/>
         <stretch mode="viewport" aspect="expand"/> <!-- none,keep, expand-->
         <scale>1.0</scale>
     </viewport>

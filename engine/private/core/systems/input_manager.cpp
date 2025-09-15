@@ -1,7 +1,7 @@
-#include "../../../public/core/systems/input_manager.h"
+#include "core/systems/input_manager.h"
 
-#include "../../../public/core/systems/logging_sys.h"
 #include "core/engine.h"
+#include "core/systems/logging_sys.h"
 
 
 GamepadInfo::~GamepadInfo() {
@@ -166,6 +166,22 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
     }
 }
 
+#if defined(WITH_EDITOR)
+glm::vec4 get_editor_viewport_rect() {
+
+    ImGuiWindow* window = ImGui::FindWindowByName("ViewportPane");
+    if (!window) {
+        return glm::vec4(0, 0, 0, 0);
+    }
+
+    ImVec2 top_left = window->Pos;
+    ImVec2 size     = window->Size;
+
+    return {top_left.x, top_left.y, size.x, size.y}; // x, y, width, height
+}
+#endif
+
+
 InputManager::~InputManager() {
     _gamepads.clear();
     SDL_QuitSubSystem(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
@@ -177,15 +193,36 @@ void InputManager::process_event(const SDL_Event& event) {
 
     switch (event.type) {
     case SDL_EVENT_QUIT:
-        if (GEngine) {
-            GEngine->is_running = false;
+        {
+            if (GEngine) {
+                GEngine->is_running = false;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+                emscripten_cancel_main_loop();
+#endif
+            }
+
+            break;
         }
-        break;
 
     case SDL_EVENT_MOUSE_MOTION:
-        _mouse_position = glm::vec2(event.motion.x, event.motion.y);
-        _mouse_delta    = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
-        break;
+        {
+
+            glm::vec2 raw_pos(event.motion.x, event.motion.y);
+
+#if defined(WITH_EDITOR)
+            glm::vec4 vp    = get_editor_viewport_rect();
+            _mouse_position = raw_pos - glm::vec2(vp.x, vp.y);
+
+            _mouse_position.x = glm::clamp(_mouse_position.x, 0.0f, vp.z);
+            _mouse_position.y = glm::clamp(_mouse_position.y, 0.0f, vp.w);
+
+#else
+            _mouse_position = raw_pos;
+#endif
+
+            _mouse_delta = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
+            break;
+        }
 
     case SDL_EVENT_MOUSE_WHEEL:
         _mouse_wheel = glm::vec2(event.wheel.x, event.wheel.y);
@@ -601,7 +638,7 @@ void InputManager::update_key_states() {
 
     // Add new keys that were pressed this frame
     for (SDL_Scancode key : _keys_this_frame) {
-        if (_key_states.find(key) == _key_states.end()) {
+        if (!_key_states.contains(key)) {
             _key_states[key]      = InputState::PRESSED;
             _prev_key_states[key] = false;
         }
@@ -610,6 +647,7 @@ void InputManager::update_key_states() {
 
 void InputManager::update_mouse_states() {
     Uint32 mouse_state = SDL_GetMouseState(&_mouse_position.x, &_mouse_position.y);
+
 
     // Update all mouse button states
     std::vector<MouseButton> buttons = {MouseButton::LEFT, MouseButton::MIDDLE, MouseButton::RIGHT, MouseButton::BUTTON_X1,

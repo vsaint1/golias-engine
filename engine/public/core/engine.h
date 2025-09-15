@@ -8,9 +8,11 @@
 
 #pragma region ENGINE_SYSTEMS
 #include "core/systems/physics_sys.h"
+#include "core/systems/scene_manager.h"
 #include "core/systems/thread_pool.h"
 #pragma endregion
 #include <random>
+#include "core/network/enet_client.h"
 
 class Renderer;
 class OpenglShader;
@@ -20,6 +22,9 @@ class OpenglRenderer;
 constexpr float PIXELS_PER_METER = 32.0f;
 constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
 
+
+
+
 /**
  * @brief Core Engine singleton.
  *
@@ -28,6 +33,8 @@ constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
 class Engine {
 public:
     Engine();
+
+    bool is_multiplayer = false;
 
     struct {
         float width                 = 0;
@@ -114,6 +121,7 @@ public:
      */
     bool initialize(int width, int height, Backend type, Uint64 flags = 0);
 
+
     /*!
      * @brief Update all engine systems.
      *
@@ -140,8 +148,23 @@ public:
     template <typename T>
     T* get_system();
 
+
+    // -------------------- SERVER CODE --------------------
+    bool initialize_server(const char* host,int port = ENET_PORT_ANY);
+
+    void shutdown_server();
+
+    void update_server(double delta_time = 0);
+
+    void broadcast(uint8_t type, const std::string& message);
+
+    template <typename T>
+    void broadcast(uint8_t type, const T& data);
+
+    void on_message(uint8_t type, std::function<void(ENetPeer*, const Packet&)> handler);
 private:
     double _physics_accumulator = 0.0;
+
 
     std::vector<std::unique_ptr<EngineManager>> _systems{};
 
@@ -150,6 +173,15 @@ private:
     TimeManager* _time_manager   = nullptr;
 
     b2WorldId _world;
+
+    struct {
+        ENetHost* host      = nullptr;
+        ENetAddress address = {};
+    } Server;
+
+    HashMap<uint8_t, std::function<void(ENetPeer*, const Packet&)>> handlers;
+
+    void handle_packet(ENetPeer* peer, ENetPacket* packet);
 
     /**
      * @brief Create a renderer instance.
@@ -240,4 +272,23 @@ T random(T min, T max) {
     }
 
     return T{0};
+}
+
+
+
+template <typename T>
+void Engine::broadcast(uint8_t type, const T& data) {
+    std::vector<uint8_t> payload(sizeof(T));
+    SDL_memcpy(payload.data(), &data, sizeof(T));
+
+    uint16_t size = static_cast<uint16_t>(payload.size());
+    uint8_t header[3] = { type, static_cast<uint8_t>((size >> 8) & 0xFF), static_cast<uint8_t>(size & 0xFF) };
+
+    std::vector<uint8_t> packet;
+    packet.insert(packet.end(), header, header + 3);
+    packet.insert(packet.end(), payload.begin(), payload.end());
+
+    ENetPacket* p = enet_packet_create(packet.data(), packet.size(), ENET_PACKET_FLAG_RELIABLE);
+    enet_host_broadcast(Server.host, 0, p);
+    enet_host_flush(Server.host);
 }

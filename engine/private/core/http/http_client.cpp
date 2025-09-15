@@ -130,10 +130,10 @@ void HttpClient::request_async(HttpRequest request, const std::function<void(con
     }
 
 #else
-    const auto fut = GEngine->get_system<ThreadManager>()->enqueue([this, request = std::move(request), callback = std::move(callback)] {
+    const auto fut = GEngine->get_system<ThreadManager>()->enqueue([this, request = std::move(request), callback = callback] {
         try {
             HttpResponse res = this->request(request);
-            callback(std::move(res));
+            callback(res);
         } catch (const std::exception& e) {
             LOG_ERROR("HttpRequest async exception: %s", e.what());
         }

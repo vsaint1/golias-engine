@@ -37,6 +37,12 @@ using HashMap = std::unordered_map<K, V>;
     #include "imgui_internal.h"
 #endif
 
+#include <enet/enet.h>
+
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    #include <emscripten/emscripten.h>
+#endif
+
 #include <mutex>
 #include <condition_variable>
 #include <atomic>

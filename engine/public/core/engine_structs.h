@@ -135,7 +135,7 @@ struct Glyph {
  *  @version 0.0.1
  */
 struct Font {
-    HashMap<char, Character> characters;
+    HashMap<uint32_t, Character> characters;
     std::string font_path;
     int font_size = 48;
     float kerning = 0.0f;

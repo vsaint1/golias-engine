@@ -47,7 +47,7 @@ public:
 protected:
     bool is_disabled = false;
 
-    glm::vec4 color = glm::vec4(1, 0, 0, 0.5f);
+    glm::vec4 debug_color = glm::vec4(1, 0, 0, 0.2f);
 
 private:
     uint8_t layer           = 0; // < (0-15)

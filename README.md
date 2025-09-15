@@ -101,13 +101,24 @@ Ember uses [CMake](https://cmake.org/) as its build system. Supported toolchains
 
 ---
 
-## Building
+## Building `WASM`
+
+To build the Web version of the engine, you need to have [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) installed and activated.
+
+> ⚠️ **Note:** Install Emscripten MingW if you're on Windows
+
 
 ```bash
 git clone https://github.com/vsaint1/ember_engine.git
 cd ember_engine
 git submodule update --init --recursive
 cmake --list-presets
+
 emcmake cmake --preset=web-release
 emmake cmake --build build/webgl/release
-python3 -m http.server -b 0.0.0.0 8000
+
+python3 -m http.server -b 0.0.0.0 8080
+```
+
+Then open your browser and navigate to `http://localhost:8080/build/webgl/`
+

@@ -7,6 +7,9 @@ on:
 jobs:
   linux-webgl:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -15,13 +18,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git make \
-          pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
-          libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
-          libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
-          libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
-          libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
           git submodule update --init --recursive
-
 
       - name: Install emscripten SDK
         run: |
@@ -41,24 +43,24 @@ jobs:
       - name: Build emscripten
         run: |
           source emsdk/emsdk_env.sh
+          mkdir -p build/webgl/debug
           emmake cmake --build build/webgl/debug
 
 
   windows-msvc:
-     runs-on: windows-2022
-     steps:
-       - name: Checkout repository
-         uses: actions/checkout@v3
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-       - name: Configure MSVC
-         uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
 
-       - name: Update submodules
-         run:  git submodule update --init --recursive
+      - name: Update submodules
+        run: git submodule update --init --recursive
 
-       - name: Run preset
-         run: cmake --preset=windows-debug
+      - name: Run preset
+        run: cmake --preset=windows-debug
 
-       - name: Build windows
-         run: cmake --build build/windows/debug --config Release
-
+      - name: Build windows
+        run: cmake --build build/windows/debug --config Release
