@@ -82,7 +82,6 @@
     {
       "name": "web-debug",
       "displayName": "WebGL Debug [Emscripten]",
-      "generator": "MinGW Makefiles",
       "binaryDir": "${sourceDir}/build/webgl/debug",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
@@ -95,7 +94,6 @@
     {
       "name": "web-release",
       "displayName": "WebGL Release [Emscripten]",
-      "generator": "MinGW Makefiles",
       "binaryDir": "${sourceDir}/build/webgl/release",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
