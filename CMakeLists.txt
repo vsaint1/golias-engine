@@ -39,6 +39,17 @@ if(BUILD_SERVER)
 endif()
 
 # =========================================================
+#  PLATFORM LIBRARIES CONFIGURATION
+#  - Windows/macOS/Linux - SHARED
+#  - iOS/Wasm - STATIC
+# =========================================================
+if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
+    set(SDL_SHARED OFF)
+else()
+    set(SDL_SHARED ON)
+endif ()
+
+# =========================================================
 # OPTIONAL EDITOR
 # =========================================================
 if(WITH_EDITOR)

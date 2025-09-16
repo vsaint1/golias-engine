@@ -16,17 +16,6 @@ if (NOT EXISTS ${ASSETS_FOLDER})
     message(FATAL_ERROR "Resources folder not found: ${ASSETS_FOLDER}")
 endif ()
 
-# =========================================================
-#  PLATFORM LIBRARIES CONFIGURATION
-#  - Windows/macOS/Linux - SHARED
-#  - iOS/Wasm - STATIC
-# =========================================================
-if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
-    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
-    set(SDL_SHARED OFF)
-else()
-    set(SDL_SHARED ON)
-endif ()
 
 # =========================================================
 #  PLATFORM SPECIFIC CONFIGURATION
