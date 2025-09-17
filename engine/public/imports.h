@@ -41,6 +41,8 @@ using HashMap = std::unordered_map<K, V>;
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     #include <emscripten/emscripten.h>
+#else
+    #include <curl/curl.h>
 #endif
 
 #include <mutex>

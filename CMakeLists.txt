@@ -34,9 +34,16 @@ message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
 include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 
 
-if(BUILD_SERVER)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build STATIC libraries for server" FORCE)
-endif()
+# =========================================================
+#  PLATFORM LIBRARIES CONFIGURATION
+#  - Windows/macOS/Linux - SHARED
+#  - iOS/Wasm - STATIC
+# =========================================================
+if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
+    set(SDL_SHARED OFF)
+else ()
+    set(SDL_SHARED ON)
+endif ()
 
 # =========================================================
 #  PLATFORM LIBRARIES CONFIGURATION
@@ -52,10 +59,10 @@ endif ()
 # =========================================================
 # OPTIONAL EDITOR
 # =========================================================
-if(WITH_EDITOR)
+if (WITH_EDITOR)
     add_subdirectory(vendor/imgui)
     add_compile_definitions(WITH_EDITOR)
-endif()
+endif ()
 
 # =========================================================
 # VENDOR LIBRARIES CONFIGURATION
@@ -81,7 +88,6 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(CURL_USE_MBEDTLS ON CACHE BOOL "" FORCE)
 set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
 set(CURL_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
-set(CURL_STATICLIB OFF CACHE BOOL "Force curl shared" FORCE)
 
 set(MBEDX509_LIBRARY mbedx509)
 set(MBEDCRYPTO_LIBRARY mbedcrypto)
@@ -91,7 +97,8 @@ set(MBEDTLS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/mbedtls/include")
 # =========================================================
 # ADD VENDOR SUBDIRECTORIES
 # =========================================================
-add_subdirectory(vendor/mbedtls)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build STATIC libs" FORCE)
+
 add_subdirectory(vendor/glad)
 add_subdirectory(vendor/stb_image)
 add_subdirectory(vendor/mini_audio)
@@ -100,12 +107,15 @@ add_subdirectory(vendor/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(vendor/tinyxml)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/enet-1.3.18)
-add_subdirectory(vendor/curl)
 add_subdirectory(vendor/json)
 add_subdirectory(vendor/box2d)
 
-if(BUILD_RUNTIME)
-    set_target_properties(box2d PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build SHARED libs" FORCE)
+set(CURL_STATICLIB OFF CACHE BOOL "Build curl as shared" FORCE)
+
+if (NOT EMSCRIPTEN)
+    add_subdirectory(vendor/mbedtls)
+    add_subdirectory(vendor/curl)
 endif ()
 
 # =========================================================
@@ -113,14 +123,14 @@ endif ()
 # =========================================================
 add_subdirectory(engine)
 
-if(BUILD_SERVER)
+if (BUILD_SERVER)
     message(STATUS "Adding server build")
     add_compile_definitions(BUILD_SERVER)
     add_subdirectory(server)
-endif()
+endif ()
 
-if(BUILD_RUNTIME)
+if (BUILD_RUNTIME)
     message(STATUS "Adding runtime build")
     add_compile_definitions(BUILD_RUNTIME)
     add_subdirectory(runtime)
-endif()
+endif ()
