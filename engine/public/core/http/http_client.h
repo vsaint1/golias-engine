@@ -1,6 +1,5 @@
 #pragma once
 #include "core/systems/logging_sys.h"
-#include <curl/curl.h>
 
 struct HttpRequest {
     const char* url    = ""; ///< URL to send the request to.

@@ -11,8 +11,12 @@ list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/renderer/.mm")
 
 add_library(engine STATIC ${ENGINE_SOURCES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image glm::glm mini_audio tinyxml enet json freetype CURL::libcurl MbedTLS::mbedtls MbedTLS::mbedx509 MbedTLS::mbedcrypto box2d)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL3::SDL3 glad stb_image glm::glm mini_audio tinyxml enet json freetype box2d)
 
-if(WITH_EDITOR)
+if (WITH_EDITOR)
     target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
-endif()
+endif ()
+
+if (NOT_EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME} PRIVATE curl CURL::libcurl MbedTLS::mbedtls MbedTLS::mbedx509 MbedTLS::mbedcrypto)
+endif ()
