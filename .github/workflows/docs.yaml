@@ -1,28 +1,30 @@
-name: docs 
-description: 'build and deploy GH pages' 
+name: docs
 
 on:
-  pull_request: 
+  push:
     branches: [ main ]
-
+  workflow_dispatch:
 
 jobs:
- build-docs:
+  build-docs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
       - name: Generate docs with Doxygen
         run: |
-            sudo apt install -y doxygen
-            mkdir -p build/docs
-            doxygen docs/Doxyfile
-            ls build/docs
+          mkdir -p build/docs
+          doxygen docs/Doxyfile
+          ls -R build/docs || true
 
       - name: Deploy docs to GH pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: ./build/docs/html
-            publish_branch: gh-pages
-            exclude_assets: ''
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/docs/html
+          publish_branch: gh-pages
+          force_orphan: true
