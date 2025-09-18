@@ -17,6 +17,6 @@ if (WITH_EDITOR)
     target_link_libraries(${PROJECT_NAME} PUBLIC imgui)
 endif ()
 
-if (NOT_EMSCRIPTEN)
-    target_link_libraries(${PROJECT_NAME} PRIVATE curl CURL::libcurl MbedTLS::mbedtls MbedTLS::mbedx509 MbedTLS::mbedcrypto)
+if (NOT EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl MbedTLS::mbedtls MbedTLS::mbedx509 MbedTLS::mbedcrypto)
 endif ()
