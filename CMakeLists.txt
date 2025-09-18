@@ -21,6 +21,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(WITH_EDITOR "Build the engine with editor support" OFF)
 option(BUILD_SERVER "Build server binaries" ON)
 option(BUILD_RUNTIME "Build runtime binaries" ON)
+option(BUILD_TESTING "Build tests" OFF)
 
 message(STATUS "Build configuration:")
 message(STATUS "  WITH_EDITOR: ${WITH_EDITOR}")
@@ -42,17 +43,6 @@ include_directories(PUBLIC "${CMAKE_SOURCE_DIR}/engine/public")
 if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
     set(SDL_SHARED OFF)
 else ()
-    set(SDL_SHARED ON)
-endif ()
-
-# =========================================================
-#  PLATFORM LIBRARIES CONFIGURATION
-#  - Windows/macOS/Linux - SHARED
-#  - iOS/Wasm - STATIC
-# =========================================================
-if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
-    set(SDL_SHARED OFF)
-else()
     set(SDL_SHARED ON)
 endif ()
 
