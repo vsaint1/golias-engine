@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Install Ubuntu SDL3 dependencies
         run: |
@@ -23,27 +25,44 @@ jobs:
             libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
             libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
-          git submodule update --init --recursive
+
+      - name: Cache emsdk
+        uses: actions/cache@v3
+        with:
+          path: emsdk
+          key: ${{ runner.os }}-emsdk-cache
+          restore-keys: |
+            ${{ runner.os }}-emsdk-
 
       - name: Install emscripten SDK
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/emscripten-core/emsdk.git
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
+
+      - name: Configure emscripten env
+        run: |
           echo "EMSDK=${{ github.workspace }}/emsdk" >> $GITHUB_ENV
           echo "EM_CONFIG=${{ github.workspace }}/emsdk/.emscripten" >> $GITHUB_ENV
           echo "${{ github.workspace }}/emsdk" >> $GITHUB_PATH
+          source emsdk/emsdk_env.sh
+
+      - name: Cache CMake build
+        uses: actions/cache@v3
+        with:
+          path: build/webgl/debug
+          key: ${{ runner.os }}-webgl-build-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: |
+            ${{ runner.os }}-webgl-build-
 
       - name: Configure emscripten and run preset
         run: |
-          source emsdk/emsdk_env.sh
           emcmake cmake --preset=web-debug
 
       - name: Build emscripten
         run: |
-          source emsdk/emsdk_env.sh
-          mkdir -p build/webgl/debug
           emmake cmake --build build/webgl/debug
 
 
@@ -52,12 +71,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Update submodules
-        run: git submodule update --init --recursive
+      - name: Cache CMake build
+        uses: actions/cache@v3
+        with:
+          path: build/windows/debug
+          key: ${{ runner.os }}-windows-build-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: |
+            ${{ runner.os }}-windows-build-
 
       - name: Run preset
         run: cmake --preset=windows-debug
