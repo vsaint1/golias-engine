@@ -1,46 +1,31 @@
-#include "core/renderer/opengl/ember_gl.h"
+#include "core/network/enet_server.h"
 
 struct PlayerPosPacket {
     int x = 0;
     int y = 0;
 };
 
-
-enum class PacketType : uint8_t {
-    MESSAGE   = 1,
-    PLAYER_POS = 2,
-};
-
 int main() {
-    if (!GEngine->initialize_server("127.0.0.1", 1234)) {
-        return SDL_APP_FAILURE;
-    }
+    ENetServer server;
+    server.initialize("127.0.0.1", 1234);
 
-    GEngine->on_message(static_cast<uint8_t>(PacketType::MESSAGE), [](ENetPeer* peer, const Packet& packet) {
-        std::string msg(packet.data.begin(), packet.data.end());
-        LOG_INFO("Received message from peer %u: %s", peer->incomingPeerID, msg.c_str());
+    server.on_peer_connected = [&](ENetPeer* peer) {
+        LOG_INFO("[SERVER] - Peer connected: %d, Host %u", peer->connectID, peer->address.host);
+    };
+
+    server.on_peer_disconnected = [&](ENetPeer* peer) { LOG_INFO("[SERVER] - Peer disconnected: %u", peer->address.host); };
+
+    server.register_rpc("hello", [](ENetPeer* peer, const std::vector<uint8_t>& args) {
+        std::string data(args.begin(), args.end());
+        LOG_INFO("[SERVER] - RPC 'hello' called by peer %d with data: %s", peer->connectID, data.c_str());
     });
 
-    GEngine->on_message(static_cast<uint8_t>(PacketType::PLAYER_POS), [](ENetPeer* peer, const Packet& packet) {
-        if (packet.data.size() != sizeof(PlayerPosPacket)) {
-            LOG_WARN("Invalid PlayerPosPacket size from peer %u", peer->incomingPeerID);
-            return;
-        }
 
-        PlayerPosPacket pos{};
-        SDL_memcpy(&pos, packet.data.data(), sizeof(PlayerPosPacket));
-        LOG_INFO("Player %u position: (%d, %d)", peer->incomingPeerID, pos.x, pos.y);
-    });
-
-    while (GEngine->is_running) {
-        GEngine->time_manager()->update();
-
-        const double dt = GEngine->time_manager()->get_delta_time();
-
-        GEngine->update_server(dt);
+    while (true) {
+        server.poll();
+        SDL_Delay(16);
     }
 
-    GEngine->shutdown_server();
 
     return 0;
 }
