@@ -4,35 +4,44 @@
 
 
 class ENetClient {
-
 public:
-    ENetClient(const std::string& host, uint16_t port);
-
+    ENetClient();
     ~ENetClient();
 
-    void pool();
+    bool connect(const char* host, int port);
+    void disconnect();
+    void poll();
 
-    void send(uint8_t type, const std::string& message);
+    [[nodiscard]] bool is_connected() const;
+
 
     template <typename T>
-    void send(uint8_t type, const T& obj);
+    void rpc(const std::string& method, const T& arg);
+    void rpc(const std::string& method, const std::vector<uint8_t>& args);
+    void rpc(const std::string& method, const std::string& arg);
 
-    void on_message(uint8_t type, std::function<void(ENetPeer*, const Packet&)> handler);
+    std::function<void()> on_connected;
+    std::function<void()> on_disconnected;
 
+    void register_rpc(const std::string& method, std::function<void(const std::vector<uint8_t>&)> handler);
+
+    ENetClient(const ENetClient&)            = delete;
+    ENetClient& operator=(const ENetClient&) = delete;
 private:
-    bool _is_connected = false;
-    HashMap<uint8_t, std::function<void(ENetPeer*, const Packet&)>> _handlers;
+    ENetHost* client;
+    ENetPeer* peer;
 
-    ENetHost* client = nullptr;
-    ENetPeer* peer   = nullptr;
+    std::unordered_map<std::string, std::function<void(const std::vector<uint8_t>&)>> rpc_methods;
 
-    void send_packet(uint8_t type, const std::vector<uint8_t>& payload);
+    void handle_packet(ENetPacket* packet);
+    void handle_rpc_packet(const uint8_t* payload, uint16_t size);
+
+
 };
 
-
 template <typename T>
-void ENetClient::send(uint8_t type, const T& obj) {
+void ENetClient::rpc(const std::string& method, const T& arg) {
     std::vector<uint8_t> payload(sizeof(T));
-    SDL_memcpy(payload.data(), &obj, sizeof(T));
-    send_packet(type, payload);
+    SDL_memcpy(payload.data(), &arg, sizeof(T));
+    rpc(method, payload);
 }
