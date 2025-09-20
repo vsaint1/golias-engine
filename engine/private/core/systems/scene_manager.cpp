@@ -4,14 +4,14 @@
 
 
 void Scene::set_root(Node2D* node) {
-    _root = node;
+    _root = std::unique_ptr<Node2D>(node);
 }
 
 
 void Scene::setup() {
 
     if (!_root) {
-        _root = new Node2D("Root");
+        _root = std::make_unique<Node2D>("Root");
     }
 
     if (!did_load) {
@@ -19,7 +19,6 @@ void Scene::setup() {
         on_ready();
         _root->ready();
     }
-
 }
 
 void Scene::update(double dt) {
@@ -27,18 +26,22 @@ void Scene::update(double dt) {
 
         on_update(dt);
         _root->process(dt);
-
     }
 }
 
 void Scene::input(InputManager* input) {
-    if (_root && did_load) {
+
+    if (_root && did_load && input) {
         on_input(input);
         _root->input(input);
     }
 }
 
 void Scene::draw(Renderer* renderer) {
+    if (!renderer) {
+        return;
+    }
+
     if (_root && did_load) {
         on_draw(renderer);
         _root->draw(renderer);
@@ -47,19 +50,16 @@ void Scene::draw(Renderer* renderer) {
 
 void Scene::destroy() {
     on_destroy();
-    delete _root;
-    _root = nullptr;
+
+    _root    = nullptr;
     did_load = false;
 }
 
 Node2D* Scene::get_root() const {
-    return _root;
+    return _root.get();
 }
 
-Scene::~Scene() {
-
-    delete _root;
-}
+Scene::~Scene() = default;
 
 // ====================================================================================
 bool SceneManager::initialize() {
@@ -78,44 +78,33 @@ void SceneManager::update(double delta_time) {
 
         // CALLED EVERY FRAME
         _current->update(delta_time);
-        
+
         _current->input(GEngine->input_manager());
 
         _current->draw(GEngine->get_renderer());
-
     }
+
+    process_scene_change();
 }
 
 
 void SceneManager::set_scene(const std::string& name) {
     auto it = _scenes.find(name);
     if (it != _scenes.end()) {
-        if (_current == it->second.get()) {
-            return;
-        }
-
-        if (_current) {
-            _current->destroy();
-        }
-
-        _current = it->second.get();
-        if (_current) {
-            _current->setup();
-        }
-
+        _next_scene_name = name;
     } else {
         LOG_WARN("Scene '%s' not found", name.c_str());
     }
 }
 
-void SceneManager::set_scene(Scene* scene) {
+void SceneManager::process_scene_change() {
 
-    auto it = std::ranges::find_if(_scenes, [scene](const auto& pair) { return pair.second.get() == scene; });
+    if (_next_scene_name.empty()) {
+        return;
+    }
+
+    auto it = _scenes.find(_next_scene_name);
     if (it != _scenes.end()) {
-        if (_current == it->second.get()) {
-            return;
-        }
-
         if (_current) {
             _current->destroy();
         }
@@ -124,11 +113,9 @@ void SceneManager::set_scene(Scene* scene) {
         if (_current) {
             _current->setup();
         }
-
-
-    } else {
-        LOG_WARN("Scene not found in the manager");
     }
+
+    _next_scene_name.clear();
 }
 
 

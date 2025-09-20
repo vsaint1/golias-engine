@@ -5,9 +5,7 @@
 
 class Scene {
 public:
-    Scene() {
-        _root = new Node2D("Root");
-    }
+    Scene() = default;
 
     virtual void on_ready() {
     }
@@ -43,7 +41,8 @@ public:
     bool did_load = false;
 
 protected:
-    Node2D* _root = nullptr;
+
+    std::unique_ptr<Node2D> _root = std::make_unique<Node2D>("Root");
 };
 
 
@@ -55,7 +54,6 @@ public:
     void update(double delta_time) override;
 
     void set_scene(const std::string& name);
-    void set_scene(Scene* scene);
     [[nodiscard]] Scene* get_scene(const std::string& name) const;
 
     void add_scene(const std::string& name, std::unique_ptr<Scene> scene);
@@ -68,5 +66,10 @@ protected:
     const char* clazz_name = "SceneManager";
 
 private:
+    // change next-frame
+    std::string _next_scene_name;
+
+    void process_scene_change();
+
     HashMap<std::string, std::unique_ptr<Scene>> _scenes;
 };
