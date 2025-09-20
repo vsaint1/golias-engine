@@ -34,7 +34,6 @@ class Engine {
 public:
     Engine();
 
-    bool is_multiplayer = false;
 
     struct {
         float width                 = 0;
@@ -157,20 +156,6 @@ public:
     template <typename T>
     T* get_system();
 
-
-    // -------------------- SERVER CODE --------------------
-    bool initialize_server(const char* host,int port = ENET_PORT_ANY);
-
-    void shutdown_server();
-
-    void update_server(double delta_time = 0);
-
-    void broadcast(uint8_t type, const std::string& message);
-
-    template <typename T>
-    void broadcast(uint8_t type, const T& data);
-
-    void on_message(uint8_t type, std::function<void(ENetPeer*, const Packet&)> handler);
 private:
 
     std::vector<std::unique_ptr<EngineManager>> _systems{};
@@ -180,15 +165,6 @@ private:
     TimeManager* _time_manager   = nullptr;
 
     b2WorldId _world;
-
-    struct {
-        ENetHost* host      = nullptr;
-        ENetAddress address = {};
-    } Server;
-
-    HashMap<uint8_t, std::function<void(ENetPeer*, const Packet&)>> handlers;
-
-    void handle_packet(ENetPeer* peer, ENetPacket* packet);
 
     /**
      * @brief Create a renderer instance.
@@ -283,22 +259,7 @@ T random(T min, T max) {
 
 
 
-template <typename T>
-void Engine::broadcast(uint8_t type, const T& data) {
-    std::vector<uint8_t> payload(sizeof(T));
-    SDL_memcpy(payload.data(), &data, sizeof(T));
 
-    uint16_t size = static_cast<uint16_t>(payload.size());
-    uint8_t header[3] = { type, static_cast<uint8_t>((size >> 8) & 0xFF), static_cast<uint8_t>(size & 0xFF) };
-
-    std::vector<uint8_t> packet;
-    packet.insert(packet.end(), header, header + 3);
-    packet.insert(packet.end(), payload.begin(), payload.end());
-
-    ENetPacket* p = enet_packet_create(packet.data(), packet.size(), ENET_PACKET_FLAG_RELIABLE);
-    enet_host_broadcast(Server.host, 0, p);
-    enet_host_flush(Server.host);
-}
 
 
 void engine_core_loop();
