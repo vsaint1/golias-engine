@@ -35,7 +35,6 @@ public:
     [[nodiscard]] glm::vec2 get_velocity() const;
     [[nodiscard]] bool is_on_ground() const;
 
-    void input(const InputManager* input) override;
     void draw_inspector() override;
     void draw_hierarchy() override;
 

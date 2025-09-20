@@ -3,9 +3,6 @@
 #include "core/ember_core.h"
 
 
-void RigidBody2D::input(const InputManager* input) {
-    Node2D::input(input);
-}
 
 void RigidBody2D::draw_inspector() {
     Node2D::draw_inspector();
