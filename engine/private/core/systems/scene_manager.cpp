@@ -84,6 +84,7 @@ void SceneManager::update(double delta_time) {
         _current->draw(GEngine->get_renderer());
     }
 
+    // TODO: process only if scene changed
     process_scene_change();
 }
 

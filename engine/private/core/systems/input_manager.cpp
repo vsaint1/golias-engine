@@ -209,16 +209,7 @@ void InputManager::process_event(const SDL_Event& event) {
 
             glm::vec2 raw_pos(event.motion.x, event.motion.y);
 
-#if defined(WITH_EDITOR)
-            glm::vec4 vp    = get_editor_viewport_rect();
-            _mouse_position = raw_pos - glm::vec2(vp.x, vp.y);
-
-            _mouse_position.x = glm::clamp(_mouse_position.x, 0.0f, vp.z);
-            _mouse_position.y = glm::clamp(_mouse_position.y, 0.0f, vp.w);
-
-#else
             _mouse_position = raw_pos;
-#endif
 
             _mouse_delta = glm::vec2(event.motion.xrel, event.motion.yrel) * _mouse_sensitivity;
             break;

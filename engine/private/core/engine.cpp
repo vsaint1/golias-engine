@@ -11,25 +11,62 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 ma_engine audio_engine;
 
-constexpr double FIXED_TIMESTEP = 1.0 / 60.0;
-constexpr double MAX_FRAME_TIME = 0.25;
+SDL_Event event;
 
-void Engine::update(double delta_time) {
+void Engine::update_systems(double delta_time) {
 
-    if (this->_time_manager->is_paused()) {
-        return;
-    }
+    GEngine->input_manager()->update();
 
-    this->_time_manager->update();
-
-    this->_input_manager->update();
-
+    // 1/60
     b2World_Step(this->_world, FIXED_TIMESTEP, 4);
 
     for (const auto& system : _systems) {
         system->update(delta_time);
     }
 }
+
+void engine_core_loop() {
+
+    static double accumulator = 0.0;
+
+    GEngine->time_manager()->update();
+
+    accumulator += GEngine->time_manager()->get_raw_delta_time();
+
+    while (SDL_PollEvent(&event)) {
+
+        GEngine->input_manager()->process_event(event);
+    }
+
+    if (GEngine->time_manager()->is_paused()) {
+        return;
+    }
+
+    while (accumulator >= FIXED_TIMESTEP) {
+        GEngine->get_renderer()->clear();
+
+        GEngine->update_systems(FIXED_TIMESTEP);
+
+        GEngine->get_renderer()->flush();
+
+        GEngine->get_renderer()->present();
+
+        accumulator -= FIXED_TIMESTEP;
+    }
+}
+
+
+void Engine::run() {
+
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    emscripten_set_main_loop(engine_core_loop, 0, true);
+#else
+    while (this->is_running) {
+        engine_core_loop();
+    }
+#endif
+}
+
 
 b2WorldId Engine::get_physics_world() const {
     return _world;
@@ -330,6 +367,7 @@ void Engine::shutdown() {
     SDL_Quit();
 }
 
+
 Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
 
     MetalRenderer* mtlRenderer = new MetalRenderer();
@@ -538,11 +576,11 @@ bool Engine::initialize_server(const char* host, int port) {
 
     addr.port = port;
 
-    constexpr int E_MAX_CLIENTS = 32;
+    constexpr int E_MAX_CLIENTS  = 32;
     constexpr int E_MAX_CHANNELS = 2;
 
-    Server.host                = enet_host_create(&addr, E_MAX_CLIENTS, E_MAX_CHANNELS, 0, 0);
-    Server.address             = addr;
+    Server.host    = enet_host_create(&addr, E_MAX_CLIENTS, E_MAX_CHANNELS, 0, 0);
+    Server.address = addr;
 
     if (!Server.host) {
         LOG_ERROR("[SERVER] - Failed to create ENet host!");
@@ -552,10 +590,10 @@ bool Engine::initialize_server(const char* host, int port) {
 
     LOG_INFO("[SERVER] - address: %s, port: %d", host, Server.address.port);
 
-    this->is_running  = true;
+    this->is_running     = true;
     this->is_multiplayer = true;
 
-    this->_time_manager  = new TimeManager();
+    this->_time_manager = new TimeManager();
     this->_time_manager->set_target_fps(60);
 
     return true;
@@ -578,13 +616,13 @@ void Engine::shutdown_server() {
 }
 
 void Engine::update_server(double delta_time) {
-    if (!Server.host) return;
+    if (!Server.host) {
+        return;
+    }
 
     const auto decode_host = [](enet_uint32 host) -> std::string {
-        return std::to_string((host & 0xFF)) + "." +
-               std::to_string((host >> 8) & 0xFF) + "." +
-               std::to_string((host >> 16) & 0xFF) + "." +
-               std::to_string((host >> 24) & 0xFF);
+        return std::to_string((host & 0xFF)) + "." + std::to_string((host >> 8) & 0xFF) + "." + std::to_string((host >> 16) & 0xFF) + "."
+             + std::to_string((host >> 24) & 0xFF);
     };
 
     ENetEvent event;
@@ -592,17 +630,12 @@ void Engine::update_server(double delta_time) {
 
         switch (event.type) {
         case ENET_EVENT_TYPE_CONNECT:
-            LOG_INFO("[SERVER] - Client connected from %x:%u",
-                     event.peer->address.host,
-                     event.peer->address.port);
+            LOG_INFO("[SERVER] - Client connected from %x:%u", event.peer->address.host, event.peer->address.port);
             break;
 
         case ENET_EVENT_TYPE_RECEIVE:
-            LOG_INFO("[SERVER] - Packet received from %s:%u, channel %u, length %zu",
-                     decode_host(event.peer->address.host).c_str(),
-                     event.peer->address.port,
-                     event.channelID,
-                     event.packet->dataLength);
+            LOG_INFO("[SERVER] - Packet received from %s:%u, channel %u, length %zu", decode_host(event.peer->address.host).c_str(),
+                     event.peer->address.port, event.channelID, event.packet->dataLength);
 
             handle_packet(event.peer, event.packet);
             enet_packet_destroy(event.packet);
@@ -612,7 +645,8 @@ void Engine::update_server(double delta_time) {
             LOG_INFO("[SERVER] - Client disconnected.");
             break;
 
-        default: break;
+        default:
+            break;
         }
     }
 }
@@ -620,8 +654,8 @@ void Engine::update_server(double delta_time) {
 void Engine::broadcast(uint8_t type, const std::string& message) {
     std::vector<uint8_t> payload(message.begin(), message.end());
 
-    uint16_t size = static_cast<uint16_t>(payload.size());
-    uint8_t header[3] = { type, static_cast<uint8_t>((size >> 8) & 0xFF), static_cast<uint8_t>(size & 0xFF) };
+    uint16_t size     = static_cast<uint16_t>(payload.size());
+    uint8_t header[3] = {type, static_cast<uint8_t>((size >> 8) & 0xFF), static_cast<uint8_t>(size & 0xFF)};
 
     std::vector<uint8_t> packet;
     packet.insert(packet.end(), header, header + 3);
@@ -633,13 +667,17 @@ void Engine::broadcast(uint8_t type, const std::string& message) {
 }
 
 void Engine::handle_packet(ENetPeer* peer, ENetPacket* packet) {
-    if (packet->dataLength < 3) return;
+    if (packet->dataLength < 3) {
+        return;
+    }
 
-    uint8_t type = packet->data[0];
+    uint8_t type  = packet->data[0];
     uint16_t size = (packet->data[1] << 8) | packet->data[2];
-    if (packet->dataLength < size + 3) return;
+    if (packet->dataLength < size + 3) {
+        return;
+    }
 
-    Packet msg{ type, { packet->data + 3, packet->data + 3 + size } };
+    Packet msg{type, {packet->data + 3, packet->data + 3 + size}};
 
     if (handlers.contains(type)) {
         handlers[type](peer, msg);

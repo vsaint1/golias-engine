@@ -18,7 +18,7 @@ class Renderer;
 class OpenglShader;
 class OpenglRenderer;
 
-
+constexpr double FIXED_TIMESTEP = 1.0 / 60.0;
 constexpr float PIXELS_PER_METER = 32.0f;
 constexpr float METERS_PER_PIXEL = 1.0f / PIXELS_PER_METER;
 
@@ -40,7 +40,7 @@ public:
         float width                 = 0;
         float height                = 0;
         const SDL_DisplayMode* data = nullptr;
-        int bbWidth = 0, bbHeight = 0; // backbuffer
+        int bbWidth = 0, bbHeight = 0; /// backbuffer
         SDL_Window* handle{};
     } Window;
 
@@ -92,6 +92,15 @@ public:
      */
     void shutdown();
 
+    /**
+     * @brief Main engine loop.
+     *
+     * @details  Processes input, updates systems, and renders each frame.
+     * - Windows, Linux, macOS, iOS, Android and Web
+     *
+     * @version 0.0.1
+     */
+    void run();
 
     /**
      * @brief Disable or enable vertical synchronization (VSync).
@@ -129,7 +138,7 @@ public:
      *
      * @version 0.0.1
      */
-    void update(double delta_time = 0);
+    void update_systems(double delta_time = 0);
 
     /*! @brief Get the created physics world.
      *
@@ -163,8 +172,6 @@ public:
 
     void on_message(uint8_t type, std::function<void(ENetPeer*, const Packet&)> handler);
 private:
-    double _physics_accumulator = 0.0;
-
 
     std::vector<std::unique_ptr<EngineManager>> _systems{};
 
@@ -292,3 +299,6 @@ void Engine::broadcast(uint8_t type, const T& data) {
     enet_host_broadcast(Server.host, 0, p);
     enet_host_flush(Server.host);
 }
+
+
+void engine_core_loop();

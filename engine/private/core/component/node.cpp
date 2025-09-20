@@ -187,12 +187,15 @@ void Node2D::process(double delta_time) {
 }
 
 void Node2D::draw(Renderer* renderer) {
-    if (!is_effective_visible() || !is_alive() ||  !_is_ready) {
+    if (!is_effective_visible() || !is_alive() || !_is_ready) {
         return;
     }
 
     for (const auto& [name, child] : _nodes) {
-        child->draw(renderer);
+        if (child) {
+
+            child->draw(renderer);
+        }
     }
 }
 
@@ -202,7 +205,9 @@ void Node2D::input(const InputManager* input) {
     }
 
     for (const auto& [name, child] : _nodes) {
-        child->input(input);
+        if (child) {
+            child->input(input);
+        }
     }
 }
 
@@ -215,7 +220,7 @@ void Node2D::draw_inspector() {
         return;
     }
 
-    ImGui::Text("%s",typeid(*this).name());
+    ImGui::Text("%s", typeid(*this).name());
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
