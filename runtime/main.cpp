@@ -13,6 +13,8 @@ class MainScene final : public Scene {
     const double MOVE_SPEED = 200.0f;
     const double JUMP_FORCE = 10.0f;
 
+    ENetClient client;
+
 public:
     void on_ready() override {
         LOG_INFO("MainScene::on_ready()");
@@ -79,6 +81,18 @@ public:
                 colliding_label->set_text("Colliding with: None");
             }
         });
+
+        client.connect("127.0.0.1",1234);
+
+        client.on_connected = [&] {
+            client.rpc("hello","Hello world");
+
+        };
+
+        client.on_disconnected = [&] {
+            LOG_INFO("Disconnected from server");
+        };
+
     }
 
 
@@ -105,6 +119,8 @@ public:
         if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_SPACE) && player->is_on_ground()) {
             player->apply_impulse({0, JUMP_FORCE});
         }
+
+        client.poll();
     }
 };
 
@@ -144,24 +160,8 @@ int main(int argc, char* argv[]) {
     }
 
 
-    auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
-
-    // auto client = new ENetClient("127.0.0.1",1234);
-
-    struct PlayerPos {
-        Uint32 x;
-        Uint32 y;
-    };
-
-    auto pos = PlayerPos{100, 200};
-    // client->send(1, "Hello from client!");
-    // client->send(2, pos);
-
-
     GEngine->run();
 
-
-    // delete client;
     GEngine->shutdown();
 
     return 0;
