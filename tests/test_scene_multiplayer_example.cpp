@@ -13,6 +13,8 @@ class MainScene final : public Scene {
     const double MOVE_SPEED = 200.0f;
     const double JUMP_FORCE = 10.0f;
 
+    ENetClient client;
+
 public:
     void on_ready() override {
         LOG_INFO("MainScene::on_ready()");
@@ -79,6 +81,26 @@ public:
                 colliding_label->set_text("Colliding with: None");
             }
         });
+
+        client.connect("127.0.0.1",1234);
+
+        client.on_connected = [&] {
+            client.rpc("hello","Hello world");
+
+        };
+
+        client.on_disconnected = [&] {
+            LOG_INFO("Disconnected from server");
+        };
+
+    }
+
+
+    void on_input(InputManager* input) override {
+        if (input->is_key_pressed(SDL_SCANCODE_1)) {
+            GEngine->get_system<SceneManager>()->set_scene("Test");
+        }
+
     }
 
 
@@ -97,47 +119,25 @@ public:
         if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_SPACE) && player->is_on_ground()) {
             player->apply_impulse({0, JUMP_FORCE});
         }
+
+        client.poll();
     }
 };
 
-SDL_Event e;
-
-void engine_core_loop() {
-
-    while (SDL_PollEvent(&e)) {
-#if defined(WITH_EDITOR)
-        ImGui_ImplSDL3_ProcessEvent(&e);
-#endif
-
-        GEngine->input_manager()->process_event(e);
-    }
-
-    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_1)) {
-        GEngine->get_system<SceneManager>()->set_scene("Test");
-    }
-
-    if (GEngine->input_manager()->is_key_pressed(SDL_SCANCODE_2)) {
-        GEngine->get_system<SceneManager>()->set_scene("Main");
-    }
-
-    const double dt = GEngine->time_manager()->get_delta_time();
-
-    GEngine->get_renderer()->clear({0.2f, 0.3f, 0.3f, 1.0f});
-
-    GEngine->update(dt);
-
-    GEngine->get_renderer()->flush();
-
-    GEngine->get_renderer()->present();
-}
 
 class TestScene final : public Scene {
 public:
     void on_ready() override {
         LOG_INFO("TestScene::on_ready()");
-        auto label = new Label("mine", "This is a test scene!");
+        auto label = new Label("mine", "This is a test sceneR!");
         label->set_transform({{100, 100}, {1, 1}, 0});
         _root->add_child("Label", label);
+    }
+
+    void on_input(InputManager* input) override {
+      if (input->is_key_pressed(SDL_SCANCODE_2)) {
+        GEngine->get_system<SceneManager>()->set_scene("Main");
+      }
     }
 };
 
@@ -160,30 +160,8 @@ int main(int argc, char* argv[]) {
     }
 
 
-    auto sample_texture2 = renderer->load_texture("sprites/Character_002.png");
+    GEngine->run();
 
-    auto client = new ENetClient("127.0.0.1",1234);
-
-    struct PlayerPos {
-        Uint32 x;
-        Uint32 y;
-    };
-
-    auto pos = PlayerPos{100,200};
-    client->send(1, "Hello from client!");
-    client->send(2, pos);
-
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
-    emscripten_set_main_loop(engine_core_loop, 0, true);
-#else
-    while (GEngine->is_running) {
-        client->pool();
-        engine_core_loop();
-    }
-#endif
-
-
-    delete client;
     GEngine->shutdown();
 
     return 0;
