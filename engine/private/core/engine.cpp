@@ -36,6 +36,13 @@ void engine_core_loop() {
 
     while (SDL_PollEvent(&event)) {
 
+        if (event.type == SDL_EVENT_QUIT) {
+            GEngine->is_running = false;
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+            emscripten_cancel_main_loop();
+#endif
+        }
+
         GEngine->input_manager()->process_event(event);
     }
 

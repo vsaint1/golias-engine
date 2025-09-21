@@ -80,32 +80,6 @@ struct TouchPoint {
         : finger_id(id), active(true), position(pos), pressure(press, 0.0f), start_position(pos) {}
 };
 
-class TextInputManager {
-public:
-    void start_input(SDL_Window* window);
-    void stop_input(SDL_Window* window);
-    void process_event(const SDL_Event& event);
-    void clear_text();
-
-    [[nodiscard]] bool is_active() const { return _active; }
-    [[nodiscard]] const std::string& get_text() const { return _text; }
-    [[nodiscard]] const std::string& get_composition() const { return _composition; }
-    [[nodiscard]] int get_cursor_position() const { return _cursor_pos; }
-
-    // Text manipulation
-    void set_text(const std::string& text);
-    void insert_text(const std::string& text);
-    void delete_char_at_cursor();
-    void move_cursor(int offset);
-
-private:
-    bool _active = false;
-    std::string _text;
-    std::string _composition;
-    int _cursor_pos = 0;
-    int _composition_start = 0;
-    int _composition_length = 0;
-};
 
 /* !
  * @brief InputManager class
@@ -173,11 +147,6 @@ public:
     [[nodiscard]] glm::vec2 get_touch_position(SDL_FingerID finger_id) const;
     [[nodiscard]] size_t get_active_touch_count() const;
 
-    // === TEXT INPUT ===
-    TextInputManager& get_text_input() { return _text_input; }
-    void start_text_input() { _text_input.start_input(_window); }
-    void stop_text_input() { _text_input.stop_input(_window); }
-
     // === INPUT ACTIONS ===
     void register_action(const InputAction& action);
     void unregister_action(const std::string& action_name);
@@ -194,7 +163,6 @@ public:
     [[nodiscard]] bool is_input_blocked() const { return _input_blocked; }
 
     // Debug
-    void print_debug_info() const;
     [[nodiscard]] std::vector<SDL_Scancode> get_pressed_keys() const;
 
     // Configuration
@@ -234,9 +202,6 @@ private:
 
     // Touch state
     std::unordered_map<SDL_FingerID, TouchPoint> _touch_points;
-
-    // Text input
-    TextInputManager _text_input;
 
     // Input actions
     std::unordered_map<std::string, InputAction> _input_actions;

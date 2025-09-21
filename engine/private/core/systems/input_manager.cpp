@@ -1,7 +1,5 @@
 #include "core/systems/input_manager.h"
-
 #include "core/engine.h"
-#include "core/systems/logging_sys.h"
 
 
 GamepadInfo::~GamepadInfo() {
@@ -21,7 +19,7 @@ float GamepadInfo::get_axis_value(int axis) const {
     }
 
     float value = axis_values[axis];
-    return (std::abs(value) < deadzone) ? 0.0f : value;
+    return SDL_abs(value) < deadzone ? 0.0f : value;
 }
 
 glm::vec2 GamepadInfo::get_stick_value(int stick_index) const {
@@ -37,88 +35,6 @@ glm::vec2 GamepadInfo::get_stick_value(int stick_index) const {
     return glm::vec2(0.0f);
 }
 
-void TextInputManager::start_input(SDL_Window* window) {
-    if (!_active) {
-        _active = true;
-        SDL_StartTextInput(window);
-    }
-}
-
-void TextInputManager::stop_input(SDL_Window* window) {
-    if (_active) {
-        _active = false;
-        SDL_StopTextInput(window);
-    }
-}
-
-void TextInputManager::process_event(const SDL_Event& event) {
-    if (!_active) {
-        return;
-    }
-
-    switch (event.type) {
-    case SDL_EVENT_TEXT_INPUT:
-        insert_text(event.text.text);
-        break;
-
-    case SDL_EVENT_TEXT_EDITING:
-        _composition        = event.edit.text;
-        _composition_start  = event.edit.start;
-        _composition_length = event.edit.length;
-        break;
-    case SDL_EVENT_KEY_DOWN:
-        switch (event.key.key) {
-        case SDLK_BACKSPACE:
-            delete_char_at_cursor();
-            break;
-        case SDLK_RETURN:
-        case SDLK_KP_ENTER:
-            insert_text("\n");
-            break;
-        case SDLK_LEFT:
-            move_cursor(-1);
-            break;
-        case SDLK_RIGHT:
-            move_cursor(1);
-            break;
-        case SDLK_HOME:
-            _cursor_pos = 0;
-            break;
-        case SDLK_END:
-            _cursor_pos = static_cast<int>(_text.length());
-            break;
-        }
-        break;
-    default:;
-    }
-}
-
-void TextInputManager::clear_text() {
-    _text.clear();
-    _cursor_pos = 0;
-    _composition.clear();
-}
-
-void TextInputManager::set_text(const std::string& text) {
-    _text       = text;
-    _cursor_pos = static_cast<int>(_text.length());
-}
-
-void TextInputManager::insert_text(const std::string& text) {
-    _text.insert(_cursor_pos, text);
-    _cursor_pos += static_cast<int>(text.length());
-}
-
-void TextInputManager::delete_char_at_cursor() {
-    if (_cursor_pos > 0 && !_text.empty()) {
-        _text.erase(_cursor_pos - 1, 1);
-        _cursor_pos--;
-    }
-}
-
-void TextInputManager::move_cursor(int offset) {
-    _cursor_pos = std::max(0, std::min(static_cast<int>(_text.length()), _cursor_pos + offset));
-}
 
 InputManager::InputManager(SDL_Window* window) : _window(window) {
 
@@ -166,20 +82,6 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
     }
 }
 
-#if defined(WITH_EDITOR)
-glm::vec4 get_editor_viewport_rect() {
-
-    ImGuiWindow* window = ImGui::FindWindowByName("ViewportPane");
-    if (!window) {
-        return glm::vec4(0, 0, 0, 0);
-    }
-
-    ImVec2 top_left = window->Pos;
-    ImVec2 size     = window->Size;
-
-    return {top_left.x, top_left.y, size.x, size.y}; // x, y, width, height
-}
-#endif
 
 
 InputManager::~InputManager() {
@@ -189,21 +91,7 @@ InputManager::~InputManager() {
 
 void InputManager::process_event(const SDL_Event& event) {
 
-    _text_input.process_event(event);
-
     switch (event.type) {
-    case SDL_EVENT_QUIT:
-        {
-            if (GEngine) {
-                GEngine->is_running = false;
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
-                emscripten_cancel_main_loop();
-#endif
-            }
-
-            break;
-        }
-
     case SDL_EVENT_MOUSE_MOTION:
         {
 
@@ -741,21 +629,6 @@ bool InputManager::position_in_rect(glm::vec2 position, const Rect2& rect) const
 
 bool InputManager::mouse_in_rect(const Rect2& rect) const {
     return position_in_rect(_mouse_position, rect);
-}
-
-void InputManager::print_debug_info() const {
-    LOG_INFO("=== InputManager Debug Info ===");
-    LOG_INFO("Mouse Position: (%.1f, %.1f)", _mouse_position.x, _mouse_position.y);
-    LOG_INFO("Mouse Delta: (%.1f, %.1f)", _mouse_delta.x, _mouse_delta.y);
-    LOG_INFO("Connected Gamepads: %zu", _gamepads.size());
-    LOG_INFO("Active Touch Points: %zu", get_active_touch_count());
-    LOG_INFO("Text Input Active: %s", _text_input.is_active() ? "Yes" : "No");
-    LOG_INFO("Input Blocked: %s", _input_blocked ? "Yes" : "No");
-
-    std::vector<SDL_Scancode> pressed_keys = get_pressed_keys();
-    if (!pressed_keys.empty()) {
-        LOG_INFO("Pressed Keys: %zu", pressed_keys.size());
-    }
 }
 
 std::vector<SDL_Scancode> InputManager::get_pressed_keys() const {
