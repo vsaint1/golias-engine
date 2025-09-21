@@ -7,9 +7,9 @@ Logger& Logger::get_instance() {
 }
 
 void Logger::initialize(const char* app_identifier) {
-    auto& debug = get_instance();
+    auto& logging = get_instance();
 
-    if (debug._thread) {
+    if (logging._thread) {
         return;
     }
 
@@ -18,9 +18,9 @@ void Logger::initialize(const char* app_identifier) {
         return 0;
     };
 
-    debug._app_identifier = app_identifier;
-    debug._is_running     = true;
-    debug._thread         = SDL_CreateThread(fn_thread, "LogThread", &debug);
+    logging._app_identifier = app_identifier;
+    logging._is_running     = true;
+    logging._thread         = SDL_CreateThread(fn_thread, "LogThread", &logging);
 }
 
 void Logger::push(const std::string& formatted_log) {
@@ -35,50 +35,55 @@ void Logger::push(const std::string& formatted_log) {
 }
 
 void Logger::destroy() {
-    auto& debug = get_instance();
+    auto& logging = get_instance();
 
-    debug._mutex.lock();
+    logging._mutex.lock();
 
-    debug._is_running = false;
+    logging._is_running = false;
 
-    debug._mutex.unlock();
+    logging._mutex.unlock();
 
-    debug._condition.notify_all();
+    logging._condition.notify_all();
 
     int status = 0;
-    SDL_WaitThread(debug._thread, &status);
+    SDL_WaitThread(logging._thread, &status);
+
+    SDL_CloseIO(logging.file);
 }
 
 
 void Logger::log_thread() {
 
-    char* pref_path = SDL_GetPrefPath("Ember Engine", _app_identifier);
+    if (!file) {
 
-    time_t now = time(nullptr);
-    tm local_time = {};
+        char* pref_path = SDL_GetPrefPath("Ember Engine", _app_identifier);
+
+        time_t now    = time(nullptr);
+        tm local_time = {};
 
 #if defined(SDL_PLATFORM_WINDOWS)
-    errno_t err = localtime_s(&local_time, &now);
-    if (err != 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time: %d", err);
-        return;
-    }
+        errno_t err = localtime_s(&local_time, &now);
+        if (err != 0) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time: %d", err);
+            return;
+        }
 #else
-    if (localtime_r(&now, &local_time) == nullptr) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time");
-        return;
-    }
+        if (localtime_r(&now, &local_time) == nullptr) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time");
+            return;
+        }
 #endif
 
-    char buffer[80];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", &local_time);
+        char buffer[80];
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", &local_time);
 
-    char file_name[256];
-    SDL_snprintf(file_name, sizeof(file_name), "engine_logs-%s.txt", buffer);
+        char file_name[256];
+        SDL_snprintf(file_name, sizeof(file_name), "engine_logs-%s.txt", buffer);
 
-    const std::string log_path = std::string(pref_path).append(file_name);
+        const std::string log_path = std::string(pref_path).append(file_name);
 
-    SDL_IOStream* file = SDL_IOFromFile(log_path.c_str(), "a");
+        file = SDL_IOFromFile(log_path.c_str(), "a");
+    }
 
     if (!file) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to open log file: %s", SDL_GetError());
@@ -96,14 +101,13 @@ void Logger::log_thread() {
 
             lock.unlock();
 
-            std::string full_msg = msg.append("\n");
-            SDL_WriteIO(file, full_msg.c_str(), full_msg.size());
+            msg.append("\n");
+
+            SDL_WriteIO(file, msg.c_str(), msg.size());
 
             lock.lock();
         }
 
         SDL_FlushIO(file);
     }
-
-    SDL_CloseIO(file);
 }

@@ -49,6 +49,8 @@ private:
     std::atomic<bool> _is_running = false;
 
     std::deque<std::string> _log_queue = std::deque<std::string>();
+
+    SDL_IOStream* file = nullptr;
 };
 
 
