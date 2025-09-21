@@ -2,7 +2,7 @@
 <config>
 
     <application>
-        <name>Golias engine - Window</name>
+        <name>Ember Engine - Window</name>
         <description>EEngine</description>
         <icon>res/icon.png</icon>
         <version>0.1.0</version>
@@ -18,7 +18,7 @@
     </logging>
 
     <performance>
-        <multithreading>true</multithreading>
+        <multithreading>false</multithreading>
         <worker_threads>4</worker_threads>
         <physics_fps>60</physics_fps>
     </performance>
