@@ -65,7 +65,11 @@ public:
 
     virtual void draw(Renderer* renderer);
 
+    virtual void input(const SDL_Event& event);
+
     virtual void input(const InputManager* input);
+
+
 
     virtual void draw_inspector();
 

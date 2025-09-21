@@ -199,6 +199,18 @@ void Node2D::draw(Renderer* renderer) {
     }
 }
 
+void Node2D::input(const SDL_Event& event) {
+    if (!is_alive() || !event.type || !_is_ready) {
+        return;
+    }
+    for (const auto& [name, child] : _nodes) {
+        if (child) {
+            child->input(event);
+        }
+    }
+
+}
+
 void Node2D::input(const InputManager* input) {
     if (!is_alive() || !input || !_is_ready) {
         return;
