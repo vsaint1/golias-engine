@@ -16,6 +16,11 @@ void Control::update_layout(const glm::vec2& viewport_size) {
     set_transform({{rect.x + pivot.x, rect.y + pivot.y}, {1.0f, 1.0f}, get_transform().rotation});
 }
 
+
+Control::Control() {
+    _z_index = 9999;
+}
+
 void Control::set_style(const Style& new_style) {
     _style = new_style;
 }

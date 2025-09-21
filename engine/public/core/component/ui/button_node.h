@@ -1,28 +1,13 @@
 #pragma once
-#include "control_node.h"
+#include "panel_node.h"
 
-class Button : public Control {
+class Button final : public Panel {
 public:
     glm::vec2 text_offset = {0.0f, 0.0f};
     glm::vec2 min_size    = {0, 0};
-    bool is_flat = false;
     MouseButton mask = MouseButton::LEFT;
 
-    Button(const char* txt , const glm::vec2& pos, const std::string& font_alias = "Default",const glm::vec2& size = {0,0}) {
-        _text = txt;
-        _font_alias = font_alias;
-        _btn_rect.x      = pos.x;
-        _btn_rect.y      = pos.y;
-        _btn_rect.width  = min_size.x;
-        _btn_rect.height = min_size.y;
-         min_size         = size;
-
-        _z_index = 9999;
-
-        _is_dirty            = true;
-
-    }
-
+    Button(const char* txt , const glm::vec2& pos, const std::string& font_alias = "Default",const glm::vec2& size = {0,0});
 
     std::function<void()> on_enter;
     std::function<void()> on_exit;
@@ -42,8 +27,6 @@ public:
 private:
     std::string _text;
     std::string _font_alias = "Default";
-
-    Rect2 _btn_rect;
 
     bool _pressed_inside = false;
     bool _was_pressed = false;

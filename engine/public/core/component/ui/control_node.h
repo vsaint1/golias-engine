@@ -17,6 +17,9 @@ struct Style {
 
 class Control : public Node2D {
 public:
+
+    Control();
+
     // Anchors (0.0 = left/top, 1.0 = right/bottom)
     float anchor_left   = 0.0f;
     float anchor_top    = 0.0f;
@@ -38,16 +41,17 @@ public:
     void draw(Renderer* renderer) override;
 
 protected:
-    Rect2 rect;
     float rotation = 0.0f;
-    Sizei viewport = {0,0};
     glm::vec2 scale = {1.0f, 1.0f};
+
     Style _style;
     bool _is_dirty = false;
 
     bool _is_disabled = false;
 
 private:
+    Rect2 rect;
+    Sizei viewport = {0,0};
 
     void update_layout(const glm::vec2& viewport_size);
 };
