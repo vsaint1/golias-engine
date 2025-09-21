@@ -77,7 +77,7 @@ bool SceneManager::initialize() {
 void SceneManager::shutdown() {
     for (const auto& [name, scene] : _scenes) {
         if (scene) {
-            LOG_INFO("SceneManager::shutdown() - destroying scene: %s", name.c_str());
+            LOG_INFO("SceneManager::shutdown() - destroying scene -> %s", name.c_str());
             scene->destroy();
         }
     }

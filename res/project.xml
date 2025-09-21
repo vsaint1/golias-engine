@@ -12,6 +12,11 @@
         <fullscreen>false</fullscreen>
     </application>
 
+    <logging>
+        <level>debug</level> <!-- debug, info, warning, error -->
+        <file>engine_logs</file>
+    </logging>
+
     <window>
         <size width="1280" height="720"/>  <!-- virtual size-->
         <mode>windowed</mode> <!-- windowed, minimized, maximized, fullscreen, exclusive-fullscreen -->

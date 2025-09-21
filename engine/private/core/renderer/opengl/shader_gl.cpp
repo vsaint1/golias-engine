@@ -45,11 +45,11 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
 
     this->id = program;
 
-    LOG_INFO("Successfully created and linked SHADER_PROGRAM(%d)", program);
+    // LOG_INFO("Successfully created and linked SHADER_PROGRAM(%d)", program);
 }
 
 unsigned int OpenglShader::compile_shader(unsigned int type, const char* source) {
-    LOG_INFO("OpenglShader::compile_shader()");
+    LOG_INFO("OpenglShader::compile_shader() - Type %s",type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
 
     EMBER_TIMER_START();
 
@@ -67,9 +67,7 @@ unsigned int OpenglShader::compile_shader(unsigned int type, const char* source)
     }
 
 
-    EMBER_TIMER_END("Compiling Shaders");
-
-    LOG_INFO("Compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
+    EMBER_TIMER_END("Compiling Shader");
 
     return shader;
 }
