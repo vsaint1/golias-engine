@@ -160,6 +160,36 @@ const char* EngineConfig::get_orientation_str() const {
     }
 }
 
+bool Performance::load(const tinyxml2::XMLElement* root) {
+    const auto performance_element = root->FirstChildElement("performance");
+
+    if (const auto multithread_element = performance_element->FirstChildElement("multithreading")) {
+
+        multithread_element->QueryBoolText(&is_multithreaded);
+    } else {
+        LOG_ERROR("Failed to load Performance Config - multithreading element is null");
+        return false;
+    }
+
+    if (const auto worker_threads_element = performance_element->FirstChildElement("worker_threads")) {
+        worker_threads_element->QueryIntText(&worker_threads);
+    } else {
+        LOG_ERROR("Failed to load Performance Config - worker_threads element is null");
+        return false;
+    }
+
+
+    if (const auto physics_fps_element = performance_element->FirstChildElement("physics_fps")) {
+        physics_fps_element->QueryIntText(&physics_fps);
+    } else {
+        LOG_ERROR("Failed to load Performance Config - physics_fps element is null");
+        return false;
+    }
+
+    return true;
+}
+
+
 bool RendererDevice::load(const tinyxml2::XMLElement* root) {
 
     const auto renderer_element = root->FirstChildElement("renderer");
@@ -284,6 +314,10 @@ bool EngineConfig::load() {
         return false;
     }
 
+    if (!_performance.load(config)) {
+        LOG_ERROR("Failed to load Performance Config");
+        return false;
+    }
 
     return true;
 }
@@ -293,8 +327,8 @@ RendererDevice EngineConfig::get_renderer_device() const {
     return _renderer_device;
 }
 
-Threading EngineConfig::get_threading() const {
-    return _threading;
+Performance EngineConfig::get_performance() const {
+    return _performance;
 }
 
 Application EngineConfig::get_application() const {
