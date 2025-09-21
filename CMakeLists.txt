@@ -21,12 +21,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(WITH_EDITOR "Build the engine with editor support" OFF)
 option(BUILD_SERVER "Build server binaries" ON)
 option(BUILD_RUNTIME "Build runtime binaries" ON)
-option(BUILD_TESTING "Build tests" OFF)
+option(BUILD_EMBER_TESTS "Build tests" OFF)
 
 message(STATUS "Build configuration:")
 message(STATUS "  WITH_EDITOR: ${WITH_EDITOR}")
-message(STATUS "  BUILD_SERVER: ${BUILD_SERVER}")
-message(STATUS "  BUILD_RUNTIME: ${BUILD_RUNTIME}")
+message(STATUS "  BUILD RUNTIME (CLIENT): ${BUILD_RUNTIME}")
+message(STATUS "  BUILD RUNTIME (SERVER): ${BUILD_SERVER}")
+message(STATUS "  BUILD TESTS: ${BUILD_EMBER_TESTS}")
 message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
 
 # =========================================================
@@ -109,6 +110,17 @@ if (NOT EMSCRIPTEN)
 endif ()
 
 # =========================================================
+# TESTS
+# =========================================================
+if (BUILD_EMBER_TESTS)
+    enable_testing()
+endif ()
+
+if (BUILD_EMBER_TESTS)
+    add_subdirectory(tests)
+endif ()
+
+# =========================================================
 # ENGINE / SERVER / RUNTIME
 # =========================================================
 add_subdirectory(engine)
@@ -124,3 +136,4 @@ if (BUILD_RUNTIME)
     add_compile_definitions(BUILD_RUNTIME)
     add_subdirectory(runtime)
 endif ()
+
