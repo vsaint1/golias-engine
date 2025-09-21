@@ -164,14 +164,14 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     SDL_SetAppMetadata(app_config.name, app_config.version, app_config.package_name);
 #pragma endregion
 
-    if (Config.get_threading().is_multithreaded) {
+    if (Config.get_performance().is_multithreaded) {
         Logger::initialize(app_config.package_name);
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         LOG_CRITICAL("Failed to initialize SDL: %s", SDL_GetError());
 
-        if (Config.get_threading().is_multithreaded) {
+        if (Config.get_performance().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -192,7 +192,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     if (!_window) {
         LOG_CRITICAL("Failed to create window: %s", SDL_GetError());
 
-        if (Config.get_threading().is_multithreaded) {
+        if (Config.get_performance().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -234,7 +234,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
             LOG_CRITICAL("Failed to initialize system: %s", name.c_str());
             SDL_DestroyWindow(_window);
 
-            if (Config.get_threading().is_multithreaded) {
+            if (Config.get_performance().is_multithreaded) {
                 Logger::destroy();
             }
 
@@ -252,7 +252,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         LOG_CRITICAL("Failed to add gamepad mappings: %s", SDL_GetError());
         SDL_DestroyWindow(_window);
 
-        if (Config.get_threading().is_multithreaded) {
+        if (Config.get_performance().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -285,7 +285,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         LOG_CRITICAL("Failed to create renderer: (unknown type)");
         SDL_DestroyWindow(_window);
 
-        if (Config.get_threading().is_multithreaded) {
+        if (Config.get_performance().is_multithreaded) {
             Logger::destroy();
         }
 
@@ -358,7 +358,7 @@ void Engine::shutdown() {
 
 #endif
 
-    if (Config.get_threading().is_multithreaded) {
+    if (Config.get_performance().is_multithreaded) {
         Logger::destroy();
     }
 
