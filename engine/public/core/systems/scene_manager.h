@@ -10,7 +10,10 @@ public:
     virtual void on_ready() {
     }
 
-    virtual void on_input(InputManager* input) {
+    virtual void on_input(const SDL_Event& event) {
+    }
+
+    virtual void on_input(const InputManager* input) {
     }
 
     virtual void on_draw(Renderer* renderer) {
@@ -22,12 +25,13 @@ public:
     virtual void on_destroy() {
     }
 
-
     void setup();
 
-    void update(double delta_time) ;
+    void update(double delta_time);
 
-    void input(InputManager* input);
+    void input(const SDL_Event& event);
+
+    void input(const InputManager* input);
 
     void draw(Renderer* renderer);
 
@@ -41,7 +45,6 @@ public:
     bool did_load = false;
 
 protected:
-
     std::unique_ptr<Node2D> _root = std::make_unique<Node2D>("Root");
 };
 

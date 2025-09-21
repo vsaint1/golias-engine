@@ -29,7 +29,15 @@ void Scene::update(double dt) {
     }
 }
 
-void Scene::input(InputManager* input) {
+void Scene::input(const SDL_Event& event) {
+
+    if (_root && did_load && event.type) {
+        on_input(event);
+        _root->input(event);
+    }
+}
+
+void Scene::input(const InputManager* input) {
 
     if (_root && did_load && input) {
         on_input(input);
@@ -61,12 +69,19 @@ Node2D* Scene::get_root() const {
 
 Scene::~Scene() = default;
 
-// ====================================================================================
+// =================== SceneManager =================
 bool SceneManager::initialize() {
     return true;
 }
 
 void SceneManager::shutdown() {
+    for (const auto& [name, scene] : _scenes) {
+        if (scene) {
+            LOG_INFO("SceneManager::shutdown() - destroying scene: %s", name.c_str());
+            scene->destroy();
+        }
+    }
+
     _scenes.clear();
 }
 
@@ -79,7 +94,10 @@ void SceneManager::update(double delta_time) {
         // CALLED EVERY FRAME
         _current->update(delta_time);
 
-        _current->input(GEngine->input_manager());
+        const auto input_manager = GEngine->input_manager();
+
+        _current->input(input_manager->get_last_event());
+        _current->input(input_manager);
 
         _current->draw(GEngine->get_renderer());
     }
