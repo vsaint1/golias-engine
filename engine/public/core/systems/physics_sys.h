@@ -26,7 +26,5 @@ public:
 
     PhysicsManager()  = default;
     ~PhysicsManager() override = default;
-protected:
-    const char* name = "PhysicsSystem";
 
 };

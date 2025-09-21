@@ -62,11 +62,7 @@ public:
     ~SceneManager() override;
     Scene* _current = nullptr;
 
-protected:
-    const char* clazz_name = "SceneManager";
-
 private:
-    // change next-frame
     std::string _next_scene_name;
 
     void process_scene_change();

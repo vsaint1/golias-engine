@@ -20,7 +20,8 @@ void Engine::update_systems(double delta_time) {
     // 1/60
     b2World_Step(this->_world, FIXED_TIMESTEP, 4);
 
-    for (const auto& system : _systems) {
+    for (const auto& [_, system] : _systems) {
+        // TODO: we can profile each system here
         system->update(delta_time);
     }
 }
@@ -73,16 +74,16 @@ b2WorldId Engine::get_physics_world() const {
 }
 
 
-Renderer* Engine::_create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
+Renderer* Engine::create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type) {
 
 
     if (type == Backend::GL_COMPATIBILITY) {
-        return _create_renderer_gl(window, view_width, view_height);
+        return create_renderer_gl(window, view_width, view_height);
     }
 
     if (type == Backend::METAL) {
         LOG_WARN("Metal renderer is not fully supported yet");
-        return _create_renderer_metal(window, view_width, view_height);
+        return create_renderer_metal(window, view_width, view_height);
     }
 
 
@@ -216,14 +217,14 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
     /* Note: Ordering matters here
      * Input > Physics > Scene > Audio > Threading...
      */
-    _systems.emplace_back(std::make_unique<PhysicsManager>());
-    _systems.emplace_back(std::make_unique<SceneManager>());
-    _systems.emplace_back(std::make_unique<AudioManager>());
-    _systems.emplace_back(std::make_unique<ThreadManager>(2));
+    _systems.emplace("PhysicsManager", std::make_unique<PhysicsManager>());
+    _systems.emplace("SceneManager", std::make_unique<SceneManager>());
+    _systems.emplace("AudioManager", std::make_unique<AudioManager>());
+    _systems.emplace("ThreadManager", std::make_unique<ThreadManager>(2));
 
-    for (const auto& system : _systems) {
+    for (const auto& [name, system] : _systems) {
         if (!system->initialize()) {
-            LOG_CRITICAL("Failed to initialize system: %s", system->get_name());
+            LOG_CRITICAL("Failed to initialize system: %s", name.c_str());
             SDL_DestroyWindow(_window);
 
             if (Config.get_threading().is_multithreaded) {
@@ -271,7 +272,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 
     const Viewport viewport = Config.get_viewport();
 
-    this->_renderer = _create_renderer_internal(_window, viewport.width, viewport.height, type);
+    this->_renderer = create_renderer_internal(_window, viewport.width, viewport.height, type);
 
     if (!this->_renderer) {
         LOG_CRITICAL("Failed to create renderer: (unknown type)");
@@ -358,7 +359,8 @@ void Engine::shutdown() {
 
     SDL_DestroyWindow(Window.handle);
 
-    for (const auto& system : _systems) {
+    for (const auto& [name, system] : _systems) {
+        LOG_INFO("%s::shutdown()", name.c_str());
         system->shutdown();
     }
 
@@ -368,7 +370,7 @@ void Engine::shutdown() {
 }
 
 
-Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
+Renderer* Engine::create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
 
     MetalRenderer* mtlRenderer = new MetalRenderer();
     mtlRenderer->Viewport[0]   = view_width;
@@ -397,6 +399,8 @@ Renderer* Engine::_create_renderer_metal(SDL_Window* window, int view_width, int
     SDL_ShowWindow(window);
 
     this->_renderer = mtlRenderer;
+
+    LOG_INFO("Engine::create_renderer_metal() - Using Metal backend");
 
     return mtlRenderer;
 }
@@ -428,7 +432,7 @@ TimeManager* Engine::time_manager() const {
     return _time_manager;
 }
 
-Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int view_height) {
+Renderer* Engine::create_renderer_gl(SDL_Window* window, int view_width, int view_height) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -480,19 +484,6 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 #endif
 
 
-#if ENGINE_DEBUG
-    int numExtensions = 0;
-
-    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
-
-    LOG_INFO("Number of available OpenGL/ES extensions: %d", numExtensions);
-    for (int i = 0; i < numExtensions; i++) {
-        const char* extension = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
-        LOG_INFO("GL_EXTENSION_NAME: %s", extension);
-    }
-#endif
-
-
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
     glRenderer->Viewport[0] = view_width;
@@ -534,6 +525,7 @@ Renderer* Engine::_create_renderer_gl(SDL_Window* window, int view_width, int vi
 
     this->_renderer = glRenderer;
 
+    LOG_INFO("Engine::create_renderer_gl() - Using OpenGL/ES backend");
 
     return _renderer;
 }

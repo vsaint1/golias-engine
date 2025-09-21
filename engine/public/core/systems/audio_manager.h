@@ -41,6 +41,5 @@ public:
 
     AudioManager() = default;
     ~AudioManager() override;
-protected:
-    const char* name = "AudioSystem";
+
 };

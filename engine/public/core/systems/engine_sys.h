@@ -18,10 +18,4 @@ public:
 
     virtual void shutdown() = 0;
 
-    [[nodiscard]] const char* get_name() const {
-        return name;
-    }
-
-protected:
-    const char* name = "EngineSystem";
 };

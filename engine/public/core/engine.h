@@ -158,7 +158,7 @@ public:
 
 private:
 
-    std::vector<std::unique_ptr<EngineManager>> _systems{};
+    HashMap<std::string,std::unique_ptr<EngineManager>> _systems{};
 
     Renderer* _renderer          = nullptr;
     InputManager* _input_manager = nullptr;
@@ -177,7 +177,7 @@ private:
      *
      * @version 0.0.1
      */
-    Renderer* _create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type);
+    Renderer* create_renderer_internal(SDL_Window* window, int view_width, int view_height, Backend type);
 
     /**
      * @brief Create an OpenGL renderer internally.
@@ -189,7 +189,7 @@ private:
      *
      * @version 0.0.2
      */
-    Renderer* _create_renderer_gl(SDL_Window* window, int view_width, int view_height);
+    Renderer* create_renderer_gl(SDL_Window* window, int view_width, int view_height);
 
     /**
      * @brief Create a Metal renderer internally.
@@ -201,13 +201,13 @@ private:
      * @param view_height Viewport height.
      * @return Renderer* Created Metal renderer.
      */
-    Renderer* _create_renderer_metal(SDL_Window* window, int view_width, int view_height);
+    Renderer* create_renderer_metal(SDL_Window* window, int view_width, int view_height);
 };
 
 template <typename T>
 T* Engine::get_system() {
 
-    for (auto& sys : _systems) {
+    for (auto& [_,sys] : _systems) {
         if (T* casted = dynamic_cast<T*>(sys.get())) {
             return casted;
         }

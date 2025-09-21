@@ -11,8 +11,6 @@
     - Send uniforms
 
     @version 0.0.9
-    @param string vertex The shader source
-    @param string fragment The shader source
 */
 
 class OpenglShader final : public Shader {
@@ -53,12 +51,12 @@ public:
 private:
     unsigned int get_uniform_location(const std::string& name);
 
-    unsigned int CompileShader(unsigned int type, const char* source);
+    unsigned int compile_shader(unsigned int type, const char* source);
 };
 
 
 template <typename T>
-inline T OpenglShader::get_value(const std::string& name) {
+T OpenglShader::get_value(const std::string& name) {
     unsigned int location = get_uniform_location(name);
     if (location == -1) {
         LOG_ERROR("Shader variable not found: %s", name.c_str());

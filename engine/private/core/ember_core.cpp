@@ -50,6 +50,27 @@ glm::vec2 Renderer::calc_text_size(const std::string& text, float scale, const s
 }
 
 
+Uint32 Renderer::get_framebuffer_texture() const  {
+    return 0;
+}
+
+HashMap<std::string, std::shared_ptr<Texture>>& Renderer::get_loaded_textures() {
+    return _textures;
+}
+
+ std::vector<std::string>& Renderer::get_loaded_fonts_name() {
+    static std::vector<std::string> font_names;
+    font_names.clear();
+
+    for (const auto& [name, font] : fonts) {
+        font_names.push_back(name);
+    }
+
+    return font_names;
+}
+
+
+
 void Renderer::set_view_matrix(const glm::mat4& view_matrix) {
     _view = view_matrix;
 }
