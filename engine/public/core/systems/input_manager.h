@@ -169,7 +169,9 @@ public:
     void set_mouse_sensitivity(float sensitivity) { _mouse_sensitivity = sensitivity; }
     [[nodiscard]] float get_mouse_sensitivity() const { return _mouse_sensitivity; }
 
+     SDL_Event& get_last_event() { return _last_event; }
 private:
+    SDL_Event _last_event;
     // Internal helper functions
     void update_key_states();
     void update_mouse_states();

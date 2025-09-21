@@ -91,11 +91,12 @@ InputManager::~InputManager() {
 
 void InputManager::process_event(const SDL_Event& event) {
 
+    _last_event = event;
     switch (event.type) {
     case SDL_EVENT_MOUSE_MOTION:
         {
 
-            glm::vec2 raw_pos(event.motion.x, event.motion.y);
+            const glm::vec2 raw_pos(event.motion.x, event.motion.y);
 
             _mouse_position = raw_pos;
 
