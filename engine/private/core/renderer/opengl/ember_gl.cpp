@@ -367,7 +367,7 @@ void OpenglRenderer::setup_shaders(Shader* default_shader, Shader* framebuffer_s
     this->_default_shader = dynamic_cast<OpenglShader*>(default_shader);
     this->_fbo_shader     = dynamic_cast<OpenglShader*>(framebuffer_shader);
 
-    LOG_INFO("Default shader setup complete");
+    LOG_INFO("OpenglRenderer::setup_shaders() - Completed");
 }
 
 void OpenglRenderer::initialize() {

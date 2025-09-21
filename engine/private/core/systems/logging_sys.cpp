@@ -1,4 +1,4 @@
-#include "../../../public/core/systems/logging_sys.h"
+#include "core/systems/logging_sys.h"
 
 
 Logger& Logger::get_instance() {
@@ -6,7 +6,7 @@ Logger& Logger::get_instance() {
     return instance;
 }
 
-void Logger::initialize() {
+void Logger::initialize(const char* app_identifier) {
     auto& debug = get_instance();
 
     if (debug._thread) {
@@ -18,8 +18,9 @@ void Logger::initialize() {
         return 0;
     };
 
-    debug._is_running = true;
-    debug._thread     = SDL_CreateThread(fn_thread, "LogThread", &debug);
+    debug._app_identifier = app_identifier;
+    debug._is_running     = true;
+    debug._thread         = SDL_CreateThread(fn_thread, "LogThread", &debug);
 }
 
 void Logger::push(const std::string& formatted_log) {
@@ -51,24 +52,31 @@ void Logger::destroy() {
 
 void Logger::log_thread() {
 
-    // TODO: Get from config file
-    char* pref_path = SDL_GetPrefPath("Ember", "com.ember.engine.app");
+    char* pref_path = SDL_GetPrefPath("Ember Engine", _app_identifier);
 
-    time_t now   = time(nullptr);
-    tm* time =  localtime(&now);
+    time_t now = time(nullptr);
+    tm local_time = {};
 
-    if (!time) {
+#if defined(SDL_PLATFORM_WINDOWS)
+    errno_t err = localtime_s(&local_time, &now);
+    if (err != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time: %d", err);
+        return;
+    }
+#else
+    if (localtime_r(&now, &local_time) == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get local time");
         return;
     }
+#endif
 
     char buffer[80];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", time);
+    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d-%S", &local_time);
 
     char file_name[256];
     SDL_snprintf(file_name, sizeof(file_name), "engine_logs-%s.txt", buffer);
 
-    std::string log_path = std::string(pref_path).append(file_name);
+    const std::string log_path = std::string(pref_path).append(file_name);
 
     SDL_IOStream* file = SDL_IOFromFile(log_path.c_str(), "a");
 

@@ -165,7 +165,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
 #pragma endregion
 
     if (Config.get_threading().is_multithreaded) {
-        Logger::initialize();
+        Logger::initialize(app_config.package_name);
     }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
@@ -292,7 +292,7 @@ bool Engine::initialize(int width, int height, Backend type, Uint64 flags) {
         return false;
     }
 
-    LOG_INFO(R"(Successfully created window with title: %s
+    LOG_INFO(R"(Successfully created Window with title: (%s)
      > Width %d, Height %d
      > Display ID %d
      > Display Width %d, Display Height %d
@@ -379,11 +379,14 @@ void Engine::shutdown() {
 
 Renderer* Engine::create_renderer_metal(SDL_Window* window, int view_width, int view_height) {
 
+    LOG_INFO("Engine::create_renderer_metal() - Using Metal backend");
+
     MetalRenderer* mtlRenderer = new MetalRenderer();
     mtlRenderer->Viewport[0]   = view_width;
     mtlRenderer->Viewport[1]   = view_height;
     mtlRenderer->Window        = window;
     mtlRenderer->Type          = Backend::METAL;
+
 
     mtlRenderer->initialize();
 
@@ -407,7 +410,6 @@ Renderer* Engine::create_renderer_metal(SDL_Window* window, int view_width, int 
 
     this->_renderer = mtlRenderer;
 
-    LOG_INFO("Engine::create_renderer_metal() - Using Metal backend");
 
     return mtlRenderer;
 }
@@ -490,6 +492,7 @@ Renderer* Engine::create_renderer_gl(SDL_Window* window, int view_width, int vie
 
 #endif
 
+    LOG_INFO("Engine::create_renderer_gl() - Using OpenGL/ES backend");
 
     OpenglRenderer* glRenderer = new OpenglRenderer();
 
@@ -532,7 +535,6 @@ Renderer* Engine::create_renderer_gl(SDL_Window* window, int view_width, int vie
 
     this->_renderer = glRenderer;
 
-    LOG_INFO("Engine::create_renderer_gl() - Using OpenGL/ES backend");
 
     return _renderer;
 }

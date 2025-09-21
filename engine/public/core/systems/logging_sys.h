@@ -29,7 +29,7 @@ class Logger {
 public:
     static Logger& get_instance();
 
-    static void initialize();
+    static void initialize(const char* app_identifier = "com.ember.engine.app");
 
     void push(const std::string& formatted_log);
 
@@ -40,6 +40,8 @@ private:
     ~Logger() = default;
 
     void log_thread();
+
+    const char* _app_identifier = "com.ember.engine.app";
 
     std::mutex _mutex                  = std::mutex();
     SDL_Thread* _thread                = nullptr;
