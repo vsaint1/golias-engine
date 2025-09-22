@@ -21,7 +21,7 @@ target("engine")
     add_includedirs("engine/public", {public = true}) 
 
     add_packages("libsdl3", "libsdl3_ttf", "libsdl3_image", "lua", "flecs", "nlohmann_json", {public = true})
-    
+
 target("client")
     set_kind("binary")
     add_files("client/*.cpp")
@@ -61,6 +61,7 @@ for _, file in ipairs(os.files("tests/test_*.cpp")) do
         add_files(file)                 
         add_packages("doctest")
         add_defines("DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN")
-        add_deps("engine")             
-        add_tests(name)                 
+        add_deps("engine")        
+        add_includedirs("engine/public")
+        add_tests(name)
 end

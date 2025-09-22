@@ -1,0 +1,27 @@
+name: Build and Test
+
+on:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install xmake
+        run: |
+          sudo apt update
+          sudo apt install -y curl
+          curl -fsSL https://xmake.io/shget.text | bash
+          export PATH=$HOME/.xmake/bin:$PATH
+          xmake --version
+
+      - name: Configure project (auto-confirm)
+        run: xmake f -m debug -y
+
+      - name: Run tests (auto-confirm)
+        run: xmake test -y
+
