@@ -5,7 +5,7 @@
 
 class LineEdit final : public Panel {
 public:
-    LineEdit(glm::vec2 pos, glm::vec2 size, const std::string& font_alias = "Default");
+    LineEdit(const glm::vec2& pos, const glm::vec2& size, const std::string& placeholder_text = "",const std::string& font_alias = "Default");
 
     void ready() override;
     void draw(Renderer* renderer) override;
@@ -29,9 +29,14 @@ public:
     std::function<void(const std::string&)> on_text_changed;
 
 private:
+    float padding          = 4.0f;
+    float char_width       = 16.0f;
+    float line_height      = 16.0f;
     SDL_Rect _text_input_rect;
 
     std::string _font_alias;
+
+    std::string _placeholder_text = "";
 
     std::string _text;
     int _cursor_pos;
