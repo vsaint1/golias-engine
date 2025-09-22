@@ -169,9 +169,16 @@ public:
     void set_mouse_sensitivity(float sensitivity) { _mouse_sensitivity = sensitivity; }
     [[nodiscard]] float get_mouse_sensitivity() const { return _mouse_sensitivity; }
 
-     SDL_Event& get_last_event() { return _last_event; }
+     SDL_Event get_last_event() const { return _last_event; }
+
+     std::string get_last_text_input()  const;
+
 private:
     SDL_Event _last_event;
+    std::string _last_text_input;
+
+    mutable  bool _has_fresh_text_input = false;
+
     // Internal helper functions
     void update_key_states();
     void update_mouse_states();

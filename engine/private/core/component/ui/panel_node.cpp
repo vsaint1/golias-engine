@@ -18,6 +18,10 @@ void Panel::draw(Renderer* renderer) {
     Control::draw(renderer);
 }
 
+void Panel::input(const SDL_Event& event) {
+    Control::input(event);
+}
+
 void Panel::set_panel_rect(const Rect2& rect) {
     _panel_rect = rect;
 }

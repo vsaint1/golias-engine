@@ -59,6 +59,8 @@ void engine_core_loop() {
 
         GEngine->get_renderer()->present();
 
+        GEngine->input_manager()->late_update();
+        
         accumulator -= FIXED_TIMESTEP;
     }
 }

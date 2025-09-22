@@ -1,4 +1,5 @@
 #include "core/systems/input_manager.h"
+
 #include "core/engine.h"
 
 
@@ -83,7 +84,6 @@ InputManager::InputManager(SDL_Window* window) : _window(window) {
 }
 
 
-
 InputManager::~InputManager() {
     _gamepads.clear();
     SDL_QuitSubSystem(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK);
@@ -92,7 +92,16 @@ InputManager::~InputManager() {
 void InputManager::process_event(const SDL_Event& event) {
 
     _last_event = event;
+
     switch (event.type) {
+    case SDL_EVENT_TEXT_INPUT:
+        {
+            if (!_has_fresh_text_input) {
+                _last_text_input      = event.text.text;
+                _has_fresh_text_input = true;
+            }
+            break;
+        }
     case SDL_EVENT_MOUSE_MOTION:
         {
 
@@ -160,26 +169,27 @@ void InputManager::update() {
 }
 
 void InputManager::late_update() {
-    // Store previous states for next frame
-    _prev_mouse_position = _mouse_position;
-    _mouse_delta         = glm::vec2(0.0f);
 
-    // Update previous key states
-    for (const auto& [key, state] : _key_states) {
-        _prev_key_states[key] = (state == InputState::PRESSED || state == InputState::HELD);
-    }
-
-    // Update previous mouse button states
-    for (const auto& [button, state] : _mouse_button_states) {
-        _prev_mouse_button_states[button] = (state == InputState::PRESSED || state == InputState::HELD);
-    }
-
-    // Update gamepad previous states
-    for (auto& [index, gamepad] : _gamepads) {
-        for (const auto& [button, state] : gamepad->button_states) {
-            gamepad->prev_button_states[button] = (state == InputState::PRESSED || state == InputState::HELD);
-        }
-    }
+    _has_fresh_text_input = false;
+    // _prev_mouse_position = _mouse_position;
+    // _mouse_delta         = glm::vec2(0.0f);
+    //
+    // // Update previous key states
+    // for (const auto& [key, state] : _key_states) {
+    //     _prev_key_states[key] = (state == InputState::PRESSED || state == InputState::HELD);
+    // }
+    //
+    // // Update previous mouse button states
+    // for (const auto& [button, state] : _mouse_button_states) {
+    //     _prev_mouse_button_states[button] = (state == InputState::PRESSED || state == InputState::HELD);
+    // }
+    //
+    // // Update gamepad previous states
+    // for (auto& [index, gamepad] : _gamepads) {
+    //     for (const auto& [button, state] : gamepad->button_states) {
+    //         gamepad->prev_button_states[button] = (state == InputState::PRESSED || state == InputState::HELD);
+    //     }
+    // }
 }
 
 // Keyboard functions
@@ -640,4 +650,12 @@ std::vector<SDL_Scancode> InputManager::get_pressed_keys() const {
         }
     }
     return pressed_keys;
+}
+
+std::string InputManager::get_last_text_input() const {
+    if (_has_fresh_text_input) {
+        _has_fresh_text_input = false;
+        return _last_text_input;
+    }
+    return "";
 }

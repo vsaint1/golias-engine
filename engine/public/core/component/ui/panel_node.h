@@ -8,7 +8,7 @@ public:
     void ready() override;
 
     void draw(Renderer* renderer) override;
-
+    void input(const SDL_Event& event) override;
     void set_panel_rect(const Rect2& rect);
     [[nodiscard]] const Rect2& get_panel_rect() const;
 
