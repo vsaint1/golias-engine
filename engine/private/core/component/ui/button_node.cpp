@@ -25,8 +25,7 @@ void Button::set_text(const std::string& new_text) {
 }
 
 void Button::ready() {
-    _default_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
-    _pointer_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER);
+
     Control::ready();
 }
 
@@ -39,14 +38,12 @@ void Button::input(const InputManager* input) {
     const bool inside_panel     = input->position_in_rect(mouse_world, _panel_rect);
 
     if (inside_panel && !_is_hovered) {
-        SDL_SetCursor(_pointer_cursor);
         if (on_enter) {
             on_enter();
         }
     }
 
     if (!inside_panel && _is_hovered) {
-        SDL_SetCursor(_default_cursor);
         if (on_exit) {
             on_exit();
         }
@@ -54,11 +51,11 @@ void Button::input(const InputManager* input) {
 
     _is_hovered = inside_panel;
 
-    if (inside_panel && input->is_mouse_button_pressed(mask)) {
+    if (inside_panel && input->is_action_pressed("ui_accept")) {
         _was_pressed = true;
     }
 
-    if (_was_pressed && !input->is_mouse_button_held(mask)) {
+    if (_was_pressed && !input->is_action_held("ui_accept")) {
         if (inside_panel && on_pressed) {
             on_pressed();
         }
@@ -84,7 +81,7 @@ void Button::draw(Renderer* renderer) {
     if (!_text.empty() && _is_dirty) {
         const glm::vec2 text_size = renderer->calc_text_size(_text, 1.f, _font_alias);
 
-        _panel_rect.width  = SDL_max(min_size.x, text_size.x * 1.2f + _style.padding);
+        _panel_rect.width  = SDL_max(min_size.x, text_size.x + _style.padding);
         _panel_rect.height = SDL_max(min_size.y, text_size.y * 2.f + _style.padding);
 
         text_offset.x = (_panel_rect.width - text_size.x) * 0.5f;
@@ -104,6 +101,4 @@ void Button::draw(Renderer* renderer) {
 
 
 Button::~Button() {
-    SDL_DestroyCursor(_default_cursor);
-    SDL_DestroyCursor(_pointer_cursor);
 }

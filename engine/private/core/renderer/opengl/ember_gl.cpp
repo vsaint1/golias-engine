@@ -463,6 +463,10 @@ void OpenglRenderer::initialize() {
     if (!this->load_font("fonts/Default.ttf", "Default", 16)) {
         LOG_WARN("Failed to load default font.");
     }
+
+    if (!this->get_texture("ui/icons/icons_64.png")) {
+        LOG_WARN("Failed to load default icon texture.");
+    }
 }
 
 void OpenglRenderer::resize_viewport(const int view_width, const int view_height) {

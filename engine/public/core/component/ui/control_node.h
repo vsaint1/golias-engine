@@ -8,6 +8,8 @@ struct Style {
     glm::vec4 disabled_color   = {0.3f, 0.3f, 0.3f, 0.5f};
 
 
+    glm::vec4 checkmark_color  = {0.0f, 0.8f, 0.0f, 1.0f};
+
     glm::vec4 text_color       = {0.95f, 0.95f, 0.95f, 1.0f};
     glm::vec4 text_placeholder_color = {0.6f, 0.6f, 0.6f, 1.0f};
 
@@ -46,6 +48,7 @@ public:
 
     void draw(Renderer* renderer) override;
 
+    ~Control() override;
 protected:
     float rotation = 0.0f;
     glm::vec2 scale = {1.0f, 1.0f};
@@ -54,6 +57,8 @@ protected:
     bool _is_dirty = false;
 
     bool _is_disabled = false;
+
+
 
 private:
     Rect2 rect;

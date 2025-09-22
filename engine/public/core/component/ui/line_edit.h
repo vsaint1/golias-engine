@@ -49,8 +49,6 @@ private:
     int _composition_cursor;
     int _composition_selection_len;
 
-    SDL_Cursor* _pointer_cursor;
-    SDL_Cursor* _default_cursor;
 
     void handle_text_input(const std::string& text);
     void handle_text_editing(const SDL_TextEditingEvent& event);

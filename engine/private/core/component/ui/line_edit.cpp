@@ -4,15 +4,12 @@
 
 LineEdit::LineEdit(const glm::vec2& pos, const glm::vec2& size, const std::string& placeholder_text, const std::string& font_alias)
     : _font_alias(font_alias), _placeholder_text(placeholder_text), _text(""), _cursor_pos(0), _show_cursor(true), _cursor_blink_timer(0.0),
-      _is_focused(false), _is_hovered(false), _composition_text(""), _composition_cursor(0), _composition_selection_len(0),
-      _pointer_cursor(nullptr), _default_cursor(nullptr) {
+      _is_focused(false), _is_hovered(false), _composition_text(""), _composition_cursor(0), _composition_selection_len(0) {
     _panel_rect      = {pos.x, pos.y, size.x, size.y};
     _text_input_rect = {(int) pos.x + 4, (int) pos.y + 4, (int) size.x - 8, (int) size.y - 8};
 }
 
 void LineEdit::ready() {
-    _default_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
-    _pointer_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
     Panel::ready();
 }
 
@@ -82,13 +79,11 @@ void LineEdit::input(const InputManager* input) {
     bool inside     = input->position_in_rect(mouse, _panel_rect);
 
     if (inside && !_is_hovered) {
-        SDL_SetCursor(_default_cursor);
         if (on_enter) {
             on_enter();
         }
     }
     if (!inside && _is_hovered) {
-        SDL_SetCursor(_pointer_cursor);
         if (on_exit) {
             on_exit();
         }
@@ -178,8 +173,7 @@ LineEdit::~LineEdit() {
     if (_is_focused) {
         SDL_StopTextInput(GEngine->Window.handle);
     }
-    SDL_DestroyCursor(_pointer_cursor);
-    SDL_DestroyCursor(_default_cursor);
+
 }
 
 // --- Private methods ---

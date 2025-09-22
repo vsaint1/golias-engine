@@ -38,3 +38,6 @@ void Control::process(double delta_time) {
 void Control::draw(Renderer* renderer) {
     Node2D::draw(renderer);
 }
+
+
+Control::~Control()  = default;

@@ -28,10 +28,7 @@ private:
     std::string _text;
     std::string _font_alias = "Default";
 
-    bool _pressed_inside = false;
     bool _was_pressed = false;
     bool _is_hovered  = false;
 
-    SDL_Cursor* _default_cursor = nullptr;
-    SDL_Cursor* _pointer_cursor = nullptr;
 };
