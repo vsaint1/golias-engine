@@ -19,12 +19,9 @@ jobs:
           export PATH=$HOME/.xmake/bin:$PATH
           xmake --version
 
-      - name: Configure project
+      - name: Configure project (auto-confirm)
         run: xmake f -m debug -y
 
-      - name: Build project (auto-confirm)
-        run: xmake build -y
-
-      - name: Run tests
-        run: xmake test
+      - name: Run tests (auto-confirm)
+        run: xmake test -y
 
