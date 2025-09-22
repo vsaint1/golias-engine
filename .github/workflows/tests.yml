@@ -1,4 +1,4 @@
-name: Xmake Build and Test
+name: Build and Test
 
 on:
   pull_request:
@@ -20,7 +20,7 @@ jobs:
           xmake --version
 
       - name: Configure project
-        run: xmake f -m debug
+        run: xmake f -m debug -y
 
       - name: Build project (auto-confirm)
         run: xmake build -y
