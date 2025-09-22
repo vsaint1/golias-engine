@@ -13,7 +13,7 @@ public class MainActivity extends SDLActivity {
 
         return new String[]{
                 "SDL3",
-                "ember_engine"
+                "ember_client"
         };
     }
 
