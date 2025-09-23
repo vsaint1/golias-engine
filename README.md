@@ -1,6 +1,6 @@
-# Ember [![tests](https://github.com/vsaint1/ember_engine/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yaml/)  [![cpp_20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) [![license](https://img.shields.io/github/license/vsaint1/ember_engine.svg)]()
+# Ember [![Build and Test](https://github.com/vsaint1/ember_engine/actions/workflows/tests.yml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/tests.yml) [![cpp_20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) ![license](https://img.shields.io/github/license/vsaint1/ember_engine.svg)
 
-[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android%20%7C%20iOS%20%7C%20Web-blue.svg)]()
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android%20%7C%20iOS%20%7C%20Web-blue.svg)
 
 **Ember** is a lightweight and modular **2D game engine/framework** written in **C/C++**, designed to be simple yet
 powerful. It aims to provide developers with a flexible **_cross-platform_** solution to build 2Ds and
