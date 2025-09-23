@@ -9,20 +9,23 @@ public:
 
     void run();
 
-    Timer get_timer() const;
+    Timer& get_timer();
 
     SDL_Renderer* get_renderer() const;
 
     SDL_Window* get_window() const;
+
+    flecs::world& get_world() { return _world; }
 
     bool is_running = false;
 
     SDL_Event event;
 
     ~Engine();
+    Timer _timer;
 
 private:
-    Timer _timer;
+    flecs::world _world;
     SDL_Window* _window     = nullptr;
     SDL_Renderer* _renderer = nullptr;
 };
@@ -30,3 +33,6 @@ private:
 void engine_core_loop();
 
 inline std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
+
+
+

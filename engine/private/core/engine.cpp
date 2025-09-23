@@ -30,7 +30,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         renderer_list += (i < driver_count - 1) ? ", " : "";
     }
 
-    LOG_INFO("Available renderers: %s, count %d", renderer_list.c_str(), driver_count);
+    LOG_INFO("Available renderers (%d): %s", driver_count, renderer_list.c_str());
 
 
     _renderer = SDL_CreateRenderer(_window, nullptr);
@@ -47,7 +47,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     return true;
 }
 
-Timer Engine::get_timer() const {
+Timer& Engine::get_timer()  {
     return _timer;
 }
 
@@ -73,6 +73,8 @@ void Engine::run() {
 
 
 Engine::~Engine() {
+    LOG_INFO("Shutting down engine");
+
     SDL_DestroyRenderer(_renderer);
     SDL_DestroyWindow(_window);
     SDL_Quit();
@@ -80,6 +82,7 @@ Engine::~Engine() {
 
 void engine_core_loop() {
 
+    GEngine->get_timer().tick();
 
     while (SDL_PollEvent(&GEngine->event)) {
         if (GEngine->event.type == SDL_EVENT_QUIT) {
@@ -87,14 +90,10 @@ void engine_core_loop() {
         }
     }
 
-    GEngine->get_timer().tick();
-
-    // TODO: UPDATE SYSTEMS
-
     SDL_SetRenderDrawColor(GEngine->get_renderer(), 20, 30, 50, 255);
     SDL_RenderClear(GEngine->get_renderer());
 
-    // TODO: RENDER STUFF
+    GEngine->get_world().progress(static_cast<float>(GEngine->get_timer().delta));
 
     SDL_RenderPresent(GEngine->get_renderer());
 
