@@ -19,7 +19,7 @@ add_requires("doctest 2.4.12", {configs = {shared = false}})
 target("engine")
     set_kind("static") 
     add_includedirs("engine/public", {public = true}) 
-
+    set_pcheader("stdafx.h","engine/private/stdafx.cpp")
     add_packages("libsdl3", "libsdl3_ttf", "libsdl3_image", "lua", "flecs", "nlohmann_json", {public = true})
 
 target("client")
