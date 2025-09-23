@@ -6,7 +6,22 @@
 
 #include <lua.hpp>
 
+#include <flecs.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <functional>
+#include <mutex>
+#include <nlohmann/json.hpp>
+#include <map>
+
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
 #include <emscripten.h>
 #endif
+
+
+using Json = nlohmann::json;
+
+/// Required SDL_main for portability 
+#include <SDL3/SDL_main.h>
