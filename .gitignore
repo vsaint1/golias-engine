@@ -14,6 +14,8 @@ build/
 
 .xmake/
 
+jniLibs/
+
 res/sounds
 
 res/sprites

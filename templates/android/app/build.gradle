@@ -1,0 +1,136 @@
+//def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+//def buildAsApplication = !buildAsLibrary
+//
+//if (buildAsApplication) {
+//    apply plugin: 'com.android.application'
+//} else {
+//    apply plugin: 'com.android.library'
+//}
+
+plugins {
+    id("com.android.application")
+    id("org.tboox.gradle-xmake-plugin") version "1.2.3"
+}
+
+
+android {
+    compileSdkVersion 34
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+
+    namespace  "com.vsaint1.ember_engine"
+
+    defaultConfig {
+        applicationId 'com.vsaint1.ember_engine'
+        minSdk 28
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+
+        externalNativeBuild {
+            xmake {
+                sdkver 28
+                path '../../../xmake.lua'
+
+                logLevel 'verbose'
+                abiFilters  'x86_64'
+                targets 'client'
+            }
+        }
+    }
+
+
+    buildTypes {
+        
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            externalNativeBuild {
+                xmake {
+                    buildMode 'debug'
+                }
+            }
+        }
+
+        release {
+            minifyEnabled false
+            debuggable false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            externalNativeBuild {
+                xmake {
+                    buildMode 'release'
+                    abiFilters  'x86_64', 'armeabi-v7a', 'arm64-v8a'
+                }
+            }
+        }
+    }
+
+
+//    applicationVariants.all { variant ->
+//        tasks["merge${variant.name.capitalize()}Assets"]
+//                .dependsOn("xmakeBuild${variant.name.capitalize()}")
+//    }
+
+    if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
+
+        sourceSets.main {
+            jniLibs.srcDir 'libs'
+        }
+
+
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    ndkVersion '27.0.12077973'
+    buildToolsVersion '34.0.0'
+
+//    if (buildAsLibrary) {
+//        libraryVariants.all { variant ->
+//            variant.outputs.each { output ->
+//                def outputFile = output.outputFile
+//                if (outputFile != null && outputFile.name.endsWith(".aar")) {
+//                    def fileName = "org.libsdl.app.aar";
+//                    output.outputFile = new File(outputFile.parent, fileName);
+//                }
+//            }
+//        }
+//    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+}
+
+tasks.register('copyDependencies') {
+
+    delete {
+        delete 'src/main/res/drawable/icon.png'
+        delete 'src/main/assets'
+    }
+
+    copy {
+        from '../../../res'
+        into 'src/main/res/drawable'
+        include 'icon.png'
+    }
+
+
+    copy {
+        from '../../../res'
+        into 'src/main/assets'
+    }
+
+}
+
+preBuild.dependsOn copyDependencies
