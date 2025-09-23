@@ -13,7 +13,7 @@ add_requires("flecs v4.1.1", {configs = {shared = false}})
 add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 
 
-if not is_plat("wasm") then
+if not is_plat("wasm") or not is_plat("android")  or not is_plat("iphoneos") then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
 end
 
@@ -32,6 +32,13 @@ target("client")
     add_deps("engine")
     add_includedirs("engine/public")
 
+
+    if is_plat("android") then
+
+        set_kind("shared")
+        add_syslinks("log", "android","m","dl")
+    end 
+
     if is_plat("wasm") then 
     
         set_basename("index")
@@ -45,7 +52,7 @@ target("client")
        -- todo
     end
 
-    if not is_plat("wasm") then
+    if not is_plat("wasm") or  not is_plat("android") then
 
         after_build(function (target)
 
@@ -55,7 +62,7 @@ target("client")
 
     end 
 
-if not is_plat("wasm") then
+if not is_plat("wasm") or not is_plat("android")  or not is_plat("iphoneos") then
 
     for _, file in ipairs(os.files("tests/test_*.cpp")) do
         local name = path.basename(file)
