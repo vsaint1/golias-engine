@@ -19,44 +19,40 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     }
 
 
-    int driver_count = SDL_GetNumRenderDrivers();
+    // TODO: later we can add support for other renderers (Vulkan, OpenGL, etc.)
+    SDLRenderer* renderer = new SDLRenderer();
 
-
-    std::string renderer_list;
-    renderer_list.reserve(driver_count * 16);
-    for (int i = 0; i < driver_count; ++i) {
-        const char* name = SDL_GetRenderDriver(i);
-        renderer_list += name;
-        renderer_list += (i < driver_count - 1) ? ", " : "";
+    if (!renderer->initialize(_window)) {
+        LOG_ERROR("Renderer initialization failed");
+        SDL_DestroyWindow(_window);
+        SDL_Quit();
+        return false;
     }
 
-    LOG_INFO("Available renderers: %s, count %d", renderer_list.c_str(), driver_count);
-
-
-    _renderer = SDL_CreateRenderer(_window, nullptr);
-
-
-    const char* renderer_name = SDL_GetRendererName(_renderer);
+    _renderer = renderer;
 
     _timer.start();
 
     is_running = true;
 
-    LOG_INFO("Successfully initialized engine with %s renderer", renderer_name);
-
     return true;
 }
 
-Timer Engine::get_timer() const {
+Timer& Engine::get_timer() {
     return _timer;
 }
 
-SDL_Renderer* Engine::get_renderer() const {
+
+Renderer* Engine::get_renderer() const {
     return _renderer;
 }
 
 SDL_Window* Engine::get_window() const {
     return _window;
+}
+
+flecs::world& Engine::get_world() {
+    return _world;
 }
 
 void Engine::run() {
@@ -73,13 +69,18 @@ void Engine::run() {
 
 
 Engine::~Engine() {
-    SDL_DestroyRenderer(_renderer);
+    LOG_INFO("Shutting down engine");
+
+    _renderer->shutdown();
+    delete _renderer;
+
     SDL_DestroyWindow(_window);
     SDL_Quit();
 }
 
 void engine_core_loop() {
 
+    GEngine->get_timer().tick();
 
     while (SDL_PollEvent(&GEngine->event)) {
         if (GEngine->event.type == SDL_EVENT_QUIT) {
@@ -87,16 +88,11 @@ void engine_core_loop() {
         }
     }
 
-    GEngine->get_timer().tick();
+    GEngine->get_renderer()->clear({0.2, 0.2, 0.2, 1.0f});
 
-    // TODO: UPDATE SYSTEMS
+    GEngine->get_world().progress(static_cast<float>(GEngine->get_timer().delta));
 
-    SDL_SetRenderDrawColor(GEngine->get_renderer(), 20, 30, 50, 255);
-    SDL_RenderClear(GEngine->get_renderer());
-
-    // TODO: RENDER STUFF
-
-    SDL_RenderPresent(GEngine->get_renderer());
+    GEngine->get_renderer()->present();
 
     // FIXME: Cap framerate for now
     SDL_Delay(16); // ~60 FPS

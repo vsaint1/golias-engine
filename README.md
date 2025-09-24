@@ -11,6 +11,15 @@ applications.
 > ⚠️ **Note:** Currently there is no `Editor` and it is unlikely one will exist in the future.
 
 
+---
+
+## Engine Core Architecture
+
+> ⚠️ **Note:**  This diagram is a work in progress and may not reflect the current state of the engine.
+![Engine Architecture](docs/architecture.png)
+
+
+---
 
 ## 📚 Documentation
 

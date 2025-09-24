@@ -3,6 +3,15 @@
 #include "stdafx.h"
 
 
+/*!
+    @file timer.h
+    @brief Timer class definition.
+
+    This file contains the definition of the Timer class, which is used to measure time intervals and manage frame timing in the engine.
+
+    @version 0.0.1
+
+*/
 class Timer {
 public:
     double delta;

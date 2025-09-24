@@ -1,32 +1,53 @@
 #pragma once
+#include "core/renderer/sdl_renderer.h"
 #include "core/system/logging.h"
 #include "core/system/timer.h"
 
 
+/*!
+    @file engine.h
+    @brief Engine class definition.
+
+    This file contains the definition of the Engine class, which serves as the core of the Ember Engine. It manages the main loop, window creation, rendering, and event handling.
+
+    @version 0.0.1
+
+*/
 class Engine {
 public:
     bool initialize(int window_w, int window_h, const char* title = "Ember Engine - Window", Uint32 window_flags = SDL_WINDOW_RESIZABLE);
 
     void run();
 
-    Timer get_timer() const;
+    Timer& get_timer();
 
-    SDL_Renderer* get_renderer() const;
+    Renderer* get_renderer() const;
 
     SDL_Window* get_window() const;
+
+    flecs::world& get_world();
 
     bool is_running = false;
 
     SDL_Event event;
 
     ~Engine();
+    Timer _timer;
 
 private:
-    Timer _timer;
-    SDL_Window* _window     = nullptr;
-    SDL_Renderer* _renderer = nullptr;
+    flecs::world _world;
+    SDL_Window* _window = nullptr;
+    Renderer* _renderer = nullptr;
 };
 
+/*!
+
+    @brief Core engine loop function.
+    
+    @note This function should never be called directly. It is used internally by the engine to handle events, update the world, and render frames.
+
+    @version 0.0.1
+*/
 void engine_core_loop();
 
 inline std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
