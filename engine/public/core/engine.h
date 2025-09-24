@@ -1,7 +1,7 @@
 #pragma once
 #include "core/system/logging.h"
 #include "core/system/timer.h"
-
+#include "core/renderer/sdl_renderer.h"
 
 class Engine {
 public:
@@ -11,7 +11,7 @@ public:
 
     Timer& get_timer();
 
-    SDL_Renderer* get_renderer() const;
+    Renderer* get_renderer() const;
 
     SDL_Window* get_window() const;
 
@@ -27,7 +27,7 @@ public:
 private:
     flecs::world _world;
     SDL_Window* _window     = nullptr;
-    SDL_Renderer* _renderer = nullptr;
+    Renderer* _renderer     = nullptr;
 };
 
 void engine_core_loop();
