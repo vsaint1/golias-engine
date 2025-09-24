@@ -251,7 +251,7 @@ void SDLRenderer::draw_circle(const Transform2D& transform, float radius, glm::v
 }
 
 
-void SDLRenderer::shutdown() {
+SDLRenderer::~SDLRenderer() {
 
     if (_renderer) {
         SDL_DestroyRenderer(_renderer);

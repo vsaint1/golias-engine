@@ -30,7 +30,8 @@ public:
 
     void draw_polygon(const Transform2D& transform, const std::vector<glm::vec2>& points, glm::vec4 color, bool is_filled) override;
 
-    void shutdown() override;
+    ~SDLRenderer() override;
+
 
 private:
     SDL_Window* _window     = nullptr;

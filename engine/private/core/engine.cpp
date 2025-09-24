@@ -71,7 +71,6 @@ void Engine::run() {
 Engine::~Engine() {
     LOG_INFO("Shutting down engine");
 
-    _renderer->shutdown();
     delete _renderer;
 
     SDL_DestroyWindow(_window);
