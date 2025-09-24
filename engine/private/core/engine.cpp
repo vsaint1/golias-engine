@@ -10,6 +10,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
+
     _window = SDL_CreateWindow(title, window_w, window_h, window_flags);
 
     if (!_window) {
@@ -18,6 +19,18 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
+#pragma region ENGINE_WINDOW_ICON
+
+    SDL_Surface* logo_surface = IMG_Load((ASSETS_PATH + "icon.png").c_str());
+
+    if (logo_surface) {
+        SDL_SetWindowIcon(_window, logo_surface);
+        SDL_DestroySurface(logo_surface);
+    } else {
+        LOG_ERROR("Failed to load `icon` image: %s", SDL_GetError());
+    }
+
+#pragma endregion
 
     // TODO: later we can add support for other renderers (Vulkan, OpenGL, etc.)
     SDLRenderer* renderer = new SDLRenderer();
@@ -31,6 +44,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _renderer = renderer;
 
+ 
     _timer.start();
 
     is_running = true;

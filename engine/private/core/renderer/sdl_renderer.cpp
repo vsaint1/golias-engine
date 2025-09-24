@@ -35,6 +35,8 @@ bool SDLRenderer::initialize(SDL_Window* window) {
 
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
+    // TODO: Get the viewport size and set logical presentation from `project.xml`
+    SDL_SetRenderLogicalPresentation(_renderer, 640, 320, SDL_LOGICAL_PRESENTATION_STRETCH);
 
     return true;
 }
