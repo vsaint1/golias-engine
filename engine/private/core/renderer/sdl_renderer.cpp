@@ -237,12 +237,12 @@ void SDLRenderer::draw_circle(const Transform2D& transform, float radius, glm::v
 
         SDL_SetRenderDrawColor(_renderer, (Uint8) (color.r * 255), (Uint8) (color.g * 255), (Uint8) (color.b * 255),
                                (Uint8) (color.a * 255));
-        const int segments = 64;
+        constexpr int segments = 64;
         std::vector<SDL_FPoint> pts;
         pts.reserve(segments + 1);
 
         for (int i = 0; i <= segments; i++) {
-            float a = (i / (float) segments) * 2.0f * M_PI;
+            float a = (i / (float) segments) * 2.0f * glm::pi<float>();
             pts.push_back({cx + cos(a) * radius, cy + sin(a) * radius});
         }
 

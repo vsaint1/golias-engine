@@ -51,6 +51,10 @@ SDL_Window* Engine::get_window() const {
     return _window;
 }
 
+flecs::world& Engine::get_world() {
+    return _world;
+}
+
 void Engine::run() {
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)

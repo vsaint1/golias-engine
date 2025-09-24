@@ -2,6 +2,13 @@
 
 #include "core/component/components.h"
 
+/*!
+
+    @brief Abstract base class for different rendering backends.
+    This class defines the interface for rendering operations such as initializing the renderer, clearing the screen, drawing shapes, textures, text and presenting the rendered content.
+
+    @version 0.0.1
+*/
 class Renderer {
 public:
     virtual bool initialize(SDL_Window* window) = 0;

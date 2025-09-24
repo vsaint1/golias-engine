@@ -17,9 +17,7 @@
 #include <nlohmann/json.hpp>
 #include <map>
 
-#include <cmath>
-#include <corecrt_math_defines.h>
-
+#include <glm/gtc/constants.hpp>
 #include <glm/glm.hpp>
 
 #include <filesystem>
