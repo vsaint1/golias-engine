@@ -1,9 +1,17 @@
 #include "core/system/timer.h"
 
+
+int Timer::get_fps() const {
+    if (delta > 0) {
+        return static_cast<int>(1.0 / delta);
+    }
+    return 0;
+}
+
 void Timer::start() {
-    now     = SDL_GetPerformanceCounter();
-    last    = now;
-    delta   = 0.0;
+    now          = SDL_GetPerformanceCounter();
+    last         = now;
+    delta        = 0.0;
     elapsed_time = 0.0;
 }
 

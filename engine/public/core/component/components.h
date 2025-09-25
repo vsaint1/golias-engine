@@ -51,3 +51,14 @@ struct Script {
 
     ~Script();
 };
+
+/*!
+ * @brief Represents a label component for rendering text.
+ */
+struct Label2D {
+    std::string text;
+    glm::vec2 offset      = {0, 0};
+    glm::vec4 color       = {1, 1, 1, 1};
+    std::string font_name = "default";
+    int font_size         = 16;
+};

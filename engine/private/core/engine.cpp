@@ -47,11 +47,21 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
-    _renderer = renderer;
 
     renderer->load_font("default", "res/fonts/Default.ttf", 16);
     renderer->load_font("emoji", "res/fonts/Twemoji.ttf", 16);
     renderer->set_default_fonts("default", "emoji");
+
+#pragma region SETUP_COMPONENTS
+
+    this->_world.component<Transform2D>();
+    this->_world.component<Shape>();
+    this->_world.component<Script>();
+    this->_world.component<Label2D>();
+    
+#pragma endregion
+
+    _renderer = renderer;
 
     _timer.start();
 

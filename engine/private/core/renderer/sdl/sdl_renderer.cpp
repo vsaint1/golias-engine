@@ -9,6 +9,7 @@ bool SDLRenderer::initialize(SDL_Window* window) {
         return false;
     }
 
+
     _renderer = SDL_CreateRenderer(_window, nullptr);
 
     if (!_renderer) {
@@ -31,12 +32,13 @@ bool SDLRenderer::initialize(SDL_Window* window) {
         renderer_list += (i < driver_count - 1) ? ", " : "";
     }
 
-    LOG_INFO("Available renderers (%d): %s", driver_count, renderer_list.c_str());
+    LOG_INFO("Available backends (%d): %s", driver_count, renderer_list.c_str());
 
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
     // TODO: Get the viewport size and set logical presentation from `project.xml`
     SDL_SetRenderLogicalPresentation(_renderer, 640, 320, SDL_LOGICAL_PRESENTATION_STRETCH);
+
 
     return true;
 }
@@ -64,8 +66,7 @@ void SDLRenderer::draw_text(const Transform2D& transform, const glm::vec4& color
 
 void SDLRenderer::draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color) {
 
-    SDL_SetRenderDrawColor(_renderer, static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
-                           static_cast<Uint8>(color.b * 255), static_cast<Uint8>(color.a * 255));
+    SDL_SetRenderDrawColorFloat(_renderer, color.r, color.g, color.b, color.a);
 
     glm::vec2 start = transform.position;
 
@@ -84,10 +85,9 @@ void SDLRenderer::draw_line(const Transform2D& transform, glm::vec2 end, glm::ve
 }
 
 void SDLRenderer::draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled) {
-    SDL_SetRenderDrawColor(_renderer, static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
-                           static_cast<Uint8>(color.b * 255), static_cast<Uint8>(color.a * 255));
 
-    if (abs(transform.rotation) < 0.001f) {
+
+    if (SDL_abs(transform.rotation) < 0.001f) {
         SDL_FRect rect = {transform.position.x - (w * transform.scale.x) / 2.0f, transform.position.y - (h * transform.scale.y) / 2.0f,
                           w * transform.scale.x, h * transform.scale.y};
 
@@ -128,6 +128,8 @@ void SDLRenderer::draw_rect(const Transform2D& transform, float w, float h, glm:
             int indices[] = {0, 1, 2, 0, 2, 3};
             SDL_RenderGeometry(_renderer, nullptr, vertices, 4, indices, 6);
         } else {
+
+            SDL_SetRenderDrawColorFloat(_renderer, color.r, color.g, color.b, color.a);
             pts.push_back(pts[0]);
             SDL_RenderLines(_renderer, pts.data(), pts.size());
         }
@@ -136,11 +138,8 @@ void SDLRenderer::draw_rect(const Transform2D& transform, float w, float h, glm:
 
 void SDLRenderer::draw_triangle(const Transform2D& transform, float size, glm::vec4 color, bool is_filled) {
 
-    SDL_SetRenderDrawColor(_renderer, static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
-                           static_cast<Uint8>(color.b * 255), static_cast<Uint8>(color.a * 255));
 
-
-    float height                           = size * 0.866f; // sqrt(3)/2 for equilateral triangle
+    const float height                     = size * 0.866f; // sqrt(3)/2 for equilateral triangle
     std::vector<glm::vec2> triangle_points = {
         {0.0f, -height / 2.0f}, // Top vertex
         {-size / 2.0f, height / 2.0f}, // Bottom left
@@ -170,6 +169,7 @@ void SDLRenderer::draw_triangle(const Transform2D& transform, float size, glm::v
         int indices[] = {0, 1, 2};
         SDL_RenderGeometry(_renderer, nullptr, vertices, 3, indices, 3);
     } else {
+        SDL_SetRenderDrawColorFloat(_renderer, color.r, color.g, color.b, color.a);
         pts.push_back(pts[0]);
         SDL_RenderLines(_renderer, pts.data(), pts.size());
     }
@@ -181,8 +181,6 @@ void SDLRenderer::draw_polygon(const Transform2D& transform, const std::vector<g
         return;
     }
 
-    SDL_SetRenderDrawColor(_renderer, static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
-                           static_cast<Uint8>(color.b * 255), static_cast<Uint8>(color.a * 255));
 
     std::vector<SDL_FPoint> pts;
     for (const auto& v : points) {
@@ -215,6 +213,7 @@ void SDLRenderer::draw_polygon(const Transform2D& transform, const std::vector<g
             SDL_RenderGeometry(_renderer, nullptr, vertices.data(), vertices.size(), indices.data(), indices.size());
         }
     } else {
+        SDL_SetRenderDrawColorFloat(_renderer, color.r, color.g, color.b, color.a);
         pts.push_back(pts.front());
         SDL_RenderLines(_renderer, pts.data(), pts.size());
     }
@@ -292,6 +291,14 @@ void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& colo
         }
 
         SDL_Texture* tex = SDL_CreateTextureFromSurface(_renderer, surf);
+
+        if (!tex) {
+            SDL_DestroySurface(surf);
+            continue;
+        }
+
+        // SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
+
         SDL_FRect r{x, y, float(surf->w), float(surf->h)};
         SDL_RenderTexture(_renderer, tex, nullptr, &r);
         x += surf->w;
@@ -327,8 +334,8 @@ void SDLRenderer::draw_circle(const Transform2D& transform, float radius, glm::v
 
     } else {
 
-        SDL_SetRenderDrawColor(_renderer, (Uint8) (color.r * 255), (Uint8) (color.g * 255), (Uint8) (color.b * 255),
-                               (Uint8) (color.a * 255));
+        SDL_SetRenderDrawColorFloat(_renderer, color.r, color.g, color.b, color.a);
+
         constexpr int segments = 64;
         std::vector<SDL_FPoint> pts;
         pts.reserve(segments + 1);
