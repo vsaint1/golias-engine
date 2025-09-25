@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/io/reflection.h"
+#include "core/system/logging.h"
 
 
 // ==============================================================
@@ -64,9 +64,59 @@ struct Label2D {
 };
 
 
+struct Scene {};
 
-// ---------------- COMPONENT REFLECTION ----------------
-REFLECT_COMPONENT(Transform2D, FIELD(Transform2D, position), FIELD(Transform2D, scale), FIELD(Transform2D, rotation))
+struct SceneRoot {};
 
-REFLECT_COMPONENT(Shape, FIELD(Shape, type), FIELD(Shape, color), FIELD(Shape, filled), FIELD(Shape, size), FIELD(Shape, radius),
-                  FIELD(Shape, end), FIELD(Shape, vertices))
+struct ActiveScene {};
+
+struct Alive {};            // Marks entities that are alive (children of active scene)
+
+struct SceneChangeRequest {
+    std::string name;
+};
+
+
+
+inline void serialize_components(flecs::world& ecs) {
+
+    ecs.component<Scene>();
+
+    ecs.component<SceneRoot>();
+    
+    ecs.component<ActiveScene>();
+
+    ecs.component<glm::vec2>().member<float>("x").member<float>("y");
+    ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
+    ecs.component<std::string>()
+        .opaque(flecs::String)
+        .serialize([](const flecs::serializer* s, const std::string* data) {
+            const char* str = data->c_str();
+            return s->value(flecs::String, &str);
+        })
+        .assign_string([](std::string* data, const char* value) { *data = value; });
+
+    ecs.component<Transform2D>().member<glm::vec2>("position").member<glm::vec2>("scale").member<float>("rotation");
+
+    ecs.component<ShapeType>()
+        .constant("RECTANGLE", ShapeType::RECTANGLE)
+        .constant("TRIANGLE", ShapeType::TRIANGLE)
+        .constant("CIRCLE", ShapeType::CIRCLE)
+        .constant("LINE", ShapeType::LINE)
+        .constant("POLYGON", ShapeType::POLYGON);
+
+    ecs.component<Shape>()
+        .member<ShapeType>("type")
+        .member<glm::vec4>("color")
+        .member<bool>("filled")
+        .member<glm::vec2>("size")
+        .member<float>("radius")
+        .member<glm::vec2>("end");
+
+    ecs.component<Label2D>()
+        .member<std::string>("text")
+        .member<glm::vec2>("offset")
+        .member<glm::vec4>("color")
+        .member<std::string>("font_name")
+        .member<int>("font_size");
+}
