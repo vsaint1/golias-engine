@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/component/components.h"
+#include "core/component/logic/system_logic.h"
 #include "core/ember_utils.h"
 #include "core/renderer/base_struct.h"
 
