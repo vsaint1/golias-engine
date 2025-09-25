@@ -11,6 +11,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     }
 
 
+    if (!TTF_Init()) {
+        SDL_Log("TTF_Init failed: %s", SDL_GetError());
+        return false;
+    }
+
     _window = SDL_CreateWindow(title, window_w, window_h, window_flags);
 
     if (!_window) {
@@ -44,7 +49,10 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _renderer = renderer;
 
- 
+    renderer->load_font("default", "res/fonts/Default.ttf", 16);
+    renderer->load_font("emoji", "res/fonts/Twemoji.ttf", 16);
+    renderer->set_default_fonts("default", "emoji");
+
     _timer.start();
 
     is_running = true;
@@ -88,6 +96,9 @@ Engine::~Engine() {
     delete _renderer;
 
     SDL_DestroyWindow(_window);
+
+
+    TTF_Quit();
     SDL_Quit();
 }
 
