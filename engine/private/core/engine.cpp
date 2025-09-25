@@ -61,6 +61,9 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 
     engine_setup_systems(this->_world);
+
+    serialize_components(this->_world);
+
 #pragma endregion
 
     _renderer = renderer;
@@ -136,11 +139,13 @@ void engine_core_loop() {
 
 
 void engine_setup_systems(flecs::world& world) {
-    world.system<Transform2D, Shape>().kind(flecs::OnUpdate).each(render_primitives_system);
-   
-    world.system<Transform2D, Label2D>().kind(flecs::OnUpdate).each(render_labels_system);
-    
-    world.system<Script>().kind(flecs::OnStart).each([](flecs::entity e, Script& s) {
+    world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate").kind(flecs::OnUpdate).each(render_primitives_system);
+
+    world.system<Transform2D, Label2D>("RenderText_OnUpdate").kind(flecs::OnUpdate).each(render_labels_system);
+
+
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e, Script& s) {
+      
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
@@ -148,18 +153,8 @@ void engine_setup_systems(flecs::world& world) {
 
         load_scripts_system(s);
 
-        serialize_entity_to_lua(s.lua_state, e);
 
-        if(e.has<Transform2D>()) {
-            Transform2D& t = e.get_mut<Transform2D>();
-            serialize_component_to_lua(s.lua_state, t, "transform");
-        }
-        
-        if(e.has<Shape>()) {
-            Shape& sh = e.get_mut<Shape>();
-            serialize_component_to_lua(s.lua_state, sh, "shape");
-        }
-        
+        generate_bindings_to_lua(s.lua_state, world, e);
     });
 
     world.system<Script>().kind(flecs::OnUpdate).each(process_scripts_system);
