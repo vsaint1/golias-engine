@@ -1,6 +1,9 @@
 #pragma once
 
 #include "core/component/components.h"
+#include "core/ember_utils.h"
+#include "core/renderer/base_struct.h"
+
 
 /*!
 
@@ -16,6 +19,12 @@ public:
     virtual void clear(glm::vec4 color = glm::vec4(0, 0, 0, 1)) = 0;
 
     virtual void present() = 0;
+
+    void set_default_fonts(const std::string& text_font, const std::string& emoji_font);
+
+    virtual bool load_font(const std::string& name, const std::string& path, int size)  = 0;
+
+    virtual void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) = 0;
 
     virtual void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color = glm::vec4(1, 1, 1, 1),
                            bool is_filled = false) = 0;
@@ -35,4 +44,15 @@ public:
 
 private:
     SDL_Window* _window = nullptr;
+
+protected:
+    std::string vformat(const char* fmt, va_list args);
+
+    virtual std::vector<Tokens> parse_text(const std::string& text) = 0;
+
+    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) = 0;
+
+    std::unordered_map<std::string, std::shared_ptr<Font>> _fonts;
+    std::string _default_font_name;
+    std::string _emoji_font_name;
 };

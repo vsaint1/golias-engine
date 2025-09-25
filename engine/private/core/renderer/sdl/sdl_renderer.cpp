@@ -1,4 +1,4 @@
-#include "core/renderer/sdl_renderer.h"
+#include "core/renderer/sdl/sdl_renderer.h"
 
 
 bool SDLRenderer::initialize(SDL_Window* window) {
@@ -52,6 +52,15 @@ void SDLRenderer::present() {
     SDL_RenderPresent(_renderer);
 }
 
+
+void SDLRenderer::draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    std::string text = vformat(fmt, args);
+    va_end(args);
+
+    draw_text_internal(transform.position, color, font_name, text);
+}
 
 void SDLRenderer::draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color) {
 
@@ -208,6 +217,87 @@ void SDLRenderer::draw_polygon(const Transform2D& transform, const std::vector<g
     } else {
         pts.push_back(pts.front());
         SDL_RenderLines(_renderer, pts.data(), pts.size());
+    }
+}
+
+std::vector<Tokens> SDLRenderer::parse_text(const std::string& text) {
+    std::vector<Tokens> segments;
+    auto cps = utf8_to_utf32(text);
+    if (cps.empty()) {
+        return segments;
+    }
+
+    std::string current;
+    bool current_emoji = is_character_emoji(cps[0]);
+
+    for (auto cp : cps) {
+        bool is_e     = is_character_emoji(cp);
+        std::string s = utf32_to_utf8(cp);
+        if (is_e != current_emoji) {
+            if (!current.empty()) {
+                segments.push_back({current, current_emoji});
+            }
+            current       = s;
+            current_emoji = is_e;
+        } else {
+            current += s;
+        }
+    }
+    if (!current.empty()) {
+        segments.push_back({current, current_emoji});
+    }
+    return segments;
+}
+
+bool SDLRenderer::load_font(const std::string& name, const std::string& path, int size) {
+
+    if (_fonts.find(name) != _fonts.end()) {
+        return true;
+    }
+
+    TTF_Font* f = TTF_OpenFont(path.c_str(), size);
+    if (!f) {
+        SDL_Log("Failed to load font %s: %s", path.c_str(), SDL_GetError());
+        return false;
+    }
+
+    _fonts[name] = std::make_unique<SDLFont>(f);
+    return true;
+}
+
+void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) {
+    auto segments = parse_text(text);
+    float x       = pos.x;
+    float y       = pos.y;
+
+    for (auto& seg : segments) {
+        SDLFont* font = nullptr;
+        if (!font_name.empty()) {
+            font = seg.is_emoji ? dynamic_cast<SDLFont*>(_fonts[_emoji_font_name].get()) : dynamic_cast<SDLFont*>(_fonts[font_name].get());
+        } else {
+            font = seg.is_emoji ? dynamic_cast<SDLFont*>(_fonts[_emoji_font_name].get())
+                                : dynamic_cast<SDLFont*>(_fonts[_default_font_name].get());
+        }
+
+        if (!font || !font->get_font()) {
+            continue;
+        }
+
+        SDL_Surface* surf = TTF_RenderText_Blended(font->get_font(), seg.text.c_str(), seg.text.size(),
+                                                   SDL_Color{static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
+                                                             static_cast<Uint8>(color.b * 255), static_cast<Uint8>(color.a * 255)});
+
+        if (!surf) {
+            continue;
+        }
+
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(_renderer, surf);
+        SDL_FRect r{x, y, float(surf->w), float(surf->h)};
+        SDL_RenderTexture(_renderer, tex, nullptr, &r);
+        x += surf->w;
+
+        SDL_DestroySurface(surf);
+        SDL_DestroyTexture(tex);
     }
 }
 
