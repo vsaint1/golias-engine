@@ -1,6 +1,6 @@
 #pragma once
-#include "core/renderer/sdl_renderer.h"
-#include "core/system/logging.h"
+#include "core/renderer/sdl/sdl_renderer.h"
+#include "core/io/file_system.h"
 #include "core/system/timer.h"
 
 
@@ -49,5 +49,18 @@ private:
     @version 0.0.1
 */
 void engine_core_loop();
+
+/*!
+
+    @brief Sets up the core systems in the provided Flecs world.
+    
+    This function registers core systems required for the engine's operation
+
+    @param world Reference to the Flecs world where systems will be registered.
+
+    @version 0.0.1
+*/
+
+void engine_setup_systems(flecs::world& world);
 
 inline std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();

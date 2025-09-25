@@ -22,6 +22,7 @@
 
 #include <filesystem>
 
+#include <miniaudio.h>
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
 #include <emscripten.h>

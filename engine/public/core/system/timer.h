@@ -17,6 +17,8 @@ public:
     double delta;
     double elapsed_time;
 
+    int get_fps() const;
+
     void start();
 
     void tick();

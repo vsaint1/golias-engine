@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/system/logging.h"
+#include "core/io/reflection.h"
 
 
 // ==============================================================
@@ -51,3 +51,22 @@ struct Script {
 
     ~Script();
 };
+
+/*!
+ * @brief Represents a label component for rendering text.
+ */
+struct Label2D {
+    std::string text;
+    glm::vec2 offset      = {0, 0};
+    glm::vec4 color       = {1, 1, 1, 1};
+    std::string font_name = "default";
+    int font_size         = 16;
+};
+
+
+
+// ---------------- COMPONENT REFLECTION ----------------
+REFLECT_COMPONENT(Transform2D, FIELD(Transform2D, position), FIELD(Transform2D, scale), FIELD(Transform2D, rotation))
+
+REFLECT_COMPONENT(Shape, FIELD(Shape, type), FIELD(Shape, color), FIELD(Shape, filled), FIELD(Shape, size), FIELD(Shape, radius),
+                  FIELD(Shape, end), FIELD(Shape, vertices))
