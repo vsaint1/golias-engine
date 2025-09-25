@@ -9,14 +9,16 @@
 #include <lua.hpp>
 
 #include <flecs.h>
+
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <functional>
 #include <mutex>
-#include <nlohmann/json.hpp>
 #include <map>
+#include <deque>
 
+#include <nlohmann/json.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/glm.hpp>
 

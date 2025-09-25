@@ -151,7 +151,7 @@ bool FileAccess::resolve_path(const std::string& file_path, ModeFlags mode_flags
         _file_path = ASSETS_PATH + file_path.substr(6);
     }
     else if (file_path.rfind("user://", 0) == 0) {
-        char* prefPath = SDL_GetPrefPath("Ember", "com.ember.engine.app");
+        char* prefPath = SDL_GetPrefPath(ENGINE_DEFAULT_FOLDER_NAME, ENGINE_PACKAGE_NAME);
         if (!prefPath) {
             LOG_ERROR("Failed to get pref path: %s", SDL_GetError());
             return false;
