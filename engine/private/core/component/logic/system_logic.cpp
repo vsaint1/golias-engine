@@ -1,4 +1,5 @@
 #include "core/component/logic/system_logic.h"
+
 #include "core/engine.h"
 
 void render_primitives_system(Transform2D& t, Shape& s) {
@@ -75,4 +76,31 @@ void render_labels_system(Transform2D& t, Label2D& l) {
     temp.position += l.offset;
 
     GEngine->get_renderer()->draw_text(temp, l.color, l.font_name.c_str(), "%s", l.text.c_str());
+}
+
+
+void scene_manager_system(flecs::world& world) {
+    world.observer<SceneChangeRequest>("SceneChangeRequest_Observer")
+        .event(flecs::OnSet)
+        .each([&](flecs::iter& it, size_t i, SceneChangeRequest& req) {
+            LOG_INFO("Scene requested: %s", req.name.c_str());
+
+            auto new_scene = world.lookup(req.name.c_str());
+            
+            if (new_scene.is_valid() && new_scene.has<Scene>()) {
+
+                world.each([&](flecs::entity e, Scene) {
+                    e.add(flecs::Disabled);
+                    e.remove<ActiveScene>();
+                });
+
+                new_scene.remove(flecs::Disabled);
+                new_scene.add<ActiveScene>();
+                LOG_INFO("Switched to scene: %s", req.name.c_str());
+            } else {
+                LOG_WARN("Scene '%s' not found", req.name.c_str());
+            }
+
+            it.entity(i).remove<SceneChangeRequest>();
+        });
 }
