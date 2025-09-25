@@ -52,13 +52,15 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     renderer->load_font("emoji", "res/fonts/Twemoji.ttf", 16);
     renderer->set_default_fonts("default", "emoji");
 
-#pragma region SETUP_COMPONENTS
+#pragma region SETUP_FLECS_WORLD
 
     this->_world.component<Transform2D>();
     this->_world.component<Shape>();
     this->_world.component<Script>();
     this->_world.component<Label2D>();
-    
+
+
+    engine_setup_systems(this->_world);
 #pragma endregion
 
     _renderer = renderer;
@@ -130,4 +132,35 @@ void engine_core_loop() {
 
     // FIXME: Cap framerate for now
     SDL_Delay(16); // ~60 FPS
+}
+
+
+void engine_setup_systems(flecs::world& world) {
+    world.system<Transform2D, Shape>().kind(flecs::OnUpdate).each(render_primitives_system);
+   
+    world.system<Transform2D, Label2D>().kind(flecs::OnUpdate).each(render_labels_system);
+    
+    world.system<Script>().kind(flecs::OnStart).each([](flecs::entity e, Script& s) {
+        if (s.path.empty()) {
+            LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
+            return;
+        }
+
+        load_scripts_system(s);
+
+        serialize_entity_to_lua(s.lua_state, e);
+
+        if(e.has<Transform2D>()) {
+            Transform2D& t = e.get_mut<Transform2D>();
+            serialize_component_to_lua(s.lua_state, t, "transform");
+        }
+        
+        if(e.has<Shape>()) {
+            Shape& sh = e.get_mut<Shape>();
+            serialize_component_to_lua(s.lua_state, sh, "shape");
+        }
+        
+    });
+
+    world.system<Script>().kind(flecs::OnUpdate).each(process_scripts_system);
 }

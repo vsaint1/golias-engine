@@ -50,4 +50,17 @@ private:
 */
 void engine_core_loop();
 
+/*!
+
+    @brief Sets up the core systems in the provided Flecs world.
+    
+    This function registers core systems required for the engine's operation
+
+    @param world Reference to the Flecs world where systems will be registered.
+
+    @version 0.0.1
+*/
+
+void engine_setup_systems(flecs::world& world);
+
 inline std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
