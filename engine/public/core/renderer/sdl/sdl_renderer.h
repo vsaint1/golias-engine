@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/renderer/sdl/sdl_struct.h"
 #include "core/renderer/renderer.h"
+#include "core/renderer/sdl/sdl_struct.h"
 
 
 /*!
@@ -14,7 +14,7 @@
     @version 0.0.1
 
 */
-class SDLRenderer : public Renderer {
+class SDLRenderer final: public Renderer {
 public:
     bool initialize(SDL_Window* window) override;
 
@@ -23,6 +23,12 @@ public:
     void present() override;
 
     bool load_font(const std::string& name, const std::string& path, int size) override;
+    
+    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path) override;
+
+    void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
+                      bool flip_h, bool flip_v, const glm::vec4& color) override;
+
 
     void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
 

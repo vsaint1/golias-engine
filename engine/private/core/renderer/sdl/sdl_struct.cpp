@@ -20,3 +20,15 @@ glm::vec2 SDLFont::get_size(const std::string& text) {
 TTF_Font* SDLFont::get_font() const {
     return _font;
 }
+
+// TEXTURE IMPLEMENTATION
+
+SDLTexture::~SDLTexture() {
+    if (_texture) {
+        SDL_DestroyTexture(_texture);
+    }
+}
+
+SDL_Texture* SDLTexture::get_texture() const {
+    return _texture;
+}
