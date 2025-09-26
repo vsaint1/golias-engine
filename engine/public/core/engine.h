@@ -2,7 +2,7 @@
 #include "core/renderer/sdl/sdl_renderer.h"
 #include "core/io/file_system.h"
 #include "core/system/timer.h"
-
+#include "core/project_config.h"
 
 /*!
     @file engine.h
@@ -25,6 +25,8 @@ public:
 
     SDL_Window* get_window() const;
 
+    EngineConfig& get_config();
+
     flecs::world& get_world();
 
     bool is_running = false;
@@ -35,6 +37,7 @@ public:
     Timer _timer;
 
 private:
+    EngineConfig _config{};
     flecs::world _world;
     SDL_Window* _window = nullptr;
     Renderer* _renderer = nullptr;
