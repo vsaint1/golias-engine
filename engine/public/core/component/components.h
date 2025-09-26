@@ -14,6 +14,11 @@ struct Transform2D {
     glm::vec2 position = {0, 0};
     glm::vec2 scale    = {1, 1};
     float rotation     = 0;
+
+    glm::vec2 world_position = {0, 0};
+    glm::vec2 world_scale    = {1, 1};
+    float world_rotation     = 0;
+
 };
 
 /*!
@@ -57,12 +62,22 @@ struct Script {
  */
 struct Label2D {
     std::string text      = "";
-    glm::vec2 offset      = {0, 0};
     glm::vec4 color       = {1, 1, 1, 1};
     std::string font_name = "default";
     int font_size         = 16;
 };
 
+
+/*!
+    * @brief Represents a 2D sprite component for rendering textures.
+*/
+struct Sprite2D {
+    std::string texture_name = "";
+    glm::vec4 source        = {0, 0, 64, 64}; // x, y, w, h
+    glm::vec4 color         = {1, 1, 1, 1};
+    bool flip_h             = false;
+    bool flip_v             = false;
+};
 
 struct Scene {};
 
@@ -83,7 +98,7 @@ inline void serialize_components(flecs::world& ecs) {
 
     ecs.component<SceneRoot>();
 
-    ecs.component<ActiveScene>();
+    ecs.component<ActiveScene>().add(flecs::Exclusive);
 
     ecs.component<glm::vec2>().member<float>("x").member<float>("y");
     ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
@@ -114,7 +129,6 @@ inline void serialize_components(flecs::world& ecs) {
 
     ecs.component<Label2D>()
         .member<std::string>("text")
-        .member<glm::vec2>("offset")
         .member<glm::vec4>("color")
         .member<std::string>("font_name")
         .member<int>("font_size");

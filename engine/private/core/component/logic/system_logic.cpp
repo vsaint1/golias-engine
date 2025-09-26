@@ -1,8 +1,7 @@
 #include "core/component/logic/system_logic.h"
 
-#include "core/engine.h"
-
 #include "core/binding/lua.h"
+#include "core/engine.h"
 
 
 void render_primitives_system(Transform2D& t, Shape& s) {
@@ -25,9 +24,55 @@ void render_primitives_system(Transform2D& t, Shape& s) {
     }
 }
 
+void render_labels_system(Transform2D& t, Label2D& l) {
+
+    // LOG_INFO("Rendering label: %s at position (%.2f, %.2f)", l.text.c_str(), t.world_position.x, t.world_position.y);
+    GEngine->get_renderer()->draw_text(t, l.color, l.font_name.c_str(), "%s", l.text.c_str());
+}
+
+void render_sprites_system(Transform2D& t, Sprite2D& sprite) {
+
+    if (!sprite.texture_name.empty()) {
+
+        auto texture = GEngine->get_renderer()->load_texture(sprite.texture_name);
+        if (texture) {
+            glm::vec4 source = sprite.source;
+
+            glm::vec4 dest = {0, 0, source.z, source.w};
+
+            GEngine->get_renderer()->draw_texture(
+                t, texture.get(), dest, source,
+                sprite.flip_h, sprite.flip_v, sprite.color
+            );
+        }
+    }
+}
 
 
- void setup_scripts_system(flecs::entity e, Script& script) {
+void update_transforms_system(flecs::entity e, Transform2D& t) {
+    auto parent = e.parent();
+    if (parent.is_valid() && parent.has<Transform2D>()) {
+        const Transform2D& parent_t = parent.get<Transform2D>();
+
+        // Update world position, scale and rotation based on parent's transform
+        t.world_position = parent_t.world_position + t.position;
+
+        t.world_scale = parent_t.world_scale * t.scale;
+
+        t.world_rotation = parent_t.world_rotation + t.rotation;
+    } else {
+        // No parent with Transform2D, so local is world
+        t.world_position = t.position;
+        t.world_scale    = t.scale;
+        t.world_rotation = t.rotation;
+    }
+
+    // LOG_INFO("Entity: %s, Local Pos: (%.2f, %.2f), World Pos: (%.2f, %.2f)", e.name().c_str(), t.position.x, t.position.y, t.world_position.x,
+    //          t.world_position.y);
+}
+
+
+void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
         // create Lua state
         script.lua_state = luaL_newstate();
@@ -55,7 +100,7 @@ void render_primitives_system(Transform2D& t, Shape& s) {
         // call `ready` if it exists
         sol::object ready_obj = lua["ready"];
         if (ready_obj.is<sol::function>()) {
-            sol::function ready_func = ready_obj.as<sol::function>();
+            sol::function ready_func                    = ready_obj.as<sol::function>();
             sol::protected_function_result ready_result = ready_func();
             if (!ready_result.valid()) {
                 sol::error err = ready_result;
@@ -86,14 +131,6 @@ void process_scripts_system(Script& script) {
             return;
         }
     }
-}
-
-
-void render_labels_system(Transform2D& t, Label2D& l) {
-    Transform2D temp = t;
-    temp.position += l.offset;
-
-    GEngine->get_renderer()->draw_text(temp, l.color, l.font_name.c_str(), "%s", l.text.c_str());
 }
 
 
