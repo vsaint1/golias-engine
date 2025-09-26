@@ -1,9 +1,35 @@
 #include "core/engine.h"
 
+#include "core/binding/lua.h"
+
+
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
 
 
+    if (!_config.load()) {
+        LOG_CRITICAL("Failed to load config file (project.xml)");
+    }
+
+    const auto& app_config = _config.get_application();
+
+
+    if (app_config.is_fullscreen) {
+        window_flags |= SDL_WINDOW_FULLSCREEN;
+    }
+
+    if (app_config.is_resizable) {
+        window_flags |= SDL_WINDOW_RESIZABLE;
+    }
+
     LOG_INFO("Initializing %s, Version %s", ENGINE_NAME, ENGINE_VERSION_STR);
+    LOG_INFO("Application: %s, Version %s, Package: %s", app_config.name, app_config.version, app_config.package_name);
+
+
+#pragma region APP_METADATA
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, _config.get_orientation_str());
+    SDL_SetAppMetadata(app_config.name, app_config.version, app_config.package_name);
+#pragma endregion
+
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK | SDL_INIT_AUDIO)) {
         LOG_ERROR("Engine initialization failed %s", SDL_GetError());
@@ -16,7 +42,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
-    _window = SDL_CreateWindow(title, window_w, window_h, window_flags);
+    _window = SDL_CreateWindow(app_config.name, window_w, window_h, window_flags);
 
     if (!_window) {
         LOG_ERROR("Window creation failed %s", SDL_GetError());
@@ -37,11 +63,21 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 #pragma endregion
 
+    if (_config.get_performance().is_multithreaded) {
+        Logger::initialize();
+    }
+
+
+    LOG_INFO("Renderer Selected: %s", _config.get_renderer_device().get_backend_str());
+
     // TODO: later we can add support for other renderers (Vulkan, OpenGL, etc.)
     SDLRenderer* renderer = new SDLRenderer();
 
     if (!renderer->initialize(_window)) {
-        LOG_ERROR("Renderer initialization failed");
+        LOG_ERROR("Renderer initialization failed, shutting down");
+
+        delete renderer;
+
         SDL_DestroyWindow(_window);
         SDL_Quit();
         return false;
@@ -61,6 +97,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 
     engine_setup_systems(this->_world);
+
+    serialize_components(this->_world);
+
+    LOG_INFO("Engine setup systems completed");
+
 #pragma endregion
 
     _renderer = renderer;
@@ -70,6 +111,10 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     is_running = true;
 
     return true;
+}
+
+EngineConfig& Engine::get_config() {
+    return _config;
 }
 
 Timer& Engine::get_timer() {
@@ -107,8 +152,8 @@ Engine::~Engine() {
 
     delete _renderer;
 
-    SDL_DestroyWindow(_window);
 
+    SDL_DestroyWindow(_window);
 
     TTF_Quit();
     SDL_Quit();
@@ -136,31 +181,36 @@ void engine_core_loop() {
 
 
 void engine_setup_systems(flecs::world& world) {
-    world.system<Transform2D, Shape>().kind(flecs::OnUpdate).each(render_primitives_system);
-   
-    world.system<Transform2D, Label2D>().kind(flecs::OnUpdate).each(render_labels_system);
-    
-    world.system<Script>().kind(flecs::OnStart).each([](flecs::entity e, Script& s) {
+    world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .each([&](flecs::entity e, Transform2D& t, Shape& s) {
+            auto scene = e.parent();
+            if (scene.is_valid() && scene.has<ActiveScene>()) {
+                render_primitives_system(t, s);
+            }
+        });
+
+    world.system<Transform2D, Label2D>("RenderText_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Transform2D& t, Label2D& l) {
+        auto scene = e.parent();
+        if (scene.is_valid() && scene.has<ActiveScene>()) {
+            render_labels_system(t, l);
+        }
+    });
+
+    scene_manager_system(world);
+
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e,  Script& s) {
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
         }
 
-        load_scripts_system(s);
 
-        serialize_entity_to_lua(s.lua_state, e);
+        setup_scripts_system(e,s);
+        
 
-        if(e.has<Transform2D>()) {
-            Transform2D& t = e.get_mut<Transform2D>();
-            serialize_component_to_lua(s.lua_state, t, "transform");
-        }
-        
-        if(e.has<Shape>()) {
-            Shape& sh = e.get_mut<Shape>();
-            serialize_component_to_lua(s.lua_state, sh, "shape");
-        }
-        
     });
 
-    world.system<Script>().kind(flecs::OnUpdate).each(process_scripts_system);
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).each(process_scripts_system);
+
 }

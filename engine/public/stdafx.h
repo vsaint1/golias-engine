@@ -6,17 +6,21 @@
 #include <chrono>
 #include <stdio.h>
 
-#include <lua.hpp>
+#include <sol/sol.hpp>
+// #include <lua.hpp>
 
 #include <flecs.h>
+
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <functional>
 #include <mutex>
-#include <nlohmann/json.hpp>
 #include <map>
+#include <deque>
+#include <condition_variable>
 
+#include <nlohmann/json.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/glm.hpp>
 
@@ -28,6 +32,7 @@
 #include <emscripten.h>
 #endif
 
+#include <tinyxml2.h>
 
 using Json = nlohmann::json;
 

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+
+    <application>
+        <name>Ember Engine - Window</name>
+        <description>EEngine</description>
+        <icon>res/icon.png</icon>
+        <version>0.1.0</version>
+        <max_fps>60</max_fps>
+        <identifier>br.com.vsaint1.ember_engine</identifier>
+        <resizable>true</resizable>
+        <fullscreen>false</fullscreen>
+    </application>
+
+    <logging>
+        <level>debug</level> <!-- debug, info, warning, error -->
+        <file>engine_logs</file>
+    </logging>
+
+    <performance>
+        <multithreading>false</multithreading>
+        <worker_threads>4</worker_threads>
+        <physics_fps>60</physics_fps>
+    </performance>
+
+    <window>
+        <size width="1280" height="720"/>  <!-- virtual size-->
+        <mode>windowed</mode> <!-- windowed, minimized, maximized, fullscreen, exclusive-fullscreen -->
+        <dpi_scale>1.0</dpi_scale>
+    </window>
+
+    <viewport>
+        <size width="640" height="360"/>
+        <stretch mode="viewport" aspect="expand"/> <!-- none,keep, expand-->
+        <scale>1.0</scale>
+    </viewport>
+
+    <orientation>landscape_left</orientation> <!-- landscape_left, landscape_right, portrait, portrait_upside_down-->
+
+    <vsync>true</vsync>
+
+    <renderer>
+        <method>auto</method> <!-- gl_compatibility, vk_forward, metal, auto-->
+        <texture_filter>nearest</texture_filter>  <!-- linear, nearest-->
+    </renderer>
+
+    <environment>
+        <clear_color r="0.2" g="0.3" b="0.3" a="1.0"/>
+    </environment>
+
+</config>

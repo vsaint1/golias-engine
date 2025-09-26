@@ -9,6 +9,51 @@
     "[" __TIME__ "]"   \
     "[EMBER_ENGINE][" __FILE__ ":" TO_STRING(__LINE__) "]: "
 
+
+    /*!
+   @brief Class for logging, tracing and debugging
+
+   - Web - Output to javascript console
+   - Windows - Output to console and file
+   - macOS - Output to xcode console
+   - Linux - Output to console and file
+   - Android - Output to logcat
+   - iOS - Output to xcode console
+
+   Use the LOG_ERROR, LOG_INFO, LOG_WARN, LOG_DEBUG macros to log messages
+
+   @note Do not push sensitive data to the logs
+
+   @version 0.0.9
+
+*/
+class Logger {
+public:
+    static Logger& get_instance();
+
+    static void initialize(const char* app_identifier = "com.ember.engine.app");
+
+    void push(const std::string& formatted_log);
+
+
+private:
+    Logger()  = default;
+    ~Logger();
+
+    void log_thread();
+
+    const char* _app_identifier = "com.ember.engine.app";
+
+    std::mutex _mutex                  = std::mutex();
+    SDL_Thread* _thread                = nullptr;
+    std::condition_variable _condition = std::condition_variable();
+    std::atomic<bool> _is_running = false;
+
+    std::deque<std::string> _log_queue = std::deque<std::string>();
+
+    SDL_IOStream* file = nullptr;
+};
+
 /*!
 
    @brief ERROR logging
@@ -21,6 +66,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -35,6 +81,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -49,6 +96,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);         \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -63,6 +111,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogVerbose(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);       \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -77,6 +126,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -91,6 +141,7 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);          \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
 
 /*!
@@ -105,7 +156,21 @@
         char buffer[1024];                                                \
         SDL_snprintf(buffer, sizeof(buffer), TRACE_FILE_LOG __VA_ARGS__); \
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", buffer);      \
+        Logger::get_instance().push(buffer);                              \
     } while (0)
+
+/*!
+
+   @brief If fail the app will quit
+   @version 0.0.1
+   @param string c-string with `printf` format specifier
+   @returns just print the message
+*/
+#define LOG_QUIT_ON_FAIL(x)              \
+    if (!x) {                            \
+        LOG_ERROR("%s", SDL_GetError()); \
+        return SDL_APP_FAILURE;          \
+    }
 
 
 /*!
