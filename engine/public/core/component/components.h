@@ -56,7 +56,7 @@ struct Script {
  * @brief Represents a label component for rendering text.
  */
 struct Label2D {
-    std::string text;
+    std::string text      = "";
     glm::vec2 offset      = {0, 0};
     glm::vec4 color       = {1, 1, 1, 1};
     std::string font_name = "default";
@@ -70,12 +70,11 @@ struct SceneRoot {};
 
 struct ActiveScene {};
 
-struct Alive {};            // Marks entities that are alive (children of active scene)
+struct Alive {}; // Marks entities that are alive (children of active scene)
 
 struct SceneChangeRequest {
     std::string name;
 };
-
 
 
 inline void serialize_components(flecs::world& ecs) {
@@ -83,7 +82,7 @@ inline void serialize_components(flecs::world& ecs) {
     ecs.component<Scene>();
 
     ecs.component<SceneRoot>();
-    
+
     ecs.component<ActiveScene>();
 
     ecs.component<glm::vec2>().member<float>("x").member<float>("y");

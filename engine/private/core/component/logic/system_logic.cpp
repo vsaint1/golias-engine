@@ -2,6 +2,9 @@
 
 #include "core/engine.h"
 
+#include "core/binding/lua.h"
+
+
 void render_primitives_system(Transform2D& t, Shape& s) {
     switch (s.type) {
     case ShapeType::TRIANGLE:
@@ -22,11 +25,15 @@ void render_primitives_system(Transform2D& t, Shape& s) {
     }
 }
 
-void load_scripts_system(Script& script) {
+
+
+ void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
+        // create Lua state
         script.lua_state = luaL_newstate();
         luaL_openlibs(script.lua_state);
 
+        // load the Lua file
         FileAccess lua_file(script.path, ModeFlags::READ);
         const std::string& lua_script = lua_file.get_file_as_str();
 
@@ -34,39 +41,50 @@ void load_scripts_system(Script& script) {
             const char* err = lua_tostring(script.lua_state, -1);
             LOG_ERROR("Failed to load script %s: %s", script.path.c_str(), err);
             lua_pop(script.lua_state, 1);
+            return;
+        }
+
+        // create a sol::state_view to access the script
+        sol::state_view lua(script.lua_state);
+
+        // generate engine bindings
+        generate_bindings(lua);
+
+        push_entity_to_lua(lua, e);
+
+        // call `ready` if it exists
+        sol::object ready_obj = lua["ready"];
+        if (ready_obj.is<sol::function>()) {
+            sol::function ready_func = ready_obj.as<sol::function>();
+            sol::protected_function_result ready_result = ready_func();
+            if (!ready_result.valid()) {
+                sol::error err = ready_result;
+                LOG_ERROR("Error running function `ready` in script %s: %s", script.path.c_str(), err.what());
+                return;
+            }
+
+            script.ready_called = true;
         }
     }
 }
 
 void process_scripts_system(Script& script) {
-    if (!script.lua_state) {
+    if (!script.ready_called) {
+        LOG_WARN("Script not initialized properly");
         return;
     }
 
-    if (!script.ready_called) {
-        lua_getglobal(script.lua_state, "ready");
-        if (lua_isfunction(script.lua_state, -1)) {
-            if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
-                const char* err = lua_tostring(script.lua_state, -1);
-                LOG_ERROR("Error running function `ready` in script %s: %s", script.path.c_str(), err);
-                lua_pop(script.lua_state, 1);
-            }
-        } else {
-            lua_pop(script.lua_state, 1); // Pop the non-function value
-        }
-        script.ready_called = true;
-    }
+    sol::state_view lua(script.lua_state);
 
-    lua_getglobal(script.lua_state, "update");
-    if (lua_isfunction(script.lua_state, -1)) {
-        lua_pushnumber(script.lua_state, GEngine->get_timer().delta);
-        if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
-            const char* err = lua_tostring(script.lua_state, -1);
-            LOG_ERROR("Error running function `update` in script %s: %s", script.path.c_str(), err);
-            lua_pop(script.lua_state, 1);
+    sol::object update_obj = lua["update"];
+    if (update_obj.is<sol::function>()) {
+        sol::function update_func                    = update_obj.as<sol::function>();
+        sol::protected_function_result update_result = update_func(GEngine->get_timer().delta);
+        if (!update_result.valid()) {
+            sol::error err = update_result;
+            LOG_ERROR("Error running function `update` in script %s: %s", script.path.c_str(), err.what());
+            return;
         }
-    } else {
-        lua_pop(script.lua_state, 1);
     }
 }
 
@@ -86,7 +104,7 @@ void scene_manager_system(flecs::world& world) {
             LOG_INFO("Scene requested: %s", req.name.c_str());
 
             auto new_scene = world.lookup(req.name.c_str());
-            
+
             if (new_scene.is_valid() && new_scene.has<Scene>()) {
 
                 world.each([&](flecs::entity e, Scene) {

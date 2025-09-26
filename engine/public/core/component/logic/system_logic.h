@@ -1,11 +1,12 @@
 #pragma once
 
 #include "core/component/components.h"
+#include "core/io/file_system.h"
 
 // =======================================================
 // FLECS SYSTEM LOGIC PROTOTYPES                         |
 // =======================================================
-void load_scripts_system(Script& script);
+void setup_scripts_system(flecs::entity e,Script& script);
 
 void process_scripts_system(Script& script);
 

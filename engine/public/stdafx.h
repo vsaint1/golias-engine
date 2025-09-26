@@ -6,7 +6,8 @@
 #include <chrono>
 #include <stdio.h>
 
-#include <lua.hpp>
+#include <sol/sol.hpp>
+// #include <lua.hpp>
 
 #include <flecs.h>
 
@@ -17,6 +18,7 @@
 #include <mutex>
 #include <map>
 #include <deque>
+#include <condition_variable>
 
 #include <nlohmann/json.hpp>
 #include <glm/gtc/constants.hpp>

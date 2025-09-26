@@ -199,17 +199,18 @@ void engine_setup_systems(flecs::world& world) {
 
     scene_manager_system(world);
 
-    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e, Script& s) {
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e,  Script& s) {
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
         }
 
-        load_scripts_system(s);
 
+        setup_scripts_system(e,s);
+        
 
-        generate_bindings_to_lua(s.lua_state, world, e);
     });
 
-    world.system<Script>().kind(flecs::OnUpdate).each(process_scripts_system);
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).each(process_scripts_system);
+
 }
