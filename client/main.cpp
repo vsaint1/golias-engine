@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize(WINDOW_W, WINDOW_H, "nullptr")) {
+    if (!GEngine->initialize(WINDOW_W, WINDOW_H)) {
         return SDL_APP_FAILURE;
     }
 
