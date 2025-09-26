@@ -90,21 +90,18 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 #pragma region SETUP_FLECS_WORLD
 
-    this->_world.component<Transform2D>();
-    this->_world.component<Shape>();
-    this->_world.component<Script>();
-    this->_world.component<Label2D>();
-
+    serialize_components(this->_world);
 
     engine_setup_systems(this->_world);
 
-    serialize_components(this->_world);
 
     LOG_INFO("Engine setup systems completed");
 
 #pragma endregion
 
     _renderer = renderer;
+
+    _renderer->load_texture("ui_icons", "res/ui/icons/icons_64.png");
 
     _timer.start();
 
@@ -181,36 +178,40 @@ void engine_core_loop() {
 
 
 void engine_setup_systems(flecs::world& world) {
+
+
+    world.system<Transform2D>("UpdateTransforms_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(update_transforms_system);
+
     world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate")
         .kind(flecs::OnUpdate)
-        .each([&](flecs::entity e, Transform2D& t, Shape& s) {
-            auto scene = e.parent();
-            if (scene.is_valid() && scene.has<ActiveScene>()) {
-                render_primitives_system(t, s);
-            }
-        });
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Shape& s) { render_primitives_system(t, s); });
 
-    world.system<Transform2D, Label2D>("RenderText_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Transform2D& t, Label2D& l) {
-        auto scene = e.parent();
-        if (scene.is_valid() && scene.has<ActiveScene>()) {
-            render_labels_system(t, l);
-        }
-    });
+    world.system<Transform2D, Label2D>("RenderText_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Label2D& l) { render_labels_system(t, l); });
+
+    world.system<Transform2D, Sprite2D>("RenderSprite_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) {
+            render_sprites_system(t, s);
+        });
 
     scene_manager_system(world);
 
-    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e,  Script& s) {
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<ActiveScene>().up().each([&](flecs::entity e, Script& s) {
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
         }
 
-
-        setup_scripts_system(e,s);
-        
-
+        setup_scripts_system(e, s);
     });
 
-    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).each(process_scripts_system);
-
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(process_scripts_system);
 }

@@ -5,7 +5,6 @@
 #define WINDOW_H 720
 
 
-
 int main(int argc, char* argv[]) {
 
     if (!GEngine->initialize(WINDOW_W, WINDOW_H)) {
@@ -24,11 +23,22 @@ int main(int argc, char* argv[]) {
                       .set<Script>({"scripts/test.lua"})
                       .child_of(scene1);
 
+
     auto enemy = world.entity("Enemy")
                      .set<Transform2D>({{300, 200}, {1, 1}, 0})
-                     .set<Label2D>({"Enemy 🔥", {-5, -20}, {1, 1, 1, 1}})
-                     .set<Shape>({ShapeType::CIRCLE, {1, 0, 0, 1}, false, {32, 32}, 20})
+                     .set<Shape>({ShapeType::CIRCLE, {1, 0, 0, 1}, false, {32, 32}, 32})
                      .child_of(scene2);
+
+    auto enemy_sprite = world.entity("EnemySprite")
+    .set<Transform2D>({{0, 0}, {1, 1}, 0})
+    .set<Sprite2D>({"ui_icons"})
+    .child_of(enemy);
+
+    auto enemy_label = world.entity("EnemyLabel")
+                           .set<Transform2D>({{0, -20}, {1, 1}, 0})
+                           .set<Label2D>({"Enemy 💀"})
+                           .child_of(enemy);
+
 
     // FileAccess("user://scenes/test.json",ModeFlags::WRITE).store_string(world.to_json().c_str());
 

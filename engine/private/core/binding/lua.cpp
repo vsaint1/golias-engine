@@ -30,7 +30,7 @@ void generate_bindings(sol::state_view lua) {
 
     lua.new_usertype<Shape>("Shape", "color", &Shape::color, "filled", &Shape::filled);
 
-    lua.new_usertype<Label2D>("Label2D", "text", &Label2D::text, "offset", &Label2D::offset, "color", &Label2D::color, "font_name",
+    lua.new_usertype<Label2D>("Label2D", "text", &Label2D::text, "color", &Label2D::color, "font_name",
                               &Label2D::font_name, "font_size", &Label2D::font_size);
 
 
@@ -52,7 +52,7 @@ void push_entity_to_lua(sol::state_view lua, flecs::entity e) {
     // entity metadata
     // -------------------------
     self["id"]       = e.id();
-    self["name"]     = e.name();
+    self["name"]     = std::string(e.name()); // we cant return string_view to lua
     self["is_valid"] = e.is_valid();
 
     // TODO: implement these functions properly
