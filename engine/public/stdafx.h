@@ -30,6 +30,7 @@
 #include <emscripten.h>
 #endif
 
+#include <tinyxml2.h>
 
 using Json = nlohmann::json;
 
