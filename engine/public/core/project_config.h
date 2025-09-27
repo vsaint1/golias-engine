@@ -133,17 +133,17 @@ struct EngineConfig {
 
     const char* get_orientation_str() const;
 
-    RendererDevice get_renderer_device() const;
+    RendererDevice& get_renderer_device();
 
-    Performance get_performance() const;
+    Performance& get_performance();
 
-    Application get_application() const;
+    Application& get_application();
 
-    Environment get_environment() const;
+    Environment& get_environment();
 
-    Viewport get_viewport() const;
+    Viewport& get_viewport();
 
-    Window get_window() const;
+    Window& get_window();
 
     bool is_vsync() const;
 
