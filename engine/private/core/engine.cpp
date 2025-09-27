@@ -4,6 +4,44 @@
 
 std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
+
+Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
+
+
+    Renderer* renderer = nullptr;
+    switch (config.get_renderer_device().backend) {
+    case Backend::GL_COMPATIBILITY: {
+        renderer = new OpenglRenderer();
+        break;
+    }
+    case Backend::VK_FORWARD:
+        LOG_ERROR("Vulkan backend is not yet supported");
+        break;
+    case Backend::DIRECTX12:
+        LOG_ERROR("DirectX 12 backend is not yet supported");
+        break;
+    case Backend::METAL:
+        LOG_ERROR("Metal backend is not yet supported");
+        break;
+    case Backend::AUTO: {
+        renderer = new SDLRenderer();
+        break;
+    }
+    }
+
+    if (renderer && !renderer->initialize(window)) {
+        LOG_ERROR("Renderer initialization failed, shutting down");
+
+        delete renderer;
+
+        return nullptr;
+    }
+
+
+    return renderer;
+}
+
+
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
 
 
@@ -22,8 +60,16 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         window_flags |= SDL_WINDOW_RESIZABLE;
     }
 
+    const auto& renderer_config = _config.get_renderer_device();
+
+    if (renderer_config.backend == Backend::GL_COMPATIBILITY) {
+        window_flags |= SDL_WINDOW_OPENGL;
+    }
+
+    auto& app_win = _config.get_window();
+
     LOG_INFO("Initializing %s, Version %s", ENGINE_NAME, ENGINE_VERSION_STR);
-    LOG_INFO("Application: %s, Version %s, Package: %s", app_config.name, app_config.version, app_config.package_name);
+    LOG_INFO("Project Configuration -> Window: (%dx%d), ApplicationName: %s, Version %s, Package: %s",app_win.width,app_win.height, app_config.name, app_config.version, app_config.package_name);
 
 
 #pragma region APP_METADATA
@@ -43,7 +89,6 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
-    auto& app_win = _config.get_window();
 
     app_win.width  = window_w;
     app_win.height = window_h;
@@ -77,22 +122,19 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     LOG_INFO("Renderer Selected: %s", _config.get_renderer_device().get_backend_str());
 
     // TODO: later we can add support for other renderers (Vulkan, OpenGL, etc.)
-    SDLRenderer* renderer = new SDLRenderer();
+    _renderer = create_renderer_internal(_window, _config);
 
-    if (!renderer->initialize(_window)) {
-        LOG_ERROR("Renderer initialization failed, shutting down");
-
-        delete renderer;
-
+    if (!_renderer) {
+        LOG_ERROR("Renderer creation failed, shutting down");
         SDL_DestroyWindow(_window);
         SDL_Quit();
         return false;
     }
 
 
-    renderer->load_font("default", "res/fonts/Default.ttf", 16);
-    renderer->load_font("emoji", "res/fonts/Twemoji.ttf", 16);
-    renderer->set_default_fonts("default", "emoji");
+    _renderer->load_font("default", "res/fonts/Default.ttf", 16);
+    _renderer->load_font("emoji", "res/fonts/Twemoji.ttf", 16);
+    _renderer->set_default_fonts("default", "emoji");
 
 #pragma region SETUP_FLECS_WORLD
 
@@ -105,7 +147,6 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 #pragma endregion
 
-    _renderer = renderer;
 
     _renderer->load_texture("ui_icons", ASSETS_PATH + "ui/icons/icons_64.png");
 
@@ -172,18 +213,14 @@ void engine_core_loop() {
             GEngine->is_running = false;
         }
 
-        if(GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
-            int new_w = GEngine->event.window.data1;
-            int new_h = GEngine->event.window.data2;
-            auto& app_win = GEngine->get_config().get_window();
+        if (GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
+            int new_w      = GEngine->event.window.data1;
+            int new_h      = GEngine->event.window.data2;
+            auto& app_win  = GEngine->get_config().get_window();
             app_win.width  = new_w;
             app_win.height = new_h;
         }
-
     }
-
-
-    static flecs::entity selected;
 
 
     GEngine->get_renderer()->clear({0.2, 0.2, 0.2, 1.0f});
@@ -203,22 +240,28 @@ void engine_setup_systems(flecs::world& world) {
     world.system<Transform2D>("UpdateTransforms_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(update_transforms_system);
 
     world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Shape& s) { render_primitives_system(t, s); });
+         .kind(flecs::OnUpdate)
+         .with<ActiveScene>()
+         .up()
+         .each([&](flecs::entity e, Transform2D& t, Shape& s) {
+             render_primitives_system(t, s);
+         });
 
     world.system<Transform2D, Label2D>("RenderText_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Label2D& l) { render_labels_system(t, l); });
+         .kind(flecs::OnUpdate)
+         .with<ActiveScene>()
+         .up()
+         .each([&](flecs::entity e, Transform2D& t, Label2D& l) {
+             render_labels_system(t, l);
+         });
 
     world.system<Transform2D, Sprite2D>("RenderSprite_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) { render_sprites_system(t, s); });
+         .kind(flecs::OnUpdate)
+         .with<ActiveScene>()
+         .up()
+         .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) {
+             render_sprites_system(t, s);
+         });
 
     scene_manager_system(world);
 

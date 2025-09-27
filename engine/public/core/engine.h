@@ -1,5 +1,6 @@
 #pragma once
 #include "core/renderer/sdl/sdl_renderer.h"
+#include  "core/renderer/opengl/ogl_renderer.h"
 #include "core/io/file_system.h"
 #include "core/system/timer.h"
 #include "core/project_config.h"

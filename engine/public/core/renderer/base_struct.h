@@ -20,7 +20,7 @@ public:
 
 class Texture {
 public:
-    unsigned int id = 0; 
+    Uint32 id = 0; 
     int width = 0;
     int height = 0;
     std::string path = "";

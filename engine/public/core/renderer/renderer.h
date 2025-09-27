@@ -48,10 +48,11 @@ public:
 
     virtual ~Renderer() = default;
 
-private:
-    SDL_Window* _window = nullptr;
 
 protected:
+
+    SDL_Window* _window = nullptr;
+
     std::string vformat(const char* fmt, va_list args);
 
     virtual std::vector<Tokens> parse_text(const std::string& text) = 0;
