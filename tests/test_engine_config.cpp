@@ -12,6 +12,6 @@ TEST_CASE("Parse config file") {
     CHECK_MESSAGE(std::string(config.get_application().package_name).compare("com.ember.engine.app") == 0,
                   "Application package name should be 'com.ember.engine.app'");
 
-    CHECK_MESSAGE(config.get_window().size.x == 1280, "Window width should be 1280");
-    CHECK_MESSAGE(config.get_window().size.y == 720, "Window height should be 720");
+    CHECK_MESSAGE(config.get_window().width== 1280, "Window width should be 1280");
+    CHECK_MESSAGE(config.get_window().height == 720, "Window height should be 720");
 }
