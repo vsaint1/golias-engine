@@ -3,7 +3,7 @@
 #include "core/engine.h"
 
 
-void generate_bindings(lua_State* L) {  
+void generate_bindings(lua_State* L) {
     using namespace binding;
 
     // Create metatables for all types
@@ -15,9 +15,12 @@ void generate_bindings(lua_State* L) {
     create_metatable<glm::vec4>(L);
     create_metatable<EngineConfig>(L);
     create_metatable<Viewport>(L);
+    create_metatable<Window>(L);
     create_metatable<RendererDevice>(L);
     create_metatable<std::string>(L);
     create_metatable<Engine>(L);
+
+
 
     // Transform2D bindings
     add_property<Transform2D>("position", &Transform2D::position);
@@ -43,37 +46,44 @@ void generate_bindings(lua_State* L) {
     add_property<glm::vec4>("y", &glm::vec4::y);
     add_property<glm::vec4>("z", &glm::vec4::z);
     add_property<glm::vec4>("w", &glm::vec4::w);
+
+    // vec4 color aliases
     add_property<glm::vec4>("r", &glm::vec4::r);
     add_property<glm::vec4>("g", &glm::vec4::g);
     add_property<glm::vec4>("b", &glm::vec4::b);
     add_property<glm::vec4>("a", &glm::vec4::a);
 
-    // FIXME: returning garbage, need to fix
     // EngineConfig bindings
     add_method<Engine>("get_config", BINDING_METHOD(Engine, get_config));
 
     add_method<EngineConfig>("get_viewport", BINDING_METHOD(EngineConfig, get_viewport));
     add_method<EngineConfig>("get_renderer_device", BINDING_METHOD(EngineConfig, get_renderer_device));
+    add_method<EngineConfig>("get_window", BINDING_METHOD(EngineConfig, get_window));
 
     // Viewport bindings
     add_property<Viewport>("width", &Viewport::width);
     add_property<Viewport>("height", &Viewport::height);
     add_property<Viewport>("scale", &Viewport::scale);
 
+    // Window bindings
+    add_property<Window>("width", &Window::width);
+    add_property<Window>("height", &Window::height);
+    add_property<Window>("dpi_scale", &Window::dpi_scale);
+
     // RendererDevice bindings
     add_property<RendererDevice>("backend", &RendererDevice::backend);
     add_property<RendererDevice>("texture_filtering", &RendererDevice::texture_filtering);
-   
+
 
     // ===================================
     // GLOBAL SINGLETONS - Push once during binding generation
     // ===================================
-    
+
     // Push EngineConfig as global singleton
     push_userdata(L, GEngine.get());
-    lua_setglobal(L, "Engine");  
-    
-    
+    lua_setglobal(L, "Engine");
+
+
     // Scene table (also global)
     lua_newtable(L);
     lua_pushcfunction(L, [](lua_State* L) -> int {
@@ -91,8 +101,6 @@ void generate_bindings(lua_State* L) {
 
     lua_setglobal(L, "Scene");
 }
-
-
 
 
 void push_entity_to_lua(lua_State* L, flecs::entity e) {

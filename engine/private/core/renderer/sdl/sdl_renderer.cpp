@@ -1,5 +1,5 @@
 #include "core/renderer/sdl/sdl_renderer.h"
-
+#include "core/engine.h"
 
 bool SDLRenderer::initialize(SDL_Window* window) {
 
@@ -37,7 +37,9 @@ bool SDLRenderer::initialize(SDL_Window* window) {
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
     // TODO: Get the viewport size and set logical presentation from `project.xml`
-    SDL_SetRenderLogicalPresentation(_renderer, 640, 320, SDL_LOGICAL_PRESENTATION_STRETCH);
+    const auto& viewport = GEngine->get_config().get_viewport();
+    LOG_INFO("Using backend: %s, Viewport: %dx%d", renderer_name, viewport.width, viewport.height);
+    SDL_SetRenderLogicalPresentation(_renderer, viewport.width, viewport.height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
 
     return true;
