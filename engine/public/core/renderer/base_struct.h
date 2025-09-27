@@ -16,3 +16,14 @@ public:
         return {0, 0};
     }
 };
+
+
+class Texture {
+public:
+    unsigned int id = 0; 
+    int width = 0;
+    int height = 0;
+    std::string path = "";
+
+    virtual ~Texture() = default;
+};

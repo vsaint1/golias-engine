@@ -6,8 +6,7 @@
 #include <chrono>
 #include <stdio.h>
 
-#include <sol/sol.hpp>
-// #include <lua.hpp>
+#include <lua.hpp>
 
 #include <flecs.h>
 

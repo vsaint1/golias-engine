@@ -1,5 +1,5 @@
 #include "core/renderer/sdl/sdl_renderer.h"
-
+#include "core/engine.h"
 
 bool SDLRenderer::initialize(SDL_Window* window) {
 
@@ -37,7 +37,9 @@ bool SDLRenderer::initialize(SDL_Window* window) {
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
     // TODO: Get the viewport size and set logical presentation from `project.xml`
-    SDL_SetRenderLogicalPresentation(_renderer, 640, 320, SDL_LOGICAL_PRESENTATION_STRETCH);
+    const auto& viewport = GEngine->get_config().get_viewport();
+    LOG_INFO("Using backend: %s, Viewport: %dx%d", renderer_name, viewport.width, viewport.height);
+    SDL_SetRenderLogicalPresentation(_renderer, viewport.width, viewport.height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
 
     return true;
@@ -61,7 +63,7 @@ void SDLRenderer::draw_text(const Transform2D& transform, const glm::vec4& color
     std::string text = vformat(fmt, args);
     va_end(args);
 
-    draw_text_internal(transform.position, color, font_name, text);
+    draw_text_internal(transform.world_position, color, font_name, text);
 }
 
 void SDLRenderer::draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color) {
@@ -256,12 +258,46 @@ bool SDLRenderer::load_font(const std::string& name, const std::string& path, in
 
     TTF_Font* f = TTF_OpenFont(path.c_str(), size);
     if (!f) {
-        SDL_Log("Failed to load font %s: %s", path.c_str(), SDL_GetError());
+        SDL_Log("Failed to load Font %s: %s", path.c_str(), SDL_GetError());
         return false;
     }
 
     _fonts[name] = std::make_unique<SDLFont>(f);
     return true;
+}
+
+std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path) {
+
+    if (_textures.find(name) != _textures.end()) {
+        return _textures[name];
+    }
+
+    SDL_Surface* surface = IMG_Load(path.c_str());
+    if (!surface) {
+        LOG_ERROR("Failed to load Texture %s: %s", path.c_str(), SDL_GetError());
+        return nullptr;
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(_renderer, surface);
+
+    if (!texture) {
+        LOG_ERROR("Failed to create Texture from surface %s: %s", path.c_str(), SDL_GetError());
+        SDL_DestroySurface(surface);
+
+        return nullptr;
+    }
+
+    std::shared_ptr<SDLTexture> tex = std::make_shared<SDLTexture>(texture);
+    tex->width                      = surface->w;
+    tex->height                     = surface->h;
+    tex->path                       = path;
+
+    SDL_DestroySurface(surface);
+
+    LOG_INFO("Loaded Texture Name: %s, Size (%dx%d), Path: %s", name.c_str(), tex->width, tex->height, tex->path.c_str());
+
+    _textures[name] = tex;
+    return _textures[name];
 }
 
 void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) {
@@ -307,6 +343,54 @@ void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& colo
         SDL_DestroyTexture(tex);
     }
 }
+
+void SDLRenderer::draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
+                               bool flip_h = false, bool flip_v = false, const glm::vec4& color = glm::vec4(1, 1, 1, 1)) {
+
+
+    if (!texture) {
+        return;
+    }
+
+    SDLTexture* sdl_tex = dynamic_cast<SDLTexture*>(texture);
+
+    if (!sdl_tex || !sdl_tex->get_texture()) {
+
+        return;
+    }
+
+    SDL_FRect src_rect;
+    src_rect.x = source.x;
+    src_rect.y = source.y;
+    src_rect.w = source.z;
+    src_rect.h = source.w;
+
+    SDL_FRect dst_rect;
+    dst_rect.x = dest.x + transform.world_position.x;
+    dst_rect.y = dest.y + transform.world_position.y;
+    dst_rect.w = dest.z * transform.world_scale.x;
+    dst_rect.h = dest.w * transform.world_scale.y;
+
+    SDL_SetTextureColorMod(sdl_tex->get_texture(), static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
+                           static_cast<Uint8>(color.b * 255));
+    SDL_SetTextureAlphaMod(sdl_tex->get_texture(), static_cast<Uint8>(color.a * 255));
+
+    SDL_FPoint center;
+    center.x = dst_rect.w * 0.5f;
+    center.y = dst_rect.h * 0.5f;
+
+    SDL_FlipMode flip = SDL_FLIP_NONE;
+    if (flip_h && flip_v) {
+        flip = (SDL_FlipMode) (SDL_FLIP_HORIZONTAL | SDL_FLIP_VERTICAL);
+    } else if (flip_h) {
+        flip = SDL_FLIP_HORIZONTAL;
+    } else if (flip_v) {
+        flip = SDL_FLIP_VERTICAL;
+    }
+
+    SDL_RenderTextureRotated(_renderer, sdl_tex->get_texture(), &src_rect, &dst_rect, transform.rotation, &center, flip);
+}
+
 
 void SDLRenderer::draw_circle(const Transform2D& transform, float radius, glm::vec4 color, bool is_filled) {
 

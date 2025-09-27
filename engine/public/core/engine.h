@@ -34,10 +34,10 @@ public:
     SDL_Event event;
 
     ~Engine();
-    Timer _timer;
 
 private:
-    EngineConfig _config{};
+    EngineConfig _config = {};
+    Timer _timer = {};
     flecs::world _world;
     SDL_Window* _window = nullptr;
     Renderer* _renderer = nullptr;

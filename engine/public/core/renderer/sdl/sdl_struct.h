@@ -18,3 +18,17 @@ public:
 private:
     TTF_Font* _font = nullptr;
 };
+
+
+class SDLTexture : public Texture {
+public:
+    SDLTexture(SDL_Texture* tex) : _texture(tex) {
+    }
+
+    ~SDLTexture() override;
+
+    SDL_Texture* get_texture() const;
+
+private:
+    SDL_Texture* _texture = nullptr;
+};

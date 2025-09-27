@@ -42,6 +42,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
+    auto& app_win = _config.get_window();
+
+    app_win.width  = window_w;
+    app_win.height = window_h;
+
     _window = SDL_CreateWindow(app_config.name, window_w, window_h, window_flags);
 
     if (!_window) {
@@ -90,15 +95,10 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 #pragma region SETUP_FLECS_WORLD
 
-    this->_world.component<Transform2D>();
-    this->_world.component<Shape>();
-    this->_world.component<Script>();
-    this->_world.component<Label2D>();
-
+    serialize_components(this->_world);
 
     engine_setup_systems(this->_world);
 
-    serialize_components(this->_world);
 
     LOG_INFO("Engine setup systems completed");
 
@@ -106,7 +106,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _renderer = renderer;
 
+    _renderer->load_texture("ui_icons", "res/ui/icons/icons_64.png");
+
     _timer.start();
+
+    SDL_ShowWindow(_window);
 
     is_running = true;
 
@@ -152,7 +156,6 @@ Engine::~Engine() {
 
     delete _renderer;
 
-
     SDL_DestroyWindow(_window);
 
     TTF_Quit();
@@ -167,7 +170,20 @@ void engine_core_loop() {
         if (GEngine->event.type == SDL_EVENT_QUIT) {
             GEngine->is_running = false;
         }
+
+        if(GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
+            int new_w = GEngine->event.window.data1;
+            int new_h = GEngine->event.window.data2;
+            auto& app_win = GEngine->get_config().get_window();
+            app_win.width  = new_w;
+            app_win.height = new_h;
+        }
+        
     }
+
+
+    static flecs::entity selected;
+
 
     GEngine->get_renderer()->clear({0.2, 0.2, 0.2, 1.0f});
 
@@ -181,36 +197,38 @@ void engine_core_loop() {
 
 
 void engine_setup_systems(flecs::world& world) {
+
+
+    world.system<Transform2D>("UpdateTransforms_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(update_transforms_system);
+
     world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate")
         .kind(flecs::OnUpdate)
-        .each([&](flecs::entity e, Transform2D& t, Shape& s) {
-            auto scene = e.parent();
-            if (scene.is_valid() && scene.has<ActiveScene>()) {
-                render_primitives_system(t, s);
-            }
-        });
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Shape& s) { render_primitives_system(t, s); });
 
-    world.system<Transform2D, Label2D>("RenderText_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Transform2D& t, Label2D& l) {
-        auto scene = e.parent();
-        if (scene.is_valid() && scene.has<ActiveScene>()) {
-            render_labels_system(t, l);
-        }
-    });
+    world.system<Transform2D, Label2D>("RenderText_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Label2D& l) { render_labels_system(t, l); });
+
+    world.system<Transform2D, Sprite2D>("RenderSprite_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) { render_sprites_system(t, s); });
 
     scene_manager_system(world);
 
-    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).each([&](flecs::entity e,  Script& s) {
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<ActiveScene>().up().each([&](flecs::entity e, Script& s) {
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
         }
 
-
-        setup_scripts_system(e,s);
-        
-
+        setup_scripts_system(e, s);
     });
 
-    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).each(process_scripts_system);
-
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(process_scripts_system);
 }

@@ -1,8 +1,7 @@
 #include "core/component/logic/system_logic.h"
 
-#include "core/engine.h"
-
 #include "core/binding/lua.h"
+#include "core/engine.h"
 
 
 void render_primitives_system(Transform2D& t, Shape& s) {
@@ -25,15 +24,66 @@ void render_primitives_system(Transform2D& t, Shape& s) {
     }
 }
 
+void render_labels_system(Transform2D& t, Label2D& l) {
+
+    // LOG_INFO("Rendering label: %s at position (%.2f, %.2f)", l.text.c_str(), t.world_position.x, t.world_position.y);
+    GEngine->get_renderer()->draw_text(t, l.color, l.font_name.c_str(), "%s", l.text.c_str());
+}
+
+void render_sprites_system(Transform2D& t, Sprite2D& sprite) {
+
+    if (!sprite.texture_name.empty()) {
+
+        auto texture = GEngine->get_renderer()->load_texture(sprite.texture_name);
+        if (texture) {
+            glm::vec4 source = sprite.source;
+
+            glm::vec4 dest = {0, 0, source.z, source.w};
+
+            GEngine->get_renderer()->draw_texture(t, texture.get(), dest, source, sprite.flip_h, sprite.flip_v, sprite.color);
+        }
+    }
+}
 
 
- void setup_scripts_system(flecs::entity e, Script& script) {
+void update_transforms_system(flecs::entity e, Transform2D& t) {
+    auto parent = e.parent();
+    if (parent.is_valid() && parent.has<Transform2D>()) {
+        const Transform2D& parent_t = parent.get<Transform2D>();
+
+        // Update world position, scale and rotation based on parent's transform
+        t.world_position = parent_t.world_position + t.position;
+
+        t.world_scale = parent_t.world_scale * t.scale;
+
+        t.world_rotation = parent_t.world_rotation + t.rotation;
+    } else {
+        // No parent with Transform2D, so local is world
+        t.world_position = t.position;
+        t.world_scale    = t.scale;
+        t.world_rotation = t.rotation;
+    }
+
+    // LOG_INFO("Entity: %s, Local Pos: (%.2f, %.2f), World Pos: (%.2f, %.2f)", e.name().c_str(), t.position.x, t.position.y, t.world_position.x,
+    //          t.world_position.y);
+}
+
+
+void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
-        // create Lua state
         script.lua_state = luaL_newstate();
         luaL_openlibs(script.lua_state);
 
-        // load the Lua file
+        lua_getglobal(script.lua_state, "package");
+        lua_getfield(script.lua_state, -1, "path");             // get package.path
+        std::string path = lua_tostring(script.lua_state, -1);  // current paths
+        lua_pop(script.lua_state, 1);                           // pop old path
+
+        path.append(";res/scripts/?.lua");                     // add your scripts folder
+        lua_pushstring(script.lua_state, path.c_str());
+        lua_setfield(script.lua_state, -2, "path");            // package.path = new path
+        lua_pop(script.lua_state, 1);                          // pop package table
+
         FileAccess lua_file(script.path, ModeFlags::READ);
         const std::string& lua_script = lua_file.get_file_as_str();
 
@@ -44,26 +94,23 @@ void render_primitives_system(Transform2D& t, Shape& s) {
             return;
         }
 
-        // create a sol::state_view to access the script
-        sol::state_view lua(script.lua_state);
+        generate_bindings(script.lua_state);
 
-        // generate engine bindings
-        generate_bindings(lua);
+        push_entity_to_lua(script.lua_state, e);
 
-        push_entity_to_lua(lua, e);
-
-        // call `ready` if it exists
-        sol::object ready_obj = lua["ready"];
-        if (ready_obj.is<sol::function>()) {
-            sol::function ready_func = ready_obj.as<sol::function>();
-            sol::protected_function_result ready_result = ready_func();
-            if (!ready_result.valid()) {
-                sol::error err = ready_result;
-                LOG_ERROR("Error running function `ready` in script %s: %s", script.path.c_str(), err.what());
-                return;
+        // Call ready() if it exists
+        lua_getglobal(script.lua_state, "ready");
+        if (lua_isfunction(script.lua_state, -1)) {
+            if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
+                const char* err = lua_tostring(script.lua_state, -1);
+                LOG_ERROR("Error in ready() of script %s: %s", script.path.c_str(), err);
+                lua_pop(script.lua_state, 1);
+            } else {
+                script.ready_called = true;
             }
-
-            script.ready_called = true;
+        } else {
+            lua_pop(script.lua_state, 1); // pop non-function
+            LOG_WARN("No `ready` function found in script %s", script.path.c_str());
         }
     }
 }
@@ -74,26 +121,21 @@ void process_scripts_system(Script& script) {
         return;
     }
 
-    sol::state_view lua(script.lua_state);
+    lua_getglobal(script.lua_state, "update"); // push global `update` function onto stack
 
-    sol::object update_obj = lua["update"];
-    if (update_obj.is<sol::function>()) {
-        sol::function update_func                    = update_obj.as<sol::function>();
-        sol::protected_function_result update_result = update_func(GEngine->get_timer().delta);
-        if (!update_result.valid()) {
-            sol::error err = update_result;
-            LOG_ERROR("Error running function `update` in script %s: %s", script.path.c_str(), err.what());
-            return;
-        }
+    if (!lua_isfunction(script.lua_state, -1)) {
+        lua_pop(script.lua_state, 1); // not a function, remove from stack
+        return;
     }
-}
 
+    lua_pushnumber(script.lua_state, static_cast<lua_Number>(GEngine->get_timer().delta)); // push delta time as argument
 
-void render_labels_system(Transform2D& t, Label2D& l) {
-    Transform2D temp = t;
-    temp.position += l.offset;
-
-    GEngine->get_renderer()->draw_text(temp, l.color, l.font_name.c_str(), "%s", l.text.c_str());
+    // call function with 1 argument, 0 return values
+    if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
+        const char* err_msg = lua_tostring(script.lua_state, -1);
+        printf("Error running function `update` in script %s: %s\n", script.path.c_str(), err_msg);
+        lua_pop(script.lua_state, 1); // remove error message from stack
+    }
 }
 
 

@@ -322,27 +322,27 @@ bool EngineConfig::load() {
 }
 
 
-RendererDevice EngineConfig::get_renderer_device() const {
+RendererDevice& EngineConfig::get_renderer_device(){
     return _renderer_device;
 }
 
-Performance EngineConfig::get_performance() const {
+Performance& EngineConfig::get_performance(){
     return _performance;
 }
 
-Application EngineConfig::get_application() const {
+Application& EngineConfig::get_application(){
     return _app;
 }
 
-Environment EngineConfig::get_environment() const {
+Environment& EngineConfig::get_environment(){
     return _environment;
 }
 
-Viewport EngineConfig::get_viewport() const {
+Viewport& EngineConfig::get_viewport()  {
     return _viewport;
 }
 
-Window EngineConfig::get_window() const {
+Window& EngineConfig::get_window(){
     return _window;
 }
 

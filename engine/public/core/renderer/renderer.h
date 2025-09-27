@@ -22,7 +22,13 @@ public:
 
     void set_default_fonts(const std::string& text_font, const std::string& emoji_font);
 
-    virtual bool load_font(const std::string& name, const std::string& path, int size)  = 0;
+    virtual bool load_font(const std::string& name, const std::string& path, int size = 16) = 0;
+
+    virtual std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path = "") = 0;
+
+    virtual void draw_texture(const Transform2D& transform,  Texture* texture, const glm::vec4& dest, const glm::vec4& source,
+                              bool flip_h = false, bool flip_v = false, const glm::vec4& color = glm::vec4(1, 1, 1, 1)) = 0;
+
 
     virtual void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) = 0;
 
@@ -50,7 +56,10 @@ protected:
 
     virtual std::vector<Tokens> parse_text(const std::string& text) = 0;
 
-    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) = 0;
+    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name,
+                                    const std::string& text) = 0;
+
+    std::unordered_map<std::string, std::shared_ptr<Texture>> _textures;
 
     std::unordered_map<std::string, std::shared_ptr<Font>> _fonts;
     std::string _default_font_name;

@@ -63,8 +63,8 @@ enum class TextureFiltering {
 
 
 struct Viewport {
-    int width   = 320;
-    int height  = 180;
+    int width   = 640;
+    int height  = 320;
     float scale = 1.0f;
 
     ViewportMode mode        = ViewportMode::VIEWPORT;
@@ -114,7 +114,8 @@ struct RendererDevice {
 enum class WindowMode { WINDOWED, MAXIMIZED, MINIMIZED, FULLSCREEN };
 
 struct Window {
-    glm::ivec2 size = glm::ivec2(1280, 720);
+    int width = 1280;
+    int height = 720;
 
     WindowMode window_mode = WindowMode::WINDOWED;
 
@@ -133,17 +134,17 @@ struct EngineConfig {
 
     const char* get_orientation_str() const;
 
-    RendererDevice get_renderer_device() const;
+    RendererDevice& get_renderer_device();
 
-    Performance get_performance() const;
+    Performance& get_performance();
 
-    Application get_application() const;
+    Application& get_application();
 
-    Environment get_environment() const;
+    Environment& get_environment();
 
-    Viewport get_viewport() const;
+    Viewport& get_viewport();
 
-    Window get_window() const;
+    Window& get_window();
 
     bool is_vsync() const;
 

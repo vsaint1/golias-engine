@@ -27,3 +27,9 @@ bool entity_add_component(flecs::entity& e, const std::string& component_name);
 void entity_remove_component(flecs::entity& e, const std::string& component_name);
 
 bool entity_is_valid(flecs::entity& e);
+
+
+// Input related API
+glm::vec2 get_mouse_position();
+
+bool is_key_pressed(int key_code);
