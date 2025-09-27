@@ -2,6 +2,32 @@
 
 #include "core/engine.h"
 
+void push_input_to_lua(lua_State* L) {
+    lua_newtable(L);
+
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        glm::vec2 pos = get_mouse_position();
+
+        lua_newtable(L);
+        lua_pushnumber(L, pos.x);
+        lua_setfield(L, -2, "x");
+        lua_pushnumber(L, pos.y);
+        lua_setfield(L, -2, "y");
+
+        return 1;
+    });
+    lua_setfield(L, -2, "get_mouse_position");
+
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        int sdl_key_code = static_cast<int>(luaL_checkinteger(L, 1));
+        bool pressed     = is_key_pressed(sdl_key_code);
+        lua_pushboolean(L, pressed);
+        return 1;
+    });
+    lua_setfield(L, -2, "is_key_pressed");
+
+    lua_setglobal(L, "Input");
+}
 
 void generate_bindings(lua_State* L) {
     using namespace binding;
@@ -21,6 +47,7 @@ void generate_bindings(lua_State* L) {
     create_metatable<Engine>(L);
 
 
+    push_input_to_lua(L);
 
     // Transform2D bindings
     add_property<Transform2D>("position", &Transform2D::position);

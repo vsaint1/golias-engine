@@ -47,3 +47,16 @@ void entity_remove_component(flecs::entity& e, const std::string& component_name
 bool entity_is_valid(flecs::entity& e) {
     return e.is_valid();
 }
+
+
+glm::vec2 get_mouse_position() {
+    float x, y;
+    SDL_GetMouseState(&x, &y);
+    return {x,y};
+}
+
+bool is_key_pressed(int key_code) {
+
+    const bool* state = SDL_GetKeyboardState(NULL);
+    return state[key_code] != 0;
+}
