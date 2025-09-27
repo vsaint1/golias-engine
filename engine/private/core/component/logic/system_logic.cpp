@@ -40,10 +40,7 @@ void render_sprites_system(Transform2D& t, Sprite2D& sprite) {
 
             glm::vec4 dest = {0, 0, source.z, source.w};
 
-            GEngine->get_renderer()->draw_texture(
-                t, texture.get(), dest, source,
-                sprite.flip_h, sprite.flip_v, sprite.color
-            );
+            GEngine->get_renderer()->draw_texture(t, texture.get(), dest, source, sprite.flip_h, sprite.flip_v, sprite.color);
         }
     }
 }
@@ -89,26 +86,21 @@ void setup_scripts_system(flecs::entity e, Script& script) {
             return;
         }
 
-        // create a sol::state_view to access the script
-        sol::state_view lua(script.lua_state);
 
         // generate engine bindings
-        generate_bindings(lua);
+        generate_bindings(script.lua_state);
 
-        push_entity_to_lua(lua, e);
+        push_entity_to_lua(script.lua_state, e);
 
-        // call `ready` if it exists
-        sol::object ready_obj = lua["ready"];
-        if (ready_obj.is<sol::function>()) {
-            sol::function ready_func                    = ready_obj.as<sol::function>();
-            sol::protected_function_result ready_result = ready_func();
-            if (!ready_result.valid()) {
-                sol::error err = ready_result;
-                LOG_ERROR("Error running function `ready` in script %s: %s", script.path.c_str(), err.what());
-                return;
-            }
 
+        lua_getglobal(script.lua_state, "ready");
+        if (lua_isfunction(script.lua_state, -1)) {
+            lua_pcall(script.lua_state, 0, 0, 0);
             script.ready_called = true;
+
+        } else {
+            lua_pop(script.lua_state, 1); // pop non-function value
+            LOG_WARN("No `ready` function found in script %s", script.path.c_str());
         }
     }
 }
@@ -119,17 +111,20 @@ void process_scripts_system(Script& script) {
         return;
     }
 
-    sol::state_view lua(script.lua_state);
+    lua_getglobal(script.lua_state, "update"); // push global `update` function onto stack
 
-    sol::object update_obj = lua["update"];
-    if (update_obj.is<sol::function>()) {
-        sol::function update_func                    = update_obj.as<sol::function>();
-        sol::protected_function_result update_result = update_func(GEngine->get_timer().delta);
-        if (!update_result.valid()) {
-            sol::error err = update_result;
-            LOG_ERROR("Error running function `update` in script %s: %s", script.path.c_str(), err.what());
-            return;
-        }
+    if (!lua_isfunction(script.lua_state, -1)) {
+        lua_pop(script.lua_state, 1); // not a function, remove from stack
+        return;
+    }
+
+    lua_pushnumber(script.lua_state, static_cast<lua_Number>(GEngine->get_timer().delta)); // push delta time as argument
+
+    // call function with 1 argument, 0 return values
+    if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
+        const char* err_msg = lua_tostring(script.lua_state, -1);
+        printf("Error running function `update` in script %s: %s\n", script.path.c_str(), err_msg);
+        lua_pop(script.lua_state, 1); // remove error message from stack
     }
 }
 
