@@ -46,7 +46,6 @@ void generate_bindings(lua_State* L) {
     create_metatable<std::string>(L);
     create_metatable<Engine>(L);
 
-
     push_input_to_lua(L);
 
     // Transform2D bindings
@@ -80,12 +79,30 @@ void generate_bindings(lua_State* L) {
     add_property<glm::vec4>("b", &glm::vec4::b);
     add_property<glm::vec4>("a", &glm::vec4::a);
 
-    // EngineConfig bindings
-    add_method<Engine>("get_config", BINDING_METHOD(Engine, get_config));
+    // EngineConfig / Viewport / Window / RendererDevice methods as lambdas
+    add_method<Engine>("get_config", [](lua_State* L) -> int {
+        Engine* engine = binding::check_userdata<Engine>(L, 1);
+        binding::push_userdata(L, &engine->get_config());
+        return 1;
+    });
 
-    add_method<EngineConfig>("get_viewport", BINDING_METHOD(EngineConfig, get_viewport));
-    add_method<EngineConfig>("get_renderer_device", BINDING_METHOD(EngineConfig, get_renderer_device));
-    add_method<EngineConfig>("get_window", BINDING_METHOD(EngineConfig, get_window));
+    add_method<EngineConfig>("get_viewport", [](lua_State* L) -> int {
+        EngineConfig* config = binding::check_userdata<EngineConfig>(L, 1);
+        binding::push_userdata(L, &config->get_viewport());
+        return 1;
+    });
+
+    add_method<EngineConfig>("get_renderer_device", [](lua_State* L) -> int {
+        EngineConfig* config = binding::check_userdata<EngineConfig>(L, 1);
+        binding::push_userdata(L, &config->get_renderer_device());
+        return 1;
+    });
+
+    add_method<EngineConfig>("get_window", [](lua_State* L) -> int {
+        EngineConfig* config = binding::check_userdata<EngineConfig>(L, 1);
+        binding::push_userdata(L, &config->get_window());
+        return 1;
+    });
 
     // Viewport bindings
     add_property<Viewport>("width", &Viewport::width);
@@ -101,17 +118,11 @@ void generate_bindings(lua_State* L) {
     add_property<RendererDevice>("backend", &RendererDevice::backend);
     add_property<RendererDevice>("texture_filtering", &RendererDevice::texture_filtering);
 
-
-    // ===================================
-    // GLOBAL SINGLETONS - Push once during binding generation
-    // ===================================
-
-    // Push EngineConfig as global singleton
+    // Global singleton Engine
     push_userdata(L, GEngine.get());
     lua_setglobal(L, "Engine");
 
-
-    // Scene table (also global)
+    // Scene table
     lua_newtable(L);
     lua_pushcfunction(L, [](lua_State* L) -> int {
         const char* scene_name = luaL_checkstring(L, 1);

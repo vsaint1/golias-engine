@@ -170,32 +170,6 @@ void add_method(const std::string& name, lua_CFunction func) {
     methods[name] = func;
 }
 
-#define BINDING_METHOD(Type, method) \
-[](lua_State* L) -> int { \
-    Type* obj = binding::check_userdata<Type>(L, 1); \
-    if constexpr (std::is_void_v<decltype(obj->method())>) { \
-        obj->method(); \
-        return 0; \
-    } else { \
-        using RetType = decltype(obj->method()); \
-        auto& result = obj->method(); /* must return reference or pointer to live object */ \
-        if constexpr (std::is_arithmetic_v<RetType>) { \
-            if constexpr (std::is_integral_v<RetType>) { \
-                lua_pushinteger(L, result); \
-            } else { \
-                lua_pushnumber(L, result); \
-            } \
-        } else if constexpr (std::is_same_v<RetType, std::string>) { \
-            lua_pushstring(L, result.c_str()); \
-        } else if constexpr (std::is_same_v<RetType, bool>) { \
-            lua_pushboolean(L, result); \
-        } else { \
-            binding::push_userdata(L, &result); /* only safe if result lives beyond function */ \
-        } \
-        return 1; \
-    } \
-}
-
 
 } // namespace binding
 
