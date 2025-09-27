@@ -2,87 +2,160 @@
 
 #include "core/engine.h"
 
-void generate_bindings(sol::state_view lua) {
-    sol::usertype<flecs::entity> entity_type = lua.new_usertype<flecs::entity>("EntityHandle", sol::no_constructor);
 
+void generate_bindings(lua_State* L) {  
+    using namespace binding;
 
-    lua.new_usertype<Scene>("Scene", sol::no_constructor);
+    // Create metatables for all types
+    create_metatable<flecs::entity>(L);
+    create_metatable<Transform2D>(L);
+    create_metatable<Shape>(L);
+    create_metatable<Label2D>(L);
+    create_metatable<glm::vec2>(L);
+    create_metatable<glm::vec4>(L);
+    create_metatable<EngineConfig>(L);
+    create_metatable<Viewport>(L);
+    create_metatable<RendererDevice>(L);
+    create_metatable<std::string>(L);
+    create_metatable<Engine>(L);
 
+    // Transform2D bindings
+    add_property<Transform2D>("position", &Transform2D::position);
+    add_property<Transform2D>("scale", &Transform2D::scale);
+    add_property<Transform2D>("rotation", &Transform2D::rotation);
 
-    sol::table scene            = lua.create_table("Scene");
-    scene["change_scene"]       = &change_scene;
-    scene["get_name"]           = [](flecs::entity e) { return std::string(e.name()); };
-    scene["get_entities_count"] = []() -> int { return 20; };
+    // Shape bindings
+    add_property<Shape>("color", &Shape::color);
+    add_property<Shape>("filled", &Shape::filled);
 
+    // Label2D bindings
+    add_property<Label2D>("text", &Label2D::text);
+    add_property<Label2D>("color", &Label2D::color);
+    add_property<Label2D>("font_name", &Label2D::font_name);
+    add_property<Label2D>("font_size", &Label2D::font_size);
 
-    lua.new_usertype<std::string>("String", sol::constructors<std::string(), std::string(const char*)>(), "c_str", &std::string::c_str,
-                                  "size", &std::string::size);
+    // vec2 bindings
+    add_property<glm::vec2>("x", &glm::vec2::x);
+    add_property<glm::vec2>("y", &glm::vec2::y);
 
-    lua.new_usertype<RendererDevice>("RendererDevice", "backend", &RendererDevice::backend, "texture_filtering",
-                                     &RendererDevice::texture_filtering, "get_backend_str", &RendererDevice::get_backend_str);
+    // vec4 bindings
+    add_property<glm::vec4>("x", &glm::vec4::x);
+    add_property<glm::vec4>("y", &glm::vec4::y);
+    add_property<glm::vec4>("z", &glm::vec4::z);
+    add_property<glm::vec4>("w", &glm::vec4::w);
+    add_property<glm::vec4>("r", &glm::vec4::r);
+    add_property<glm::vec4>("g", &glm::vec4::g);
+    add_property<glm::vec4>("b", &glm::vec4::b);
+    add_property<glm::vec4>("a", &glm::vec4::a);
 
-    lua.new_usertype<EngineConfig>("EngineConfig", "get_application", &EngineConfig::get_application, "get_renderer_device",
-                                   &EngineConfig::get_renderer_device, "get_orientation_str", &EngineConfig::get_orientation_str,
-                                   "is_vsync", &EngineConfig::is_vsync, "set_vsync", &EngineConfig::set_vsync);
+    // FIXME: returning garbage, need to fix
+    // EngineConfig bindings
+    add_method<Engine>("get_config", BINDING_METHOD(Engine, get_config));
 
-    lua.new_usertype<Transform2D>("Transform2D", "position", &Transform2D::position, "scale", &Transform2D::scale, "rotation",
-                                  &Transform2D::rotation);
+    add_method<EngineConfig>("get_viewport", BINDING_METHOD(EngineConfig, get_viewport));
+    add_method<EngineConfig>("get_renderer_device", BINDING_METHOD(EngineConfig, get_renderer_device));
 
-    lua.new_usertype<Shape>("Shape", "color", &Shape::color, "filled", &Shape::filled);
+    // Viewport bindings
+    add_property<Viewport>("width", &Viewport::width);
+    add_property<Viewport>("height", &Viewport::height);
+    add_property<Viewport>("scale", &Viewport::scale);
 
-    lua.new_usertype<Label2D>("Label2D", "text", &Label2D::text, "color", &Label2D::color, "font_name",
-                              &Label2D::font_name, "font_size", &Label2D::font_size);
+    // RendererDevice bindings
+    add_property<RendererDevice>("backend", &RendererDevice::backend);
+    add_property<RendererDevice>("texture_filtering", &RendererDevice::texture_filtering);
+   
 
+    // ===================================
+    // GLOBAL SINGLETONS - Push once during binding generation
+    // ===================================
+    
+    // Push EngineConfig as global singleton
+    push_userdata(L, GEngine.get());
+    lua_setglobal(L, "Engine");  
+    
+    
+    // Scene table (also global)
+    lua_newtable(L);
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        const char* scene_name = luaL_checkstring(L, 1);
+        change_scene(scene_name);
+        return 0;
+    });
+    lua_setfield(L, -2, "change_scene");
 
-    lua.new_usertype<glm::vec2>("vec2", sol::constructors<glm::vec2(), glm::vec2(float, float)>(), "x", &glm::vec2::x, "y", &glm::vec2::y);
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushinteger(L, 20);
+        return 1;
+    });
+    lua_setfield(L, -2, "get_entities_count");
 
-    lua.new_usertype<glm::vec4>("vec4", sol::constructors<glm::vec4(), glm::vec4(float, float, float, float)>(), "x", &glm::vec4::x, "y",
-                                &glm::vec4::y, "z", &glm::vec4::z, "w", &glm::vec4::w, "r", &glm::vec4::r, "g", &glm::vec4::g, "b",
-                                &glm::vec4::b, "a", &glm::vec4::a);
-
-    lua.new_usertype<SDL_Event>("SDL_Event", "type", &SDL_Event::type);
+    lua_setglobal(L, "Scene");
 }
 
 
-void push_entity_to_lua(sol::state_view lua, flecs::entity e) {
 
-    sol::table self = lua.create_table();
+
+void push_entity_to_lua(lua_State* L, flecs::entity e) {
+    lua_newtable(L); // Create the 'self' table
 
     // -------------------------
     // entity metadata
     // -------------------------
-    self["id"]       = e.id();
-    self["name"]     = std::string(e.name()); // we cant return string_view to lua
-    self["is_valid"] = e.is_valid();
+    lua_pushinteger(L, e.id());
+    lua_setfield(L, -2, "id");
+
+    lua_pushstring(L, e.name());
+    lua_setfield(L, -2, "name");
+
+    lua_pushboolean(L, e.is_valid());
+    lua_setfield(L, -2, "is_valid");
 
     // TODO: implement these functions properly
-    self["has_component"] = [e](sol::this_state ts, const std::string& component_name) -> bool { return true; };
-    self["add_component"] = [e](sol::this_state ts, const std::string& component_name) -> bool { return true; };
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushboolean(L, true);
+        return 1;
+    });
+    lua_setfield(L, -2, "has_component");
 
-    self["get_component"] = [e](sol::this_state ts, const std::string& component_name) -> sol::object {
-        return sol::make_object(ts, nullptr);
-    };
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushboolean(L, true);
+        return 1;
+    });
+    lua_setfield(L, -2, "add_component");
 
-    self["remove_component"] = [e](sol::this_state ts, const std::string& component_name) -> bool { return true; };
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushnil(L);
+        return 1;
+    });
+    lua_setfield(L, -2, "get_component");
+
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushboolean(L, true);
+        return 1;
+    });
+    lua_setfield(L, -2, "remove_component");
 
     // -------------------------
     // components (direct members)
     // -------------------------
     if (e.has<Transform2D>()) {
-        self["transform"] = std::ref(e.get_mut<Transform2D>());
+        binding::push_userdata(L, &e.get_mut<Transform2D>());
+        lua_setfield(L, -2, "transform");
     }
 
     if (e.has<Shape>()) {
-        self["shape"] = std::ref(e.get_mut<Shape>());
+        binding::push_userdata(L, &e.get_mut<Shape>());
+        lua_setfield(L, -2, "shape");
     }
 
     if (e.has<Label2D>()) {
-        self["label"] = std::ref(e.get_mut<Label2D>());
+        binding::push_userdata(L, &e.get_mut<Label2D>());
+        lua_setfield(L, -2, "label");
     }
 
     // -------------------------
     // expose the entity to Lua as `self`
     // scripts can just use `self` directly
     // -------------------------
-    lua["self"] = self;
+    lua_setglobal(L, "self");
 }
