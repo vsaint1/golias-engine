@@ -18,18 +18,33 @@ add_requires("flecs v4.1.1", {configs = {shared = false}})
 add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 add_requires("glm 1.0.1", {configs = {shared = false}})
 add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
+add_requires("assimp v6.0.2", {configs = {shared = use_shared}})
+
 
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
 end
 
+target("glad")
+    set_kind("static")
+    add_files("vendor/glad/src/glad.c")
+    add_includedirs("vendor/glad/include", {public = true})
+    set_pcheader(nil) 
 
 -- === Engine Target ===
 target("engine")
     set_kind("static")
-    add_files("engine/private/**/*.cpp")
+    -- add_files("engine/private/**/*.cpp")
     add_includedirs("engine/public", {public = true})
-    set_pcheader("stdafx.h","engine/private/stdafx.cpp")
+    
+    -- glad (gl/es2)
+    add_deps("glad")
+
+    add_includedirs("vendor/glad/include", {public = true})
+    add_files("vendor/glad/src/glad.c")
+
+    set_pcxxheader("engine/private/stdafx.cpp")
+
     add_packages(
         "libsdl3",
         "libsdl3_ttf",
@@ -37,10 +52,11 @@ target("engine")
         "lua",
         "flecs",
         "nlohmann_json",
+        "glad",
         "glm",
         "miniaudio",
         "tinyxml2",
-        "bzip2",
+        "assimp",
         {public = true}
     )
 
