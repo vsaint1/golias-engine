@@ -2,6 +2,7 @@
 
 #include "core/binding/lua.h"
 
+std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
 
@@ -106,7 +107,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _renderer = renderer;
 
-    _renderer->load_texture("ui_icons", "res/ui/icons/icons_64.png");
+    _renderer->load_texture("ui_icons", ASSETS_PATH + "ui/icons/icons_64.png");
 
     _timer.start();
 
@@ -178,7 +179,7 @@ void engine_core_loop() {
             app_win.width  = new_w;
             app_win.height = new_h;
         }
-        
+
     }
 
 
