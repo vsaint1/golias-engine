@@ -71,11 +71,19 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 
 void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
-        // create Lua state
         script.lua_state = luaL_newstate();
         luaL_openlibs(script.lua_state);
 
-        // load the Lua file
+        lua_getglobal(script.lua_state, "package");
+        lua_getfield(script.lua_state, -1, "path");             // get package.path
+        std::string path = lua_tostring(script.lua_state, -1);  // current paths
+        lua_pop(script.lua_state, 1);                           // pop old path
+
+        path.append(";res/scripts/?.lua");                     // add your scripts folder
+        lua_pushstring(script.lua_state, path.c_str());
+        lua_setfield(script.lua_state, -2, "path");            // package.path = new path
+        lua_pop(script.lua_state, 1);                          // pop package table
+
         FileAccess lua_file(script.path, ModeFlags::READ);
         const std::string& lua_script = lua_file.get_file_as_str();
 
@@ -86,20 +94,22 @@ void setup_scripts_system(flecs::entity e, Script& script) {
             return;
         }
 
-
-        // generate engine bindings
         generate_bindings(script.lua_state);
 
         push_entity_to_lua(script.lua_state, e);
 
-
+        // Call ready() if it exists
         lua_getglobal(script.lua_state, "ready");
         if (lua_isfunction(script.lua_state, -1)) {
-            lua_pcall(script.lua_state, 0, 0, 0);
-            script.ready_called = true;
-
+            if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
+                const char* err = lua_tostring(script.lua_state, -1);
+                LOG_ERROR("Error in ready() of script %s: %s", script.path.c_str(), err);
+                lua_pop(script.lua_state, 1);
+            } else {
+                script.ready_called = true;
+            }
         } else {
-            lua_pop(script.lua_state, 1); // pop non-function value
+            lua_pop(script.lua_state, 1); // pop non-function
             LOG_WARN("No `ready` function found in script %s", script.path.c_str());
         }
     }
