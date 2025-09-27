@@ -27,6 +27,12 @@ target("engine")
     set_pcheader("stdafx.h","engine/private/stdafx.cpp")
     add_packages("libsdl3", "libsdl3_ttf", "libsdl3_image", "lua", "flecs", "nlohmann_json","glm", "miniaudio", "tinyxml2",{public = true})
 
+    if is_plat("android") or is_plat("linux") then 
+        -- add fPIC 
+        add_cxflags("-fPIC")
+    end
+
+
 target("client")
     set_kind("binary")
     add_files("client/*.cpp")
