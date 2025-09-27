@@ -80,7 +80,7 @@ struct Environment {
 };
 
 struct Application {
-    const char* name         = "Window - Ember Engine";
+    const char* name         = "Ember Engine - Window";
     const char* version      = "1.0";
     const char* package_name = "com.ember.engine.app"; // identifier
     const char* icon_path    = "res/icon.png";
