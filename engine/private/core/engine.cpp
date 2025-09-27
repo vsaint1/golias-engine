@@ -42,6 +42,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
+    auto& app_win = _config.get_window();
+
+    app_win.width  = window_w;
+    app_win.height = window_h;
+
     _window = SDL_CreateWindow(app_config.name, window_w, window_h, window_flags);
 
     if (!_window) {
@@ -105,6 +110,8 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _timer.start();
 
+    SDL_ShowWindow(_window);
+
     is_running = true;
 
     return true;
@@ -149,7 +156,6 @@ Engine::~Engine() {
 
     delete _renderer;
 
-
     SDL_DestroyWindow(_window);
 
     TTF_Quit();
@@ -164,7 +170,20 @@ void engine_core_loop() {
         if (GEngine->event.type == SDL_EVENT_QUIT) {
             GEngine->is_running = false;
         }
+
+        if(GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
+            int new_w = GEngine->event.window.data1;
+            int new_h = GEngine->event.window.data2;
+            auto& app_win = GEngine->get_config().get_window();
+            app_win.width  = new_w;
+            app_win.height = new_h;
+        }
+        
     }
+
+
+    static flecs::entity selected;
+
 
     GEngine->get_renderer()->clear({0.2, 0.2, 0.2, 1.0f});
 
@@ -198,9 +217,7 @@ void engine_setup_systems(flecs::world& world) {
         .kind(flecs::OnUpdate)
         .with<ActiveScene>()
         .up()
-        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) {
-            render_sprites_system(t, s);
-        });
+        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) { render_sprites_system(t, s); });
 
     scene_manager_system(world);
 

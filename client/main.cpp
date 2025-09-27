@@ -29,15 +29,9 @@ int main(int argc, char* argv[]) {
                      .set<Shape>({ShapeType::CIRCLE, {1, 0, 0, 1}, false, {32, 32}, 32})
                      .child_of(scene2);
 
-    auto enemy_sprite = world.entity("EnemySprite")
-    .set<Transform2D>({{0, 0}, {1, 1}, 0})
-    .set<Sprite2D>({"ui_icons"})
-    .child_of(enemy);
+    auto enemy_sprite = world.entity("EnemySprite").set<Transform2D>({{0, 0}, {1, 1}, 0}).set<Sprite2D>({"ui_icons"}).child_of(enemy);
 
-    auto enemy_label = world.entity("EnemyLabel")
-                           .set<Transform2D>({{0, -20}, {1, 1}, 0})
-                           .set<Label2D>({"Enemy 💀"})
-                           .child_of(enemy);
+    auto enemy_label = world.entity("EnemyLabel").set<Transform2D>({{0, -20}, {1, 1}, 0}).set<Label2D>({"Enemy 💀"}).child_of(enemy);
 
 
     // FileAccess("user://scenes/test.json",ModeFlags::WRITE).store_string(world.to_json().c_str());

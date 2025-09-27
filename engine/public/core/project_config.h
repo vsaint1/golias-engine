@@ -63,8 +63,8 @@ enum class TextureFiltering {
 
 
 struct Viewport {
-    int width   = 320;
-    int height  = 180;
+    int width   = 640;
+    int height  = 320;
     float scale = 1.0f;
 
     ViewportMode mode        = ViewportMode::VIEWPORT;
@@ -114,7 +114,8 @@ struct RendererDevice {
 enum class WindowMode { WINDOWED, MAXIMIZED, MINIMIZED, FULLSCREEN };
 
 struct Window {
-    glm::ivec2 size = glm::ivec2(1280, 720);
+    int width = 1280;
+    int height = 720;
 
     WindowMode window_mode = WindowMode::WINDOWED;
 
