@@ -12,8 +12,21 @@ Script::~Script() {
                 lua_pop(lua_state, 1);
             }
         }
-        
+
         lua_close(lua_state);
         lua_state = nullptr;
     }
+}
+
+Mesh::~Mesh() {
+    if (vbo)
+        glDeleteBuffers(1, &vbo);
+    if (vao)
+        glDeleteVertexArrays(1, &vao);
+    if (texture_id)
+        glDeleteTextures(1, &texture_id);
+}
+
+Model::~Model() {
+    LOG_INFO("Releasing model resources");
 }
