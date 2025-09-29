@@ -20,6 +20,8 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 #endif
 
 GLuint compile_shader(const std::string& src, GLenum type) {
+
+    // LOG_INFO("Source :\n%s",  src.c_str());
     const GLuint s   = glCreateShader(type);
     const char* csrc = src.c_str();
 
@@ -38,7 +40,6 @@ GLuint compile_shader(const std::string& src, GLenum type) {
     return s;
 }
 
-
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
     std::string full = atlasPath;
     if (atlasPath.rfind("res/", 0) != 0)
@@ -50,15 +51,23 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         return 0;
     }
 
-    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
+    LOG_INFO("Loaded surface (pre-convert): %dx%d, Pitch: %d", surf->w, surf->h, surf->pitch);
 
+    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
     if (!surf) {
-        LOG_ERROR("Convertion failed %s", full.c_str());
+        LOG_ERROR("Conversion failed %s", full.c_str());
         return 0;
     }
 
     const int W = surf->w;
     const int H = surf->h;
+    LOG_INFO("Converted surface: %dx%d, Pitch: %d, BytesPerPixel: %d", W, H, surf->pitch, SDL_BYTESPERPIXEL(surf->format));
+
+    if (W <= 0 || H <= 0) {
+        LOG_ERROR("Invalid surface dimensions %dx%d", W, H);
+        SDL_DestroySurface(surf);
+        return 0;
+    }
 
     int face_w = 0, face_h = 0;
 
@@ -86,13 +95,21 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         return 0;
     }
 
+    if (face_w <= 0 || face_h <= 0) {
+        LOG_ERROR("Invalid face dimensions computed: %dx%d", face_w, face_h);
+        SDL_DestroySurface(surf);
+        return 0;
+    }
+
+    LOG_INFO("Detected layout %d, Face size: %dx%d", layout, face_w, face_h);
+
     std::array<SDL_Rect, 6> faceRects;
 
     if (layout == L_HORIZONTAL) {
-        for (int i       = 0; i < 6; ++i)
+        for (int i = 0; i < 6; ++i)
             faceRects[i] = SDL_Rect{i * face_w, 0, face_w, face_h};
     } else if (layout == L_VERTICAL) {
-        for (int i       = 0; i < 6; ++i)
+        for (int i = 0; i < 6; ++i)
             faceRects[i] = SDL_Rect{0, i * face_h, face_w, face_h};
     } else if (layout == L_3x2) {
         faceRects[0] = SDL_Rect{0, 0, face_w, face_h}; // +X
@@ -102,7 +119,6 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[4] = SDL_Rect{1 * face_w, 1 * face_h, face_w, face_h}; // +Z
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
     } else {
-        // L_4x3_CROSS
         int fw = face_w, fh = face_h;
         auto R = [&](int cx, int cy) {
             return SDL_Rect{cx * fw, cy * fh, fw, fh};
@@ -115,12 +131,12 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[5] = R(3, 1); // -Z
     }
 
+    // Orientation adjustments
     switch (orient) {
     case CUBEMAP_ORIENTATION::TOP:
         std::swap(faceRects[2], faceRects[3]); // +Y <-> -Y
         break;
     case CUBEMAP_ORIENTATION::BOTTOM:
-        // +Y -> bottom
         std::swap(faceRects[2], faceRects[3]);
         break;
     case CUBEMAP_ORIENTATION::FLIP_X:
@@ -131,28 +147,58 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         std::swap(faceRects[2], faceRects[3]);
         std::swap(faceRects[4], faceRects[5]);
         break;
-    case CUBEMAP_ORIENTATION::DEFAULT:
     default:
         break;
     }
+
+    // Validate rects are fully inside surface
+    for (int i = 0; i < 6; ++i) {
+        const SDL_Rect& r = faceRects[i];
+        if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) {
+            LOG_ERROR("Face rect %d out of surface bounds: x=%d y=%d w=%d h=%d surface=%dx%d", i, r.x, r.y, r.w, r.h, W, H);
+            SDL_DestroySurface(surf);
+            return 0;
+        }
+    }
+
+    Uint8* pixels = static_cast<Uint8*>(surf->pixels);
+    int pitch     = surf->pitch;
+    const int bytesPerPixel = 4;
+    const int surfaceBytes = pitch * H;
 
     GLuint texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
 
     for (int i = 0; i < 6; ++i) {
-        Uint8* pixels = static_cast<Uint8*>(surf->pixels);
-        int pitch     = surf->pitch;
+        const SDL_Rect& r = faceRects[i];
+        LOG_INFO("Uploading face %d: x=%d y=%d w=%d h=%d pitch=%d", i, r.x, r.y, r.w, r.h, pitch);
 
-        std::vector<Uint8> faceData(face_w * face_h * 4);
-        for (int y = 0; y < face_h; ++y) {
-            SDL_memcpy(&faceData[y * face_w * 4],
-                       pixels + (faceRects[i].y + y) * pitch + faceRects[i].x * 4,
-                       face_w * 4);
+        // allocate buffer for face
+        std::vector<Uint8> faceData(r.w * r.h * bytesPerPixel);
+
+        for (int y = 0; y < r.h; ++y) {
+            int row = r.y + y;
+            // compute byte offsets
+            long start = static_cast<long>(row) * pitch + static_cast<long>(r.x) * bytesPerPixel;
+            long end = start + static_cast<long>(r.w) * bytesPerPixel;
+
+            if (start < 0 || end > surfaceBytes) {
+                LOG_ERROR("Index out of bounds detected while copying face %d row %d: start=%ld end=%ld surfaceBytes=%d (rect x=%d y=%d w=%d h=%d pitch=%d)",
+                          i, y, start, end, surfaceBytes, r.x, r.y, r.w, r.h, pitch);
+                SDL_DestroySurface(surf);
+                glDeleteTextures(1, &texID);
+                return 0;
+            }
+
+            // copy one row
+            Uint8* src = pixels + start;
+            Uint8* dst = faceData.data() + (y * r.w * bytesPerPixel);
+            SDL_memcpy(dst, src, r.w * bytesPerPixel);
         }
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, face_w, face_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, faceData.data());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, r.w, r.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, faceData.data());
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -168,6 +214,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     SDL_DestroySurface(surf);
     return texID;
 }
+
 
 void OpenglRenderer::setup_cubemap() {
 
@@ -318,9 +365,11 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _context = glContext;
     _window  = window;
 
+#if defined(SDL_PLATFORM_WINDOWS)
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(ogl_validation_layer, nullptr);
+#endif
 
     setup_default_shaders();
 
