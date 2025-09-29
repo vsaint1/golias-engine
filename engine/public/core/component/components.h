@@ -129,7 +129,7 @@ struct Mesh {
 
 struct Model {
     std::string path;
-    std::vector<std::shared_ptr<Mesh>> meshes;
+    std::vector<Mesh> meshes;
 
     ~Model();
 };
@@ -155,7 +155,7 @@ public:
     }
 
     glm::mat4 get_projection(int w, int h) const {
-        return glm::perspective(glm::radians(Zoom), (float) w / (float) h, 0.1f, 100.0f);
+        return glm::perspective(glm::radians(Zoom), (float) w / (float) h, 0.1f, 1000.0f);
     }
 
     void handle_keyboard(MOVEMENT dir, double dt) {
