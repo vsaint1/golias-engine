@@ -18,7 +18,6 @@ struct Transform2D {
     glm::vec2 world_position = {0, 0};
     glm::vec2 world_scale    = {1, 1};
     float world_rotation     = 0;
-
 };
 
 /*!
@@ -79,17 +78,13 @@ struct Sprite2D {
     bool flip_v              = false;
 };
 
-struct Scene {
-};
+struct Scene {};
 
-struct SceneRoot {
-};
+struct SceneRoot {};
 
-struct ActiveScene {
-};
+struct ActiveScene {};
 
-struct Alive {
-}; // Marks entities that are alive (children of active scene)
+struct Alive {}; // Marks entities that are alive (children of active scene)
 
 struct SceneChangeRequest {
     std::string name;
@@ -113,14 +108,13 @@ struct Transform3D {
 };
 
 
-
 // TODO: remove this from components
 struct Mesh {
-    Uint32 vao         = 0;
-    Uint32 vbo         = 0;
-    Uint32 texture_id   = 0;
-    bool has_texture    = false;
-    size_t vertex_count = 0;
+    Uint32 vao              = 0;
+    Uint32 vbo              = 0;
+    Uint32 texture_id       = 0;
+    bool has_texture        = false;
+    size_t vertex_count     = 0;
     glm::vec3 diffuse_color = glm::vec3(0.5f);
 
     ~Mesh();
@@ -135,54 +129,44 @@ struct Model {
 };
 
 
-
 enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
-// TODO: refactor
 class Camera3D {
 public:
-    glm::vec3 Position, Front, Up, Right, WorldUp;
-    float speed = 5.0f;
-    float zoom          = 45.0f;
+    glm::vec3 position{0.0f, 1.5f, 4.0f};
+    float yaw           = -90.0f; // Z
+    float pitch         = 0.0f;
+    float fov           = 45.0f;
+    float speed         = 5.0f;
+    float view_distance = 1000.f;
 
-    explicit Camera3D(glm::vec3 pos = {0, 1.5f, 4.0f}, glm::vec3 up = {0, 1, 0}) : Position(pos), WorldUp(up) {
-        Front = glm::vec3(0, 0, -1);
-        update();
+    explicit Camera3D(glm::vec3 pos = {0, 1.5f, 4.0f}) : position(pos) {
+        update_vectors();
     }
 
-    glm::mat4 get_view() const {
-        return glm::lookAt(Position, Position + Front, Up);
-    }
+    glm::mat4 get_view() const;
 
-    glm::mat4 get_projection(int w, int h) const {
-        return glm::perspective(glm::radians(zoom), (float) w / (float) h, 0.1f, 1000.0f);
-    }
+    glm::mat4 get_projection(int w, int h) const;
 
-    void handle_keyboard(MOVEMENT dir, double dt) {
-        float vel = speed * dt;
-        if (dir == FORWARD) {
-            Position += Front * vel;
-        }
-        if (dir == BACKWARD) {
-            Position -= Front * vel;
-        }
-        if (dir == LEFT) {
-            Position -= Right * vel;
-        }
-        if (dir == RIGHT) {
-            Position += Right * vel;
-        }
-    }
+    void move_forward(float dt);
 
-    void handle_scroll(float yoffset) {
-        zoom = std::clamp(zoom - yoffset, 1.0f, 90.0f);
-    }
+    void move_backward(float dt);
+
+    void move_left(float dt);
+
+    void move_right(float dt);
+
+    void look_at(float xoffset, float yoffset, float sensitivity = 0.1f);
+
+    void zoom(float yoffset);
 
 private:
-    void update() {
-        Right = glm::normalize(glm::cross(Front, WorldUp));
-        Up    = glm::normalize(glm::cross(Right, Front));
-    }
+    glm::vec3 front{0.0f, 0.0f, -1.0f};
+    glm::vec3 up{};
+    glm::vec3 right{};
+    glm::vec3 world_up{0.0f, 1.0f, 0.0f};
+
+    void update_vectors();
 };
 
 
@@ -195,39 +179,37 @@ inline void serialize_components(flecs::world& ecs) {
     ecs.component<ActiveScene>().add(flecs::Exclusive);
 
     ecs.component<Model>();
-    
+
     ecs.component<glm::vec2>().member<float>("x").member<float>("y");
     ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
     ecs.component<std::string>()
-       .opaque(flecs::String)
-       .serialize([](const flecs::serializer* s, const std::string* data) {
-           const char* str = data->c_str();
-           return s->value(flecs::String, &str);
-       })
-       .assign_string([](std::string* data, const char* value) {
-           *data = value;
-       });
+        .opaque(flecs::String)
+        .serialize([](const flecs::serializer* s, const std::string* data) {
+            const char* str = data->c_str();
+            return s->value(flecs::String, &str);
+        })
+        .assign_string([](std::string* data, const char* value) { *data = value; });
 
     ecs.component<Transform2D>().member<glm::vec2>("position").member<glm::vec2>("scale").member<float>("rotation");
 
     ecs.component<ShapeType>()
-       .constant("RECTANGLE", ShapeType::RECTANGLE)
-       .constant("TRIANGLE", ShapeType::TRIANGLE)
-       .constant("CIRCLE", ShapeType::CIRCLE)
-       .constant("LINE", ShapeType::LINE)
-       .constant("POLYGON", ShapeType::POLYGON);
+        .constant("RECTANGLE", ShapeType::RECTANGLE)
+        .constant("TRIANGLE", ShapeType::TRIANGLE)
+        .constant("CIRCLE", ShapeType::CIRCLE)
+        .constant("LINE", ShapeType::LINE)
+        .constant("POLYGON", ShapeType::POLYGON);
 
     ecs.component<Shape>()
-       .member<ShapeType>("type")
-       .member<glm::vec4>("color")
-       .member<bool>("filled")
-       .member<glm::vec2>("size")
-       .member<float>("radius")
-       .member<glm::vec2>("end");
+        .member<ShapeType>("type")
+        .member<glm::vec4>("color")
+        .member<bool>("filled")
+        .member<glm::vec2>("size")
+        .member<float>("radius")
+        .member<glm::vec2>("end");
 
     ecs.component<Label2D>()
-       .member<std::string>("text")
-       .member<glm::vec4>("color")
-       .member<std::string>("font_name")
-       .member<int>("font_size");
+        .member<std::string>("text")
+        .member<glm::vec4>("color")
+        .member<std::string>("font_name")
+        .member<int>("font_size");
 }

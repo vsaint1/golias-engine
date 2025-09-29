@@ -2,14 +2,13 @@
 
 #include "core/engine.h"
 
-void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLenum severity,
-                                     GLsizei length, const GLchar* message, const void* userParam) {
+void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
+                                     const void* userParam) {
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         return;
     }
 
-    LOG_ERROR("ValidationLayer Type: 0x%x, Severity: 0x%x, ID: %u, Message: %s",
-              type, severity, id, message);
+    LOG_ERROR("ValidationLayer Type: 0x%x, Severity: 0x%x, ID: %u, Message: %s", type, severity, id, message);
 }
 
 
@@ -42,8 +41,9 @@ GLuint compile_shader(const std::string& src, GLenum type) {
 
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
     std::string full = atlasPath;
-    if (atlasPath.rfind("res/", 0) != 0)
+    if (atlasPath.rfind("res/", 0) != 0) {
         full = ASSETS_PATH + atlasPath;
+    }
 
     SDL_Surface* surf = IMG_Load(full.c_str());
     if (!surf) {
@@ -106,11 +106,13 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     std::array<SDL_Rect, 6> faceRects;
 
     if (layout == L_HORIZONTAL) {
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 6; ++i) {
             faceRects[i] = SDL_Rect{i * face_w, 0, face_w, face_h};
+        }
     } else if (layout == L_VERTICAL) {
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 6; ++i) {
             faceRects[i] = SDL_Rect{0, i * face_h, face_w, face_h};
+        }
     } else if (layout == L_3x2) {
         faceRects[0] = SDL_Rect{0, 0, face_w, face_h}; // +X
         faceRects[1] = SDL_Rect{1 * face_w, 0, face_w, face_h}; // -X
@@ -120,9 +122,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
     } else {
         int fw = face_w, fh = face_h;
-        auto R = [&](int cx, int cy) {
-            return SDL_Rect{cx * fw, cy * fh, fw, fh};
-        };
+        auto R       = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
         faceRects[0] = R(2, 1); // +X
         faceRects[1] = R(0, 1); // -X
         faceRects[2] = R(1, 0); // +Y
@@ -161,10 +161,10 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         }
     }
 
-    Uint8* pixels = static_cast<Uint8*>(surf->pixels);
-    int pitch     = surf->pitch;
+    Uint8* pixels           = static_cast<Uint8*>(surf->pixels);
+    int pitch               = surf->pitch;
     const int bytesPerPixel = 4;
-    const int surfaceBytes = pitch * H;
+    const int surfaceBytes  = pitch * H;
 
     GLuint texID = 0;
     glGenTextures(1, &texID);
@@ -181,10 +181,11 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
             int row = r.y + y;
             // compute byte offsets
             long start = static_cast<long>(row) * pitch + static_cast<long>(r.x) * bytesPerPixel;
-            long end = start + static_cast<long>(r.w) * bytesPerPixel;
+            long end   = start + static_cast<long>(r.w) * bytesPerPixel;
 
             if (start < 0 || end > surfaceBytes) {
-                LOG_ERROR("Index out of bounds detected while copying face %d row %d: start=%ld end=%ld surfaceBytes=%d (rect x=%d y=%d w=%d h=%d pitch=%d)",
+                LOG_ERROR("Index out of bounds detected while copying face %d row %d: start=%ld end=%ld surfaceBytes=%d (rect x=%d y=%d "
+                          "w=%d h=%d pitch=%d)",
                           i, y, start, end, surfaceBytes, r.x, r.y, r.w, r.h, pitch);
                 SDL_DestroySurface(surf);
                 glDeleteTextures(1, &texID);
@@ -208,8 +209,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-    LOG_INFO("Loaded Cubemap atlas %s (%dx%d), Layout %d, Face %dx%d, TexID: %d",
-             full.c_str(), W, H, layout, face_w, face_h, texID);
+    LOG_INFO("Loaded Cubemap atlas %s (%dx%d), Layout %d, Face %dx%d, TexID: %d", full.c_str(), W, H, layout, face_w, face_h, texID);
 
     SDL_DestroySurface(surf);
     return texID;
@@ -220,48 +220,17 @@ void OpenglRenderer::setup_cubemap() {
 
     // CUBE MAP POS
     constexpr float skybox_vertices[] = {
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
 
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
 
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f
-    };
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
     glGenVertexArrays(1, &skybox_vao);
     glGenBuffers(1, &skybox_vbo);
@@ -341,10 +310,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
         return false;
     }
 
-    int major, minor;
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
-    LOG_INFO("Created GL Context version: %d.%d", major, minor);
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
@@ -365,11 +330,31 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _context = glContext;
     _window  = window;
 
-#if defined(SDL_PLATFORM_WINDOWS)
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(ogl_validation_layer, nullptr);
-#endif
+
+    GLint num_extensions = 0;
+    std::vector<std::string> extensions;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    for (GLuint i = 0; i < num_extensions; i++) {
+        const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
+
+        if (SDL_strcasecmp(ext, "GL_KHR_debug") == 0) {
+            LOG_INFO("KHR_debug extension supported, enabling validation layers");
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(ogl_validation_layer, nullptr);
+            break;
+        }
+    }
+
+    LOG_WARN("KHR_debug extensions not supported, validation layers disabled");
+
+    int major, minor;
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+    LOG_INFO("Created GL Context version: %d.%d", major, minor);
+    LOG_INFO("OpenGL Vendor: %s", glGetString(GL_VENDOR));
+    LOG_INFO("OpenGL Renderer: %s", glGetString(GL_RENDERER));
+
 
     setup_default_shaders();
 
@@ -386,7 +371,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glEnable(GL_DEPTH_TEST);
 
     // glViewport(0, 0, viewport.width, viewport.height);
-
 
 
     return true;
@@ -481,7 +465,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(base_dir.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs
-                                                               | aiProcess_JoinIdenticalVertices);
+                                                                   | aiProcess_JoinIdenticalVertices);
     if (!scene || !scene->mRootNode) {
         LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
         return nullptr;
@@ -490,11 +474,21 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     auto model  = std::make_shared<Model>();
     model->path = base_dir;
 
-    base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        model->meshes.push_back(load_meshes(scene->mMeshes[i], scene, base_dir));
+
+    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+        aiMaterial* mat = scene->mMaterials[i];
+        aiString name;
+
+        if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
+            LOG_INFO("Material  %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
+        }
     }
 
+    base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
+    for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+        LOG_INFO("Loading Mesh %d/%d, Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
+        model->meshes.push_back(load_meshes(scene->mMeshes[i], scene, base_dir));
+    }
 
     _models[path] = model;
     LOG_INFO("Loaded Model: %s, Mesh Count:  %zu", path, model->meshes.size());
@@ -591,8 +585,6 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
 
 
 void OpenglRenderer::draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) {
-
-
 }
 
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
@@ -612,7 +604,6 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
     glBindVertexArray(0);
 
     glDepthFunc(GL_LESS);
-
 }
 
 void OpenglRenderer::draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
@@ -704,7 +695,6 @@ void OpenglRenderer::setup_default_shaders() {
     glUniform1i(textureSamplerLoc, 0);
 
     EMBER_TIMER_END("Baking default shaders");
-
 }
 
 
