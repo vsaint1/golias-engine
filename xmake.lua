@@ -83,7 +83,9 @@ target("client")
         set_basename("index")
         add_ldflags(
             "-s",
-            "ALLOW_MEMORY_GROWTH=1",
+            "FULL_ES3=1",
+            "MIN_WEBGL_VERSION=2",
+            "ASSERTIONS=1",
             "FETCH=1",
             "USE_SDL=3",
             "USE_SDL_IMAGE=2",
