@@ -69,7 +69,8 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 }
 
 
-void render_world_3d_system(const Camera3D& camera) {
+void render_world_3d_system(flecs::entity e,Camera3D& camera) {
+
     const auto& window = GEngine->get_config().get_window();
     GEngine->get_renderer()->draw_environment(camera.get_view(), camera.get_projection(window.width, window.height));
 

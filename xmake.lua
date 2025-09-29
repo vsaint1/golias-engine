@@ -79,21 +79,22 @@ target("client")
         add_syslinks("log", "android", "m", "dl")
     end
 
-    if is_plat("wasm") then
-        set_basename("index")
-        add_ldflags(
-            "-s",
-            "FULL_ES3=1",
-            "MIN_WEBGL_VERSION=2",
-            "ASSERTIONS=1",
-            "FETCH=1",
-            "USE_SDL=3",
-            "USE_SDL_IMAGE=2",
-            "USE_SDL_TTF=2",
-            "USE_FREETYPE=1",
-            "--preload-file=res@/res"
-        )
-    end
+ if is_plat("wasm") then
+     set_basename("index")
+
+       add_ldflags(
+           "-sFULL_ES3=1",
+           "-sMIN_WEBGL_VERSION=2",
+           "-sMAX_WEBGL_VERSION=2",
+           "-sASSERTIONS=1",
+           "-sFETCH=1",
+           "-sUSE_SDL=3",
+           "-sUSE_SDL_IMAGE=2",
+           "-sUSE_SDL_TTF=2",
+           "-sUSE_FREETYPE=1",
+           "--preload-file=res@/res"
+       )
+     end
 
     if not (is_plat("wasm") or is_plat("android")) then
         after_build(function (target)
