@@ -136,14 +136,14 @@ struct Model {
 
 
 
-
 enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
+// TODO: refactor
 class Camera3D {
 public:
     glm::vec3 Position, Front, Up, Right, WorldUp;
-    float MovementSpeed = 5.0f;
-    float Zoom          = 45.0f;
+    float speed = 5.0f;
+    float zoom          = 45.0f;
 
     explicit Camera3D(glm::vec3 pos = {0, 1.5f, 4.0f}, glm::vec3 up = {0, 1, 0}) : Position(pos), WorldUp(up) {
         Front = glm::vec3(0, 0, -1);
@@ -155,11 +155,11 @@ public:
     }
 
     glm::mat4 get_projection(int w, int h) const {
-        return glm::perspective(glm::radians(Zoom), (float) w / (float) h, 0.1f, 1000.0f);
+        return glm::perspective(glm::radians(zoom), (float) w / (float) h, 0.1f, 1000.0f);
     }
 
     void handle_keyboard(MOVEMENT dir, double dt) {
-        float vel = MovementSpeed * dt;
+        float vel = speed * dt;
         if (dir == FORWARD) {
             Position += Front * vel;
         }
@@ -175,7 +175,7 @@ public:
     }
 
     void handle_scroll(float yoffset) {
-        Zoom = std::clamp(Zoom - yoffset, 1.0f, 90.0f);
+        zoom = std::clamp(zoom - yoffset, 1.0f, 90.0f);
     }
 
 private:
@@ -194,6 +194,8 @@ inline void serialize_components(flecs::world& ecs) {
 
     ecs.component<ActiveScene>().add(flecs::Exclusive);
 
+    ecs.component<Model>();
+    
     ecs.component<glm::vec2>().member<float>("x").member<float>("y");
     ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
     ecs.component<std::string>()
