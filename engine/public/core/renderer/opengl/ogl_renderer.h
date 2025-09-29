@@ -5,32 +5,32 @@
 
 class OpenglRenderer final : public Renderer {
 public:
-    bool initialize(SDL_Window* window);
+    bool initialize(SDL_Window* window) override;
 
-    void clear(glm::vec4 color = glm::vec4(0, 0, 0, 1));
+    void clear(glm::vec4 color) override;
 
-    void present();
+    void present() override;
 
 
-    bool load_font(const std::string& name, const std::string& path, int size);
+    bool load_font(const std::string& name, const std::string& path, int size) override;
 
-    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path);
+    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path) override;
 
     void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source, bool flip_h,
-                      bool flip_v, const glm::vec4& color);
+                      bool flip_v, const glm::vec4& color) override;
 
 
-    void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...);
+    void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
 
-    void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled);
+    void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled) override;
 
-    void draw_triangle(const Transform2D& transform, float size, glm::vec4 color, bool is_filled);
+    void draw_triangle(const Transform2D& transform, float size, glm::vec4 color, bool is_filled) override;
 
-    void draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color);
+    void draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color) override;
 
-    void draw_circle(const Transform2D& transform, float radius, glm::vec4 color, bool is_filled);
+    void draw_circle(const Transform2D& transform, float radius, glm::vec4 color, bool is_filled) override;
 
-    void draw_polygon(const Transform2D& transform, const std::vector<glm::vec2>& points, glm::vec4 color, bool is_filled);
+    void draw_polygon(const Transform2D& transform, const std::vector<glm::vec2>& points, glm::vec4 color, bool is_filled) override;
 
     ~OpenglRenderer() override;
 
@@ -47,7 +47,7 @@ public:
 private:
     SDL_GLContext _context = nullptr;
 
-    GLuint setup_default_shaders();
+    void setup_default_shaders();
 
     Mesh load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
 
@@ -63,11 +63,7 @@ protected:
     GLuint cubemap_shader_program = 0;
     GLint cubemap_viewLoc, cubemap_projLoc, cubemap_skyboxLoc;
 
+    std::vector<Tokens> parse_text(const std::string& text) override;
 
-
-    std::string vformat(const char* fmt, va_list args);
-
-    virtual std::vector<Tokens> parse_text(const std::string& text);
-
-    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text);
+    void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) override;
 };

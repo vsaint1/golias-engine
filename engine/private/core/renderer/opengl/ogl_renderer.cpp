@@ -13,7 +13,6 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 }
 
 
-
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
 #define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
 #else
@@ -51,7 +50,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         return 0;
     }
 
-   surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
+    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
 
     if (!surf) {
         LOG_ERROR("Convertion failed %s", full.c_str());
@@ -66,13 +65,21 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     enum CUBE_LAYOUT { L_HORIZONTAL, L_VERTICAL, L_3x2, L_4x3_CROSS, L_UNKNOWN } layout = L_UNKNOWN;
 
     if (W % 6 == 0 && W / 6 == H) {
-        layout = L_HORIZONTAL; face_w = W / 6; face_h = H;
+        layout = L_HORIZONTAL;
+        face_w = W / 6;
+        face_h = H;
     } else if (H % 6 == 0 && H / 6 == W) {
-        layout = L_VERTICAL; face_w = W; face_h = H / 6;
+        layout = L_VERTICAL;
+        face_w = W;
+        face_h = H / 6;
     } else if (W % 3 == 0 && H % 2 == 0 && W / 3 == H / 2) {
-        layout = L_3x2; face_w = W / 3; face_h = H / 2;
+        layout = L_3x2;
+        face_w = W / 3;
+        face_h = H / 2;
     } else if (W % 4 == 0 && H % 3 == 0 && W / 4 == H / 3) {
-        layout = L_4x3_CROSS; face_w = W / 4; face_h = H / 3;
+        layout = L_4x3_CROSS;
+        face_w = W / 4;
+        face_h = H / 3;
     } else {
         LOG_WARN("Unknown atlas layout (%dx%d).", W, H);
         SDL_DestroySurface(surf);
@@ -82,10 +89,10 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     std::array<SDL_Rect, 6> faceRects;
 
     if (layout == L_HORIZONTAL) {
-        for (int i = 0; i < 6; ++i)
+        for (int i       = 0; i < 6; ++i)
             faceRects[i] = SDL_Rect{i * face_w, 0, face_w, face_h};
     } else if (layout == L_VERTICAL) {
-        for (int i = 0; i < 6; ++i)
+        for (int i       = 0; i < 6; ++i)
             faceRects[i] = SDL_Rect{0, i * face_h, face_w, face_h};
     } else if (layout == L_3x2) {
         faceRects[0] = SDL_Rect{0, 0, face_w, face_h}; // +X
@@ -94,9 +101,12 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[3] = SDL_Rect{0, 1 * face_h, face_w, face_h}; // -Y
         faceRects[4] = SDL_Rect{1 * face_w, 1 * face_h, face_w, face_h}; // +Z
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
-    } else { // L_4x3_CROSS
+    } else {
+        // L_4x3_CROSS
         int fw = face_w, fh = face_h;
-        auto R = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
+        auto R = [&](int cx, int cy) {
+            return SDL_Rect{cx * fw, cy * fh, fw, fh};
+        };
         faceRects[0] = R(2, 1); // +X
         faceRects[1] = R(0, 1); // -X
         faceRects[2] = R(1, 0); // +Y
@@ -106,24 +116,24 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     }
 
     switch (orient) {
-        case CUBEMAP_ORIENTATION::TOP:
-            std::swap(faceRects[2], faceRects[3]); // +Y <-> -Y
-            break;
-        case CUBEMAP_ORIENTATION::BOTTOM:
-            // +Y -> bottom
-            std::swap(faceRects[2], faceRects[3]);
-            break;
-        case CUBEMAP_ORIENTATION::FLIP_X:
-            std::swap(faceRects[0], faceRects[1]);
-            std::swap(faceRects[4], faceRects[5]);
-            break;
-        case CUBEMAP_ORIENTATION::FLIP_Y:
-            std::swap(faceRects[2], faceRects[3]);
-            std::swap(faceRects[4], faceRects[5]);
-            break;
-        case CUBEMAP_ORIENTATION::DEFAULT:
-        default:
-            break;
+    case CUBEMAP_ORIENTATION::TOP:
+        std::swap(faceRects[2], faceRects[3]); // +Y <-> -Y
+        break;
+    case CUBEMAP_ORIENTATION::BOTTOM:
+        // +Y -> bottom
+        std::swap(faceRects[2], faceRects[3]);
+        break;
+    case CUBEMAP_ORIENTATION::FLIP_X:
+        std::swap(faceRects[0], faceRects[1]);
+        std::swap(faceRects[4], faceRects[5]);
+        break;
+    case CUBEMAP_ORIENTATION::FLIP_Y:
+        std::swap(faceRects[2], faceRects[3]);
+        std::swap(faceRects[4], faceRects[5]);
+        break;
+    case CUBEMAP_ORIENTATION::DEFAULT:
+    default:
+        break;
     }
 
     GLuint texID = 0;
@@ -136,9 +146,9 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
 
         std::vector<Uint8> faceData(face_w * face_h * 4);
         for (int y = 0; y < face_h; ++y) {
-            memcpy(&faceData[y * face_w * 4],
-                   pixels + (faceRects[i].y + y) * pitch + faceRects[i].x * 4,
-                   face_w * 4);
+            SDL_memcpy(&faceData[y * face_w * 4],
+                       pixels + (faceRects[i].y + y) * pitch + faceRects[i].x * 4,
+                       face_w * 4);
         }
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -218,6 +228,7 @@ void OpenglRenderer::setup_cubemap() {
     const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.vert");
     const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.frag");
 
+    LOG_INFO("Compiling Environment shaders");
     GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
     GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
 
@@ -283,11 +294,16 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
         return false;
     }
 
+    int major, minor;
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+    LOG_INFO("Created GL Context version: %d.%d", major, minor);
+
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
         LOG_CRITICAL("Failed to initialize GLAD (GLES_FUNCTIONS)");
-        return nullptr;
+        return false;
     }
 
 #else
@@ -302,21 +318,18 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _context = glContext;
     _window  = window;
 
-
-    default_shader_program = setup_default_shaders();
-
-    if (default_shader_program == 0) {
-        LOG_CRITICAL("Failed to setup default shaders");
-        return false;
-    }
-
-    const auto& viewport = GEngine->get_config().get_viewport();
-    LOG_INFO("Using backend: %s, Viewport: %dx%d", "Opengl/ES 3.X", viewport.width, viewport.height);
-
-
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(ogl_validation_layer, nullptr);
+
+    setup_default_shaders();
+
+    // TODO: create api to handle environment setup
+    setup_cubemap();
+    skybox_texture = load_cubemap_atlas("sprites/desert.png", CUBEMAP_ORIENTATION::DEFAULT);
+
+    const auto& viewport = GEngine->get_config().get_viewport();
+    LOG_INFO("Using backend: %s, Viewport: %dx%d", "Opengl/ES 3.X", viewport.width, viewport.height);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -325,10 +338,7 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     // glViewport(0, 0, viewport.width, viewport.height);
 
-    // TODO: create api to handle environment setup
-    setup_cubemap();
 
-    skybox_texture = load_cubemap_atlas("sprites/desert.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     return true;
 }
@@ -438,7 +448,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
 
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s, Mesh Count: %llu", path, model->meshes.size());
+    LOG_INFO("Loaded Model: %s, Mesh Count:  %zu", path, model->meshes.size());
 
     return model;
 }
@@ -582,7 +592,6 @@ void OpenglRenderer::draw_polygon(const Transform2D& transform, const std::vecto
 OpenglRenderer::~OpenglRenderer() {
 
 
-
     // cubemap resources
     glDeleteVertexArrays(1, &skybox_vao);
     glDeleteBuffers(1, &skybox_vbo);
@@ -594,16 +603,21 @@ OpenglRenderer::~OpenglRenderer() {
     SDL_GL_DestroyContext(_context);
 }
 
-GLuint OpenglRenderer::setup_default_shaders() {
+void OpenglRenderer::setup_default_shaders() {
 
     EMBER_TIMER_START();
 
-
+    LOG_INFO("Compiling Default shaders");
     const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/default.vert");
     const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/default.frag");
 
     GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
     GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
+
+    if (!v || !f) {
+        LOG_ERROR("Failed to compile default shaders");
+        return;
+    }
 
     GLuint prog = glCreateProgram();
     glAttachShader(prog, v);
@@ -616,7 +630,7 @@ GLuint OpenglRenderer::setup_default_shaders() {
         char log[1024];
         glGetProgramInfoLog(prog, 1024, nullptr, log);
         LOG_ERROR("Failed to link Shaders %s", log);
-        return 0;
+        return;
     }
 
 
@@ -633,6 +647,8 @@ GLuint OpenglRenderer::setup_default_shaders() {
     textureSamplerLoc  = glGetUniformLocation(prog, "TEXTURE");
     useTextureLoc      = glGetUniformLocation(prog, "USE_TEXTURE");
 
+    default_shader_program = prog;
+
     glUseProgram(prog);
     glUniform3f(lightPosLoc, 10, 10, 10);
     glUniform3f(lightColorLoc, 1, 1, 1);
@@ -640,12 +656,6 @@ GLuint OpenglRenderer::setup_default_shaders() {
 
     EMBER_TIMER_END("Baking default shaders");
 
-    return prog;
-}
-
-std::string OpenglRenderer::vformat(const char* fmt, va_list args) {
-
-    return "Hello";
 }
 
 
