@@ -2,18 +2,250 @@
 
 #include "core/engine.h"
 
+void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                     GLsizei length, const GLchar* message, const void* userParam) {
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+        return;
+    }
 
-void GLAPIENTRY
-ogl_validation_layer(GLenum source,
-                     GLenum type,
-                     GLuint id,
-                     GLenum severity,
-                     GLsizei length,
-                     const GLchar* message,
-                     const void* userParam) {
-    LOG_DEBUG("ValidationLayer: %s type = 0x%x, severity = 0x%x, message = %s\n",
-              (type == GL_DEBUG_TYPE_ERROR ? "(OGL_ERROR)" : "(OGL_WARN)"),
-              type, severity, message);
+    LOG_ERROR("ValidationLayer Type: 0x%x, Severity: 0x%x, ID: %u, Message: %s",
+              type, severity, id, message);
+}
+
+
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
+#else
+#define SHADER_HEADER "#version 330 core\n"
+#endif
+
+GLuint compile_shader(const std::string& src, GLenum type) {
+    const GLuint s   = glCreateShader(type);
+    const char* csrc = src.c_str();
+
+    glShaderSource(s, 1, &csrc, nullptr);
+    glCompileShader(s);
+    GLint ok;
+    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+
+    if (!ok) {
+        char log[1024];
+        glGetShaderInfoLog(s, 1024, nullptr, log);
+        LOG_ERROR("Failed to compile Shader %s, Type %s", log, type == GL_VERTEX_SHADER ? "Vertex" : "Fragment");
+        return 0;
+    }
+
+    return s;
+}
+
+
+GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
+    std::string full = atlasPath;
+    if (atlasPath.rfind("res/", 0) != 0)
+        full = ASSETS_PATH + atlasPath;
+
+    SDL_Surface* surf = IMG_Load(full.c_str());
+    if (!surf) {
+        LOG_ERROR("Failed to load %s -> %s", full.c_str(), SDL_GetError());
+        return 0;
+    }
+
+   surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
+
+    if (!surf) {
+        LOG_ERROR("Convertion failed %s", full.c_str());
+        return 0;
+    }
+
+    const int W = surf->w;
+    const int H = surf->h;
+
+    int face_w = 0, face_h = 0;
+
+    enum CUBE_LAYOUT { L_HORIZONTAL, L_VERTICAL, L_3x2, L_4x3_CROSS, L_UNKNOWN } layout = L_UNKNOWN;
+
+    if (W % 6 == 0 && W / 6 == H) {
+        layout = L_HORIZONTAL; face_w = W / 6; face_h = H;
+    } else if (H % 6 == 0 && H / 6 == W) {
+        layout = L_VERTICAL; face_w = W; face_h = H / 6;
+    } else if (W % 3 == 0 && H % 2 == 0 && W / 3 == H / 2) {
+        layout = L_3x2; face_w = W / 3; face_h = H / 2;
+    } else if (W % 4 == 0 && H % 3 == 0 && W / 4 == H / 3) {
+        layout = L_4x3_CROSS; face_w = W / 4; face_h = H / 3;
+    } else {
+        LOG_WARN("Unknown atlas layout (%dx%d).", W, H);
+        SDL_DestroySurface(surf);
+        return 0;
+    }
+
+    std::array<SDL_Rect, 6> faceRects;
+
+    if (layout == L_HORIZONTAL) {
+        for (int i = 0; i < 6; ++i)
+            faceRects[i] = SDL_Rect{i * face_w, 0, face_w, face_h};
+    } else if (layout == L_VERTICAL) {
+        for (int i = 0; i < 6; ++i)
+            faceRects[i] = SDL_Rect{0, i * face_h, face_w, face_h};
+    } else if (layout == L_3x2) {
+        faceRects[0] = SDL_Rect{0, 0, face_w, face_h}; // +X
+        faceRects[1] = SDL_Rect{1 * face_w, 0, face_w, face_h}; // -X
+        faceRects[2] = SDL_Rect{2 * face_w, 0, face_w, face_h}; // +Y
+        faceRects[3] = SDL_Rect{0, 1 * face_h, face_w, face_h}; // -Y
+        faceRects[4] = SDL_Rect{1 * face_w, 1 * face_h, face_w, face_h}; // +Z
+        faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
+    } else { // L_4x3_CROSS
+        int fw = face_w, fh = face_h;
+        auto R = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
+        faceRects[0] = R(2, 1); // +X
+        faceRects[1] = R(0, 1); // -X
+        faceRects[2] = R(1, 0); // +Y
+        faceRects[3] = R(1, 2); // -Y
+        faceRects[4] = R(1, 1); // +Z
+        faceRects[5] = R(3, 1); // -Z
+    }
+
+    switch (orient) {
+        case CUBEMAP_ORIENTATION::TOP:
+            std::swap(faceRects[2], faceRects[3]); // +Y <-> -Y
+            break;
+        case CUBEMAP_ORIENTATION::BOTTOM:
+            // +Y -> bottom
+            std::swap(faceRects[2], faceRects[3]);
+            break;
+        case CUBEMAP_ORIENTATION::FLIP_X:
+            std::swap(faceRects[0], faceRects[1]);
+            std::swap(faceRects[4], faceRects[5]);
+            break;
+        case CUBEMAP_ORIENTATION::FLIP_Y:
+            std::swap(faceRects[2], faceRects[3]);
+            std::swap(faceRects[4], faceRects[5]);
+            break;
+        case CUBEMAP_ORIENTATION::DEFAULT:
+        default:
+            break;
+    }
+
+    GLuint texID = 0;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+
+    for (int i = 0; i < 6; ++i) {
+        Uint8* pixels = static_cast<Uint8*>(surf->pixels);
+        int pitch     = surf->pitch;
+
+        std::vector<Uint8> faceData(face_w * face_h * 4);
+        for (int y = 0; y < face_h; ++y) {
+            memcpy(&faceData[y * face_w * 4],
+                   pixels + (faceRects[i].y + y) * pitch + faceRects[i].x * 4,
+                   face_w * 4);
+        }
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, face_w, face_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, faceData.data());
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    LOG_INFO("Loaded Cubemap atlas %s (%dx%d), Layout %d, Face %dx%d, TexID: %d",
+             full.c_str(), W, H, layout, face_w, face_h, texID);
+
+    SDL_DestroySurface(surf);
+    return texID;
+}
+
+void OpenglRenderer::setup_cubemap() {
+
+    // CUBE MAP POS
+    constexpr float skybox_vertices[] = {
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+
+        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,
+
+        -1.0f, 1.0f, -1.0f,
+        1.0f, 1.0f, -1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, 1.0f,
+        -1.0f, 1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f, 1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f
+    };
+
+    glGenVertexArrays(1, &skybox_vao);
+    glGenBuffers(1, &skybox_vbo);
+    glBindVertexArray(skybox_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, skybox_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skybox_vertices), skybox_vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
+    glBindVertexArray(0);
+
+    const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.vert");
+    const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.frag");
+
+    GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
+    GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, v);
+    glAttachShader(prog, f);
+    glLinkProgram(prog);
+    GLint ok;
+    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+
+    if (!ok) {
+        char log[1024];
+        glGetProgramInfoLog(prog, 1024, nullptr, log);
+        LOG_ERROR("Failed to link Shaders %s", log);
+        return;
+    }
+
+
+    glDeleteShader(v);
+    glDeleteShader(f);
+
+    cubemap_viewLoc   = glGetUniformLocation(prog, "VIEW");
+    cubemap_projLoc   = glGetUniformLocation(prog, "PROJECTION");
+    cubemap_skyboxLoc = glGetUniformLocation(prog, "TEXTURE");
+
+    cubemap_shader_program = prog;
+
+    LOG_INFO("Environment setup complete");
 }
 
 
@@ -86,18 +318,24 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(ogl_validation_layer, nullptr);
 
-    glEnable(GL_CULL_FACE_MODE);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
     glEnable(GL_DEPTH_TEST);
 
-    glViewport(0, 0, viewport.width, viewport.height);
+    // glViewport(0, 0, viewport.width, viewport.height);
+
+    // TODO: create api to handle environment setup
+    setup_cubemap();
+
+    skybox_texture = load_cubemap_atlas("sprites/desert.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     return true;
 }
 
 void OpenglRenderer::clear(glm::vec4 color) {
 
+    // TODO: handle viewport/window changes
     const auto& window = GEngine->get_config().get_window();
     glViewport(0, 0, window.width, window.height);
     glClearColor(color.r, color.g, color.b, color.a);
@@ -124,7 +362,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     // TODO: refactor using FileAccess api
     // FileAccess file(path, ModeFlags::READ);
-    std::string full_path  = path;
+    std::string full_path = path;
 
     if (path.rfind("res/", 0) != 0) {
         full_path = ASSETS_PATH + path;
@@ -140,10 +378,11 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     auto texture = std::make_shared<Texture>();
 
-    SDL_Surface* conv = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
+    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
 
-    if (!conv) {
+    if (!surf) {
         LOG_ERROR("Failed to convert texture to RGBA32: %s", SDL_GetError());
+        SDL_DestroySurface(surf);
         return nullptr;
     }
 
@@ -156,19 +395,19 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, conv->w, conv->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, conv->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     texture->id     = texID;
-    texture->width  = conv->w;
-    texture->height = conv->h;
+    texture->width  = surf->w;
+    texture->height = surf->h;
     texture->path   = path;
 
-    LOG_INFO("Texture Info: Id %d, Size %dx%d, Path: %s", texture->id, conv->w, conv->h, full_path.c_str());
+    LOG_INFO("Texture Info: Id %d, Size %dx%d, Path: %s", texture->id, surf->w, surf->h, full_path.c_str());
 
     _textures[name] = texture;
 
-    SDL_DestroySurface(conv);
+    SDL_DestroySurface(surf);
     return texture;
 }
 
@@ -204,19 +443,19 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     return model;
 }
 
-std::shared_ptr<Mesh> OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
-    std::shared_ptr<Mesh> m = std::make_shared<Mesh>();
+Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
+    Mesh m;
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
-        m->diffuse_color = {c.r, c.g, c.b};
+        m.diffuse_color = {c.r, c.g, c.b};
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             const std::string full = base_dir + texPath.C_Str();
             const auto tex         = load_texture(texPath.C_Str(), full);
-            m->texture_id          = tex ? tex->id : 0;
-            m->has_texture         = m->texture_id != 0;
+            m.texture_id           = tex ? tex->id : 0;
+            m.has_texture          = m.texture_id != 0;
         }
     }
 
@@ -248,11 +487,11 @@ std::shared_ptr<Mesh> OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* s
         }
     }
 
-    m->vertex_count = verts.size() / 8;
-    glGenVertexArrays(1, &m->vao);
-    glGenBuffers(1, &m->vbo);
-    glBindVertexArray(m->vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
+    m.vertex_count = verts.size() / 8;
+    glGenVertexArrays(1, &m.vao);
+    glGenBuffers(1, &m.vbo);
+    glBindVertexArray(m.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);
@@ -261,14 +500,17 @@ std::shared_ptr<Mesh> OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* s
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
     glEnableVertexAttribArray(2);
     glBindVertexArray(0);
+
+
     return m;
 }
 
 void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
                                 const glm::vec3& viewPos) {
 
-    if (!model)
+    if (!model) {
         return;
+    }
 
     glUseProgram(default_shader_program);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(t.get_model_matrix()));
@@ -278,15 +520,40 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
 
     for (const auto& mesh : model->meshes) {
 
-        glUniform3f(materialDiffuseLoc, mesh->diffuse_color.r, mesh->diffuse_color.g, mesh->diffuse_color.b);
-        glUniform1i(useTextureLoc, mesh->has_texture);
+        glUniform3f(materialDiffuseLoc, mesh.diffuse_color.r, mesh.diffuse_color.g, mesh.diffuse_color.b);
+        glUniform1i(useTextureLoc, mesh.has_texture);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mesh->texture_id);
-        glBindVertexArray(mesh->vao);
-        glDrawArrays(GL_TRIANGLES, 0, mesh->vertex_count);
+        glBindTexture(GL_TEXTURE_2D, mesh.texture_id);
+        glBindVertexArray(mesh.vao);
+        glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
         glBindVertexArray(0);
-
     }
+}
+
+
+void OpenglRenderer::draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) {
+
+
+}
+
+void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
+
+
+    glDepthFunc(GL_LEQUAL);
+
+    glUseProgram(cubemap_shader_program);
+
+    glUniformMatrix4fv(cubemap_viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(cubemap_projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(skybox_vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    glDepthFunc(GL_LESS);
+
 }
 
 void OpenglRenderer::draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
@@ -314,45 +581,29 @@ void OpenglRenderer::draw_polygon(const Transform2D& transform, const std::vecto
 
 OpenglRenderer::~OpenglRenderer() {
 
+
+
+    // cubemap resources
+    glDeleteVertexArrays(1, &skybox_vao);
+    glDeleteBuffers(1, &skybox_vbo);
+    glDeleteTextures(1, &skybox_texture);
+    glDeleteProgram(cubemap_shader_program);
+
+    // default shader
     glDeleteProgram(default_shader_program);
     SDL_GL_DestroyContext(_context);
 }
-
-
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
-#else
-#define SHADER_HEADER "#version 330 core\n"
-#endif
 
 GLuint OpenglRenderer::setup_default_shaders() {
 
     EMBER_TIMER_START();
 
-    auto compile = [](const std::string& src, GLenum type) -> GLuint {
-        const GLuint s   = glCreateShader(type);
-        const char* csrc = src.c_str();
-
-        glShaderSource(s, 1, &csrc, nullptr);
-        glCompileShader(s);
-        GLint ok;
-        glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-
-        if (!ok) {
-            char log[1024];
-            glGetShaderInfoLog(s, 1024, nullptr, log);
-            LOG_ERROR("Failed to compile Shader %s, Type %s", log, type == GL_VERTEX_SHADER ? "Vertex" : "Fragment");
-            return 0;
-        }
-
-        return s;
-    };
 
     const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/default.vert");
     const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/default.frag");
 
-    GLuint v = compile(vertexSource, GL_VERTEX_SHADER);
-    GLuint f = compile(fragmentSource, GL_FRAGMENT_SHADER);
+    GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
+    GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
 
     GLuint prog = glCreateProgram();
     glAttachShader(prog, v);
@@ -383,7 +634,7 @@ GLuint OpenglRenderer::setup_default_shaders() {
     useTextureLoc      = glGetUniformLocation(prog, "USE_TEXTURE");
 
     glUseProgram(prog);
-    glUniform3f(lightPosLoc, 10, -30, 10);
+    glUniform3f(lightPosLoc, 10, 10, 10);
     glUniform3f(lightColorLoc, 1, 1, 1);
     glUniform1i(textureSamplerLoc, 0);
 

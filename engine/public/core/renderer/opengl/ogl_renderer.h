@@ -16,8 +16,8 @@ public:
 
     std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path);
 
-    void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
-                      bool flip_h, bool flip_v, const glm::vec4& color);
+    void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source, bool flip_h,
+                      bool flip_v, const glm::vec4& color);
 
 
     void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...);
@@ -38,6 +38,10 @@ public:
     void draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
                     const glm::vec3& viewPos) override;
 
+    void draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) override;
+
+    void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
+
     std::shared_ptr<Model> load_model(const char* path) override;
 
 private:
@@ -45,19 +49,25 @@ private:
 
     GLuint setup_default_shaders();
 
-    std::shared_ptr<Mesh> load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
+    Mesh load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
+
+    void setup_cubemap();
 
 protected:
-    // TODO: create a shader class??
+    // TODO: create a shader class!!
     GLuint default_shader_program = 0;
     GLint modelLoc, viewLoc, projLoc, viewPosLoc, lightPosLoc, lightColorLoc, materialDiffuseLoc, textureSamplerLoc, useTextureLoc;
+
+    // TODO: create a shader class!!
+    GLuint skybox_vao             = 0, skybox_vbo = 0, skybox_texture = 0;
+    GLuint cubemap_shader_program = 0;
+    GLint cubemap_viewLoc, cubemap_projLoc, cubemap_skyboxLoc;
+
+
 
     std::string vformat(const char* fmt, va_list args);
 
     virtual std::vector<Tokens> parse_text(const std::string& text);
 
-    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name,
-                                    const std::string& text);
-
-
+    virtual void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text);
 };
