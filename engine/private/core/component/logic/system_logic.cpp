@@ -69,20 +69,36 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 }
 
 
+void render_world_3d_system(const Camera3D& camera) {
+    const auto& window = GEngine->get_config().get_window();
+    GEngine->get_renderer()->draw_environment(camera.get_view(), camera.get_projection(window.width, window.height));
+
+    // Render all 3D models in the scene
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const std::shared_ptr<Model>& model) {
+        GEngine->get_renderer()->draw_model(
+            t, model.get(), camera.get_view(),
+            camera.get_projection(window.width, window.height),
+            camera.Position);
+    });
+
+
+}
+
+
 void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
         script.lua_state = luaL_newstate();
         luaL_openlibs(script.lua_state);
 
         lua_getglobal(script.lua_state, "package");
-        lua_getfield(script.lua_state, -1, "path");             // get package.path
-        std::string path = lua_tostring(script.lua_state, -1);  // current paths
-        lua_pop(script.lua_state, 1);                           // pop old path
+        lua_getfield(script.lua_state, -1, "path"); // get package.path
+        std::string path = lua_tostring(script.lua_state, -1); // current paths
+        lua_pop(script.lua_state, 1); // pop old path
 
-        path.append(";res/scripts/?.lua");                     // add your scripts folder
+        path.append(";res/scripts/?.lua"); // add your scripts folder
         lua_pushstring(script.lua_state, path.c_str());
-        lua_setfield(script.lua_state, -2, "path");            // package.path = new path
-        lua_pop(script.lua_state, 1);                          // pop package table
+        lua_setfield(script.lua_state, -2, "path"); // package.path = new path
+        lua_pop(script.lua_state, 1); // pop package table
 
         FileAccess lua_file(script.path, ModeFlags::READ);
         const std::string& lua_script = lua_file.get_file_as_str();
@@ -141,26 +157,26 @@ void process_scripts_system(Script& script) {
 
 void scene_manager_system(flecs::world& world) {
     world.observer<SceneChangeRequest>("SceneChangeRequest_Observer")
-        .event(flecs::OnSet)
-        .each([&](flecs::iter& it, size_t i, SceneChangeRequest& req) {
-            LOG_INFO("Scene requested: %s", req.name.c_str());
+         .event(flecs::OnSet)
+         .each([&](flecs::iter& it, size_t i, SceneChangeRequest& req) {
+             LOG_INFO("Scene requested: %s", req.name.c_str());
 
-            auto new_scene = world.lookup(req.name.c_str());
+             auto new_scene = world.lookup(req.name.c_str());
 
-            if (new_scene.is_valid() && new_scene.has<Scene>()) {
+             if (new_scene.is_valid() && new_scene.has<Scene>()) {
 
-                world.each([&](flecs::entity e, Scene) {
-                    e.add(flecs::Disabled);
-                    e.remove<ActiveScene>();
-                });
+                 world.each([&](flecs::entity e, Scene) {
+                     e.add(flecs::Disabled);
+                     e.remove<ActiveScene>();
+                 });
 
-                new_scene.remove(flecs::Disabled);
-                new_scene.add<ActiveScene>();
-                LOG_INFO("Switched to scene: %s", req.name.c_str());
-            } else {
-                LOG_WARN("Scene '%s' not found", req.name.c_str());
-            }
+                 new_scene.remove(flecs::Disabled);
+                 new_scene.add<ActiveScene>();
+                 LOG_INFO("Switched to scene: %s", req.name.c_str());
+             } else {
+                 LOG_WARN("Scene '%s' not found", req.name.c_str());
+             }
 
-            it.entity(i).remove<SceneChangeRequest>();
-        });
+             it.entity(i).remove<SceneChangeRequest>();
+         });
 }

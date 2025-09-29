@@ -16,6 +16,8 @@ void render_labels_system(Transform2D& t, Label2D& l);
 
 void render_sprites_system(Transform2D& t,  Sprite2D& s);
 
+void render_world_3d_system(const Camera3D& camera);
+
 void update_transforms_system(flecs::entity e, Transform2D& t);
 
 void scene_manager_system(flecs::world& world);
