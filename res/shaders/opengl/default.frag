@@ -3,7 +3,7 @@ out vec4 COLOR;
 
 in vec3 NORMAL;
 in vec3 WORLD_POSITION;
-in vec2 VERTEX;
+in vec2 UV;
 
 uniform vec3 CAMERA_POSITION;
 
@@ -16,7 +16,7 @@ uniform vec3 DIFFUSE;
 uniform bool USE_TEXTURE;
 
 void main() {
-    vec3 color = USE_TEXTURE ? texture(TEXTURE, VERTEX).rgb : DIFFUSE;
+    vec3 color = USE_TEXTURE ? texture(TEXTURE, UV).rgb : DIFFUSE;
 
     const float ambient_strength = 0.1;
 
