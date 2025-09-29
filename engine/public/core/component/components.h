@@ -82,9 +82,15 @@ struct Scene {};
 
 struct SceneRoot {};
 
-struct ActiveScene {};
 
-struct Alive {}; // Marks entities that are alive (children of active scene)
+namespace tags {
+    struct ActiveScene {};
+
+    struct Alive {}; // Marks entities that are alive (children of active scene)
+
+    struct MainCamera {}; // Marks the main camera entity
+}; // namespace tags
+
 
 struct SceneChangeRequest {
     std::string name;
@@ -131,6 +137,7 @@ struct Model {
 
 enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
+
 class Camera3D {
 public:
     glm::vec3 position{0.0f, 1.5f, 4.0f};
@@ -176,7 +183,7 @@ inline void serialize_components(flecs::world& ecs) {
 
     ecs.component<SceneRoot>();
 
-    ecs.component<ActiveScene>().add(flecs::Exclusive);
+    ecs.component<tags::ActiveScene>().add(flecs::Exclusive);
 
     ecs.component<Model>();
 

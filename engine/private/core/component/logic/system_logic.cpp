@@ -68,21 +68,21 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
     //          t.world_position.y);
 }
 
+void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
-void render_world_3d_system(flecs::entity e,Camera3D& camera) {
+
+    if (!e.is_valid() || !e.has<MainCamera>()) {
+        return;
+    }
 
     const auto& window = GEngine->get_config().get_window();
     GEngine->get_renderer()->draw_environment(camera.get_view(), camera.get_projection(window.width, window.height));
 
     // Render all 3D models in the scene
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const std::shared_ptr<Model>& model) {
-        GEngine->get_renderer()->draw_model(
-            t, model.get(), camera.get_view(),
-            camera.get_projection(window.width, window.height),
-            camera.Position);
+        GEngine->get_renderer()->draw_model(t, model.get(), camera.get_view(), camera.get_projection(window.width, window.height),
+                                            camera.position);
     });
-
-
 }
 
 
@@ -158,26 +158,26 @@ void process_scripts_system(Script& script) {
 
 void scene_manager_system(flecs::world& world) {
     world.observer<SceneChangeRequest>("SceneChangeRequest_Observer")
-         .event(flecs::OnSet)
-         .each([&](flecs::iter& it, size_t i, SceneChangeRequest& req) {
-             LOG_INFO("Scene requested: %s", req.name.c_str());
+        .event(flecs::OnSet)
+        .each([&](flecs::iter& it, size_t i, SceneChangeRequest& req) {
+            LOG_INFO("Scene requested: %s", req.name.c_str());
 
-             auto new_scene = world.lookup(req.name.c_str());
+            auto new_scene = world.lookup(req.name.c_str());
 
-             if (new_scene.is_valid() && new_scene.has<Scene>()) {
+            if (new_scene.is_valid() && new_scene.has<Scene>()) {
 
-                 world.each([&](flecs::entity e, Scene) {
-                     e.add(flecs::Disabled);
-                     e.remove<ActiveScene>();
-                 });
+                world.each([&](flecs::entity e, Scene) {
+                    e.add(flecs::Disabled);
+                    e.remove<ActiveScene>();
+                });
 
-                 new_scene.remove(flecs::Disabled);
-                 new_scene.add<ActiveScene>();
-                 LOG_INFO("Switched to scene: %s", req.name.c_str());
-             } else {
-                 LOG_WARN("Scene '%s' not found", req.name.c_str());
-             }
+                new_scene.remove(flecs::Disabled);
+                new_scene.add<ActiveScene>();
+                LOG_INFO("Switched to scene: %s", req.name.c_str());
+            } else {
+                LOG_WARN("Scene '%s' not found", req.name.c_str());
+            }
 
-             it.entity(i).remove<SceneChangeRequest>();
-         });
+            it.entity(i).remove<SceneChangeRequest>();
+        });
 }
