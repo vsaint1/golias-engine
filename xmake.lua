@@ -80,7 +80,8 @@ target("client")
     end
 
  if is_plat("wasm") then
-     set_basename("index")
+        
+       set_basename("index")
 
        add_ldflags(
            "-sFULL_ES3=1",
@@ -92,8 +93,12 @@ target("client")
            "-sUSE_SDL_IMAGE=2",
            "-sUSE_SDL_TTF=2",
            "-sUSE_FREETYPE=1",
-           "--preload-file=res@/res"
-       )
+           "-s ALLOW_MEMORY_GROWTH=1 ",
+           "-s EXPORTED_RUNTIME_METHODS=cwrap",
+           "-s STACK_SIZE=1mb",
+           "--preload-file=res@/res",
+           "-g")
+
      end
 
     if not (is_plat("wasm") or is_plat("android")) then
