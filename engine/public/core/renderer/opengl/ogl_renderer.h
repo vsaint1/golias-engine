@@ -32,8 +32,11 @@ public:
 
     void draw_polygon(const Transform2D& transform, const std::vector<glm::vec2>& points, glm::vec4 color, bool is_filled) override;
 
-    ~OpenglRenderer() override;
+    void draw_line_3d(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) override;
 
+    void draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec4& color, bool is_filled) override;
+
+    ~OpenglRenderer() override;
 
     void draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
                     const glm::vec3& viewPos) override;

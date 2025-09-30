@@ -35,7 +35,7 @@ void generate_bindings(lua_State* L) {
     // Create metatables for all types
     create_metatable<flecs::entity>(L);
     create_metatable<Transform2D>(L);
-    create_metatable<Shape>(L);
+    create_metatable<Shape2D>(L);
     create_metatable<Label2D>(L);
     create_metatable<glm::vec2>(L);
     create_metatable<glm::vec4>(L);
@@ -54,8 +54,8 @@ void generate_bindings(lua_State* L) {
     add_property<Transform2D>("rotation", &Transform2D::rotation);
 
     // Shape bindings
-    add_property<Shape>("color", &Shape::color);
-    add_property<Shape>("filled", &Shape::filled);
+    add_property<Shape2D>("color", &Shape2D::color);
+    add_property<Shape2D>("filled", &Shape2D::filled);
 
     // Label2D bindings
     add_property<Label2D>("text", &Label2D::text);
@@ -189,8 +189,8 @@ void push_entity_to_lua(lua_State* L, flecs::entity e) {
         lua_setfield(L, -2, "transform");
     }
 
-    if (e.has<Shape>()) {
-        binding::push_userdata(L, &e.get_mut<Shape>());
+    if (e.has<Shape2D>()) {
+        binding::push_userdata(L, &e.get_mut<Shape2D>());
         lua_setfield(L, -2, "shape");
     }
 

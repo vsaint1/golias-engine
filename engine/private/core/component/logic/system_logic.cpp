@@ -4,7 +4,7 @@
 #include "core/engine.h"
 
 
-void render_primitives_system(Transform2D& t, Shape& s) {
+void render_primitives_system(Transform2D& t, Shape2D& s) {
     switch (s.type) {
     case ShapeType::TRIANGLE:
         GEngine->get_renderer()->draw_triangle(t, s.size.x, s.color, s.filled);
@@ -71,7 +71,7 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
 
-    if (!e.is_valid() || !e.has<MainCamera>()) {
+    if (!e.is_valid() || !e.has<tags::MainCamera>()) {
         return;
     }
 
@@ -164,15 +164,15 @@ void scene_manager_system(flecs::world& world) {
 
             auto new_scene = world.lookup(req.name.c_str());
 
-            if (new_scene.is_valid() && new_scene.has<Scene>()) {
+            if (new_scene.is_valid() && new_scene.has<tags::Scene>()) {
 
-                world.each([&](flecs::entity e, Scene) {
+                world.each([&](flecs::entity e, tags::Scene) {
                     e.add(flecs::Disabled);
-                    e.remove<ActiveScene>();
+                    e.remove<tags::ActiveScene>();
                 });
 
                 new_scene.remove(flecs::Disabled);
-                new_scene.add<ActiveScene>();
+                new_scene.add<tags::ActiveScene>();
                 LOG_INFO("Switched to scene: %s", req.name.c_str());
             } else {
                 LOG_WARN("Scene '%s' not found", req.name.c_str());

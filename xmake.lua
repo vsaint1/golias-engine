@@ -20,7 +20,6 @@ add_requires("glm 1.0.1", {configs = {shared = false}})
 add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
 add_requires("assimp v5.4.0", {configs = {shared = false}})
 
-
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
 end
@@ -84,15 +83,15 @@ target("client")
        set_basename("index")
 
        add_ldflags(
-           "-sFULL_ES3=1",
-           "-sMIN_WEBGL_VERSION=2",
-           "-sMAX_WEBGL_VERSION=2",
-           "-sASSERTIONS=1",
-           "-sFETCH=1",
-           "-sUSE_SDL=3",
-           "-sUSE_SDL_IMAGE=2",
-           "-sUSE_SDL_TTF=2",
-           "-sUSE_FREETYPE=1",
+           "-s FULL_ES3=1",
+           "-s MIN_WEBGL_VERSION=2",
+           "-s MAX_WEBGL_VERSION=2",
+           "-s ASSERTIONS=1",
+           "-s FETCH=1",
+           "-s USE_SDL=3",
+           "-s USE_SDL_IMAGE=2",
+           "-s USE_SDL_TTF=2",
+           "-s USE_FREETYPE=1",
            "-s ALLOW_MEMORY_GROWTH=1 ",
            "-s EXPORTED_RUNTIME_METHODS=cwrap",
            "-s STACK_SIZE=1mb",
