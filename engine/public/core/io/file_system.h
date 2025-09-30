@@ -171,6 +171,7 @@ public:
 
     FileAccess& operator=(const FileAccess&) = delete;
 
+    SDL_IOStream* get_handle() const { return _file; }
 private:
     SDL_IOStream* _file = nullptr; ///< Internal SDL file handle
     std::string _file_path;        ///< Full resolved file path
