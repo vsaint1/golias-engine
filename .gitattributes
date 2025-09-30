@@ -1,2 +1,2 @@
 templates/android/app/src/main/java/org/** linguist-vendored
-Xmake linguist-vendored
+Xmake.lua linguist-vendored
