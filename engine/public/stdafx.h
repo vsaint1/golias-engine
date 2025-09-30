@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -8,6 +8,12 @@
 
 #include <lua.hpp>
 
+#define FLECS_CUSTOM_BUILD
+#define FLECS_SYSTEM
+#define FLECS_NO_LOG
+#define FLECS_META
+#define FLECS_CPP
+#define FLECS_PIPELINE
 #include <flecs.h>
 
 #include <string>
@@ -19,9 +25,23 @@
 #include <deque>
 #include <condition_variable>
 
+#include <glad.h>
+
 #include <nlohmann/json.hpp>
-#include <glm/gtc/constants.hpp>
+
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 
 #include <filesystem>
 

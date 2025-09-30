@@ -80,7 +80,7 @@ struct Environment {
 };
 
 struct Application {
-    const char* name         = "Window - Ember Engine";
+    const char* name         = "Ember Engine - Window";
     const char* version      = "1.0";
     const char* package_name = "com.ember.engine.app"; // identifier
     const char* icon_path    = "res/icon.png";
@@ -89,7 +89,6 @@ struct Application {
 
     bool is_fullscreen = false;
     bool is_resizable  = true;
-    bool is_debug      = true;
 
     bool load(const tinyxml2::XMLElement* root);
 };
@@ -125,6 +124,8 @@ struct Window {
 };
 
 struct EngineConfig {
+
+    bool is_debug      = false;
 
     Orientation orientation = Orientation::LANDSCAPE_LEFT;
 

@@ -4,7 +4,7 @@
 #include "core/engine.h"
 
 
-void render_primitives_system(Transform2D& t, Shape& s) {
+void render_primitives_system(Transform2D& t, Shape2D& s) {
     switch (s.type) {
     case ShapeType::TRIANGLE:
         GEngine->get_renderer()->draw_triangle(t, s.size.x, s.color, s.filled);
@@ -68,6 +68,80 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
     //          t.world_position.y);
 }
 
+void render_world_3d_system(flecs::entity e, Camera3D& camera) {
+
+
+    if (!e.is_valid() || !e.has<tags::MainCamera>()) {
+        return;
+    }
+
+    const auto& window = GEngine->get_config().get_window();
+    GEngine->get_renderer()->draw_environment(camera.get_view(), camera.get_projection(window.width, window.height));
+
+    // Render all 3D models in the scene
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const std::shared_ptr<Model>& model) {
+        GEngine->get_renderer()->draw_model(t, model.get(), camera.get_view(), camera.get_projection(window.width, window.height),
+                                            camera.position);
+    });
+}
+
+
+void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& event) {
+    if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+        camera.zoom(static_cast<float>(event.wheel.y));
+    }
+
+
+    float xoffset = 0.0f;
+    float yoffset = 0.0f;
+    if (event.type == SDL_EVENT_MOUSE_MOTION) {
+
+
+        if (event.motion.state & SDL_BUTTON_LMASK) {
+            xoffset = static_cast<float>(event.motion.xrel);
+            yoffset = static_cast<float>(event.motion.yrel);
+        }
+    }
+
+    if (event.type == SDL_EVENT_FINGER_MOTION) {
+        xoffset = static_cast<float>(event.tfinger.dx * 10);
+        yoffset = static_cast<float>(event.tfinger.dy * 10);
+    }
+
+    camera.look_at(xoffset, -yoffset, 1.f);
+}
+
+
+
+void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta) {
+
+
+    const bool* state = SDL_GetKeyboardState(NULL);
+
+    if (state[SDL_SCANCODE_W]) {
+        camera.move_forward(delta);
+    }
+
+    if (state[SDL_SCANCODE_S]) {
+        camera.move_backward(delta);
+    }
+
+    if (state[SDL_SCANCODE_A]) {
+        camera.move_left(delta);
+    }
+
+    if (state[SDL_SCANCODE_D]) {
+        camera.move_right(delta);
+    }
+
+    if (state[SDL_SCANCODE_E]) {
+
+        GEngine->get_config().is_debug = !GEngine->get_config().is_debug;
+    }
+
+    camera.speed = state[SDL_SCANCODE_LSHIFT] ? 30.0f : 10.0f;
+}
+
 
 void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
@@ -75,14 +149,14 @@ void setup_scripts_system(flecs::entity e, Script& script) {
         luaL_openlibs(script.lua_state);
 
         lua_getglobal(script.lua_state, "package");
-        lua_getfield(script.lua_state, -1, "path");             // get package.path
-        std::string path = lua_tostring(script.lua_state, -1);  // current paths
-        lua_pop(script.lua_state, 1);                           // pop old path
+        lua_getfield(script.lua_state, -1, "path"); // get package.path
+        std::string path = lua_tostring(script.lua_state, -1); // current paths
+        lua_pop(script.lua_state, 1); // pop old path
 
-        path.append(";res/scripts/?.lua");                     // add your scripts folder
+        path.append(";res/scripts/?.lua"); // add your scripts folder
         lua_pushstring(script.lua_state, path.c_str());
-        lua_setfield(script.lua_state, -2, "path");            // package.path = new path
-        lua_pop(script.lua_state, 1);                          // pop package table
+        lua_setfield(script.lua_state, -2, "path"); // package.path = new path
+        lua_pop(script.lua_state, 1); // pop package table
 
         FileAccess lua_file(script.path, ModeFlags::READ);
         const std::string& lua_script = lua_file.get_file_as_str();
@@ -147,15 +221,15 @@ void scene_manager_system(flecs::world& world) {
 
             auto new_scene = world.lookup(req.name.c_str());
 
-            if (new_scene.is_valid() && new_scene.has<Scene>()) {
+            if (new_scene.is_valid() && new_scene.has<tags::Scene>()) {
 
-                world.each([&](flecs::entity e, Scene) {
+                world.each([&](flecs::entity e, tags::Scene) {
                     e.add(flecs::Disabled);
-                    e.remove<ActiveScene>();
+                    e.remove<tags::ActiveScene>();
                 });
 
                 new_scene.remove(flecs::Disabled);
-                new_scene.add<ActiveScene>();
+                new_scene.add<tags::ActiveScene>();
                 LOG_INFO("Switched to scene: %s", req.name.c_str());
             } else {
                 LOG_WARN("Scene '%s' not found", req.name.c_str());

@@ -1,5 +1,6 @@
 #pragma once
 #include "core/renderer/sdl/sdl_renderer.h"
+#include  "core/renderer/opengl/ogl_renderer.h"
 #include "core/io/file_system.h"
 #include "core/system/timer.h"
 #include "core/project_config.h"
@@ -15,6 +16,8 @@
 */
 class Engine {
 public:
+
+
     bool initialize(int window_w, int window_h, const char* title = "Ember Engine - Window", Uint32 window_flags = SDL_WINDOW_RESIZABLE);
 
     void run();
@@ -46,7 +49,7 @@ private:
 /*!
 
     @brief Core engine loop function.
-    
+
     @note This function should never be called directly. It is used internally by the engine to handle events, update the world, and render frames.
 
     @version 0.0.1
@@ -56,7 +59,7 @@ void engine_core_loop();
 /*!
 
     @brief Sets up the core systems in the provided Flecs world.
-    
+
     This function registers core systems required for the engine's operation
 
     @param world Reference to the Flecs world where systems will be registered.
@@ -66,4 +69,4 @@ void engine_core_loop();
 
 void engine_setup_systems(flecs::world& world);
 
-inline std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
+extern std::unique_ptr<Engine> GEngine;

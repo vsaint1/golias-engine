@@ -6,12 +6,14 @@ TEST_CASE("Parse config file") {
 
     MESSAGE("Load config defaults from project.xml");
 
-    CHECK(config.load()== false);
+    CHECK(config.load() == false);
 
-    CHECK_MESSAGE(std::string(config.get_application().name).compare("Window - Ember Engine") == 0, "Application name should be 'Window - Ember Engine'");
-    CHECK_MESSAGE(std::string(config.get_application().package_name).compare("com.ember.engine.app") == 0,
-                  "Application package name should be 'com.ember.engine.app'");
 
-    CHECK_MESSAGE(config.get_window().size.x == 1280, "Window width should be 1280");
-    CHECK_MESSAGE(config.get_window().size.y == 720, "Window height should be 720");
+    // Application info
+    CHECK_EQ(std::string_view(config.get_application().name), "Ember Engine - Window");
+    CHECK_EQ(std::string_view(config.get_application().package_name), "com.ember.engine.app");
+
+    // Window info
+    CHECK_EQ(config.get_window().width, 1280);
+    CHECK_EQ(config.get_window().height, 720);
 }
