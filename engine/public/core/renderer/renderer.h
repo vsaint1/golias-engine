@@ -35,6 +35,15 @@ public:
     virtual void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color = glm::vec4(1, 1, 1, 1),
                            bool is_filled = false) = 0;
 
+
+    virtual void draw_line_3d(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
+        LOG_WARN("draw_line_3d not implemented for this renderer");
+    }
+
+    virtual void draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec4& color, bool is_filled) {
+        LOG_WARN("draw_triangle_3d not implemented for this renderer");
+    }
+
     virtual void draw_triangle(const Transform2D& transform, float size, glm::vec4 color = glm::vec4(1, 1, 1, 1),
                                bool is_filled = false) = 0;
 

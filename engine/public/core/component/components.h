@@ -28,7 +28,7 @@ enum class ShapeType { RECTANGLE, TRIANGLE, CIRCLE, LINE, POLYGON };
 /*!
  * @brief Represents a shape with its properties for rendering.
  */
-struct Shape {
+struct Shape2D {
     ShapeType type = ShapeType::RECTANGLE; /// Type of the shape
     glm::vec4 color{1, 1, 1, 1};
     bool filled = true;
@@ -78,12 +78,13 @@ struct Sprite2D {
     bool flip_v              = false;
 };
 
-struct Scene {};
 
 struct SceneRoot {};
 
 
 namespace tags {
+    struct Scene {};
+
     struct ActiveScene {};
 
     struct Alive {}; // Marks entities that are alive (children of active scene)
@@ -113,6 +114,14 @@ struct Transform3D {
     }
 };
 
+/*!
+ * @brief Represents a physics body for 2D or 3D physics simulations.
+ * Jolt Physics -> BodyID
+ * Box2D -> b2BodyId
+ */
+struct PhysicsBody {
+    Uint32 id = 0; 
+};
 
 // TODO: remove this from components
 struct Mesh {
@@ -121,6 +130,8 @@ struct Mesh {
     Uint32 texture_id       = 0;
     bool has_texture        = false;
     size_t vertex_count     = 0;
+    std::vector<glm::vec3> vertices;
+
     glm::vec3 diffuse_color = glm::vec3(0.5f);
 
     ~Mesh();
@@ -179,7 +190,7 @@ private:
 
 inline void serialize_components(flecs::world& ecs) {
 
-    ecs.component<Scene>();
+    ecs.component<tags::Scene>();
 
     ecs.component<SceneRoot>();
 
@@ -206,7 +217,7 @@ inline void serialize_components(flecs::world& ecs) {
         .constant("LINE", ShapeType::LINE)
         .constant("POLYGON", ShapeType::POLYGON);
 
-    ecs.component<Shape>()
+    ecs.component<Shape2D>()
         .member<ShapeType>("type")
         .member<glm::vec4>("color")
         .member<bool>("filled")
