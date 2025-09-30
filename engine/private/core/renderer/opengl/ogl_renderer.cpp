@@ -122,7 +122,9 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
     } else {
         int fw = face_w, fh = face_h;
-        auto R       = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
+        auto R = [&](int cx, int cy) {
+            return SDL_Rect{cx * fw, cy * fh, fw, fh};
+        };
         faceRects[0] = R(2, 1); // +X
         faceRects[1] = R(0, 1); // -X
         faceRects[2] = R(1, 0); // +Y
@@ -220,17 +222,17 @@ void OpenglRenderer::setup_cubemap() {
 
     // CUBE MAP POS
     constexpr float skybox_vertices[] = {
-        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+        -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 
-        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 
-        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+        -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
 
     glGenVertexArrays(1, &skybox_vao);
     glGenBuffers(1, &skybox_vbo);
@@ -360,7 +362,7 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     // TODO: create api to handle environment setup
     setup_cubemap();
-    skybox_texture = load_cubemap_atlas("sprites/desert.png", CUBEMAP_ORIENTATION::DEFAULT);
+    skybox_texture = load_cubemap_atlas("environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     const auto& viewport = GEngine->get_config().get_viewport();
     LOG_INFO("Using backend: %s, Viewport: %dx%d", "Opengl/ES 3.X", viewport.width, viewport.height);
@@ -465,7 +467,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(base_dir.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs
-                                                                   | aiProcess_JoinIdenticalVertices);
+                                                               | aiProcess_JoinIdenticalVertices);
     if (!scene || !scene->mRootNode) {
         LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
         return nullptr;
@@ -496,13 +498,26 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     return model;
 }
 
+
+void OpenglRenderer::draw_line_3d(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
+
+}
+
+void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec4& color,
+                                      bool is_filled) {
+
+  
+}
+
 Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
     Mesh m;
+
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
         m.diffuse_color = {c.r, c.g, c.b};
+
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             const std::string full = base_dir + texPath.C_Str();
@@ -514,13 +529,21 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
 
     std::vector<float> verts;
     verts.reserve(mesh->mNumFaces * 3 * 8);
+
+    m.vertices.reserve(mesh->mNumVertices);
+
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
         aiFace face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++) {
             unsigned int idx = face.mIndices[j];
-            verts.push_back(mesh->mVertices[idx].x);
-            verts.push_back(mesh->mVertices[idx].y);
-            verts.push_back(mesh->mVertices[idx].z);
+
+            const aiVector3D& v = mesh->mVertices[idx];
+            m.vertices.push_back(glm::vec3(v.x, v.y, v.z));
+
+            verts.push_back(v.x);
+            verts.push_back(v.y);
+            verts.push_back(v.z);
+
             if (mesh->HasNormals()) {
                 verts.push_back(mesh->mNormals[idx].x);
                 verts.push_back(mesh->mNormals[idx].y);
@@ -530,6 +553,7 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
                 verts.push_back(0);
                 verts.push_back(0);
             }
+
             if (mesh->HasTextureCoords(0)) {
                 verts.push_back(mesh->mTextureCoords[0][idx].x);
                 verts.push_back(mesh->mTextureCoords[0][idx].y);
@@ -541,19 +565,21 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
     }
 
     m.vertex_count = verts.size() / 8;
+
     glGenVertexArrays(1, &m.vao);
     glGenBuffers(1, &m.vbo);
     glBindVertexArray(m.vao);
     glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
     glEnableVertexAttribArray(2);
-    glBindVertexArray(0);
 
+    glBindVertexArray(0);
 
     return m;
 }
@@ -564,6 +590,9 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     if (!model) {
         return;
     }
+
+    // TODO: wireframe mode
+    const auto draw_mode = GEngine->get_config().is_debug ? GL_LINES : GL_TRIANGLES;
 
     glUseProgram(default_shader_program);
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(t.get_model_matrix()));
@@ -578,7 +607,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mesh.texture_id);
         glBindVertexArray(mesh.vao);
-        glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count);
+        glDrawArrays(draw_mode, 0, mesh.vertex_count);
         glBindVertexArray(0);
     }
 }
