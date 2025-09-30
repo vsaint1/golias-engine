@@ -134,10 +134,6 @@ void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta
         camera.move_right(delta);
     }
 
-    if (state[SDL_SCANCODE_E]) {
-
-        GEngine->get_config().is_debug = !GEngine->get_config().is_debug;
-    }
 
     camera.speed = state[SDL_SCANCODE_LSHIFT] ? 30.0f : 10.0f;
 }

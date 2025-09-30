@@ -1,6 +1,8 @@
 #include "core/renderer/opengl/ogl_renderer.h"
 
 #include "core/engine.h"
+#include "core/io/file_system.h"
+#include "core/renderer/base_struct.h"
 
 void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
                                      const void* userParam) {
@@ -40,12 +42,20 @@ GLuint compile_shader(const std::string& src, GLenum type) {
 }
 
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
-    std::string full = atlasPath;
-    if (atlasPath.rfind("res/", 0) != 0) {
-        full = ASSETS_PATH + atlasPath;
+    std::string full = ASSETS_PATH + atlasPath;
+
+    LOG_INFO("Loading cubemap atlas: %s", full.c_str());
+
+
+    FileAccess file = FileAccess(atlasPath, ModeFlags::READ);
+
+    if (!file.is_open()) {
+        LOG_ERROR("Failed to open file %s", full.c_str());
+        return 0;
     }
 
-    SDL_Surface* surf = IMG_Load(full.c_str());
+    SDL_Surface* surf = IMG_Load_IO(file.get_handle(), false);
+
     if (!surf) {
         LOG_ERROR("Failed to load %s -> %s", full.c_str(), SDL_GetError());
         return 0;
@@ -122,9 +132,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
     } else {
         int fw = face_w, fh = face_h;
-        auto R = [&](int cx, int cy) {
-            return SDL_Rect{cx * fw, cy * fh, fw, fh};
-        };
+        auto R       = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
         faceRects[0] = R(2, 1); // +X
         faceRects[1] = R(0, 1); // -X
         faceRects[2] = R(1, 0); // +Y
@@ -222,17 +230,17 @@ void OpenglRenderer::setup_cubemap() {
 
     // CUBE MAP POS
     constexpr float skybox_vertices[] = {
-        -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
 
-        1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
 
-        -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
     glGenVertexArrays(1, &skybox_vao);
     glGenBuffers(1, &skybox_vbo);
@@ -283,7 +291,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     /* GLES 3.0 -> GLSL: 300 */
-    const char* glsl_version = "#version 300 es";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -292,7 +299,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
     /* OPENGL 3.3 -> GLSL: 330*/
-    const char* glsl_version = "#version 330";
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -333,9 +339,15 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _window  = window;
 
 
+    SDL_GL_SetSwapInterval(0);
+    
     GLint num_extensions = 0;
     std::vector<std::string> extensions;
     glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    extensions.reserve(num_extensions);
+
+    bool khr_debug_found = false;
+
     for (GLuint i = 0; i < num_extensions; i++) {
         const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
 
@@ -344,16 +356,19 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(ogl_validation_layer, nullptr);
+            khr_debug_found = true;
             break;
         }
     }
 
-    LOG_WARN("KHR_debug extensions not supported, validation layers disabled");
+    if (!khr_debug_found) {
+        LOG_WARN("KHR_debug extensions not supported, validation layers disabled");
+    }
 
     int major, minor;
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
-    LOG_INFO("Created GL Context version: %d.%d", major, minor);
+    LOG_INFO("OpenGL Version: %d.%d", major, minor);
     LOG_INFO("OpenGL Vendor: %s", glGetString(GL_VENDOR));
     LOG_INFO("OpenGL Renderer: %s", glGetString(GL_RENDERER));
 
@@ -365,7 +380,7 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     skybox_texture = load_cubemap_atlas("environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     const auto& viewport = GEngine->get_config().get_viewport();
-    LOG_INFO("Using backend: %s, Viewport: %dx%d", "Opengl/ES 3.X", viewport.width, viewport.height);
+    // LOG_INFO("Using backend: %s, Viewport: %dx%d", viewport.width, viewport.height);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -405,19 +420,17 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     }
 
 
-    // TODO: refactor using FileAccess api
-    // FileAccess file(path, ModeFlags::READ);
-    std::string full_path = path;
+    FileAccess file_access(path, ModeFlags::READ);
 
-    if (path.rfind("res/", 0) != 0) {
-        full_path = ASSETS_PATH + path;
+    if (!file_access.is_open()) {
+        LOG_ERROR("Failed to open texture file: %s", path.c_str());
+        return nullptr;
     }
 
-
-    SDL_Surface* surf = IMG_Load(full_path.c_str());
+    SDL_Surface* surf = IMG_Load_IO(file_access.get_handle(), false);
 
     if (!surf) {
-        LOG_ERROR("Failed to load texture: %s, Error: %s", full_path.c_str(), SDL_GetError());
+        LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
         return nullptr;
     }
 
@@ -448,7 +461,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     texture->height = surf->h;
     texture->path   = path;
 
-    LOG_INFO("Texture Info: Id %d, Size %dx%d, Path: %s", texture->id, surf->w, surf->h, full_path.c_str());
+    LOG_INFO("Texture Info: Id %d, Size %dx%d, Path: %s", texture->id, surf->w, surf->h, path.c_str());
 
     _textures[name] = texture;
 
@@ -464,10 +477,38 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
         return _models[base_dir];
     }
 
+    // LOG_INFO("Loading Model: %s, base_dir: %s", path, base_dir.c_str());
+
+    // SDL_IOStream* rw = SDL_IOFromFile(base_dir.c_str(), "rb");
+    // if (!rw) {
+    //     LOG_ERROR("Failed to open Model file: %s, Error: %s", base_dir.c_str(), SDL_GetError());
+    //     return nullptr;
+    // }
+
+    // Sint64 size = SDL_GetIOSize(rw);
+    // if (size <= 0) {
+    //     LOG_ERROR("Failed to get size for Model file: %s", base_dir.c_str());
+    //     SDL_CloseIO(rw);
+    //     return nullptr;
+    // }
+
+    // std::vector<char> buffer(size);
+    // if (SDL_ReadIO(rw, buffer.data(),  size) != size) {
+    //     LOG_ERROR("Failed to read Model file: %s", base_dir.c_str());
+    //     SDL_CloseIO(rw);
+    //     return nullptr;
+    // }
+    // SDL_CloseIO(rw);
+
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(base_dir.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs
-                                                               | aiProcess_JoinIdenticalVertices);
+
+    const auto flags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
+                     | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+
+    // NOTE: on android this doesnt work, needs to read from memory buffer
+    const aiScene* scene = importer.ReadFile(base_dir, flags);
+
     if (!scene || !scene->mRootNode) {
         LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
         return nullptr;
@@ -476,37 +517,32 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     auto model  = std::make_shared<Model>();
     model->path = base_dir;
 
-
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* mat = scene->mMaterials[i];
         aiString name;
-
         if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
-            LOG_INFO("Material  %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
+            LOG_INFO("Material %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
         }
     }
 
     base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        LOG_INFO("Loading Mesh %d/%d, Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
+        LOG_INFO("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
         model->meshes.push_back(load_meshes(scene->mMeshes[i], scene, base_dir));
     }
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s, Mesh Count:  %zu", path, model->meshes.size());
+    LOG_INFO("Loaded Model: %s  Mesh Count:  %zu", path, model->meshes.size());
 
     return model;
 }
 
 
 void OpenglRenderer::draw_line_3d(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) {
-
 }
 
 void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec4& color,
                                       bool is_filled) {
-
-  
 }
 
 Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
