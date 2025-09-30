@@ -6,7 +6,6 @@ set_version("0.0.1", {build = "%Y%m%d%H%M"})
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("mode.debug", "mode.release")
 
--- === Dependencies ===
 -- Build static on macOS/iOS/Emscripten, shared otherwise
 local use_shared = not (is_plat("macosx") or is_plat("iphoneos") or is_plat("wasm"))
 
@@ -18,7 +17,8 @@ add_requires("flecs v4.1.1", {configs = {shared = false}})
 add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 add_requires("glm 1.0.1", {configs = {shared = false}})
 add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
-add_requires("assimp v5.4.0", {configs = {shared = false}})
+add_requires("assimp v5.4.0", {configs = {shared = false, android_jniiosysystem = true}})
+
 
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
@@ -29,14 +29,13 @@ target("glad")
     add_files("vendor/glad/src/glad.c")
     add_includedirs("vendor/glad/include", {public = true})
 
--- === Engine Target ===
 target("engine")
     set_kind("static")
     add_files("engine/private/**/*.cpp")
     add_includedirs("engine/public", {public = true})
     
-    -- glad (gl/es2)
-    add_deps("glad")
+   
+    add_deps("glad") -- using glad vendored, from repository cant build to wasm
 
     add_includedirs("vendor/glad/include", {public = true})
     add_files("vendor/glad/src/glad.c")
