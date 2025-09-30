@@ -86,6 +86,63 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 }
 
 
+void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& event) {
+    if (event.type == SDL_EVENT_MOUSE_WHEEL) {
+        camera.zoom(static_cast<float>(event.wheel.y));
+    }
+
+
+    float xoffset = 0.0f;
+    float yoffset = 0.0f;
+    if (event.type == SDL_EVENT_MOUSE_MOTION) {
+
+
+        if (event.motion.state & SDL_BUTTON_LMASK) {
+            xoffset = static_cast<float>(event.motion.xrel);
+            yoffset = static_cast<float>(event.motion.yrel);
+        }
+    }
+
+    if (event.type == SDL_EVENT_FINGER_MOTION) {
+        xoffset = static_cast<float>(event.tfinger.dx * 10);
+        yoffset = static_cast<float>(event.tfinger.dy * 10);
+    }
+
+    camera.look_at(xoffset, -yoffset, 1.f);
+}
+
+
+
+void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta) {
+
+
+    const bool* state = SDL_GetKeyboardState(NULL);
+
+    if (state[SDL_SCANCODE_W]) {
+        camera.move_forward(delta);
+    }
+
+    if (state[SDL_SCANCODE_S]) {
+        camera.move_backward(delta);
+    }
+
+    if (state[SDL_SCANCODE_A]) {
+        camera.move_left(delta);
+    }
+
+    if (state[SDL_SCANCODE_D]) {
+        camera.move_right(delta);
+    }
+
+    if (state[SDL_SCANCODE_E]) {
+
+        GEngine->get_config().is_debug = !GEngine->get_config().is_debug;
+    }
+
+    camera.speed = state[SDL_SCANCODE_LSHIFT] ? 30.0f : 10.0f;
+}
+
+
 void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
         script.lua_state = luaL_newstate();

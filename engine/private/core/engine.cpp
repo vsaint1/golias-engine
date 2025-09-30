@@ -10,10 +10,11 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
     Renderer* renderer = nullptr;
     switch (config.get_renderer_device().backend) {
-    case Backend::GL_COMPATIBILITY: {
-        renderer = new OpenglRenderer();
-        break;
-    }
+    case Backend::GL_COMPATIBILITY:
+        {
+            renderer = new OpenglRenderer();
+            break;
+        }
     case Backend::VK_FORWARD:
         LOG_ERROR("Vulkan backend is not yet supported");
         break;
@@ -23,10 +24,11 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
     case Backend::METAL:
         LOG_ERROR("Metal backend is not yet supported");
         break;
-    case Backend::AUTO: {
-        renderer = new SDLRenderer();
-        break;
-    }
+    case Backend::AUTO:
+        {
+            renderer = new SDLRenderer();
+            break;
+        }
     }
 
     if (renderer && !renderer->initialize(window)) {
@@ -43,8 +45,6 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
 
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
-
-
     if (!_config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
     }
@@ -69,7 +69,8 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     auto& app_win = _config.get_window();
 
     LOG_INFO("Initializing %s, Version %s", ENGINE_NAME, ENGINE_VERSION_STR);
-    LOG_INFO("Project Configuration -> Window: (%dx%d), ApplicationName: %s, Version %s, Package: %s",app_win.width,app_win.height, app_config.name, app_config.version, app_config.package_name);
+    LOG_INFO("Project Configuration -> Window: (%dx%d), ApplicationName: %s, Version %s, Package: %s", app_win.width, app_win.height,
+             app_config.name, app_config.version, app_config.package_name);
 
 
 #pragma region APP_METADATA
@@ -83,12 +84,15 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
+    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_VERBOSE);
 
     if (!TTF_Init()) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return false;
     }
 
+
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
 
     app_win.width  = window_w;
     app_win.height = window_h;
@@ -180,6 +184,41 @@ flecs::world& Engine::get_world() {
     return _world;
 }
 
+void engine_core_loop() {
+
+    GEngine->get_timer().tick();
+
+
+    while (SDL_PollEvent(&GEngine->event)) {
+
+        if (GEngine->event.type == SDL_EVENT_QUIT) {
+            GEngine->is_running = false;
+        }
+
+
+        if (GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
+            int new_w      = GEngine->event.window.data1;
+            int new_h      = GEngine->event.window.data2;
+            auto& app_win  = GEngine->get_config().get_window();
+            app_win.width  = new_w;
+            app_win.height = new_h;
+        }
+
+        GEngine->get_world().each([&](flecs::entity e, Camera3D& camera) { camera_touch_system(e, camera, GEngine->event); });
+    }
+
+
+    GEngine->get_renderer()->clear(GEngine->get_config().get_environment().clear_color);
+
+    GEngine->get_world().progress(static_cast<float>(GEngine->get_timer().delta));
+
+    GEngine->get_renderer()->present();
+
+    // FIXME: Cap framerate for now
+    SDL_Delay(16); // ~60 FPS
+}
+
+
 void Engine::run() {
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -204,68 +243,43 @@ Engine::~Engine() {
     SDL_Quit();
 }
 
-void engine_core_loop() {
-
-    GEngine->get_timer().tick();
-
-    while (SDL_PollEvent(&GEngine->event)) {
-        if (GEngine->event.type == SDL_EVENT_QUIT) {
-            GEngine->is_running = false;
-        }
-
-        if (GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
-            int new_w      = GEngine->event.window.data1;
-            int new_h      = GEngine->event.window.data2;
-            auto& app_win  = GEngine->get_config().get_window();
-            app_win.width  = new_w;
-            app_win.height = new_h;
-        }
-    }
-
-
-    GEngine->get_renderer()->clear({0.2, 0.2, 0.2, 1.0f});
-
-    GEngine->get_world().progress(static_cast<float>(GEngine->get_timer().delta));
-
-    GEngine->get_renderer()->present();
-
-    // FIXME: Cap framerate for now
-    SDL_Delay(16); // ~60 FPS
-}
-
-
+// TODO: enable/disable 3d and 2d systems based on config
 void engine_setup_systems(flecs::world& world) {
 
+    world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).each(render_world_3d_system);
 
-    world.system<Transform2D>("UpdateTransforms_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(update_transforms_system);
+    world.system<Camera3D>("Camera3D_Keyboard_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Camera3D& camera) {
+        camera_keyboard_system(e, camera, static_cast<float>(GEngine->get_timer().delta));
+    });
 
-    world.system<Transform2D, Shape>("RenderPrimitives_OnUpdate")
-         .kind(flecs::OnUpdate)
-         .with<ActiveScene>()
-         .up()
-         .each([&](flecs::entity e, Transform2D& t, Shape& s) {
-             render_primitives_system(t, s);
-         });
+    world.system<Transform2D>("UpdateTransforms_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<tags::ActiveScene>()
+        .up()
+        .each(update_transforms_system);
+
+    world.system<Transform2D, Shape2D>("RenderPrimitives_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<tags::ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Shape2D& s) { render_primitives_system(t, s); });
 
     world.system<Transform2D, Label2D>("RenderText_OnUpdate")
-         .kind(flecs::OnUpdate)
-         .with<ActiveScene>()
-         .up()
-         .each([&](flecs::entity e, Transform2D& t, Label2D& l) {
-             render_labels_system(t, l);
-         });
+        .kind(flecs::OnUpdate)
+        .with<tags::ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Label2D& l) { render_labels_system(t, l); });
 
     world.system<Transform2D, Sprite2D>("RenderSprite_OnUpdate")
-         .kind(flecs::OnUpdate)
-         .with<ActiveScene>()
-         .up()
-         .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) {
-             render_sprites_system(t, s);
-         });
+        .kind(flecs::OnUpdate)
+        .with<tags::ActiveScene>()
+        .up()
+        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) { render_sprites_system(t, s); });
 
     scene_manager_system(world);
 
-    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<ActiveScene>().up().each([&](flecs::entity e, Script& s) {
+
+    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<tags::ActiveScene>().up().each([&](flecs::entity e, Script& s) {
         if (s.path.empty()) {
             LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
             return;
@@ -274,5 +288,5 @@ void engine_setup_systems(flecs::world& world) {
         setup_scripts_system(e, s);
     });
 
-    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).with<ActiveScene>().up().each(process_scripts_system);
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).with<tags::ActiveScene>().up().each(process_scripts_system);
 }
