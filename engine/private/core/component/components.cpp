@@ -28,7 +28,7 @@ Mesh::~Mesh() {
 }
 
 Model::~Model() {
-    LOG_INFO("Releasing model resources");
+    // LOG_INFO("Releasing model resources");
     for (auto& mesh : meshes) {
         if (mesh.vbo) {
             glDeleteBuffers(1, &mesh.vbo);

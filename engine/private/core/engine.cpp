@@ -196,6 +196,14 @@ void engine_core_loop() {
         }
 
 
+        if (GEngine->event.type == SDL_EVENT_KEY_DOWN) {
+
+            if (GEngine->event.key.scancode == SDL_SCANCODE_F9) {
+                GEngine->get_config().is_debug = !GEngine->get_config().is_debug;
+            }
+        }
+
+
         if (GEngine->event.type == SDL_EVENT_WINDOW_RESIZED) {
             int new_w      = GEngine->event.window.data1;
             int new_h      = GEngine->event.window.data2;
