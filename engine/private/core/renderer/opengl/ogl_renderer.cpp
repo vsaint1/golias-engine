@@ -14,33 +14,6 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 }
 
 
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
-#else
-#define SHADER_HEADER "#version 330 core\n"
-#endif
-
-GLuint compile_shader(const std::string& src, GLenum type) {
-
-    // LOG_INFO("Source :\n%s",  src.c_str());
-    const GLuint s   = glCreateShader(type);
-    const char* csrc = src.c_str();
-
-    glShaderSource(s, 1, &csrc, nullptr);
-    glCompileShader(s);
-    GLint ok;
-    glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-
-    if (!ok) {
-        char log[1024];
-        glGetShaderInfoLog(s, 1024, nullptr, log);
-        LOG_ERROR("Failed to compile Shader %s, Type %s", log, type == GL_VERTEX_SHADER ? "Vertex" : "Fragment");
-        return 0;
-    }
-
-    return s;
-}
-
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
     std::string full = ASSETS_PATH + atlasPath;
 
@@ -182,7 +155,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
 
     for (int i = 0; i < 6; ++i) {
         const SDL_Rect& r = faceRects[i];
-        LOG_INFO("Uploading face %d: x=%d y=%d w=%d h=%d pitch=%d", i, r.x, r.y, r.w, r.h, pitch);
+        // LOG_INFO("Uploading face %d: x=%d y=%d w=%d h=%d pitch=%d", i, r.x, r.y, r.w, r.h, pitch);
 
         // allocate buffer for face
         std::vector<Uint8> faceData(r.w * r.h * bytesPerPixel);
@@ -252,31 +225,6 @@ void OpenglRenderer::setup_cubemap() {
     glBindVertexArray(0);
 
     skybox_shader = new OpenglShader("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
-
-
-    // GLuint prog = glCreateProgram();
-    // glAttachShader(prog, v);
-    // glAttachShader(prog, f);
-    // glLinkProgram(prog);
-    // GLint ok;
-    // glGetProgramiv(prog, GL_LINK_STATUS, &ok);
-
-    // if (!ok) {
-    //     char log[1024];
-    //     glGetProgramInfoLog(prog, 1024, nullptr, log);
-    //     LOG_ERROR("Failed to link Shaders %s", log);
-    //     return;
-    // }
-
-
-    // glDeleteShader(v);
-    // glDeleteShader(f);
-
-    // cubemap_viewLoc   = glGetUniformLocation(prog, "VIEW");
-    // cubemap_projLoc   = glGetUniformLocation(prog, "PROJECTION");
-    // cubemap_skyboxLoc = glGetUniformLocation(prog, "TEXTURE");
-
-    // cubemap_shader_program = prog;
 
     LOG_INFO("Environment setup complete");
 }

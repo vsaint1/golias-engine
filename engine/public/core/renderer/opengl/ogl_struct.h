@@ -41,7 +41,7 @@ public:
 private:
     Uint32 get_uniform_location(const std::string& name);
 
-    Uint32 CompileShader(Uint32 type, const char* source);
+    Uint32 compile_shader(Uint32 type, const char* source);
 };
 
 

@@ -16,8 +16,8 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     const std::string fragmentSource = SHADER_HEADER + load_assets_file(fragment);
 
 
-    Uint32 vs = CompileShader(GL_VERTEX_SHADER, vertexSource.c_str());
-    Uint32 fs = CompileShader(GL_FRAGMENT_SHADER, fragmentSource.c_str());
+    Uint32 vs = compile_shader(GL_VERTEX_SHADER, vertexSource.c_str());
+    Uint32 fs = compile_shader(GL_FRAGMENT_SHADER, fragmentSource.c_str());
 
     Uint32 program = glCreateProgram();
     glAttachShader(program, vs);
@@ -44,8 +44,8 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     // LOG_INFO("Successfully created and linked SHADER_PROGRAM(%d)", program);
 }
 
-Uint32 OpenglShader::CompileShader(Uint32 type, const char* source) {
-    LOG_INFO("OpenglShader::CompileShader()");
+Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
+    LOG_INFO("OpenglShader::CompileShader() - %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
 
     EMBER_TIMER_START();
 
@@ -65,7 +65,6 @@ Uint32 OpenglShader::CompileShader(Uint32 type, const char* source) {
 
     EMBER_TIMER_END("Compiling Shaders");
 
-    // LOG_INFO("Compiled %s", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
 
     return shader;
 }
