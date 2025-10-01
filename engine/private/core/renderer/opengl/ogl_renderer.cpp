@@ -251,36 +251,32 @@ void OpenglRenderer::setup_cubemap() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
     glBindVertexArray(0);
 
-    const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.vert");
-    const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/skybox.frag");
-
-    LOG_INFO("Compiling Environment shaders");
-    GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
-    GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
-
-    GLuint prog = glCreateProgram();
-    glAttachShader(prog, v);
-    glAttachShader(prog, f);
-    glLinkProgram(prog);
-    GLint ok;
-    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
-
-    if (!ok) {
-        char log[1024];
-        glGetProgramInfoLog(prog, 1024, nullptr, log);
-        LOG_ERROR("Failed to link Shaders %s", log);
-        return;
-    }
+    skybox_shader = new OpenglShader("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
 
-    glDeleteShader(v);
-    glDeleteShader(f);
+    // GLuint prog = glCreateProgram();
+    // glAttachShader(prog, v);
+    // glAttachShader(prog, f);
+    // glLinkProgram(prog);
+    // GLint ok;
+    // glGetProgramiv(prog, GL_LINK_STATUS, &ok);
 
-    cubemap_viewLoc   = glGetUniformLocation(prog, "VIEW");
-    cubemap_projLoc   = glGetUniformLocation(prog, "PROJECTION");
-    cubemap_skyboxLoc = glGetUniformLocation(prog, "TEXTURE");
+    // if (!ok) {
+    //     char log[1024];
+    //     glGetProgramInfoLog(prog, 1024, nullptr, log);
+    //     LOG_ERROR("Failed to link Shaders %s", log);
+    //     return;
+    // }
 
-    cubemap_shader_program = prog;
+
+    // glDeleteShader(v);
+    // glDeleteShader(f);
+
+    // cubemap_viewLoc   = glGetUniformLocation(prog, "VIEW");
+    // cubemap_projLoc   = glGetUniformLocation(prog, "PROJECTION");
+    // cubemap_skyboxLoc = glGetUniformLocation(prog, "TEXTURE");
+
+    // cubemap_shader_program = prog;
 
     LOG_INFO("Environment setup complete");
 }
@@ -549,7 +545,7 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
 
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-     
+
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
         m.diffuse_color = {c.r, c.g, c.b};
@@ -636,16 +632,17 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     // TODO: wireframe mode
     const auto draw_mode = GEngine->get_config().is_debug ? GL_LINES : GL_TRIANGLES;
 
-    glUseProgram(default_shader_program);
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(t.get_model_matrix()));
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-    glUniform3f(viewPosLoc, viewPos.x, viewPos.y, viewPos.z);
+    default_shader->bind();
+
+    default_shader->set_value("MODEL", t.get_model_matrix());
+    default_shader->set_value("VIEW", view);
+    default_shader->set_value("PROJECTION", projection);
+    default_shader->set_value("CAMERA_POSITION", viewPos);
 
     for (const auto& mesh : model->meshes) {
 
-        glUniform3f(materialDiffuseLoc, mesh.diffuse_color.r, mesh.diffuse_color.g, mesh.diffuse_color.b);
-        glUniform1i(useTextureLoc, mesh.has_texture);
+        default_shader->set_value("material.diffuse", mesh.diffuse_color);
+        default_shader->set_value("USE_TEXTURE", mesh.has_texture);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mesh.texture_id);
         glBindVertexArray(mesh.vao);
@@ -663,10 +660,10 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
 
     glDepthFunc(GL_LEQUAL);
 
-    glUseProgram(cubemap_shader_program);
+    skybox_shader->bind();
 
-    glUniformMatrix4fv(cubemap_viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(cubemap_projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    skybox_shader->set_value("VIEW", view);
+    skybox_shader->set_value("PROJECTION", projection);
 
     glBindVertexArray(skybox_vao);
     glActiveTexture(GL_TEXTURE0);
@@ -682,6 +679,10 @@ void OpenglRenderer::draw_texture(const Transform2D& transform, Texture* texture
 }
 
 void OpenglRenderer::draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) {
+}
+
+void OpenglRenderer::draw_text_3d(const Transform3D& transform, const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color,
+                                  const std::string& font_name, const char* fmt, ...) {
 }
 
 void OpenglRenderer::draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled) {
@@ -707,65 +708,32 @@ OpenglRenderer::~OpenglRenderer() {
     glDeleteVertexArrays(1, &skybox_vao);
     glDeleteBuffers(1, &skybox_vbo);
     glDeleteTextures(1, &skybox_texture);
-    glDeleteProgram(cubemap_shader_program);
+    // glDeleteProgram(cubemap_shader_program);
+    delete skybox_shader;
+    skybox_shader = nullptr;
 
     // default shader
-    glDeleteProgram(default_shader_program);
+    delete default_shader;
+    default_shader = nullptr;
     SDL_GL_DestroyContext(_context);
 }
 
 void OpenglRenderer::setup_default_shaders() {
 
-    EMBER_TIMER_START();
 
-    LOG_INFO("Compiling Default shaders");
-    const std::string vertexSource   = SHADER_HEADER + load_assets_file("shaders/opengl/default.vert");
-    const std::string fragmentSource = SHADER_HEADER + load_assets_file("shaders/opengl/default.frag");
-
-    GLuint v = compile_shader(vertexSource, GL_VERTEX_SHADER);
-    GLuint f = compile_shader(fragmentSource, GL_FRAGMENT_SHADER);
-
-    if (!v || !f) {
-        LOG_ERROR("Failed to compile default shaders");
-        return;
-    }
-
-    GLuint prog = glCreateProgram();
-    glAttachShader(prog, v);
-    glAttachShader(prog, f);
-    glLinkProgram(prog);
-    GLint ok;
-    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
-
-    if (!ok) {
-        char log[1024];
-        glGetProgramInfoLog(prog, 1024, nullptr, log);
-        LOG_ERROR("Failed to link Shaders %s", log);
+    default_shader = new OpenglShader("shaders/opengl/default.vert", "shaders/opengl/default.frag");
+    if (!default_shader->is_valid()) {
+        LOG_ERROR("Failed to create default shader");
+        delete default_shader;
+        default_shader = nullptr;
         return;
     }
 
 
-    glDeleteShader(v);
-    glDeleteShader(f);
-
-    modelLoc           = glGetUniformLocation(prog, "MODEL");
-    viewLoc            = glGetUniformLocation(prog, "VIEW");
-    projLoc            = glGetUniformLocation(prog, "PROJECTION");
-    viewPosLoc         = glGetUniformLocation(prog, "CAMERA_POSITION");
-    lightPosLoc        = glGetUniformLocation(prog, "LIGHT_POSITION");
-    lightColorLoc      = glGetUniformLocation(prog, "LIGHT_COLOR");
-    materialDiffuseLoc = glGetUniformLocation(prog, "DIFFUSE");
-    textureSamplerLoc  = glGetUniformLocation(prog, "TEXTURE");
-    useTextureLoc      = glGetUniformLocation(prog, "USE_TEXTURE");
-
-    default_shader_program = prog;
-
-    glUseProgram(prog);
-    glUniform3f(lightPosLoc, 10, 10, 10);
-    glUniform3f(lightColorLoc, 1, 1, 1);
-    glUniform1i(textureSamplerLoc, 0);
-
-    EMBER_TIMER_END("Baking default shaders");
+    default_shader->bind();
+    default_shader->set_value("LIGHT_POSITION", glm::vec3(10, 10, 10));
+    default_shader->set_value("LIGHT_COLOR", glm::vec3(1, 1, 1));
+    default_shader->set_value("TEXTURE", 0);
 }
 
 

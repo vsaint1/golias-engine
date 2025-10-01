@@ -32,6 +32,10 @@ public:
 
     virtual void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) = 0;
 
+    virtual void draw_text_3d(const Transform3D& transform,const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) {
+        LOG_WARN("draw_text_3d not implemented for this renderer");
+    }
+
     virtual void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color = glm::vec4(1, 1, 1, 1),
                            bool is_filled = false) = 0;
 

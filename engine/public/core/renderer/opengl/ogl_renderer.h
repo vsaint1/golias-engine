@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/renderer/renderer.h"
+#include "core/renderer/opengl/ogl_struct.h"
 
 
 class OpenglRenderer final : public Renderer {
@@ -21,6 +22,8 @@ public:
 
 
     void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
+
+    void draw_text_3d(const Transform3D& transform,const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
 
     void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled) override;
 
@@ -57,15 +60,14 @@ private:
     void setup_cubemap();
 
 protected:
-    // TODO: create a shader class!!
-    GLuint default_shader_program = 0;
-    GLint modelLoc, viewLoc, projLoc, viewPosLoc, lightPosLoc, lightColorLoc, materialDiffuseLoc, textureSamplerLoc, useTextureLoc;
+ 
 
-    // TODO: create a shader class!!
+    // TODO: create a mesh clazz!!
     GLuint skybox_vao             = 0, skybox_vbo = 0, skybox_texture = 0;
-    GLuint cubemap_shader_program = 0;
-    GLint cubemap_viewLoc, cubemap_projLoc, cubemap_skyboxLoc;
 
+    OpenglShader* default_shader = nullptr;
+    OpenglShader* skybox_shader = nullptr;
+    
     std::vector<Tokens> parse_text(const std::string& text) override;
 
     void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) override;
