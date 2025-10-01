@@ -59,7 +59,7 @@ private:
 
 protected:
  
-    std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
+    std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) override;
 
     OpenglMesh* skybox_mesh = nullptr;
 
