@@ -25,13 +25,25 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    int success;
-    char infoLog[512];
+    GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(program, 512, nullptr, infoLog);
-        LOG_CRITICAL("SHADER_PROGRAM linking failed: %s", infoLog);
-        exit(EXIT_FAILURE);
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+
+        LOG_ERROR("Link error: %s", infoLog);
+        exit(-1);
+    }
+
+    glValidateProgram(program);
+    GLint validated;
+    glGetProgramiv(program, GL_VALIDATE_STATUS, &validated);
+    if (!validated) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        LOG_ERROR("Validation error: %s", infoLog);
+        exit(-1);
+
     }
 
     SDL_assert(success == GL_TRUE);
@@ -164,12 +176,11 @@ void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 co
 
 void OpenglMesh::bind() {
     glBindVertexArray(vao);
- 
 }
 
 void OpenglMesh::draw(EDrawMode mode) {
 
-   auto draw_mode = mode == EDrawMode::TRIANGLES ? GL_TRIANGLES : GL_LINES;
+    auto draw_mode = mode == EDrawMode::TRIANGLES ? GL_TRIANGLES : GL_LINES;
     if (ebo) {
         glDrawElements(draw_mode, index_count, GL_UNSIGNED_INT, 0);
     } else {

@@ -3,7 +3,7 @@
 
 std::string load_assets_file(const std::string& file_path) {
 
-    // LOG_INFO("Loading asset file: %s", file_path.c_str());
+    LOG_INFO("Loading asset file: %s", file_path.c_str());
     const auto buffer = load_file_into_memory(file_path);
 
     return std::string(buffer.begin(), buffer.end());

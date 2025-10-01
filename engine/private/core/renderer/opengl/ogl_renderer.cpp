@@ -582,7 +582,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
                                 const glm::vec3& viewPos) {
 
-    if (!model) {
+    if (!model || !default_shader) {
         return;
     }
 
