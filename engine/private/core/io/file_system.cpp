@@ -173,7 +173,7 @@ bool FileAccess::resolve_path(const std::string& file_path, ModeFlags mode_flags
         }
     }
     else {
-        _file_path = ASSETS_PATH + file_path;
+        _file_path =  file_path;
     }
 
     return true;

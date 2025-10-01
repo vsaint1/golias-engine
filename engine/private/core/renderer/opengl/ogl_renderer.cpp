@@ -340,7 +340,7 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
 
     SDL_GL_SetSwapInterval(0);
-    
+
     GLint num_extensions = 0;
     std::vector<std::string> extensions;
     glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
@@ -377,7 +377,7 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     // TODO: create api to handle environment setup
     setup_cubemap();
-    skybox_texture = load_cubemap_atlas("environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
+    skybox_texture = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     const auto& viewport = GEngine->get_config().get_viewport();
     // LOG_INFO("Using backend: %s, Viewport: %dx%d", viewport.width, viewport.height);
@@ -528,7 +528,8 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         LOG_INFO("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
-        model->meshes.push_back(load_meshes(scene->mMeshes[i], scene, base_dir));
+        const auto mesh = load_meshes(scene->mMeshes[i], scene, base_dir);
+        model->meshes.push_back(mesh);
     }
 
     _models[path] = model;
@@ -556,10 +557,16 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
 
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
-            const std::string full = base_dir + texPath.C_Str();
-            const auto tex         = load_texture(texPath.C_Str(), full);
-            m.texture_id           = tex ? tex->id : 0;
-            m.has_texture          = m.texture_id != 0;
+            const std::string texture_path = base_dir + texPath.C_Str();
+
+            const auto tex                 = load_texture(texPath.C_Str(),texture_path);
+
+            if (!tex) {
+                LOG_WARN("Failed to load Texture for Mesh %s", mesh->mName.C_Str());
+            }
+
+            m.texture_id  = tex ? tex->id : 0;
+            m.has_texture = m.texture_id != 0;
         }
     }
 
