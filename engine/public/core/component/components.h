@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/renderer/base_struct.h"
 #include "core/system/logging.h"
-
 
 // ==============================================================
 // ALL COMPONENTS ARE DEFINED HERE, PURE DATA AND SIMPLE LOGICS |
@@ -120,27 +120,22 @@ struct Transform3D {
  * Box2D -> b2BodyId
  */
 struct PhysicsBody {
-    Uint32 id = 0; 
-};
-
-// TODO: remove this from components
-struct Mesh {
-    Uint32 vao              = 0;
-    Uint32 vbo              = 0;
-    Uint32 texture_id       = 0;
-    bool has_texture        = false;
-    size_t vertex_count     = 0;
-    std::vector<glm::vec3> vertices;
-
-    glm::vec3 diffuse_color = glm::vec3(0.5f);
-
-    ~Mesh();
+    Uint32 id = 0;
 };
 
 
 struct Model {
     std::string path;
-    std::vector<Mesh> meshes;
+    std::vector<std::unique_ptr<Mesh>> meshes;
+
+    Model()                        = default;
+
+    Model(Model&&) noexcept            = default;
+    Model& operator=(Model&&) noexcept = default;
+
+    Model(const Model&)            = delete;
+    Model& operator=(const Model&) = delete;
+
 
     ~Model();
 };

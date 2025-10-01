@@ -52,6 +52,31 @@ public:
     virtual ~Texture() = default;
 };
 
+struct Material {
+    glm::vec3 diffuse  = glm::vec3(0.5f);
+    glm::vec3 specular = glm::vec3(1.f);
+    float shininess    = 1.f;
+};
+
+struct Mesh {
+  std::string name = "UNNAMED_MESH";
+    Uint32 vao = 0;
+    Uint32 vbo = 0;
+    Uint32 ebo = 0;           
+    Uint32 texture_id = 0;
+    bool has_texture = false;
+    size_t vertex_count = 0;
+    size_t index_count = 0;   
+    std::vector<glm::vec3> vertices;
+    std::vector<unsigned int> indices; 
+    Material material;
+
+    Mesh() = default;
+    virtual ~Mesh() = default;
+
+protected:
+    virtual void destroy() = 0;
+};
 
 
 /*!

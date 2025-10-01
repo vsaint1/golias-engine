@@ -1,4 +1,5 @@
 #include "core/renderer/opengl/ogl_struct.h"
+
 #include "core/io/file_system.h"
 
 
@@ -107,7 +108,7 @@ void OpenglShader::destroy() {
     glDeleteProgram(id);
 }
 
-OpenglShader::~OpenglShader(){
+OpenglShader::~OpenglShader() {
     destroy();
 }
 
@@ -159,4 +160,25 @@ void OpenglShader::set_value(const std::string& name, glm::vec3 value, Uint32 co
 void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform4fv(location, count, glm::value_ptr(value));
+}
+
+
+void OpenglMesh::destroy() {
+
+    if (vbo) {
+        glDeleteBuffers(1, &vbo);
+    }
+
+    if (vao) {
+        glDeleteVertexArrays(1, &vao);
+    }
+
+    if (texture_id) {
+        glDeleteTextures(1, &texture_id);
+    }
+}
+
+
+OpenglMesh::~OpenglMesh() {
+    destroy();
 }

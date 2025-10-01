@@ -83,6 +83,11 @@ public:
 protected:
     SDL_Window* _window = nullptr;
 
+    virtual std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir){
+        LOG_WARN("load_meshes not implemented for this renderer");
+        return nullptr;
+    }
+
     std::string vformat(const char* fmt, va_list args);
 
     virtual std::vector<Tokens> parse_text(const std::string& text) = 0;

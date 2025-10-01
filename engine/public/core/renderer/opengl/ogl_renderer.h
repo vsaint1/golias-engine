@@ -55,12 +55,11 @@ private:
 
     void setup_default_shaders();
 
-    Mesh load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
-
     void setup_cubemap();
 
 protected:
  
+    std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
 
     // TODO: create a mesh clazz!!
     GLuint skybox_vao             = 0, skybox_vbo = 0, skybox_texture = 0;

@@ -18,30 +18,11 @@ Script::~Script() {
     }
 }
 
-Mesh::~Mesh() {
-    // if (vbo)
-    //     glDeleteBuffers(1, &vbo);
-    // if (vao)
-    //     glDeleteVertexArrays(1, &vao);
-    // if (texture_id)
-    //     glDeleteTextures(1, &texture_id);
-}
-
 Model::~Model() {
-    // LOG_INFO("Releasing model resources");
-    for (auto& mesh : meshes) {
-        if (mesh.vbo) {
-            glDeleteBuffers(1, &mesh.vbo);
-        }
 
-        if (mesh.vao) {
-            glDeleteVertexArrays(1, &mesh.vao);
-        }
-
-        if (mesh.texture_id) {
-            glDeleteTextures(1, &mesh.texture_id);
-        }
-    }
+    LOG_INFO("Destroying model: %s", path.c_str());
+    // automatically all ~destructors
+    meshes.clear();
 }
 
 

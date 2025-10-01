@@ -10,7 +10,7 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
         return;
     }
 
-    LOG_ERROR("ValidationLayer Type: 0x%x, Severity: 0x%x, ID: %u, Message: %s", type, severity, id, message);
+    LOG_WARN("ValidationLayer Type: 0x%x, Severity: 0x%x, ID: %u, Message: %s", type, severity, id, message);
 }
 
 
@@ -469,8 +469,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         LOG_INFO("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
-        const auto mesh = load_meshes(scene->mMeshes[i], scene, base_dir);
-        model->meshes.push_back(mesh);
+        model->meshes.push_back(load_mesh(scene->mMeshes[i], scene, base_dir));
     }
 
     _models[path] = model;
@@ -487,81 +486,87 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
                                       bool is_filled) {
 }
 
-Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
-    Mesh m;
-
+std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
+    auto m  = std::make_unique<OpenglMesh>();
+    m->name = mesh->mName.C_Str();
 
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
-        m.diffuse_color = {c.r, c.g, c.b};
+        m->material.diffuse = {c.r, c.g, c.b};
 
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             const std::string texture_path = base_dir + texPath.C_Str();
-
-            const auto tex = load_texture(texPath.C_Str(), texture_path);
-
-            if (!tex) {
-                LOG_WARN("Failed to load Texture for Mesh %s", mesh->mName.C_Str());
-            }
-
-            m.texture_id  = tex ? tex->id : 0;
-            m.has_texture = m.texture_id != 0;
+            const auto tex                 = load_texture(texPath.C_Str(), texture_path);
+            m->texture_id                  = tex ? tex->id : 0;
+            m->has_texture                 = m->texture_id != 0;
         }
     }
 
-    std::vector<float> verts;
-    verts.reserve(mesh->mNumFaces * 3 * 8);
+    std::vector<float> verts; // vertex attributes
+    std::vector<unsigned int> indices; // element indices
 
-    m.vertices.reserve(mesh->mNumVertices);
+    verts.reserve(mesh->mNumVertices * 8);
+    m->vertices.reserve(mesh->mNumVertices);
+    indices.reserve(mesh->mNumFaces * 3);
+
+    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+        const aiVector3D& v = mesh->mVertices[i];
+        verts.push_back(v.x);
+        verts.push_back(v.y);
+        verts.push_back(v.z);
+        m->vertices.push_back(glm::vec3(v.x, v.y, v.z));
+
+        if (mesh->HasNormals()) {
+            verts.push_back(mesh->mNormals[i].x);
+            verts.push_back(mesh->mNormals[i].y);
+            verts.push_back(mesh->mNormals[i].z);
+        } else {
+            verts.push_back(0);
+            verts.push_back(0);
+            verts.push_back(0);
+        }
+
+        if (mesh->HasTextureCoords(0)) {
+            verts.push_back(mesh->mTextureCoords[0][i].x);
+            verts.push_back(mesh->mTextureCoords[0][i].y);
+        } else {
+            verts.push_back(0);
+            verts.push_back(0);
+        }
+    }
 
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        aiFace face = mesh->mFaces[i];
+        const aiFace& face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            unsigned int idx = face.mIndices[j];
-
-            const aiVector3D& v = mesh->mVertices[idx];
-            m.vertices.push_back(glm::vec3(v.x, v.y, v.z));
-
-            verts.push_back(v.x);
-            verts.push_back(v.y);
-            verts.push_back(v.z);
-
-            if (mesh->HasNormals()) {
-                verts.push_back(mesh->mNormals[idx].x);
-                verts.push_back(mesh->mNormals[idx].y);
-                verts.push_back(mesh->mNormals[idx].z);
-            } else {
-                verts.push_back(0);
-                verts.push_back(0);
-                verts.push_back(0);
-            }
-
-            if (mesh->HasTextureCoords(0)) {
-                verts.push_back(mesh->mTextureCoords[0][idx].x);
-                verts.push_back(mesh->mTextureCoords[0][idx].y);
-            } else {
-                verts.push_back(0);
-                verts.push_back(0);
-            }
+            indices.push_back(face.mIndices[j]);
         }
     }
 
-    m.vertex_count = verts.size() / 8;
+    m->vertex_count = mesh->mNumVertices;
+    m->index_count  = indices.size();
 
-    glGenVertexArrays(1, &m.vao);
-    glGenBuffers(1, &m.vbo);
-    glBindVertexArray(m.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glGenVertexArrays(1, &m->vao);
+    glGenBuffers(1, &m->vbo);
+    glGenBuffers(1, &m->ebo);
+
+    glBindVertexArray(m->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);
+
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
@@ -569,6 +574,7 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
 
     return m;
 }
+
 
 void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
                                 const glm::vec3& viewPos) {
@@ -585,18 +591,32 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     default_shader->set_value("MODEL", t.get_model_matrix());
     default_shader->set_value("VIEW", view);
     default_shader->set_value("PROJECTION", projection);
-    default_shader->set_value("CAMERA_POSITION", viewPos);
 
-    for (const auto& mesh : model->meshes) {
-
-        default_shader->set_value("material.diffuse", mesh.diffuse_color);
-        default_shader->set_value("USE_TEXTURE", mesh.has_texture);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, mesh.texture_id);
-        glBindVertexArray(mesh.vao);
-        glDrawArrays(draw_mode, 0, mesh.vertex_count);
-        glBindVertexArray(0);
+    std::unordered_map<GLuint, std::vector<Mesh*>> batches;
+    for (auto& mesh : model->meshes) {
+        batches[mesh->texture_id].push_back(mesh.get());
     }
+
+    for (auto& [tex, meshes] : batches) {
+        if (tex != 0) {
+            glBindTexture(GL_TEXTURE_2D, tex);
+        }
+
+        default_shader->set_value("USE_TEXTURE", tex != 0);
+
+        for (auto* mesh : meshes) {
+            default_shader->set_value("material.diffuse", mesh->material.diffuse);
+            glBindVertexArray(mesh->vao);
+            if (mesh->ebo) {
+                glDrawElements(draw_mode, mesh->index_count, GL_UNSIGNED_INT, 0);
+            } else {
+                glDrawArrays(draw_mode, 0, mesh->vertex_count);
+            }
+        }
+    }
+
+    glBindVertexArray(0);
+
 }
 
 

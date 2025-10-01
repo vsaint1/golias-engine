@@ -83,3 +83,11 @@ inline T OpenglShader::get_value(const std::string& name) {
 
     return T();
 }
+
+
+class OpenglMesh : public Mesh {
+public:
+    void destroy() override;
+
+    ~OpenglMesh();
+};
