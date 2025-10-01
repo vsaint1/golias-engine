@@ -152,7 +152,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 #pragma endregion
 
 
-    _renderer->load_texture("ui_icons", ASSETS_PATH + "ui/icons/icons_64.png");
+    _renderer->load_texture("ui_icons","res://ui/icons/icons_64.png");
 
     _timer.start();
 

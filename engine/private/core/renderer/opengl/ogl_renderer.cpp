@@ -15,22 +15,21 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 
 
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
-    std::string full = ASSETS_PATH + atlasPath;
 
-    LOG_INFO("Loading cubemap atlas: %s", full.c_str());
+    LOG_INFO("Loading cubemap atlas: %s", atlasPath.c_str());
 
 
     FileAccess file = FileAccess(atlasPath, ModeFlags::READ);
 
     if (!file.is_open()) {
-        LOG_ERROR("Failed to open file %s", full.c_str());
+        LOG_ERROR("Failed to open file %s", atlasPath.c_str());
         return 0;
     }
 
     SDL_Surface* surf = IMG_Load_IO(file.get_handle(), false);
 
     if (!surf) {
-        LOG_ERROR("Failed to load %s -> %s", full.c_str(), SDL_GetError());
+        LOG_ERROR("Failed to load %s -> %s", atlasPath.c_str(), SDL_GetError());
         return 0;
     }
 
@@ -38,7 +37,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
 
     surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
     if (!surf) {
-        LOG_ERROR("Conversion failed %s", full.c_str());
+        LOG_ERROR("Conversion failed %s", atlasPath.c_str());
         return 0;
     }
 
@@ -192,7 +191,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-    LOG_INFO("Loaded Cubemap atlas %s (%dx%d), Layout %d, Face %dx%d, TexID: %d", full.c_str(), W, H, layout, face_w, face_h, texID);
+    LOG_INFO("Loaded Cubemap atlas %s (%dx%d), Layout %d, Face %dx%d, TexID: %d", atlasPath.c_str(), W, H, layout, face_w, face_h, texID);
 
     SDL_DestroySurface(surf);
     return texID;
