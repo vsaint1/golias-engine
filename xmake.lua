@@ -17,7 +17,7 @@ add_requires("flecs v4.1.1", {configs = {shared = false}})
 add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 add_requires("glm 1.0.1", {configs = {shared = false}})
 add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
-add_requires("assimp v5.4.0", {configs = {shared = false, android_jniiosysystem = true}})
+add_requires("assimp v5.4.0", {configs = {shared = false}})
 
 
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
