@@ -589,7 +589,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     // TODO: wireframe mode
     const auto draw_mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 
-    default_shader->bind();
+    default_shader->activate();
 
     default_shader->set_value("MODEL", t.get_model_matrix());
     default_shader->set_value("VIEW", view);
@@ -625,7 +625,7 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
 
     glDepthFunc(GL_LEQUAL);
 
-    skybox_shader->bind();
+    skybox_shader->activate();
 
     skybox_shader->set_value("VIEW", view);
     skybox_shader->set_value("PROJECTION", projection);
@@ -696,7 +696,7 @@ void OpenglRenderer::setup_default_shaders() {
     }
 
 
-    default_shader->bind();
+    default_shader->activate();
     default_shader->set_value("LIGHT_POSITION", glm::vec3(10, 10, 10));
     default_shader->set_value("LIGHT_COLOR", glm::vec3(1, 1, 1));
     default_shader->set_value("TEXTURE", 0);

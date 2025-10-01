@@ -12,7 +12,7 @@ public:
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
-    void bind() const override;
+    void activate() const override;
 
     void set_value(const std::string& name, float value) override;
 

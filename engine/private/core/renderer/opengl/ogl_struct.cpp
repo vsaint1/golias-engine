@@ -100,7 +100,7 @@ bool OpenglShader::is_valid() const {
     return true;
 }
 
-void OpenglShader::bind() const {
+void OpenglShader::activate() const {
     glUseProgram(id);
 }
 

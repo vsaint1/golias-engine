@@ -114,7 +114,7 @@ public:
 
     virtual ~Shader() = default;
 
-    virtual void bind() const = 0;
+    virtual void activate() const = 0;
 
     virtual void set_value(const std::string& name, float value) = 0;
 
