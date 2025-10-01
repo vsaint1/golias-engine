@@ -507,6 +507,8 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
             const auto tex                 = load_texture(texPath.C_Str(), texture_path);
             m->texture_id                  = tex ? tex->id : 0;
         }
+
+        // m->material.shininess = mat->Get(AI_MATKEY_SHININESS, m->material.shininess) == AI_SUCCESS ? m->material.shininess : 1.0f;
     }
 
     std::vector<float> verts; // vertex attributes
@@ -616,9 +618,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
         mesh->bind();
 
         mesh->draw(draw_mode);
-
     }
-
 }
 
 
