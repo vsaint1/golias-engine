@@ -419,6 +419,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
         return _textures[name];
     }
 
+    LOG_INFO("Loading texture: %s", path.c_str());
 
     FileAccess file_access(path, ModeFlags::READ);
 
@@ -428,6 +429,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     }
 
     SDL_Surface* surf = IMG_Load_IO(file_access.get_handle(), false);
+    // SDL_Surface* surf = IMG_Load(path.c_str());
 
     if (!surf) {
         LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
@@ -471,43 +473,38 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
 
 std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
-    std::string base_dir = ASSETS_PATH + path;
 
-    if (_models.contains(base_dir)) {
-        return _models[base_dir];
+    if (_models.contains(path)) {
+        return _models[path];
     }
 
-    // LOG_INFO("Loading Model: %s, base_dir: %s", path, base_dir.c_str());
+    std::string base_dir = ASSETS_PATH + path;
+    // FileAccess file(path, ModeFlags::READ);
 
-    // SDL_IOStream* rw = SDL_IOFromFile(base_dir.c_str(), "rb");
-    // if (!rw) {
-    //     LOG_ERROR("Failed to open Model file: %s, Error: %s", base_dir.c_str(), SDL_GetError());
+    // std::string base_dir = file.get_path();
+    // if (!file.is_open()) {
+    //     LOG_ERROR("Failed to open model file: %s", path);
     //     return nullptr;
     // }
 
-    // Sint64 size = SDL_GetIOSize(rw);
-    // if (size <= 0) {
-    //     LOG_ERROR("Failed to get size for Model file: %s", base_dir.c_str());
-    //     SDL_CloseIO(rw);
-    //     return nullptr;
-    // }
+    // const auto buffer = file.get_file_as_bytes();
 
-    // std::vector<char> buffer(size);
-    // if (SDL_ReadIO(rw, buffer.data(),  size) != size) {
-    //     LOG_ERROR("Failed to read Model file: %s", base_dir.c_str());
-    //     SDL_CloseIO(rw);
+    // if (buffer.empty()) {
+    //     LOG_ERROR("Failed to import Model");
     //     return nullptr;
     // }
-    // SDL_CloseIO(rw);
 
     Assimp::Importer importer;
 
+    std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
 
-    const auto flags = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
-                     | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
+                            | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+
+    // const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), ASSIMP_FLAGS, ext.c_str());
 
     // NOTE: on android this doesnt work, needs to read from memory buffer
-    const aiScene* scene = importer.ReadFile(base_dir, flags);
+    const aiScene* scene = importer.ReadFile(base_dir, ASSIMP_FLAGS);
 
     if (!scene || !scene->mRootNode) {
         LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
@@ -515,7 +512,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     }
 
     auto model  = std::make_shared<Model>();
-    model->path = base_dir;
+    model->path = path;
 
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* mat = scene->mMaterials[i];
@@ -533,7 +530,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     }
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s  Mesh Count:  %zu", path, model->meshes.size());
+    LOG_INFO("Loaded Model: %s,  Mesh Count:  %zu, FileFormat: %s", path, model->meshes.size(), ext.c_str());
 
     return model;
 }
@@ -549,8 +546,10 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
 Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
     Mesh m;
 
+
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+     
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
         m.diffuse_color = {c.r, c.g, c.b};
@@ -559,7 +558,7 @@ Mesh OpenglRenderer::load_meshes(aiMesh* mesh, const aiScene* scene, const std::
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             const std::string texture_path = base_dir + texPath.C_Str();
 
-            const auto tex                 = load_texture(texPath.C_Str(),texture_path);
+            const auto tex = load_texture(texPath.C_Str(), texture_path);
 
             if (!tex) {
                 LOG_WARN("Failed to load Texture for Mesh %s", mesh->mName.C_Str());
