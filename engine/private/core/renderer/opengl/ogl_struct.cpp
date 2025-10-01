@@ -162,6 +162,24 @@ void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 co
     glUniform4fv(location, count, glm::value_ptr(value));
 }
 
+void OpenglMesh::bind() {
+    glBindVertexArray(vao);
+ 
+}
+
+void OpenglMesh::draw(EDrawMode mode) {
+
+   auto draw_mode = mode == EDrawMode::TRIANGLES ? GL_TRIANGLES : GL_LINES;
+    if (ebo) {
+        glDrawElements(draw_mode, index_count, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(draw_mode, 0, vertex_count);
+    }
+}
+
+void OpenglMesh::unbind() {
+    glBindVertexArray(0);
+}
 
 void OpenglMesh::destroy() {
 

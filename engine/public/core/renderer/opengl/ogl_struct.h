@@ -87,6 +87,19 @@ inline T OpenglShader::get_value(const std::string& name) {
 
 class OpenglMesh : public Mesh {
 public:
+    Uint32 vao        = 0;
+    Uint32 vbo        = 0;
+    Uint32 ebo        = 0;
+    Uint32 texture_id = 0;
+
+    bool has_texture() const override { return texture_id != 0; }
+
+    void bind() override;
+    
+    void draw(EDrawMode mode) override;
+    
+    void unbind() override;
+
     void destroy() override;
 
     ~OpenglMesh();

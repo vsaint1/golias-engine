@@ -215,16 +215,21 @@ void OpenglRenderer::setup_cubemap() {
 
         -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
-    glGenVertexArrays(1, &skybox_vao);
-    glGenBuffers(1, &skybox_vbo);
-    glBindVertexArray(skybox_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, skybox_vbo);
+    skybox_mesh = new OpenglMesh();
+    skybox_mesh->vertex_count = 36;
+
+    glGenVertexArrays(1, &skybox_mesh->vao);
+    glGenBuffers(1, &skybox_mesh->vbo);
+    glBindVertexArray(skybox_mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, skybox_mesh->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skybox_vertices), skybox_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
     glBindVertexArray(0);
 
     skybox_shader = new OpenglShader("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
+
+    skybox_mesh->texture_id = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     LOG_INFO("Environment setup complete");
 }
@@ -321,7 +326,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     // TODO: create api to handle environment setup
     setup_cubemap();
-    skybox_texture = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     const auto& viewport = GEngine->get_config().get_viewport();
     // LOG_INFO("Using backend: %s, Viewport: %dx%d", viewport.width, viewport.height);
@@ -490,6 +494,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     auto m  = std::make_unique<OpenglMesh>();
     m->name = mesh->mName.C_Str();
 
+
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
@@ -502,7 +507,6 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
             const std::string texture_path = base_dir + texPath.C_Str();
             const auto tex                 = load_texture(texPath.C_Str(), texture_path);
             m->texture_id                  = tex ? tex->id : 0;
-            m->has_texture                 = m->texture_id != 0;
         }
     }
 
@@ -561,13 +565,13 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
@@ -584,7 +588,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     }
 
     // TODO: wireframe mode
-    const auto draw_mode = GEngine->get_config().is_debug ? GL_LINES : GL_TRIANGLES;
+    const auto draw_mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 
     default_shader->bind();
 
@@ -592,31 +596,25 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
     default_shader->set_value("VIEW", view);
     default_shader->set_value("PROJECTION", projection);
 
-    std::unordered_map<GLuint, std::vector<Mesh*>> batches;
+
     for (auto& mesh : model->meshes) {
-        batches[mesh->texture_id].push_back(mesh.get());
-    }
 
-    for (auto& [tex, meshes] : batches) {
-        if (tex != 0) {
-            glBindTexture(GL_TEXTURE_2D, tex);
+        if (!mesh) {
+            continue;
         }
 
-        default_shader->set_value("USE_TEXTURE", tex != 0);
-
-        for (auto* mesh : meshes) {
-            default_shader->set_value("material.diffuse", mesh->material.diffuse);
-            glBindVertexArray(mesh->vao);
-            if (mesh->ebo) {
-                glDrawElements(draw_mode, mesh->index_count, GL_UNSIGNED_INT, 0);
-            } else {
-                glDrawArrays(draw_mode, 0, mesh->vertex_count);
-            }
+        if (mesh->has_texture()) {
+            default_shader->set_value("USE_TEXTURE", mesh->has_texture());
         }
+
+        default_shader->set_value("material.diffuse", mesh->material.diffuse);
+
+        mesh->bind();
+
+        mesh->draw(draw_mode);
     }
 
     glBindVertexArray(0);
-
 }
 
 
@@ -633,11 +631,13 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
     skybox_shader->set_value("VIEW", view);
     skybox_shader->set_value("PROJECTION", projection);
 
-    glBindVertexArray(skybox_vao);
+    skybox_mesh->bind();
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_mesh->texture_id);
+    
+    skybox_mesh->draw(EDrawMode::TRIANGLES);
+
+    skybox_mesh->unbind();
 
     glDepthFunc(GL_LESS);
 }
@@ -673,10 +673,9 @@ OpenglRenderer::~OpenglRenderer() {
 
 
     // cubemap resources
-    glDeleteVertexArrays(1, &skybox_vao);
-    glDeleteBuffers(1, &skybox_vbo);
-    glDeleteTextures(1, &skybox_texture);
-    // glDeleteProgram(cubemap_shader_program);
+    delete skybox_mesh;
+    skybox_mesh = nullptr;
+
     delete skybox_shader;
     skybox_shader = nullptr;
 

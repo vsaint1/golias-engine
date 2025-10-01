@@ -61,8 +61,7 @@ protected:
  
     std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir);
 
-    // TODO: create a mesh clazz!!
-    GLuint skybox_vao             = 0, skybox_vbo = 0, skybox_texture = 0;
+    OpenglMesh* skybox_mesh = nullptr;
 
     OpenglShader* default_shader = nullptr;
     OpenglShader* skybox_shader = nullptr;

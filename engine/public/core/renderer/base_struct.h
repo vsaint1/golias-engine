@@ -58,20 +58,38 @@ struct Material {
     float shininess    = 1.f;
 };
 
+
+struct Vertex {
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 uv;
+};
+
+enum class EDrawMode {
+    LINES,
+    TRIANGLES,
+};
+
 struct Mesh {
-  std::string name = "UNNAMED_MESH";
-    Uint32 vao = 0;
-    Uint32 vbo = 0;
-    Uint32 ebo = 0;           
-    Uint32 texture_id = 0;
-    bool has_texture = false;
+    std::string name = "UNNAMED_MESH";
+
     size_t vertex_count = 0;
-    size_t index_count = 0;   
+    size_t index_count  = 0;
+
     std::vector<glm::vec3> vertices;
-    std::vector<unsigned int> indices; 
+    std::vector<unsigned int> indices;
+
     Material material;
 
-    Mesh() = default;
+    virtual bool has_texture() const = 0;
+
+    virtual void bind() = 0;
+
+    virtual void draw(EDrawMode mode = EDrawMode::TRIANGLES) = 0;
+
+    virtual void unbind() = 0;
+
+    Mesh()          = default;
     virtual ~Mesh() = default;
 
 protected:
