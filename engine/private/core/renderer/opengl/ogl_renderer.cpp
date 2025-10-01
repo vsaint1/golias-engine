@@ -214,7 +214,7 @@ void OpenglRenderer::setup_cubemap() {
 
         -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
-    skybox_mesh = new OpenglMesh();
+    skybox_mesh               = new OpenglMesh();
     skybox_mesh->vertex_count = 36;
 
     glGenVertexArrays(1, &skybox_mesh->vao);
@@ -602,18 +602,23 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
             continue;
         }
 
-        if (mesh->has_texture()) {
-            default_shader->set_value("USE_TEXTURE", mesh->has_texture());
-        }
+        const auto opengl_mesh = static_cast<const OpenglMesh*>(mesh.get());
 
-        default_shader->set_value("material.diffuse", mesh->material.diffuse);
+        if (mesh->has_texture()) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, opengl_mesh->texture_id);
+            default_shader->set_value("USE_TEXTURE", opengl_mesh->has_texture());
+        } else {
+            default_shader->set_value("USE_TEXTURE", 0);
+            default_shader->set_value("material.diffuse", opengl_mesh->material.diffuse);
+        }
 
         mesh->bind();
 
         mesh->draw(draw_mode);
+
     }
 
-    glBindVertexArray(0);
 }
 
 
@@ -633,7 +638,7 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
     skybox_mesh->bind();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_mesh->texture_id);
-    
+
     skybox_mesh->draw(EDrawMode::TRIANGLES);
 
     skybox_mesh->unbind();
