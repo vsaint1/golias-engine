@@ -333,6 +333,8 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glCullFace(GL_BACK);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     // glViewport(0, 0, viewport.width, viewport.height);
 
@@ -346,7 +348,7 @@ void OpenglRenderer::clear(glm::vec4 color) {
     const auto& window = GEngine->get_config().get_window();
     glViewport(0, 0, window.width, window.height);
     glClearColor(color.r, color.g, color.b, color.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void OpenglRenderer::present() {
@@ -618,6 +620,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const 
         mesh->bind();
 
         mesh->draw(draw_mode);
+
     }
 }
 
