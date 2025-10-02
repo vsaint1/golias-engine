@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/renderer/renderer.h"
 #include "core/renderer/opengl/ogl_struct.h"
+#include "core/renderer/renderer.h"
 
 
 class OpenglRenderer final : public Renderer {
@@ -23,7 +23,8 @@ public:
 
     void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
 
-    void draw_text_3d(const Transform3D& transform,const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
+    void draw_text_3d(const Transform3D& transform, const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color,
+                      const std::string& font_name, const char* fmt, ...) override;
 
     void draw_rect(const Transform2D& transform, float w, float h, glm::vec4 color, bool is_filled) override;
 
@@ -45,7 +46,7 @@ public:
 
     void draw_model(const Transform3D& t, const Model* model) override;
 
-    void draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) override;
+    void draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader) override;
 
     void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
 
@@ -59,14 +60,14 @@ private:
     void setup_cubemap();
 
 protected:
- 
     std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) override;
 
-    OpenglMesh* skybox_mesh = nullptr;
+    OpenglMesh* skybox_mesh               = nullptr;
+    std::shared_ptr<OpenglMesh> cube_mesh = nullptr;
 
     OpenglShader* default_shader = nullptr;
-    OpenglShader* skybox_shader = nullptr;
-    
+    OpenglShader* skybox_shader  = nullptr;
+
     std::vector<Tokens> parse_text(const std::string& text) override;
 
     void draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) override;

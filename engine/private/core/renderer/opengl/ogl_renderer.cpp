@@ -14,6 +14,87 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 }
 
 
+std::shared_ptr<OpenglMesh> generate_cube_mesh() {
+    auto mesh = std::make_shared<OpenglMesh>();
+
+    std::vector<Vertex> vertices = {
+        // Front face
+        {{-0.5f, -0.5f, 0.5f}, {0, 0, 1}, {0, 0}},
+        {{0.5f, -0.5f, 0.5f}, {0, 0, 1}, {1, 0}},
+        {{0.5f, 0.5f, 0.5f}, {0, 0, 1}, {1, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {0, 0, 1}, {0, 1}},
+
+        // Back face
+        {{0.5f, -0.5f, -0.5f}, {0, 0, -1}, {0, 0}},
+        {{-0.5f, -0.5f, -0.5f}, {0, 0, -1}, {1, 0}},
+        {{-0.5f, 0.5f, -0.5f}, {0, 0, -1}, {1, 1}},
+        {{0.5f, 0.5f, -0.5f}, {0, 0, -1}, {0, 1}},
+
+        // Left face
+        {{-0.5f, -0.5f, -0.5f}, {-1, 0, 0}, {0, 0}},
+        {{-0.5f, -0.5f, 0.5f}, {-1, 0, 0}, {1, 0}},
+        {{-0.5f, 0.5f, 0.5f}, {-1, 0, 0}, {1, 1}},
+        {{-0.5f, 0.5f, -0.5f}, {-1, 0, 0}, {0, 1}},
+
+        // Right face
+        {{0.5f, -0.5f, 0.5f}, {1, 0, 0}, {0, 0}},
+        {{0.5f, -0.5f, -0.5f}, {1, 0, 0}, {1, 0}},
+        {{0.5f, 0.5f, -0.5f}, {1, 0, 0}, {1, 1}},
+        {{0.5f, 0.5f, 0.5f}, {1, 0, 0}, {0, 1}},
+
+        // Top face
+        {{-0.5f, 0.5f, 0.5f}, {0, 1, 0}, {0, 0}},
+        {{0.5f, 0.5f, 0.5f}, {0, 1, 0}, {1, 0}},
+        {{0.5f, 0.5f, -0.5f}, {0, 1, 0}, {1, 1}},
+        {{-0.5f, 0.5f, -0.5f}, {0, 1, 0}, {0, 1}},
+
+        // Bottom face
+        {{-0.5f, -0.5f, -0.5f}, {0, -1, 0}, {0, 0}},
+        {{0.5f, -0.5f, -0.5f}, {0, -1, 0}, {1, 0}},
+        {{0.5f, -0.5f, 0.5f}, {0, -1, 0}, {1, 1}},
+        {{-0.5f, -0.5f, 0.5f}, {0, -1, 0}, {0, 1}},
+    };
+
+    std::vector<unsigned int> indices = {
+        0,  1,  2,  0,  2,  3, // Front
+        4,  5,  6,  4,  6,  7, // Back
+        8,  9,  10, 8,  10, 11, // Left
+        12, 13, 14, 12, 14, 15, // Right
+        16, 17, 18, 16, 18, 19, // Top
+        20, 21, 22, 20, 22, 23 // Bottom
+    };
+
+    mesh->vertex_count = 24;
+    mesh->index_count  = 36;
+
+
+    glGenVertexArrays(1, &mesh->vao);
+    glGenBuffers(1, &mesh->vbo);
+    glGenBuffers(1, &mesh->ebo);
+
+    glBindVertexArray(mesh->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+
+    return mesh;
+}
+
+
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
 
     LOG_INFO("Loading cubemap atlas: %s", atlasPath.c_str());
@@ -329,6 +410,8 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     const auto& viewport = GEngine->get_config().get_viewport();
     // LOG_INFO("Using backend: %s, Viewport: %dx%d", viewport.width, viewport.height);
 
+    cube_mesh = generate_cube_mesh();
+
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
@@ -583,8 +666,6 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 }
 
 
-
-
 void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
 
 
@@ -654,7 +735,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             ogl_shader->set_value("material.diffuse", mesh->material.diffuse);
         }
 
-        auto mode=  batch.mode == EDrawMode::LINES ? GL_LINES : GL_TRIANGLES;
+        auto mode = batch.mode == EDrawMode::LINES ? GL_LINES : GL_TRIANGLES;
         glDrawElementsInstanced(mode, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
 
         glBindVertexArray(0);
@@ -667,8 +748,21 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     draw_environment(view, projection);
 }
 
+void OpenglRenderer::draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader) {
 
-void OpenglRenderer::draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) {
+    if (!cube_mesh) {
+        return;
+    }
+
+    Transform3D temp = transform;
+    temp.scale *= cube.size;
+
+    auto& batch                  = _instanced_batches[cube_mesh.get()];
+    batch.mesh                   = cube_mesh.get();
+    batch.mesh->material.diffuse = cube.color;
+    batch.shader                 = default_shader;
+    batch.models.push_back(temp.get_model_matrix());
+    batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 }
 
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {

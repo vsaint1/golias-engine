@@ -10,7 +10,7 @@
     @version 0.0.3
 */
 struct InstancedBatch {
-    const Mesh* mesh; /// Model->meshes[i]
+    Mesh* mesh; /// Model->meshes[i]
     Shader* shader = nullptr; /// Shader to use for rendering
     std::vector<glm::mat4> models; /// model matrices for instancing
     EDrawMode mode = EDrawMode::TRIANGLES;
@@ -82,7 +82,8 @@ public:
         LOG_WARN("draw_model not implemented for this renderer");
     }
 
-    virtual void draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) {
+    // TODO: add shader parameter
+    virtual void draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader = nullptr) {
         LOG_WARN("draw_cube not implemented for this renderer");
     }
 
@@ -123,6 +124,5 @@ protected:
     std::string _emoji_font_name;
 
     // batching/instancing
-
     std::unordered_map<const Mesh*, InstancedBatch> _instanced_batches;
 };
