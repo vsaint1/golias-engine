@@ -13,6 +13,7 @@ struct InstancedBatch {
     Mesh* mesh; /// Model->meshes[i]
     Shader* shader = nullptr; /// Shader to use for rendering
     std::vector<glm::mat4> models; /// model matrices for instancing
+    std::vector<glm::vec3> colors; /// colors for instancing (later)
     EDrawMode mode = EDrawMode::TRIANGLES;
 };
 

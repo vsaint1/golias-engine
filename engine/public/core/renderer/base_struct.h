@@ -53,7 +53,7 @@ public:
 };
 
 struct Material {
-    glm::vec3 diffuse  = glm::vec3(0.5f);
+    glm::vec3 albedo  = glm::vec3(1.f);
     glm::vec3 specular = glm::vec3(1.f);
     float shininess    = 1.f;
     glm::vec3 emissive = glm::vec3(0.f);

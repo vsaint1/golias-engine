@@ -5,7 +5,7 @@ void Renderer::set_default_fonts(const std::string& text_font, const std::string
     _default_font_name = text_font;
     _emoji_font_name   = emoji_font;
 
-    LOG_INFO("Default fonts set: Text: %s, Emoji: %s", text_font.c_str(), emoji_font.c_str());
+    LOG_INFO("Default fonts set: Text: %s | Emoji: %s", text_font.c_str(), emoji_font.c_str());
 }
 
 
