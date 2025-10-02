@@ -83,6 +83,12 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
         GEngine->get_renderer()->draw_model(t, model.get());
     });
 
+    // Render all cubes in the scene
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Cube& cube) {
+        GEngine->get_renderer()->draw_cube(t, cube);
+    });
+
+
     // Flush
     GEngine->get_renderer()->flush(camera.get_view(), camera.get_projection(window.width, window.height));
 }
@@ -114,7 +120,6 @@ void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& eve
 }
 
 
-
 void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta) {
 
 
@@ -137,7 +142,7 @@ void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta
     }
 
 
-    camera.speed = state[SDL_SCANCODE_LSHIFT] ? 30.0f : 10.0f;
+    camera.speed = state[SDL_SCANCODE_LSHIFT] ? 100.0f : 50.0f;
 }
 
 
