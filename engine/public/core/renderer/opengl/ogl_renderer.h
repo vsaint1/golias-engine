@@ -39,10 +39,11 @@ public:
 
     void draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3, const glm::vec4& color, bool is_filled) override;
 
+    void flush(const glm::mat4& view, const glm::mat4& projection) override;
+
     ~OpenglRenderer() override;
 
-    void draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
-                    const glm::vec3& viewPos) override;
+    void draw_model(const Transform3D& t, const Model* model) override;
 
     void draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) override;
 

@@ -76,13 +76,15 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     }
 
     const auto& window = GEngine->get_config().get_window();
-    GEngine->get_renderer()->draw_environment(camera.get_view(), camera.get_projection(window.width, window.height));
 
     // Render all 3D models in the scene
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const std::shared_ptr<Model>& model) {
-        GEngine->get_renderer()->draw_model(t, model.get(), camera.get_view(), camera.get_projection(window.width, window.height),
-                                            camera.position);
+        // push to instanced_batches
+        GEngine->get_renderer()->draw_model(t, model.get());
     });
+
+    // Flush
+    GEngine->get_renderer()->flush(camera.get_view(), camera.get_projection(window.width, window.height));
 }
 
 

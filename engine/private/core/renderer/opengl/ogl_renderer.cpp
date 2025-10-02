@@ -583,45 +583,88 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 }
 
 
-void OpenglRenderer::draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
-                                const glm::vec3& viewPos) {
+
+
+void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
+
 
     if (!model || !default_shader) {
         return;
     }
 
-    // TODO: wireframe mode
-    const auto draw_mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
-
-    default_shader->activate();
-
-    default_shader->set_value("MODEL", t.get_model_matrix());
-    default_shader->set_value("VIEW", view);
-    default_shader->set_value("PROJECTION", projection);
-
-
     for (auto& mesh : model->meshes) {
-
         if (!mesh) {
             continue;
         }
 
-        const auto opengl_mesh = static_cast<const OpenglMesh*>(mesh.get());
+        auto& batch  = _instanced_batches[mesh.get()];
+        batch.mesh   = mesh.get();
+        batch.shader = default_shader;
+        batch.models.push_back(t.get_model_matrix());
+        batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
+    }
+}
 
-        if (mesh->has_texture()) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, opengl_mesh->texture_id);
-            default_shader->set_value("USE_TEXTURE", opengl_mesh->has_texture());
-        } else {
-            default_shader->set_value("USE_TEXTURE", 0);
-            default_shader->set_value("material.diffuse", opengl_mesh->material.diffuse);
+void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
+
+
+    // DrawInstanced
+    for (auto& [_, batch] : _instanced_batches) {
+        const Mesh* mesh = batch.mesh;
+        auto shader      = batch.shader;
+        auto& models     = batch.models;
+
+        if (!mesh || !shader || models.empty()) {
+            continue;
         }
 
-        mesh->bind();
+        OpenglShader* ogl_shader = static_cast<OpenglShader*>(shader);
 
-        mesh->draw(draw_mode);
+        shader->activate();
+        ogl_shader->set_value("VIEW", view);
+        ogl_shader->set_value("PROJECTION", projection);
 
+
+        const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
+
+        if (!ogl_shader->is_valid() || !ogl_mesh) {
+            continue;
+        }
+
+        GLuint instanceVBO;
+        glGenBuffers(1, &instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STATIC_DRAW);
+
+        glBindVertexArray(ogl_mesh->vao);
+
+        for (int i = 0; i < 4; i++) {
+            glEnableVertexAttribArray(3 + i);
+            glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*) (i * sizeof(glm::vec4)));
+            glVertexAttribDivisor(3 + i, 1);
+        }
+
+
+        if (ogl_mesh->has_texture()) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
+            ogl_shader->set_value("USE_TEXTURE", 1);
+        } else {
+            ogl_shader->set_value("USE_TEXTURE", 0);
+            ogl_shader->set_value("material.diffuse", mesh->material.diffuse);
+        }
+
+        auto mode=  batch.mode == EDrawMode::LINES ? GL_LINES : GL_TRIANGLES;
+        glDrawElementsInstanced(mode, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
+
+        glBindVertexArray(0);
+        glDeleteBuffers(1, &instanceVBO);
     }
+
+    _instanced_batches.clear();
+
+    // Draw the "World Environment" ( the last )
+    draw_environment(view, projection);
 }
 
 
