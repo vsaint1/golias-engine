@@ -18,7 +18,7 @@ add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 add_requires("glm 1.0.1", {configs = {shared = false}})
 add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
 add_requires("assimp v5.4.0", {configs = {shared = false}})
-
+add_requires("nuklear 4.12.7", {configs = {shared = false}})
 
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
@@ -33,7 +33,6 @@ target("engine")
     set_kind("static")
     add_files("engine/private/**/*.cpp")
     add_includedirs("engine/public", {public = true})
-    
    
     add_deps("glad") -- using glad vendored, from repository cant build to wasm
 
@@ -41,6 +40,7 @@ target("engine")
     add_files("vendor/glad/src/glad.c")
 
     set_pcxxheader("engine/public/stdafx.h")
+
 
     add_packages(
         "libsdl3",
@@ -54,6 +54,7 @@ target("engine")
         "miniaudio",
         "tinyxml2",
         "assimp",
+        "nuklear",
         {public = true}
     )
 
