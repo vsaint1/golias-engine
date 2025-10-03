@@ -1,7 +1,13 @@
 set_project("ember_engine")
 set_languages("cxx20")
 set_license("MIT")
-set_version("0.0.1", {build = "%Y%m%d%H%M"})
+
+local base_version = "0.0.3"
+
+set_version(base_version, {build = "%Y%m%d%H%M"})
+
+
+add_defines(string.format("ENGINE_VERSION_STR=\"%s\"", base_version))
 
 add_rules("plugin.compile_commands.autoupdate", {outputdir = ".vscode"})
 add_rules("mode.debug", "mode.release")
@@ -20,9 +26,20 @@ add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}
 add_requires("assimp v5.4.0", {configs = {shared = false}})
 add_requires("nuklear 4.12.7", {configs = {shared = false}})
 
+add_options("mode", {description = "Engine mode 2D/3D", default = "2D", values = {"2D", "3D"}})
+
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
 end
+
+if get_config("mode") == "3D" then
+    add_defines("EMBER_3D")
+    printf("Ember Engine - Building in 3D mode (OPENGL) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
+else
+    add_defines("EMBER_2D")
+    printf("Ember Engine - Building in 2D mode (AUTO) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
+end
+
 
 target("glad")
     set_kind("static")
@@ -32,6 +49,7 @@ target("glad")
 target("engine")
     set_kind("static")
     add_files("engine/private/**/*.cpp")
+    add_files("engine/private/*.cpp")
     add_includedirs("engine/public", {public = true})
    
     add_deps("glad") -- using glad vendored, from repository cant build to wasm
@@ -40,6 +58,9 @@ target("engine")
     add_files("vendor/glad/src/glad.c")
 
     set_pcxxheader("engine/public/stdafx.h")
+
+
+
 
 
     add_packages(
@@ -57,6 +78,12 @@ target("engine")
         "nuklear",
         {public = true}
     )
+
+    if is_plat("windows") then
+        set_toolchains("msvc")
+
+        add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "_CRT_SECURE_NO_WARNINGS")
+    end
 
     if is_plat("android") or is_plat("linux") then
         add_cxflags("-fPIC")

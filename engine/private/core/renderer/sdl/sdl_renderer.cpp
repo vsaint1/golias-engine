@@ -1,6 +1,10 @@
 #include "core/renderer/sdl/sdl_renderer.h"
 #include "core/engine.h"
 
+
+
+
+
 bool SDLRenderer::initialize(SDL_Window* window) {
 
     _window = window;

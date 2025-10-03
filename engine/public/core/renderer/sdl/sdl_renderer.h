@@ -4,6 +4,7 @@
 #include "core/renderer/sdl/sdl_struct.h"
 
 
+
 /*!
 
     @file sdl_renderer.h
