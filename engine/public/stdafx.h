@@ -69,3 +69,5 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 
 #include "definitions.h"
 
+#define MAX_VERTEX_MEMORY 512 * 1024
+#define MAX_ELEMENT_MEMORY 128 * 1024
