@@ -41,6 +41,7 @@ bool SDLRenderer::initialize(SDL_Window* window) {
     LOG_INFO("Using backend: %s, Viewport: %dx%d", renderer_name, viewport.width, viewport.height);
     SDL_SetRenderLogicalPresentation(_renderer, viewport.width, viewport.height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
+    // SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
 
     return true;
 }
@@ -48,12 +49,15 @@ bool SDLRenderer::initialize(SDL_Window* window) {
 
 void SDLRenderer::clear(glm::vec4 color) {
 
+
     SDL_SetRenderDrawColor(_renderer, (Uint8) (color.r * 255), (Uint8) (color.g * 255), (Uint8) (color.b * 255), (Uint8) (color.a * 255));
     SDL_RenderClear(_renderer);
 }
 
 void SDLRenderer::present() {
+
     SDL_RenderPresent(_renderer);
+
 }
 
 
@@ -272,7 +276,15 @@ std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, cons
         return _textures[name];
     }
 
-    SDL_Surface* surface = IMG_Load(path.c_str());
+    FileAccess file(path, ModeFlags::READ);
+
+    if(!file.is_open()) {
+        LOG_ERROR("Failed to open Texture file %s", path.c_str());
+        return nullptr;
+    }
+
+    SDL_Surface* surface = IMG_Load_IO(file.get_handle(),false);
+
     if (!surface) {
         LOG_ERROR("Failed to load Texture %s: %s", path.c_str(), SDL_GetError());
         return nullptr;
