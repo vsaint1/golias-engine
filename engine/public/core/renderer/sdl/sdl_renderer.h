@@ -22,6 +22,10 @@ public:
 
     void present() override;
 
+    void* get_context() override{
+        return (void*)_renderer;
+    }
+
     bool load_font(const std::string& name, const std::string& path, int size) override;
     
     std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path) override;

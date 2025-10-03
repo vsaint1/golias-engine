@@ -12,6 +12,9 @@ public:
 
     void present() override;
 
+    void* get_context() override {
+        return _context;
+    }
 
     bool load_font(const std::string& name, const std::string& path, int size) override;
 

@@ -33,6 +33,8 @@ public:
 
     virtual void present() = 0;
 
+    virtual void* get_context() = 0;
+
     void set_default_fonts(const std::string& text_font, const std::string& emoji_font);
 
     virtual bool load_font(const std::string& name, const std::string& path, int size = 16) = 0;
