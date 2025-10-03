@@ -106,6 +106,7 @@ nk_sdl_device_upload_atlas(struct nk_context* ctx, const void *image, int width,
     sdl->ogl.font_tex = g_SDLFontTexture;
 }
 
+
 NK_API void
 nk_sdl_render(struct nk_context* ctx, enum nk_anti_aliasing AA)
 {
@@ -156,8 +157,8 @@ nk_sdl_render(struct nk_context* ctx, enum nk_anti_aliasing AA)
         /* iterate over and execute each draw command */
         offset = (const nk_draw_index*)nk_buffer_memory_const(&ebuf);
 
-        /* SDL3: Get current clip state - returns true if clipping is enabled */
-        clipping_enabled = SDL_GetRenderClipRect(sdl->renderer, &saved_clip);
+        clipping_enabled = SDL_RenderClipEnabled(sdl->renderer);
+        SDL_GetRenderClipRect(sdl->renderer, &saved_clip);
 
         nk_draw_foreach(cmd, &sdl->ctx, &sdl->ogl.cmds)
         {
@@ -165,33 +166,30 @@ nk_sdl_render(struct nk_context* ctx, enum nk_anti_aliasing AA)
 
             {
                 SDL_Rect r;
-                r.x = (int)cmd->clip_rect.x;
-                r.y = (int)cmd->clip_rect.y;
-                r.w = (int)cmd->clip_rect.w;
-                r.h = (int)cmd->clip_rect.h;
+                r.x = cmd->clip_rect.x;
+                r.y = cmd->clip_rect.y;
+                r.w = cmd->clip_rect.w;
+                r.h = cmd->clip_rect.h;
                 SDL_SetRenderClipRect(sdl->renderer, &r);
             }
 
             {
                 const void *vertices = nk_buffer_memory_const(&vbuf);
-                int vertex_count = (int)(vbuf.needed / vs);
 
                 SDL_RenderGeometryRaw(sdl->renderer,
                         (SDL_Texture *)cmd->texture.ptr,
                         (const float*)((const nk_byte*)vertices + vp), vs,
                         (const SDL_FColor*)((const nk_byte*)vertices + vc), vs,
                         (const float*)((const nk_byte*)vertices + vt), vs,
-                        vertex_count,
-                        offset, cmd->elem_count, 2);
+                        (vbuf.needed / vs),
+                        (void *) offset, cmd->elem_count, 2);
 
                 offset += cmd->elem_count;
             }
         }
 
-        /* SDL3: Restore previous clip state */
-        if (clipping_enabled) {
-            SDL_SetRenderClipRect(sdl->renderer, &saved_clip);
-        } else {
+        SDL_SetRenderClipRect(sdl->renderer, &saved_clip);
+        if (!clipping_enabled) {
             SDL_SetRenderClipRect(sdl->renderer, NULL);
         }
 
@@ -199,10 +197,8 @@ nk_sdl_render(struct nk_context* ctx, enum nk_anti_aliasing AA)
         nk_buffer_clear(&sdl->ogl.cmds);
         nk_buffer_free(&vbuf);
         nk_buffer_free(&ebuf);
- 
     }
 }
-
 
 static void
 nk_sdl_clipboard_paste(nk_handle usr, struct nk_text_edit *edit)
