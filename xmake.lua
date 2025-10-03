@@ -34,10 +34,10 @@ end
 
 if get_config("mode") == "3D" then
     add_defines("EMBER_3D")
-    printf("Ember Engine - Building in 3D mode (OPENGL) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
+    printf("Ember Engine - Building in 3D mode | (OPENGL) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
 else
     add_defines("EMBER_2D")
-    printf("Ember Engine - Building in 2D mode (AUTO) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
+    printf("Ember Engine - Building in 2D mode | Backend (AUTO) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
 end
 
 
