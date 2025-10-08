@@ -1,9 +1,9 @@
 #pragma once
-#include "core/renderer/sdl/sdl_renderer.h"
-#include  "core/renderer/opengl/ogl_renderer.h"
 #include "core/io/file_system.h"
-#include "core/system/timer.h"
 #include "core/project_config.h"
+#include "core/renderer/opengl/ogl_renderer.h"
+#include "core/renderer/sdl/sdl_renderer.h"
+#include "core/system/timer.h"
 
 /*!
     @file engine.h
@@ -16,8 +16,6 @@
 */
 class Engine {
 public:
-
-
     bool initialize(int window_w, int window_h, const char* title = "Ember Engine - Window", Uint32 window_flags = SDL_WINDOW_RESIZABLE);
 
     void run();
@@ -38,9 +36,14 @@ public:
 
     ~Engine();
 
+    struct nk_context* nk_ctx = nullptr;
+
 private:
+    struct nk_font_atlas* font_atlas = nullptr;
+    struct nk_colorf bg;
+
     EngineConfig _config = {};
-    Timer _timer = {};
+    Timer _timer         = {};
     flecs::world _world;
     SDL_Window* _window = nullptr;
     Renderer* _renderer = nullptr;
