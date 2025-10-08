@@ -372,64 +372,132 @@ SDL_EVENT_USER = 32768
 SDL_EVENT_LAST = 65535
 SDL_EVENT_ENUM_PADDING = 2147483647
 
+---@meta _
 
-
--- INTELLISENSE STUBS FOR AUTOCOMPLETE
-
----@class Vec2
+---Vector 2D
+---@class vec2
 ---@field x number
 ---@field y number
 
+---Vector 3D
+---@class vec3
+---@field x number
+---@field y number
+---@field z number
+
+---Vector 4D / Color
+---@class vec4
+---@field x number
+---@field y number
+---@field z number
+---@field w number
+---@field r number Color red channel
+---@field g number Color green channel
+---@field b number Color blue channel
+---@field a number Color alpha channel
+
+---2D Transform component
 ---@class Transform2D
----@field position Vec2
----@field scale Vec2
----@field rotation number
+---@field position vec2
+---@field scale vec2
+---@field rotation number Rotation in radians
 
----@class Viewport
----@field width number
----@field height number
----@field scale number
+---3D Transform component
+---@class Transform3D
+---@field position vec3
+---@field rotation vec3 Euler angles in radians
+---@field scale vec3
 
----@class Window
----@field width number
----@field height number
----@field dpi_scale number
+---2D Shape component
+---@class Shape2D
+---@field color vec4
+---@field filled boolean
 
----@class RendererDevice
----@field backend string
----@field texture_filtering string
+---2D Label/Text component
+---@class Label2D
+---@field text string
+---@field color vec4
+---@field font_name string
+---@field font_size number
 
----@class EngineConfig
----@field viewport Viewport
----@field window Window
----@field renderer RendererDevice
----@field get_viewport fun():Viewport
----@field get_window fun():Window
+---3D Camera component
+---@class Camera3D
+---@field position vec3
+---@field yaw number Yaw angle in degrees
+---@field pitch number Pitch angle in degrees
+---@field fov number Field of view in degrees
+---@field speed number Movement speed
+---@field view_distance number Far plane distance
+---@field move_forward fun(self: Camera3D, delta_time: number) Move camera forward
+---@field move_backward fun(self: Camera3D, delta_time: number) Move camera backward
+---@field move_left fun(self: Camera3D, delta_time: number) Move camera left
+---@field move_right fun(self: Camera3D, delta_time: number) Move camera right
+---@field look_at fun(self: Camera3D, xoffset: number, yoffset: number, sensitivity?: number) Rotate camera
+---@field zoom fun(self: Camera3D, yoffset: number) Zoom camera
+---@field get_view_matrix fun(self: Camera3D): mat4 Get view matrix
+---@field get_projection_matrix fun(self: Camera3D, width: integer, height: integer): mat4 Get projection matrix
 
----@class Engine
----@field get_config fun():EngineConfig
+---4x4 Matrix
+---@class mat4
 
----@class Input
----@field is_key_pressed fun(scancode:number):boolean
----@field get_mouse_position fun():Vec2
-
----@class Scene
----@field change_scene fun(name:string):boolean
-
+---Game entity with components
 ---@class Entity
----@field id number
----@field name string
----@field is_valid boolean
+---@field id integer Unique entity ID
+---@field name string Entity name
+---@field is_valid boolean Whether entity is still valid
+---@field transform2d? Transform2D 2D transform component
+---@field transform? Transform3D 3D transform component
+---@field shape? Shape2D 2D shape component
+---@field label? Label2D 2D label component
+---@field camera? Camera3D 3D camera component
+---@field has_component fun(self: Entity, component_name: string): boolean Check if entity has component
+---@field add_component fun(self: Entity, component_name: string): boolean Add component to entity
+---@field get_component fun(self: Entity, component_name: string): any Get component from entity
+---@field remove_component fun(self: Entity, component_name: string): boolean Remove component from entity
 
+---Viewport configuration
+---@class Viewport
+---@field width integer Viewport width in pixels
+---@field height integer Viewport height in pixels
+---@field scale number Viewport scale factor
 
+---Window configuration
+---@class Window
+---@field width integer Window width in pixels
+---@field height integer Window height in pixels
+---@field dpi_scale number DPI scaling factor
+
+---Renderer device configuration
+---@class RendererDevice
+---@field backend string Rendering backend name
+---@field texture_filtering string Texture filtering mode
+
+---Engine configuration
+---@class EngineConfig
+---@field get_viewport fun(self: EngineConfig): Viewport Get viewport configuration
+---@field get_window fun(self: EngineConfig): Window Get window configuration
+---@field get_renderer_device fun(self: EngineConfig): RendererDevice Get renderer device configuration
+
+---Main engine class
+---@class Engine
+---@field get_config fun(self: Engine): EngineConfig Get engine configuration
+
+---Global engine singleton
 ---@type Engine
-Engine = {}
 
----@type Input
-Input = {}
+---Input handling
+---@class InputLib
+---@field get_mouse_position fun(): vec2 Get current mouse position
+---@field is_key_pressed fun(sdl_key_code: integer): boolean Check if key is pressed
 
----@type Scene
-Scene = {}
+---@type InputLib
 
+---Scene management
+---@class SceneLib
+---@field change_scene fun(scene_name: string) Change to a different scene
+---@field get_entities_count fun(): integer Get total number of entities
+
+---@type SceneLib
+
+---Current entity (available in entity scripts)
 ---@type Entity
-self = {}
