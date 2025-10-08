@@ -40,7 +40,7 @@
     <vsync>true</vsync>
 
     <renderer>
-        <method>auto</method> <!-- gl_compatibility, vk_forward, metal, auto-->
+        <method>gl_compatibility</method> <!-- gl_compatibility, vk_forward, metal, auto-->
         <texture_filter>nearest</texture_filter>  <!-- linear, nearest-->
     </renderer>
 
