@@ -26,19 +26,14 @@ add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}
 add_requires("assimp v5.4.0", {configs = {shared = false}})
 add_requires("nuklear 4.12.7", {configs = {shared = false}})
 
-add_options("mode", {description = "Engine mode 2D/3D", default = "2D", values = {"2D", "3D"}})
+-- add_options("mode", {description = "Engine mode 2D/3D", default = "2D", values = {"2D", "3D"}})
 
 if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
     add_requires("doctest v2.4.9", {configs = {shared = false}})
 end
 
-if get_config("mode") == "3D" then
-    add_defines("EMBER_3D")
-    printf("Ember Engine - Building in 3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
-else
-    add_defines("EMBER_2D")
-    printf("Ember Engine - Building in 2D mode | Backend (AUTO) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
-end
+add_defines("EMBER_3D")
+printf("Ember Engine - Building in 3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
 
 
 target("glad")
