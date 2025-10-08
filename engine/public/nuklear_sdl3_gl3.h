@@ -497,9 +497,16 @@ nk_sdl_handle_event(SDL_Event *evt)
         case SDL_EVENT_TEXT_INPUT:
             {
 
-                nk_glyph glyph;
-                memcpy(glyph, evt->text.text, NK_UTF_SIZE);
-                nk_input_glyph(ctx, glyph);
+               nk_rune unicode;
+            int glyph_len;
+            int byte_len;
+            const char *text = evt->text.text;
+            glyph_len = byte_len = nk_utf_decode(text, &unicode, 4);
+            while (unicode != '\0' && glyph_len) {
+                nk_input_unicode(ctx, unicode);
+                glyph_len = nk_utf_decode(text+byte_len, &unicode, 4);
+                byte_len += glyph_len;
+            }
             }
             return 1;
 
