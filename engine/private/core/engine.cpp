@@ -212,7 +212,9 @@ void engine_core_loop() {
             app_win.height = new_h;
         }
 
+#if defined(EMBER_3D)
         GEngine->get_world().each([&](flecs::entity e, Camera3D& camera) { camera_touch_system(e, camera, GEngine->event); });
+#endif
     }
 
 
@@ -251,41 +253,26 @@ Engine::~Engine() {
     SDL_Quit();
 }
 
-// TODO: enable/disable 3d and 2d systems based on config
 void engine_setup_systems(flecs::world& world) {
 
+    scene_manager_system(world);
+
+
+#if defined(EMBER_3D)
     world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).each(render_world_3d_system);
 
     world.system<Camera3D>("Camera3D_Keyboard_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Camera3D& camera) {
         camera_keyboard_system(e, camera, static_cast<float>(GEngine->get_timer().delta));
     });
 
-    world.system<Transform2D>("UpdateTransforms_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<tags::ActiveScene>()
-        .up()
-        .each(update_transforms_system);
 
-    world.system<Transform2D, Shape2D>("RenderPrimitives_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<tags::ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Shape2D& s) { render_primitives_system(t, s); });
+#endif
 
-    world.system<Transform2D, Label2D>("RenderText_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<tags::ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Label2D& l) { render_labels_system(t, l); });
+#if defined(EMBER_2D)
 
-    world.system<Transform2D, Sprite2D>("RenderSprite_OnUpdate")
-        .kind(flecs::OnUpdate)
-        .with<tags::ActiveScene>()
-        .up()
-        .each([&](flecs::entity e, Transform2D& t, Sprite2D& s) { render_sprites_system(t, s); });
+    world.system<Camera2D>("Render_World_2D_OnUpdate").kind(flecs::OnUpdate).each(render_world_2d_system);
 
-    scene_manager_system(world);
-
+#endif
 
     world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<tags::ActiveScene>().up().each([&](flecs::entity e, Script& s) {
         if (s.path.empty()) {

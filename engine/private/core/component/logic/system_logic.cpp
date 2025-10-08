@@ -3,6 +3,42 @@
 #include "core/binding/lua.h"
 #include "core/engine.h"
 
+#if defined(EMBER_2D)
+
+
+int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
+    (void) e1;
+    (void) e2;
+    return t1->z_index - t2->z_index;
+}
+
+void render_world_2d_system(flecs::entity e, Camera2D& camera) {
+    if (!e.is_valid() || !e.has<tags::MainCamera>()) {
+        return;
+    }
+
+    auto& world = GEngine->get_world();
+
+    auto q = world.query_builder<Transform2D>().order_by(sort_by_z_index).build();
+
+    q.each([&](flecs::entity e, Transform2D& t) {
+        update_transforms_system(e, t);
+
+
+        if (e.has<Shape2D>()) {
+            render_primitives_system(t, e.get_mut<Shape2D>());
+        }
+
+        if (e.has<Sprite2D>()) {
+            render_sprites_system(t, e.get_mut<Sprite2D>());
+        }
+
+        if (e.has<Label2D>()) {
+            render_labels_system(t, e.get_mut<Label2D>());
+        }
+
+    });
+}
 
 void render_primitives_system(Transform2D& t, Shape2D& s) {
     switch (s.type) {
@@ -68,6 +104,10 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
     //          t.world_position.y);
 }
 
+#endif
+
+#if defined(EMBER_3D)
+
 void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
 
@@ -84,10 +124,7 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     });
 
     // Render all cubes in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Cube& cube) {
-        
-        GEngine->get_renderer()->draw_cube(t, cube);
-    });
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Cube& cube) { GEngine->get_renderer()->draw_cube(t, cube); });
 
 
     // Flush
@@ -146,6 +183,7 @@ void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta
     camera.speed = state[SDL_SCANCODE_LSHIFT] ? 100.0f : 50.0f;
 }
 
+#endif
 
 void setup_scripts_system(flecs::entity e, Script& script) {
     if (!script.lua_state) {
@@ -214,6 +252,21 @@ void process_scripts_system(Script& script) {
         printf("Error running function `update` in script %s: %s\n", script.path.c_str(), err_msg);
         lua_pop(script.lua_state, 1); // remove error message from stack
     }
+
+    lua_getglobal(script.lua_state, "draw");
+
+    if (!lua_isfunction(script.lua_state, -1)) {
+        lua_pop(script.lua_state, 1); // not a function, remove from stack
+        return;
+    }
+
+    if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
+        const char* err_msg = lua_tostring(script.lua_state, -1);
+        printf("Error running function `draw` in script %s: %s\n", script.path.c_str(), err_msg);
+        lua_pop(script.lua_state, 1); // remove error message from stack
+    }
+
+    // TODO: call `events` function if exists and pass events to it
 }
 
 
