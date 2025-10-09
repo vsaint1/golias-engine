@@ -374,6 +374,26 @@ SDL_EVENT_ENUM_PADDING = 2147483647
 
 ---@meta _
 
+---SDL Mouse Button Constants
+---@enum SDL_MouseButton
+SDL_BUTTON = {
+    LEFT = 1,
+    MIDDLE = 2,
+    RIGHT = 3,
+    X1 = 4,
+    X2 = 5,
+}
+
+---SDL Mouse Button Masks (for checking button state)
+---@class SDL_MouseButtonMask
+SDL_BUTTON_MASK = {
+    LEFT = 0x01,    -- 1 << 0
+    MIDDLE = 0x02,  -- 1 << 1
+    RIGHT = 0x04,   -- 1 << 2
+    X1 = 0x08,      -- 1 << 3
+    X2 = 0x10,      -- 1 << 4
+}
+
 ---Vector 2D
 ---@class vec2
 ---@field x number
@@ -440,6 +460,12 @@ SDL_EVENT_ENUM_PADDING = 2147483647
 ---4x4 Matrix
 ---@class mat4
 
+
+---@class Cube
+---@field size number Size of the cube
+---@field color vec4 Color of the cube
+
+
 ---Game entity with components
 ---@class Entity
 ---@field id integer Unique entity ID
@@ -447,9 +473,10 @@ SDL_EVENT_ENUM_PADDING = 2147483647
 ---@field is_valid boolean Whether entity is still valid
 ---@field transform2d? Transform2D 2D transform component
 ---@field transform? Transform3D 3D transform component
----@field shape? Shape2D 2D shape component
----@field label? Label2D 2D label component
+---@field shape2d? Shape2D 2D shape component
+---@field label2d? Label2D 2D label component
 ---@field camera? Camera3D 3D camera component
+---@field cube? Cube 3D cube component
 ---@field has_component fun(self: Entity, component_name: string): boolean Check if entity has component
 ---@field add_component fun(self: Entity, component_name: string): boolean Add component to entity
 ---@field get_component fun(self: Entity, component_name: string): any Get component from entity
@@ -486,18 +513,18 @@ SDL_EVENT_ENUM_PADDING = 2147483647
 ---@type Engine
 
 ---Input handling
----@class InputLib
+---@class Input
 ---@field get_mouse_position fun(): vec2 Get current mouse position
 ---@field is_key_pressed fun(sdl_key_code: integer): boolean Check if key is pressed
 
----@type InputLib
+---@type Input
 
 ---Scene management
----@class SceneLib
+---@class Scene
 ---@field change_scene fun(scene_name: string) Change to a different scene
 ---@field get_entities_count fun(): integer Get total number of entities
 
----@type SceneLib
+---@type Scene
 
 ---Current entity (available in entity scripts)
 ---@type Entity
