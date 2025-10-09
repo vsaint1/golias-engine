@@ -24,13 +24,6 @@ void render_world_2d_system(flecs::entity e, Camera2D& camera);
 // NOTE: This system assumes there's only one main camera in the scene
 void render_world_3d_system(flecs::entity e, Camera3D& camera);
 
-
-// NOTE: this systems are used more like helpers for camera control
-//       they should be replaced with proper input handling system
-//       that can be bound to different actions
-// systems: camera_touch_system/camera_keyboard_system
-void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& event);
-
 #endif
 
 // =======================================================
@@ -42,7 +35,4 @@ void setup_scripts_system(flecs::entity e, Script& script);
 
 void process_scripts_system(Script& script);
 
-
-void init_lua_vm();
-
-void shutdown_lua_vm();
+void process_event_scripts_system(Script&, const SDL_Event& event);

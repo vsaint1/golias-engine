@@ -131,144 +131,112 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     GEngine->get_renderer()->flush(camera.get_view(), camera.get_projection(window.width, window.height));
 }
 
-
-void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& event) {
-    if (event.type == SDL_EVENT_MOUSE_WHEEL) {
-        camera.zoom(static_cast<float>(event.wheel.y));
-    }
-
-
-    float xoffset = 0.0f;
-    float yoffset = 0.0f;
-    if (event.type == SDL_EVENT_MOUSE_MOTION) {
-
-
-        if (event.motion.state & SDL_BUTTON_LMASK) {
-            xoffset = static_cast<float>(event.motion.xrel);
-            yoffset = static_cast<float>(event.motion.yrel);
-        }
-    }
-
-    if (event.type == SDL_EVENT_FINGER_MOTION) {
-        xoffset = static_cast<float>(event.tfinger.dx * 10);
-        yoffset = static_cast<float>(event.tfinger.dy * 10);
-    }
-
-    camera.look_at(xoffset, -yoffset, 1.f);
-}
-
-
-void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta) {
-
-
-    const bool* state = SDL_GetKeyboardState(NULL);
-
-    if (state[SDL_SCANCODE_W]) {
-        camera.move_forward(delta);
-    }
-
-    if (state[SDL_SCANCODE_S]) {
-        camera.move_backward(delta);
-    }
-
-    if (state[SDL_SCANCODE_A]) {
-        camera.move_left(delta);
-    }
-
-    if (state[SDL_SCANCODE_D]) {
-        camera.move_right(delta);
-    }
-
-
-    camera.speed = state[SDL_SCANCODE_LSHIFT] ? 100.0f : 50.0f;
-}
-
 #endif
 
 void setup_scripts_system(flecs::entity e, Script& script) {
-    if (!script.lua_state) {
-        script.lua_state = luaL_newstate();
-        luaL_openlibs(script.lua_state);
+    // Create a NEW lua_State for THIS script
+    script.lua_state = luaL_newstate();
+    luaL_openlibs(script.lua_state);
 
-        lua_getglobal(script.lua_state, "package");
-        lua_getfield(script.lua_state, -1, "path"); // get package.path
-        std::string path = lua_tostring(script.lua_state, -1); // current paths
-        lua_pop(script.lua_state, 1); // pop old path
+    // Setup package path for this state
+    lua_getglobal(script.lua_state, "package");
+    lua_getfield(script.lua_state, -1, "path");
+    std::string path = lua_tostring(script.lua_state, -1);
+    lua_pop(script.lua_state, 1);
+    path.append(";./res/scripts/?.lua;res/scripts/?.lua;./?.lua");
+    lua_pushstring(script.lua_state, path.c_str());
+    lua_setfield(script.lua_state, -2, "path");
+    lua_pop(script.lua_state, 1);
 
-        path.append(";res/scripts/?.lua"); // add your scripts folder
-        lua_pushstring(script.lua_state, path.c_str());
-        lua_setfield(script.lua_state, -2, "path"); // package.path = new path
-        lua_pop(script.lua_state, 1); // pop package table
+    generate_bindings(script.lua_state);
 
-        FileAccess lua_file(script.path, ModeFlags::READ);
-        const std::string& lua_script = lua_file.get_file_as_str();
+    script.ready_called = false;
 
-        if (luaL_dostring(script.lua_state, lua_script.c_str()) != LUA_OK) {
+    // Load the Lua script from file
+    FileAccess lua_file(script.path, ModeFlags::READ);
+    const std::string& lua_script = lua_file.get_file_as_str();
+
+    // Load & execute script file
+    if (luaL_loadstring(script.lua_state, lua_script.c_str()) || 
+        lua_pcall(script.lua_state, 0, 0, 0)) {
+        const char* err = lua_tostring(script.lua_state, -1);
+        LOG_ERROR("Failed to load script %s: %s", script.path.c_str(), err);
+        lua_pop(script.lua_state, 1);
+        return;
+    }
+
+    generate_bindings(script.lua_state);
+    
+    push_entity_to_lua(script.lua_state, e);
+
+    // Call _ready() if it exists
+    lua_getglobal(script.lua_state, "_ready");
+    if (lua_isfunction(script.lua_state, -1)) {
+        if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
             const char* err = lua_tostring(script.lua_state, -1);
-            LOG_ERROR("Failed to load script %s: %s", script.path.c_str(), err);
+            LOG_ERROR("Error in _ready() of %s: %s", script.path.c_str(), err);
             lua_pop(script.lua_state, 1);
-            return;
-        }
-
-        generate_bindings(script.lua_state);
-
-        push_entity_to_lua(script.lua_state, e);
-
-        // Call ready() if it exists
-        lua_getglobal(script.lua_state, "ready");
-        if (lua_isfunction(script.lua_state, -1)) {
-            if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
-                const char* err = lua_tostring(script.lua_state, -1);
-                LOG_ERROR("Error in ready() of script %s: %s", script.path.c_str(), err);
-                lua_pop(script.lua_state, 1);
-            } else {
-                script.ready_called = true;
-            }
         } else {
-            lua_pop(script.lua_state, 1); // pop non-function
-            LOG_WARN("No `ready` function found in script %s", script.path.c_str());
+            script.ready_called = true;
         }
+    } else {
+        lua_pop(script.lua_state, 1);
     }
 }
 
-void process_scripts_system(Script& script) {
-    if (!script.ready_called) {
-        LOG_WARN("Script not initialized properly");
+void process_event_scripts_system(Script& script, const SDL_Event& event) {
+    if (!script.ready_called || !script.lua_state) {
         return;
     }
 
-    lua_getglobal(script.lua_state, "update"); // push global `update` function onto stack
+    lua_getglobal(script.lua_state, "_input");
 
     if (!lua_isfunction(script.lua_state, -1)) {
-        lua_pop(script.lua_state, 1); // not a function, remove from stack
+        lua_pop(script.lua_state, 1);
         return;
     }
 
-    lua_pushnumber(script.lua_state, static_cast<lua_Number>(GEngine->get_timer().delta)); // push delta time as argument
+    push_sdl_event_to_lua(script.lua_state, event);
 
-    // call function with 1 argument, 0 return values
     if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
         const char* err_msg = lua_tostring(script.lua_state, -1);
-        printf("Error running function `update` in script %s: %s\n", script.path.c_str(), err_msg);
-        lua_pop(script.lua_state, 1); // remove error message from stack
+        LOG_ERROR("Error in _input() of %s: %s", script.path.c_str(), err_msg);
+        lua_pop(script.lua_state, 1);
     }
+}
 
-    lua_getglobal(script.lua_state, "draw");
 
-    if (!lua_isfunction(script.lua_state, -1)) {
-        lua_pop(script.lua_state, 1); // not a function, remove from stack
+void process_scripts_system(Script& script) {
+    if (!script.ready_called || !script.lua_state) {
         return;
     }
 
-    if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
-        const char* err_msg = lua_tostring(script.lua_state, -1);
-        printf("Error running function `draw` in script %s: %s\n", script.path.c_str(), err_msg);
-        lua_pop(script.lua_state, 1); // remove error message from stack
+    // Call _process
+    lua_getglobal(script.lua_state, "_process");
+    if (lua_isfunction(script.lua_state, -1)) {
+        lua_pushnumber(script.lua_state, static_cast<lua_Number>(GEngine->get_timer().delta));
+        
+        if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
+            const char* err_msg = lua_tostring(script.lua_state, -1);
+            LOG_ERROR("Error in _process() of %s: %s", script.path.c_str(), err_msg);
+            lua_pop(script.lua_state, 1);
+        }
+    } else {
+        lua_pop(script.lua_state, 1);
     }
 
-    // TODO: call `events` function if exists and pass events to it
+    // Call _draw
+    lua_getglobal(script.lua_state, "_draw");
+    if (lua_isfunction(script.lua_state, -1)) {
+        if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
+            const char* err_msg = lua_tostring(script.lua_state, -1);
+            LOG_ERROR("Error in _draw() of %s: %s", script.path.c_str(), err_msg);
+            lua_pop(script.lua_state, 1);
+        }
+    } else {
+        lua_pop(script.lua_state, 1);
+    }
 }
-
 
 void scene_manager_system(flecs::world& world) {
     world.observer<SceneChangeRequest>("SceneChangeRequest_Observer")

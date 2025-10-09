@@ -5,6 +5,148 @@
 using namespace binding;
 
 
+
+// Push SDL_Event to Lua as a table
+void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
+    lua_newtable(L); // Main event table
+    
+    lua_pushinteger(L, event.type);
+    lua_setfield(L, -2, "type");
+    
+    lua_pushinteger(L, event.common.timestamp);
+    lua_setfield(L, -2, "timestamp");
+    
+    switch (event.type) {
+        case SDL_EVENT_FINGER_MOTION:
+        case SDL_EVENT_FINGER_DOWN:
+        case SDL_EVENT_FINGER_UP: {
+            lua_newtable(L); // finger table
+            lua_pushnumber(L, event.tfinger.fingerID);
+            lua_setfield(L, -2, "finger_id");
+            lua_pushnumber(L, event.tfinger.x);
+            lua_setfield(L, -2, "x");
+            lua_pushnumber(L, event.tfinger.y);
+            lua_setfield(L, -2, "y");
+            lua_pushnumber(L, event.tfinger.dx);
+            lua_setfield(L, -2, "dx");
+            lua_pushnumber(L, event.tfinger.dy);
+            lua_setfield(L, -2, "dy");
+            lua_pushnumber(L, event.tfinger.pressure);
+            lua_setfield(L, -2, "pressure");
+            lua_pushinteger(L, event.tfinger.windowID);
+            lua_setfield(L, -2, "window_id");
+            lua_setfield(L, -2, "tfinger");
+            break;
+        }
+        case SDL_EVENT_MOUSE_MOTION: {
+            lua_newtable(L);
+            lua_pushnumber(L, event.motion.x);
+            lua_setfield(L, -2, "x");
+            lua_pushnumber(L, event.motion.y);
+            lua_setfield(L, -2, "y");
+            lua_pushnumber(L, event.motion.xrel);
+            lua_setfield(L, -2, "xrel");
+            lua_pushnumber(L, event.motion.yrel);
+            lua_setfield(L, -2, "yrel");
+            lua_pushinteger(L, event.motion.which);
+            lua_setfield(L, -2, "which");
+            lua_pushinteger(L, event.motion.state);
+            lua_setfield(L, -2, "state");
+            lua_setfield(L, -2, "motion");
+            break;
+        }
+        
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+            lua_newtable(L); 
+            lua_pushinteger(L, event.button.button);
+            lua_setfield(L, -2, "button");
+            lua_pushboolean(L, event.button.down);
+            lua_setfield(L, -2, "down");
+            lua_pushinteger(L, event.button.clicks);
+            lua_setfield(L, -2, "clicks");
+            lua_pushnumber(L, event.button.x);
+            lua_setfield(L, -2, "x");
+            lua_pushnumber(L, event.button.y);
+            lua_setfield(L, -2, "y");
+            lua_setfield(L, -2, "button");
+            break;
+        }
+        
+        case SDL_EVENT_MOUSE_WHEEL: {
+            lua_newtable(L); 
+            lua_pushnumber(L, event.wheel.x);
+            lua_setfield(L, -2, "x");
+            lua_pushnumber(L, event.wheel.y);
+            lua_setfield(L, -2, "y");
+            lua_pushinteger(L, event.wheel.direction);
+            lua_setfield(L, -2, "direction");
+            lua_pushnumber(L, event.wheel.mouse_x);
+            lua_setfield(L, -2, "mouse_x");
+            lua_pushnumber(L, event.wheel.mouse_y);
+            lua_setfield(L, -2, "mouse_y");
+            lua_setfield(L, -2, "wheel");
+            break;
+        }
+        
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP: {
+            lua_newtable(L);
+            lua_pushinteger(L, event.key.scancode);
+            lua_setfield(L, -2, "scancode");
+            lua_pushinteger(L, event.key.key);
+            lua_setfield(L, -2, "keycode");
+            lua_pushinteger(L, event.key.mod);
+            lua_setfield(L, -2, "mod");
+            lua_pushboolean(L, event.key.down);
+            lua_setfield(L, -2, "down");
+            lua_pushboolean(L, event.key.repeat);
+            lua_setfield(L, -2, "repeat");
+            lua_setfield(L, -2, "key");
+            break;
+        }
+        
+        case SDL_EVENT_TEXT_INPUT: {
+            lua_newtable(L); 
+            lua_pushstring(L, event.text.text);
+            lua_setfield(L, -2, "text");
+            lua_setfield(L, -2, "text_input");
+            break;
+        }
+        
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_MINIMIZED:
+        case SDL_EVENT_WINDOW_MAXIMIZED:
+        case SDL_EVENT_WINDOW_RESTORED:
+        case SDL_EVENT_WINDOW_MOUSE_ENTER:
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+            lua_newtable(L); // window table
+            lua_pushinteger(L, event.window.windowID);
+            lua_setfield(L, -2, "window_id");
+            if (event.type == SDL_EVENT_WINDOW_RESIZED || 
+                event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+                lua_pushinteger(L, event.window.data1);
+                lua_setfield(L, -2, "width");
+                lua_pushinteger(L, event.window.data2);
+                lua_setfield(L, -2, "height");
+            }
+            lua_setfield(L, -2, "window");
+            break;
+        }
+        
+        case SDL_EVENT_QUIT: {
+            break;
+        }
+        
+        default:
+            break;
+    }
+}
+
 void push_input_to_lua(lua_State* L) {
     lua_newtable(L);
 
