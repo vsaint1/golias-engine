@@ -11,31 +11,53 @@
 
 ## 🔹 Key Features
 
-- [x] **2D Physics**
-- [ ] **3D Physics**
+### 3D Features
+- [x] **Model Loading** (OBJ, FBX, GLTF/GLB)
+- [ ] **PBR (Physically Based Rendering)**
+- [ ] **3D Physics** (coming soon)
+- [ ] **Lighting System** (Directional, Point, Spot)
+- [ ] **Shadow Mapping**
+- [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)
+- [ ] **Animation System** (Skeletal Animation)
+- [ ] **Terrain System** (coming soon)
+
+### 2D Features
+- [x] **2D Sprite Rendering**
+- [x] **Text/Shaping Rendering** (TrueType fonts and Emojis)
+- [x] **Text Shaping** (HarfBuzz)
+- [ ] **Tilemap Support** (Orthogonal, Isometric)
+- [ ] **Audio System** (coming soon)
+- [ ] **2D Physics**
+
+
+### General Features
+- [ ] **Audio System** (coming soon)
+- [ ] **Particle System** (coming soon)
 - [x] Cross-Platform **Rendering** and **API** by Design 
 - [x] **Web (WASM) Support**
 - [x] **Native Support:** Windows, Linux, macOS, Android, iOS
-- [x] **Lightweight and Modular Architecture**
-- [x] **Scripting Support** (Lua)
 - [x] **ECS (Entity Component System) Based**
-- [x] **Sample Games and Demos Included**
+- [x] **Scripting Support** (Lua)
+- [ ] **UI System** (Buttons, Inputs, Checkboxes, etc.)
+- [ ] **Using Custom Shaders** (not implemented yet)
 
 ---
 
 
-## 📱 Supported Platforms
+## 📱 Rendering Backends
 
-| Platform | Backend       | Status            |
-| -------- | ------------- | ----------------- |
-| Windows  | OpenGL 3.3    | ✅ Fully supported |
-| Linux    | OpenGL 3.3    | ✅ Fully supported |
-| macOS    | OpenGL 3.3    | ✅ Fully supported |
-| macOS    | Metal         | 🚧 Coming soon    |
-| Android  | OpenGL ES 3.0 | ✅ Fully supported |
-| iOS      | OpenGL ES 3.0 | ✅ Fully supported |
-| iOS      | Metal         | 🚧 Coming soon    |
-| Web      | WebGL 3.0     | ✅ Fully supported |
+| Platform                                                              | Type | Backend       | Status            |
+| --------------------------------------------------------------------- | ---- | ------------- | ----------------- |
+| Windows                                                               | 3D   | OpenGL 3.3    | ✅ Fully supported |
+| Linux                                                                 | 3D   | OpenGL 3.3    | ✅ Fully supported |
+| macOS                                                                 | 3D   | OpenGL 3.3    | ✅ Fully supported |
+| macOS                                                                 | 3D   | Metal         | 🚧 Coming soon    |
+| Android                                                               | 3D   | OpenGL ES 3.0 | ✅ Fully supported |
+| iOS                                                                   | 3D   | OpenGL ES 3.0 | ✅ Fully supported |
+| iOS                                                                   | 3D   | Metal         | 🚧 Coming soon    |
+| Web                                                                   | 3D   | WebGL 3.0     | ✅ Fully supported |
+| Windows, Linux, macOS, Android, iOS, Web, Nintendo, Playstation, Xbox | 2D   | Auto  | ✅ Fully supported |
+
 
 
 ## Engine Core Architecture
@@ -63,7 +85,7 @@
 | 3D Wireframe         | ![Wireframe](docs/3d_wireframe.png) | Basic 3D wireframe rendering demo            |
 | Huge City            | ![City](docs/3d_map_huge.png)       | Large city scene rendering demo (Web)        |
 | 3D Physics Example   | ![3D Physics](docs/3d_physics.png)  | 3D physics simulation with thousands of models |
-
+| 2D Text Rendering    | ![2D Text](docs/2d_text.png)        | 2D text rendering with shaping (HarfBuzz)    |
 ---
 
 ## 🛠 Building for WASM

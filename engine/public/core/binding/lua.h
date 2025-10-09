@@ -176,6 +176,8 @@ void add_method(const std::string& name, lua_CFunction func) {
 
 
 
+void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event);
+
 // =======================================================
 // Generate Lua bindings for an entity
 // =======================================================

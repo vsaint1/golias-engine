@@ -24,6 +24,7 @@
 #include <map>
 #include <deque>
 #include <condition_variable>
+#include <random>
 
 #include <glad.h>
 
@@ -67,4 +68,6 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 #endif
 
 #include "definitions.h"
+
+#include "nuklear_include.h"
 

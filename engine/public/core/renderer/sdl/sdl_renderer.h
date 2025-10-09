@@ -4,6 +4,7 @@
 #include "core/renderer/sdl/sdl_struct.h"
 
 
+
 /*!
 
     @file sdl_renderer.h
@@ -11,6 +12,7 @@
 
     This file contains the definition of the SDLRenderer class, which is a concrete implementation of the Renderer interface using the SDL library for rendering operations.
 
+    @note This renderer is mainly intended for 2D rendering. For 3D rendering, consider using other backends.
     @version 0.0.1
 
 */
@@ -22,6 +24,10 @@ public:
 
     void present() override;
 
+    void* get_context() override{
+        return (void*)_renderer;
+    }
+
     bool load_font(const std::string& name, const std::string& path, int size) override;
     
     std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path) override;
@@ -29,7 +35,8 @@ public:
     void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
                       bool flip_h, bool flip_v, const glm::vec4& color) override;
 
-
+    void flush(const glm::mat4& view, const glm::mat4& projection) override;
+    
     void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) override;
 
     void draw_line(const Transform2D& transform, glm::vec2 end, glm::vec4 color) override;

@@ -13,7 +13,7 @@ uniform vec3 LIGHT_POSITION;
 uniform vec3 LIGHT_COLOR; // DEFAULT vec3(1.0, 1.0, 1.0)
 
 struct CMaterial {
-    vec3 diffuse;
+    vec3 albedo;
     vec3 specular;
     float shininess;
     vec3 emissive;
@@ -26,7 +26,7 @@ uniform bool USE_TEXTURE;
 
 void main() {
 
-    vec3 color = USE_TEXTURE ? texture(TEXTURE, UV).rgb : material.diffuse;
+    vec3 color = USE_TEXTURE ? texture(TEXTURE, UV).rgb : material.albedo;
 
     const float ambient_strength = 0.1;
 

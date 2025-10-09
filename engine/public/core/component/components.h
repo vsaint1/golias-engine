@@ -15,6 +15,8 @@ struct Transform2D {
     glm::vec2 scale    = {1, 1};
     float rotation     = 0;
 
+    int z_index = 0;
+
     glm::vec2 world_position = {0, 0};
     glm::vec2 world_scale    = {1, 1};
     float world_rotation     = 0;
@@ -123,12 +125,16 @@ struct PhysicsBody {
     Uint32 id = 0;
 };
 
+struct Cube {
+    glm::vec3 size  = glm::vec3(1.f);
+    glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f);
+};
 
 struct Model {
     std::string path;
     std::vector<std::unique_ptr<Mesh>> meshes;
 
-    Model()                        = default;
+    Model() = default;
 
     Model(Model&&) noexcept            = default;
     Model& operator=(Model&&) noexcept = default;
@@ -140,8 +146,35 @@ struct Model {
     ~Model();
 };
 
+struct Follow {
+    flecs::entity target;
+    glm::vec3 offset{0.0f, 5.0f, 0.0f};
+    float smoothness = 0.1f;
+};
 
-enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
+class Camera2D {
+public:
+    glm::vec2 position{0.0f, 0.0f};
+    float zoom     = 1.0f;
+    float rotation = 0.0f;
+
+
+    Camera2D() = default;
+
+    glm::mat4 get_view() const {
+        glm::mat4 view(1.0f);
+        view = glm::translate(view, glm::vec3(-position, 0.0f));
+        view = glm::rotate(view, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+        view = glm::scale(view, glm::vec3(zoom, zoom, 1.0f));
+        return view;
+    }
+
+    glm::mat4 get_projection(int w, int h) const {
+        return glm::ortho(0.0f, static_cast<float>(w), static_cast<float>(h), 0.0f, -1.0f, 1.0f);
+    }
+};
+
+// enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
 
 class Camera3D {
@@ -185,16 +218,33 @@ private:
 
 inline void serialize_components(flecs::world& ecs) {
 
+
+    ecs.component<glm::vec3>().member<float>("x").member<float>("y").member<float>("z");
+    ecs.component<glm::vec2>().member<float>("x").member<float>("y");
+    ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
+
     ecs.component<tags::Scene>();
 
     ecs.component<SceneRoot>();
+
+    ecs.component<Camera2D>();
+
+    ecs.component<Camera3D>() 
+    .member<glm::vec3>("position")
+    .member<float>("yaw")
+    .member<float>("pitch")
+    .member<float>("fov")
+    .member<float>("speed")
+    .member<float>("view_distance");
+
+
+    ecs.component<Transform3D>().member<glm::vec3>("position").member<glm::vec3>("rotation").member<glm::vec3>("scale");
 
     ecs.component<tags::ActiveScene>().add(flecs::Exclusive);
 
     ecs.component<Model>();
 
-    ecs.component<glm::vec2>().member<float>("x").member<float>("y");
-    ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
+
     ecs.component<std::string>()
         .opaque(flecs::String)
         .serialize([](const flecs::serializer* s, const std::string* data) {

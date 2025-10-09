@@ -4,6 +4,19 @@
 #include "core/ember_utils.h"
 #include "core/renderer/base_struct.h"
 
+/*!
+    @brief Structure representing a batch of instanced meshes to be rendered.
+
+    @version 0.0.3
+*/
+struct InstancedBatch {
+    Mesh* mesh; /// Model->meshes[i]
+    Shader* shader = nullptr; /// Shader to use for rendering
+    std::vector<glm::mat4> models; /// model matrices for instancing
+    std::vector<glm::vec3> colors; /// colors for instancing (later)
+    EDrawMode mode = EDrawMode::TRIANGLES;
+};
+
 
 /*!
 
@@ -20,6 +33,8 @@ public:
 
     virtual void present() = 0;
 
+    virtual void* get_context() = 0;
+
     void set_default_fonts(const std::string& text_font, const std::string& emoji_font);
 
     virtual bool load_font(const std::string& name, const std::string& path, int size = 16) = 0;
@@ -32,7 +47,8 @@ public:
 
     virtual void draw_text(const Transform2D& transform, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) = 0;
 
-    virtual void draw_text_3d(const Transform3D& transform,const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color, const std::string& font_name, const char* fmt, ...) {
+    virtual void draw_text_3d(const Transform3D& transform, const glm::mat4& view, const glm::mat4& projection, const glm::vec4& color,
+                              const std::string& font_name, const char* fmt, ...) {
         LOG_WARN("draw_text_3d not implemented for this renderer");
     }
 
@@ -61,12 +77,16 @@ public:
 
     virtual ~Renderer() = default;
 
-    virtual void draw_model(const Transform3D& t, const Model* model, const glm::mat4& view, const glm::mat4& projection,
-                            const glm::vec3& viewPos) {
+    virtual void flush(const glm::mat4& view, const glm::mat4& projection) {
+        LOG_WARN("flush not implemented for this renderer");
+    }
+
+    virtual void draw_model(const Transform3D& t, const Model* model) {
         LOG_WARN("draw_model not implemented for this renderer");
     }
 
-    virtual void draw_cube(const Transform3D& transform, const glm::mat4& view, const glm::mat4& proj, Uint32 shader) {
+    // TODO: add shader parameter
+    virtual void draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader = nullptr) {
         LOG_WARN("draw_cube not implemented for this renderer");
     }
 
@@ -83,7 +103,7 @@ public:
 protected:
     SDL_Window* _window = nullptr;
 
-    virtual std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir){
+    virtual std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
         LOG_WARN("load_meshes not implemented for this renderer");
         return nullptr;
     }
@@ -105,4 +125,7 @@ protected:
 
     std::string _default_font_name;
     std::string _emoji_font_name;
+
+    // batching/instancing
+    std::unordered_map<const Mesh*, InstancedBatch> _instanced_batches;
 };

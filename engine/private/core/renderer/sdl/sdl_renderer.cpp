@@ -1,5 +1,7 @@
 #include "core/renderer/sdl/sdl_renderer.h"
+
 #include "core/engine.h"
+
 
 bool SDLRenderer::initialize(SDL_Window* window) {
 
@@ -36,11 +38,11 @@ bool SDLRenderer::initialize(SDL_Window* window) {
 
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
-    // TODO: Get the viewport size and set logical presentation from `project.xml`
     const auto& viewport = GEngine->get_config().get_viewport();
     LOG_INFO("Using backend: %s, Viewport: %dx%d", renderer_name, viewport.width, viewport.height);
     SDL_SetRenderLogicalPresentation(_renderer, viewport.width, viewport.height, SDL_LOGICAL_PRESENTATION_STRETCH);
 
+    // SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
 
     return true;
 }
@@ -48,11 +50,18 @@ bool SDLRenderer::initialize(SDL_Window* window) {
 
 void SDLRenderer::clear(glm::vec4 color) {
 
+
     SDL_SetRenderDrawColor(_renderer, (Uint8) (color.r * 255), (Uint8) (color.g * 255), (Uint8) (color.b * 255), (Uint8) (color.a * 255));
     SDL_RenderClear(_renderer);
 }
 
+void SDLRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
+    // TODO: flush geometry
+
+}
+
 void SDLRenderer::present() {
+
     SDL_RenderPresent(_renderer);
 }
 
@@ -72,8 +81,8 @@ void SDLRenderer::draw_line(const Transform2D& transform, glm::vec2 end, glm::ve
 
     glm::vec2 start = transform.position;
 
-    float cosr = glm::cos(transform.rotation);
-    float sinr = glm::sin(transform.rotation);
+    float cosr = cos(transform.rotation);
+    float sinr = sin(transform.rotation);
 
     float x = end.x * transform.scale.x;
     float y = end.y * transform.scale.y;
@@ -141,7 +150,7 @@ void SDLRenderer::draw_rect(const Transform2D& transform, float w, float h, glm:
 void SDLRenderer::draw_triangle(const Transform2D& transform, float size, glm::vec4 color, bool is_filled) {
 
 
-    const float height                     = size * 0.866f; // sqrt(3)/2 for equilateral triangle
+    const float height                     = sqrt(3.0f) / 2.0f * size;
     std::vector<glm::vec2> triangle_points = {
         {0.0f, -height / 2.0f}, // Top vertex
         {-size / 2.0f, height / 2.0f}, // Bottom left
@@ -272,7 +281,15 @@ std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, cons
         return _textures[name];
     }
 
-    SDL_Surface* surface = IMG_Load(path.c_str());
+    FileAccess file(path, ModeFlags::READ);
+
+    if (!file.is_open()) {
+        LOG_ERROR("Failed to open Texture file %s", path.c_str());
+        return nullptr;
+    }
+
+    SDL_Surface* surface = IMG_Load_IO(file.get_handle(), false);
+
     if (!surface) {
         LOG_ERROR("Failed to load Texture %s: %s", path.c_str(), SDL_GetError());
         return nullptr;
@@ -371,9 +388,8 @@ void SDLRenderer::draw_texture(const Transform2D& transform, Texture* texture, c
     dst_rect.w = dest.z * transform.world_scale.x;
     dst_rect.h = dest.w * transform.world_scale.y;
 
-    SDL_SetTextureColorMod(sdl_tex->get_texture(), static_cast<Uint8>(color.r * 255), static_cast<Uint8>(color.g * 255),
-                           static_cast<Uint8>(color.b * 255));
-    SDL_SetTextureAlphaMod(sdl_tex->get_texture(), static_cast<Uint8>(color.a * 255));
+    SDL_SetTextureColorModFloat(sdl_tex->get_texture(), color.r, color.g, color.b);
+    SDL_SetTextureAlphaModFloat(sdl_tex->get_texture(), color.a);
 
     SDL_FPoint center;
     center.x = dst_rect.w * 0.5f;

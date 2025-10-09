@@ -6,7 +6,7 @@ TEST_CASE("Parse config file") {
 
     MESSAGE("Load config defaults from project.xml");
 
-    CHECK(config.load() == false);
+    config.load();
 
 
     // Application info

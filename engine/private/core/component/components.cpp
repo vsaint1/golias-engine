@@ -20,7 +20,7 @@ Script::~Script() {
 
 Model::~Model() {
 
-    LOG_INFO("Destroying model: %s", path.c_str());
+    LOG_INFO("Releasing model: %s", path.c_str());
     // automatically all ~destructors
     meshes.clear();
 }
