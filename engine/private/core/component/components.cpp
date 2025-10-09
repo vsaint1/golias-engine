@@ -13,8 +13,9 @@ Script::~Script() {
             }
         }
 
-        lua_close(lua_state);
-        lua_state = nullptr;
+        // LUA_STATE IS NOW SHARED, DO NOT CLOSE IT HERE
+        // lua_close(lua_state);
+        // lua_state = nullptr;
     }
 }
 

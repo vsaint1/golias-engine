@@ -31,8 +31,6 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera);
 // systems: camera_touch_system/camera_keyboard_system
 void camera_touch_system(flecs::entity e, Camera3D& camera, const SDL_Event& event);
 
-void camera_keyboard_system(flecs::entity e, Camera3D& camera, const float delta) ;
-
 #endif
 
 // =======================================================
@@ -43,3 +41,8 @@ void scene_manager_system(flecs::world& world);
 void setup_scripts_system(flecs::entity e, Script& script);
 
 void process_scripts_system(Script& script);
+
+
+void init_lua_vm();
+
+void shutdown_lua_vm();

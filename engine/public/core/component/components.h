@@ -218,16 +218,33 @@ private:
 
 inline void serialize_components(flecs::world& ecs) {
 
+
+    ecs.component<glm::vec3>().member<float>("x").member<float>("y").member<float>("z");
+    ecs.component<glm::vec2>().member<float>("x").member<float>("y");
+    ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
+
     ecs.component<tags::Scene>();
 
     ecs.component<SceneRoot>();
+
+    ecs.component<Camera2D>();
+
+    ecs.component<Camera3D>() 
+    .member<glm::vec3>("position")
+    .member<float>("yaw")
+    .member<float>("pitch")
+    .member<float>("fov")
+    .member<float>("speed")
+    .member<float>("view_distance");
+
+
+    ecs.component<Transform3D>().member<glm::vec3>("position").member<glm::vec3>("rotation").member<glm::vec3>("scale");
 
     ecs.component<tags::ActiveScene>().add(flecs::Exclusive);
 
     ecs.component<Model>();
 
-    ecs.component<glm::vec2>().member<float>("x").member<float>("y");
-    ecs.component<glm::vec4>().member<float>("x").member<float>("y").member<float>("z").member<float>("w");
+
     ecs.component<std::string>()
         .opaque(flecs::String)
         .serialize([](const flecs::serializer* s, const std::string* data) {
