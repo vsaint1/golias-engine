@@ -14,34 +14,21 @@ int main(int argc, char* argv[]) {
 
     Camera3D cam;
     cam.position = glm::vec3(0, 10, 20);
-    auto camera  = GEngine->get_world().entity("MainCamera").set<Camera3D>(cam).add<tags::MainCamera>().child_of(scene);
+    auto camera  = GEngine->get_world().entity("MainCamera").set<Camera3D>(cam).add<tags::MainCamera>()
+    .set<Script>({"res://scripts/test.lua"})
+    .child_of(scene);
 
-    auto map      = GEngine->get_renderer()->load_model("sprites/obj/tree_b_green.obj");
-    auto campfire = GEngine->get_renderer()->load_model("sprites/obj/campfire_complete.obj");
-    auto car2     = GEngine->get_renderer()->load_model("sprites/obj/Car2.obj");
     auto car      = GEngine->get_renderer()->load_model("sprites/obj/Car.obj");
-    auto dragon   = GEngine->get_renderer()->load_model("sprites/obj/dragon.fbx");
 
-    auto e1 = GEngine->get_world()
-                  .entity("campfire")
-                  .set<std::shared_ptr<Model>>(campfire)
-                  .set<Transform3D>({.position = {0, 0, 0}})
-                  .child_of(scene);
-
-    auto e2 =
-        GEngine->get_world().entity("car2").set<std::shared_ptr<Model>>(car2).set<Transform3D>({.position = {5, 1, 0}}).child_of(scene);
 
     auto e3 =
         GEngine->get_world().entity("car").set<std::shared_ptr<Model>>(car).set<Transform3D>({.position = {10, 1, 0}}).child_of(scene);
 
-    auto e4 = GEngine->get_world()
-                  .entity("dragon")
-                  .set<std::shared_ptr<Model>>(dragon)
-                  .set<Transform3D>({.position = {15, 0, 0}, .rotation = {-90, 0, 0}})
-                  .child_of(scene);
 
 
-    auto e5 = GEngine->get_world().entity("map").set<std::shared_ptr<Model>>(map).set<Transform3D>({.position = {-10, -5, 0}});
+    auto plane = GEngine->get_world().entity("plane").set<Cube>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
+                     .set<Transform3D>({.position = {0, 0, 0}})
+                     .child_of(scene);
 
     GEngine->run();
 
