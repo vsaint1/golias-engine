@@ -5,21 +5,21 @@
 using namespace binding;
 
 
-
 // Push SDL_Event to Lua as a table
 void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
     lua_newtable(L); // Main event table
-    
+
     lua_pushinteger(L, event.type);
     lua_setfield(L, -2, "type");
-    
+
     lua_pushinteger(L, event.common.timestamp);
     lua_setfield(L, -2, "timestamp");
-    
+
     switch (event.type) {
-        case SDL_EVENT_FINGER_MOTION:
-        case SDL_EVENT_FINGER_DOWN:
-        case SDL_EVENT_FINGER_UP: {
+    case SDL_EVENT_FINGER_MOTION:
+    case SDL_EVENT_FINGER_DOWN:
+    case SDL_EVENT_FINGER_UP:
+        {
             lua_newtable(L); // finger table
             lua_pushnumber(L, event.tfinger.fingerID);
             lua_setfield(L, -2, "finger_id");
@@ -38,7 +38,8 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "tfinger");
             break;
         }
-        case SDL_EVENT_MOUSE_MOTION: {
+    case SDL_EVENT_MOUSE_MOTION:
+        {
             lua_newtable(L);
             lua_pushnumber(L, event.motion.x);
             lua_setfield(L, -2, "x");
@@ -55,10 +56,11 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "motion");
             break;
         }
-        
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        case SDL_EVENT_MOUSE_BUTTON_UP: {
-            lua_newtable(L); 
+
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        {
+            lua_newtable(L);
             lua_pushinteger(L, event.button.button);
             lua_setfield(L, -2, "button");
             lua_pushboolean(L, event.button.down);
@@ -72,9 +74,10 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "button");
             break;
         }
-        
-        case SDL_EVENT_MOUSE_WHEEL: {
-            lua_newtable(L); 
+
+    case SDL_EVENT_MOUSE_WHEEL:
+        {
+            lua_newtable(L);
             lua_pushnumber(L, event.wheel.x);
             lua_setfield(L, -2, "x");
             lua_pushnumber(L, event.wheel.y);
@@ -88,9 +91,10 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "wheel");
             break;
         }
-        
-        case SDL_EVENT_KEY_DOWN:
-        case SDL_EVENT_KEY_UP: {
+
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP:
+        {
             lua_newtable(L);
             lua_pushinteger(L, event.key.scancode);
             lua_setfield(L, -2, "scancode");
@@ -105,30 +109,31 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "key");
             break;
         }
-        
-        case SDL_EVENT_TEXT_INPUT: {
-            lua_newtable(L); 
+
+    case SDL_EVENT_TEXT_INPUT:
+        {
+            lua_newtable(L);
             lua_pushstring(L, event.text.text);
             lua_setfield(L, -2, "text");
             lua_setfield(L, -2, "text_input");
             break;
         }
-        
-        case SDL_EVENT_WINDOW_RESIZED:
-        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-        case SDL_EVENT_WINDOW_MINIMIZED:
-        case SDL_EVENT_WINDOW_MAXIMIZED:
-        case SDL_EVENT_WINDOW_RESTORED:
-        case SDL_EVENT_WINDOW_MOUSE_ENTER:
-        case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-        case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        case SDL_EVENT_WINDOW_FOCUS_LOST:
-        case SDL_EVENT_WINDOW_CLOSE_REQUESTED: {
+
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+    case SDL_EVENT_WINDOW_MINIMIZED:
+    case SDL_EVENT_WINDOW_MAXIMIZED:
+    case SDL_EVENT_WINDOW_RESTORED:
+    case SDL_EVENT_WINDOW_MOUSE_ENTER:
+    case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        {
             lua_newtable(L); // window table
             lua_pushinteger(L, event.window.windowID);
             lua_setfield(L, -2, "window_id");
-            if (event.type == SDL_EVENT_WINDOW_RESIZED || 
-                event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+            if (event.type == SDL_EVENT_WINDOW_RESIZED || event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
                 lua_pushinteger(L, event.window.data1);
                 lua_setfield(L, -2, "width");
                 lua_pushinteger(L, event.window.data2);
@@ -137,13 +142,14 @@ void push_sdl_event_to_lua(lua_State* L, const SDL_Event& event) {
             lua_setfield(L, -2, "window");
             break;
         }
-        
-        case SDL_EVENT_QUIT: {
+
+    case SDL_EVENT_QUIT:
+        {
             break;
         }
-        
-        default:
-            break;
+
+    default:
+        break;
     }
 }
 
@@ -176,7 +182,7 @@ void push_input_to_lua(lua_State* L) {
 
 void push_camera3d_to_lua(lua_State* L) {
     create_metatable<Camera3D>(L);
-    
+
     // Properties
     add_property<Camera3D>("position", &Camera3D::position);
     add_property<Camera3D>("yaw", &Camera3D::yaw);
@@ -184,56 +190,56 @@ void push_camera3d_to_lua(lua_State* L) {
     add_property<Camera3D>("fov", &Camera3D::fov);
     add_property<Camera3D>("speed", &Camera3D::speed);
     add_property<Camera3D>("view_distance", &Camera3D::view_distance);
-    
+
     // Methods
     add_method<Camera3D>("get_view_matrix", [](lua_State* L) -> int {
-        Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
+        Camera3D* cam  = binding::check_userdata<Camera3D>(L, 1);
         glm::mat4 view = cam->get_view();
         binding::push_userdata(L, &view);
         return 1;
     });
-    
+
     add_method<Camera3D>("get_projection_matrix", [](lua_State* L) -> int {
-        Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
-        int width     = static_cast<int>(luaL_checkinteger(L, 2));
-        int height    = static_cast<int>(luaL_checkinteger(L, 3));
+        Camera3D* cam  = binding::check_userdata<Camera3D>(L, 1);
+        int width      = static_cast<int>(luaL_checkinteger(L, 2));
+        int height     = static_cast<int>(luaL_checkinteger(L, 3));
         glm::mat4 proj = cam->get_projection(width, height);
         binding::push_userdata(L, &proj);
         return 1;
     });
-    
+
     add_method<Camera3D>("move_forward", [](lua_State* L) -> int {
         Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
         float dt      = static_cast<float>(luaL_checknumber(L, 2));
         cam->move_forward(dt);
         return 0;
     });
-    
+
     add_method<Camera3D>("move_backward", [](lua_State* L) -> int {
         Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
         float dt      = static_cast<float>(luaL_checknumber(L, 2));
         cam->move_backward(dt);
         return 0;
     });
-    
+
     add_method<Camera3D>("move_left", [](lua_State* L) -> int {
         Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
         float dt      = static_cast<float>(luaL_checknumber(L, 2));
         cam->move_left(dt);
         return 0;
     });
-    
+
     add_method<Camera3D>("move_right", [](lua_State* L) -> int {
         Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
         float dt      = static_cast<float>(luaL_checknumber(L, 2));
         cam->move_right(dt);
         return 0;
     });
-    
+
     add_method<Camera3D>("look_at", [](lua_State* L) -> int {
-        Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
-        float xoffset = static_cast<float>(luaL_checknumber(L, 2));
-        float yoffset = static_cast<float>(luaL_checknumber(L, 3));
+        Camera3D* cam     = binding::check_userdata<Camera3D>(L, 1);
+        float xoffset     = static_cast<float>(luaL_checknumber(L, 2));
+        float yoffset     = static_cast<float>(luaL_checknumber(L, 3));
         float sensitivity = 0.1f;
         if (lua_gettop(L) >= 4) {
             sensitivity = static_cast<float>(luaL_checknumber(L, 4));
@@ -241,7 +247,7 @@ void push_camera3d_to_lua(lua_State* L) {
         cam->look_at(xoffset, yoffset, sensitivity);
         return 0;
     });
-    
+
     add_method<Camera3D>("zoom", [](lua_State* L) -> int {
         Camera3D* cam = binding::check_userdata<Camera3D>(L, 1);
         float yoffset = static_cast<float>(luaL_checknumber(L, 2));
@@ -251,11 +257,10 @@ void push_camera3d_to_lua(lua_State* L) {
 }
 
 
-
 // Create and populate metatables for all types
 void generate_bindings(lua_State* L) {
 
-    
+
     // Transform2D
     create_metatable<Transform2D>(L);
     add_property<Transform2D>("position", &Transform2D::position);
@@ -303,7 +308,7 @@ void generate_bindings(lua_State* L) {
     add_property<glm::vec4>("b", &glm::vec4::b);
     add_property<glm::vec4>("a", &glm::vec4::a);
 
-  
+
     push_camera3d_to_lua(L);
 
     // Engine
@@ -378,78 +383,242 @@ void generate_bindings(lua_State* L) {
     lua_setglobal(L, "Scene");
 }
 
+void push_entity_table_to_lua(lua_State* L, flecs::entity e);
 
 void push_entity_to_lua(lua_State* L, flecs::entity e) {
-    lua_newtable(L); // Create the 'self' table
+    push_entity_table_to_lua(L, e);
+    lua_setglobal(L, "self");
+}
 
-    // -------------------------
-    // entity metadata
-    // -------------------------
+void push_entity_table_to_lua(lua_State* L, flecs::entity e) {
+    lua_newtable(L); // Create the entity table
+
+    // Store entity ID for methods to use
     lua_pushinteger(L, e.id());
-    lua_setfield(L, -2, "id");
+    lua_setfield(L, -2, "_id");
 
     lua_pushstring(L, e.name());
     lua_setfield(L, -2, "name");
 
-    lua_pushboolean(L, e.is_valid());
-    lua_setfield(L, -2, "is_valid");
+    // -------------------------
+    // Create a metatable with __index for dynamic component access
+    // -------------------------
+    lua_newtable(L); // metatable
 
-    // TODO: implement these functions properly
+    // __index metamethod for dynamic property access
     lua_pushcfunction(L, [](lua_State* L) -> int {
-        lua_pushboolean(L, true);
-        return 1;
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
+
+        const char* key = luaL_checkstring(L, 2);
+        auto entity     = GEngine->get_world().entity(id);
+
+        // Check for components
+        if (strcmp(key, "transform") == 0 && entity.has<Transform3D>()) {
+            binding::push_userdata(L, &entity.get_mut<Transform3D>());
+            return 1;
+        }
+        if (strcmp(key, "transform2d") == 0 && entity.has<Transform2D>()) {
+            binding::push_userdata(L, &entity.get_mut<Transform2D>());
+            return 1;
+        }
+        if (strcmp(key, "camera") == 0 && entity.has<Camera3D>()) {
+            binding::push_userdata(L, &entity.get_mut<Camera3D>());
+            return 1;
+        }
+        if (strcmp(key, "shape2d") == 0 && entity.has<Shape2D>()) {
+            binding::push_userdata(L, &entity.get_mut<Shape2D>());
+            return 1;
+        }
+        if (strcmp(key, "label2d") == 0 && entity.has<Label2D>()) {
+            binding::push_userdata(L, &entity.get_mut<Label2D>());
+            return 1;
+        }
+
+        return 0; // property not found
     });
-    lua_setfield(L, -2, "has_component");
+    lua_setfield(L, -2, "__index");
 
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        lua_pushboolean(L, true);
-        return 1;
+    lua_setmetatable(L, -2);
+
+
+
+lua_pushcfunction(L, [](lua_State* L) -> int {
+    lua_getfield(L, 1, "_id");
+    flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+    lua_pop(L, 1);
+
+    const char* name = luaL_checkstring(L, 2);
+    auto parent = GEngine->get_world().entity(id);
+
+    flecs::entity found;
+    parent.children([&](flecs::entity child) {
+        if (!found.is_valid() && strcmp(child.name(), name) == 0) {
+            found = child;
+        }
     });
-    lua_setfield(L, -2, "add_component");
 
-    lua_pushcfunction(L, [](lua_State* L) -> int {
+    if (!found.is_valid()) {
         lua_pushnil(L);
         return 1;
-    });
-    lua_setfield(L, -2, "get_component");
+    }
 
+    push_entity_table_to_lua(L, found);
+    return 1;
+});
+lua_setfield(L, -2, "get_node");
+
+    // get_children() -> Entity[]
     lua_pushcfunction(L, [](lua_State* L) -> int {
-        lua_pushboolean(L, true);
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
+
+        auto entity = GEngine->get_world().entity(id);
+
+        lua_newtable(L);
+        int index = 1;
+        entity.children([&](flecs::entity child) {
+            push_entity_table_to_lua(L, child);
+            lua_rawseti(L, -2, index++);
+        });
+
         return 1;
     });
-    lua_setfield(L, -2, "remove_component");
+    lua_setfield(L, -2, "get_children");
 
-    // -------------------------
-    // components (direct members)
-    // -------------------------
-    if (e.has<Transform2D>()) {
-        binding::push_userdata(L, &e.get_mut<Transform2D>());
-        lua_setfield(L, -2, "transform2d");
-    }
+    // get_child_count() -> integer
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
 
-    if (e.has<Shape2D>()) {
-        binding::push_userdata(L, &e.get_mut<Shape2D>());
-        lua_setfield(L, -2, "shape2d");
-    }
+        auto entity = GEngine->get_world().entity(id);
+        int count   = 0;
+        entity.children([&](flecs::entity) { count++; });
 
-    if (e.has<Label2D>()) {
-        binding::push_userdata(L, &e.get_mut<Label2D>());
-        lua_setfield(L, -2, "label2d");
-    }
+        lua_pushinteger(L, count);
+        return 1;
+    });
+    lua_setfield(L, -2, "get_child_count");
 
-    if(e.has<Camera3D>()) {
-        binding::push_userdata(L, &e.get_mut<Camera3D>());
-        lua_setfield(L, -2, "camera");
-    }
-    
-    if(e.has<Transform3D>()) {
-        binding::push_userdata(L, &e.get_mut<Transform3D>());
-        lua_setfield(L, -2, "transform");
-    }
+    // find_child(name: string, recursive: bool = false, component: string = nil) -> Component | Entity | nil
+    // If component is specified, returns the component directly, otherwise returns entity
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
 
-    // -------------------------
-    // expose the entity to Lua as `self`
-    // scripts can just use `self` directly
-    // -------------------------
-    lua_setglobal(L, "self");
+        const char* name      = luaL_checkstring(L, 2);
+        bool recursive        = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
+        const char* component = lua_isstring(L, 4) ? lua_tostring(L, 4) : nullptr;
+
+        auto entity = GEngine->get_world().entity(id);
+        flecs::entity result;
+
+        std::function<void(flecs::entity)> search;
+        search = [&](flecs::entity parent) {
+            parent.children([&](flecs::entity child) {
+                if (result.is_valid()) {
+                    return;
+                }
+                if (strcmp(child.name(), name) == 0) {
+                    result = child;
+                    return;
+                }
+                if (recursive) {
+                    search(child);
+                }
+            });
+        };
+
+        search(entity);
+
+        if (!result.is_valid()) {
+            lua_pushnil(L);
+            return 1;
+        }
+
+        // If component specified, return component directly
+        if (component != nullptr) {
+            if (strcmp(component, "Camera3D") == 0 && result.has<Camera3D>()) {
+                binding::push_userdata(L, &result.get_mut<Camera3D>());
+                return 1;
+            }
+            if (strcmp(component, "Transform3D") == 0 && result.has<Transform3D>()) {
+                binding::push_userdata(L, &result.get_mut<Transform3D>());
+                return 1;
+            }
+            if (strcmp(component, "Transform2D") == 0 && result.has<Transform2D>()) {
+                binding::push_userdata(L, &result.get_mut<Transform2D>());
+                return 1;
+            }
+            if (strcmp(component, "Shape2D") == 0 && result.has<Shape2D>()) {
+                binding::push_userdata(L, &result.get_mut<Shape2D>());
+                return 1;
+            }
+            lua_pushnil(L); // Component not found
+            return 1;
+        }
+
+        // Otherwise return entity
+        push_entity_table_to_lua(L, result);
+        return 1;
+    });
+    lua_setfield(L, -2, "find_child");
+
+    // has(component_name: string) -> boolean
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
+
+        const char* component = luaL_checkstring(L, 2);
+        auto entity           = GEngine->get_world().entity(id);
+
+        bool has = false;
+        if (strcmp(component, "Transform3D") == 0) {
+            has = entity.has<Transform3D>();
+        } else if (strcmp(component, "Transform2D") == 0) {
+            has = entity.has<Transform2D>();
+        } else if (strcmp(component, "Camera3D") == 0) {
+            has = entity.has<Camera3D>();
+        } else if (strcmp(component, "Cube") == 0) {
+            has = entity.has<Cube>();
+        } else if (strcmp(component, "Shape2D") == 0) {
+            has = entity.has<Shape2D>();
+        } else if (strcmp(component, "Script") == 0) {
+            has = entity.has<Script>();
+        }
+
+        lua_pushboolean(L, has);
+        return 1;
+    });
+    lua_setfield(L, -2, "has");
+
+    // is_valid() -> boolean
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
+
+        auto entity = GEngine->get_world().entity(id);
+        lua_pushboolean(L, entity.is_valid());
+        return 1;
+    });
+    lua_setfield(L, -2, "is_valid");
+
+    // queue_free() - mark for deletion
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_getfield(L, 1, "_id");
+        flecs::entity_t id = static_cast<flecs::entity_t>(lua_tointeger(L, -1));
+        lua_pop(L, 1);
+
+        auto entity = GEngine->get_world().entity(id);
+        entity.destruct();
+
+        return 0;
+    });
+    lua_setfield(L, -2, "queue_free");
 }

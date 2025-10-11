@@ -1,47 +1,33 @@
 #include "core/engine.h"
 #include <SDL3/SDL_main.h>
 
-
-#define WINDOW_W 1280
-#define WINDOW_H 720
-
 int main(int argc, char* argv[]) {
+    const int WINDOW_W = 1280, WINDOW_H = 720;
 
     if (!GEngine->initialize(WINDOW_W, WINDOW_H)) {
-        return SDL_APP_FAILURE;
+        LOG_INFO("Failed to initialize engine");
+        return -1;
     }
 
 
-    auto ui_icons = GEngine->get_renderer()->load_texture("ui_icons", "res://ui/icons/icons_64.png");
+    auto scene = GEngine->get_world().entity("MainScene").add<tags::Scene>().add<tags::ActiveScene>();
 
-    auto& world = GEngine->get_world();
-
-
-    auto scene1 = world.entity("MenuScene").add<tags::Scene>().add<tags::ActiveScene>();
-    auto scene2 = world.entity("GameScene").add<tags::Scene>();
-
-    auto player = world.entity("Player")
-                      .set<Transform2D>({{100, 100}, {1, 1}, 50, 1})
-                      .set<Shape2D>({ShapeType::RECTANGLE, {0, 1, 0, 1}, true, {50, 50}})
-                      .set<Script>({"res://scripts/test.lua"})
-                      .child_of(scene1);
-
-    auto& camera = world.entity("MainCamera").add<tags::MainCamera>().set<Camera2D>({})
-    .set<Follow>({player, {0, -100,0}, 0.1f})
-    .child_of(scene1);
-
-    auto enemy = world.entity("Enemy")
-                     .set<Transform2D>({{300, 200}, {1, 1}, 0})
-                     .set<Shape2D>({ShapeType::CIRCLE, {1, 0, 0, 1}, false, {32, 32}, 32})
-                     .child_of(scene1);
-
-    auto enemy_sprite = world.entity("EnemySprite").set<Transform2D>({{0, 0}, {1, 1}, 0}).set<Sprite2D>({"ui_icons"}).child_of(enemy);
-
-    auto enemy_label = world.entity("EnemyLabel").set<Transform2D>({{0, -20}, {1, 1}, 0}).set<Label2D>({"Enemy 💀"}).child_of(enemy);
+    Camera3D cam;
+    cam.position = glm::vec3(0, 10, 20);
+    auto camera  = GEngine->get_world().entity("MainCamera").set<Camera3D>(cam).add<tags::MainCamera>()
+    .set<Script>({"res://scripts/test.lua"})
+    .child_of(scene);
 
 
-    // FileAccess("user://scenes/test.json",ModeFlags::WRITE).store_string(world.to_json().c_str());
 
+    auto e3 =
+        GEngine->get_world().entity("car").set<Model>({.path = "sprites/obj/Car.obj"}).set<Transform3D>({.position = {10, 1, 0}}).child_of(scene);
+
+
+
+    auto plane = GEngine->get_world().entity("plane").set<Cube>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
+                     .set<Transform3D>({.position = {0, 0, 0}})
+                     .child_of(scene);
 
     GEngine->run();
 

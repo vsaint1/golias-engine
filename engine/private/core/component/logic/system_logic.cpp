@@ -118,9 +118,12 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     const auto& window = GEngine->get_config().get_window();
 
     // Render all 3D models in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const std::shared_ptr<Model>& model) {
-        // push to instanced_batches
-        GEngine->get_renderer()->draw_model(t, model.get());
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Model& model) {
+        
+      
+       auto  m = GEngine->get_renderer()->load_model(model.path.c_str());
+      
+        GEngine->get_renderer()->draw_model(t, m.get());
     });
 
     // Render all cubes in the scene

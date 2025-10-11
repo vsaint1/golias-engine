@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     auto player = world.entity("Player")
                       .set<Transform2D>({{100, 100}, {1, 1}, 50, 1})
                       .set<Shape2D>({ShapeType::RECTANGLE, {0, 1, 0, 1}, true, {50, 50}})
-                      .set<Script>({"res://scripts/test.lua"})
+                      .set<Script>({"res://scripts/test_2d.lua"})
                       .child_of(scene1);
 
     auto& camera = world.entity("MainCamera").add<tags::MainCamera>().set<Camera2D>({})

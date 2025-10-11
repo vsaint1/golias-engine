@@ -213,7 +213,11 @@ void engine_core_loop() {
         }
 
 #if defined(EMBER_3D)
-        GEngine->get_world().each([&](flecs::entity e, Camera3D& camera) { camera_touch_system(e, camera, GEngine->event); });
+        GEngine->get_world().each([&](flecs::entity e, const SDL_Event& event) {
+            if (e.has<Script>()) {
+                process_event_scripts_system(e.get_mut<Script>(), event);
+            }
+        });
 #endif
     }
 
@@ -260,11 +264,6 @@ void engine_setup_systems(flecs::world& world) {
 
 #if defined(EMBER_3D)
     world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).each(render_world_3d_system);
-
-    world.system<Camera3D>("Camera3D_Keyboard_OnUpdate").kind(flecs::OnUpdate).each([&](flecs::entity e, Camera3D& camera) {
-        camera_keyboard_system(e, camera, static_cast<float>(GEngine->get_timer().delta));
-    });
-
 
 #endif
 

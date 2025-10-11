@@ -132,15 +132,15 @@ struct Cube {
 
 struct Model {
     std::string path;
-    std::vector<std::unique_ptr<Mesh>> meshes;
+    std::vector<std::shared_ptr<Mesh>> meshes;
 
-    Model() = default;
+    // Model() = default;
 
-    Model(Model&&) noexcept            = default;
-    Model& operator=(Model&&) noexcept = default;
+    // Model(Model&&) noexcept            = default;
+    // Model& operator=(Model&&) noexcept = default;
 
-    Model(const Model&)            = delete;
-    Model& operator=(const Model&) = delete;
+    // Model(const Model&)            = delete;
+    // Model& operator=(const Model&) = delete;
 
 
     ~Model();
