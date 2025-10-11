@@ -18,11 +18,10 @@ int main(int argc, char* argv[]) {
     .set<Script>({"res://scripts/test.lua"})
     .child_of(scene);
 
-    auto car      = GEngine->get_renderer()->load_model("sprites/obj/Car.obj");
 
 
     auto e3 =
-        GEngine->get_world().entity("car").set<std::shared_ptr<Model>>(car).set<Transform3D>({.position = {10, 1, 0}}).child_of(scene);
+        GEngine->get_world().entity("car").set<Model>({.path = "sprites/obj/Car.obj"}).set<Transform3D>({.position = {10, 1, 0}}).child_of(scene);
 
 
 
