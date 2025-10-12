@@ -12,20 +12,30 @@ int main(int argc, char* argv[]) {
 
     auto scene = GEngine->get_world().entity("MainScene").add<tags::Scene>().add<tags::ActiveScene>();
 
-    Camera3D cam;
-    cam.position = glm::vec3(0, 10, 20);
-    auto camera  = GEngine->get_world().entity("MainCamera").set<Camera3D>(cam).add<tags::MainCamera>()
-    .set<Script>({"res://scripts/test.lua"})
-    .child_of(scene);
+    auto player = GEngine->get_world()
+                      .entity("Player")
+                      .set<Cube>({.size = {1, 2, 1}, .color = {1, 0, 0}})
+                      .set<Transform3D>({.position = {0, 2, 0}, .scale = {1, 1, 1}})
+                      .set<Script>({"res://scripts/test.lua"})
+                      .child_of(scene);
+
+    auto camera  = GEngine->get_world()
+                      .entity("MainCamera")
+                      .set<Transform3D>({.position = {0, 5, 10}, .rotation = {-0.4f, 0, 0}})
+                      .add<Camera3D>()
+                      .child_of(player);
 
 
+    auto e3 = GEngine->get_world()
+                  .entity("car")
+                  .set<Model>({.path = "sprites/obj/Car.obj"})
+                  .set<Transform3D>({.position = {10, 2, 0}})
+                  .child_of(scene);
 
-    auto e3 =
-        GEngine->get_world().entity("car").set<Model>({.path = "sprites/obj/Car.obj"}).set<Transform3D>({.position = {10, 1, 0}}).child_of(scene);
 
-
-
-    auto plane = GEngine->get_world().entity("plane").set<Cube>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
+    auto plane = GEngine->get_world()
+                     .entity("plane")
+                     .set<Cube>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
                      .set<Transform3D>({.position = {0, 0, 0}})
                      .child_of(scene);
 

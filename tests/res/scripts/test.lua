@@ -1,58 +1,60 @@
-require("constants")
-
-local speed = 100
-
+local t = require("constants")
+local cam = nil
 
 function _ready()
-    print("Entity Id: ".. self.id .. " Name: " .. self.name)
-    local viewport = Engine:get_config():get_viewport()
-    local window = Engine:get_config():get_window()
-    print("Viewport: " .. viewport.width .. "x" .. viewport.height .. " Scale: " .. viewport.scale)
-    print("Window: Width: " .. window.width .. " Height: " .. window.height .. " DPI Scale: " .. window.dpi_scale)
-
+    print("Entity id:", self.id)
+   
     local mouse_pos = Input.get_mouse_position()
     print("Mouse Position: " .. mouse_pos.x .. ", " .. mouse_pos.y)
+   
+    cam = self:get_node("MainCamera")
+    if cam ~= nil then
+        print("Camera found at:")
+    else
+        error("Camera not found!")
+    end
 end
 
-
-function _process(delta_time)
-
-    if Input.is_key_pressed(SCANCODE_D) then
-        self.camera:move_right(delta_time)
-    end
-
-    if Input.is_key_pressed(SCANCODE_A) then
-        self.camera:move_left(delta_time)
-    end
-
+function _process(dt)
+    if cam == nil then return end
+   
     if Input.is_key_pressed(SCANCODE_W) then
-        self.camera:move_forward(delta_time)
+        cam:move_forward(dt)
     end
-
+   
     if Input.is_key_pressed(SCANCODE_S) then
-        self.camera:move_backward(delta_time)
+        cam:move_backward(dt)
     end
-    
+   
+    if Input.is_key_pressed(SCANCODE_A) then
+        cam:move_left(dt)
+    end
+   
+    if Input.is_key_pressed(SCANCODE_D) then
+        cam:move_right(dt)
+    end
+   
+
     if Input.is_key_pressed(SCANCODE_LSHIFT) then
-        self.camera.speed = 100
+        cam.speed = 15.0
     else
-        self.camera.speed = 50
+        cam.speed = 10.0
     end
 end
 
 function _input(event)
-   if event.type == EVENT_MOUSE_MOTION then
-        if (event.motion.state & BUTTON_MASK.LEFT) ~=0 then
-            self.camera:look_at(event.motion.xrel, -event.motion.yrel, 1.0)
+   
+    if event.type == EVENT_MOUSE_MOTION then
+        if (event.motion.state & BUTTON_MASK.LEFT) ~= 0 then
+            cam:look_at(event.motion.xrel, -event.motion.yrel, 1.0)
         end
     end
-
+   
     if event.type == EVENT_MOUSE_WHEEL then
-        self.camera:zoom(event.wheel.y)
+        cam:zoom(event.wheel.y)
     end
 end
 
-
-function destroy() 
+function destroy()
     print("godzilla giroflex")
 end
