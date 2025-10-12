@@ -6,7 +6,8 @@
 #include <chrono>
 #include <stdio.h>
 
-#include <lua.hpp>
+// #include <lua.hpp>
+#include <sol.hpp>
 
 #define FLECS_CUSTOM_BUILD
 #define FLECS_SYSTEM

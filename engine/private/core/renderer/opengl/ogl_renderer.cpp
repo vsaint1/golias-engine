@@ -569,18 +569,18 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
         aiMaterial* mat = scene->mMaterials[i];
         aiString name;
         if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
-            LOG_INFO("Material %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
+            LOG_DEBUG("Material %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
         }
     }
 
     base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        LOG_INFO("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
+        LOG_DEBUG("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
         model->meshes.push_back(load_mesh(scene->mMeshes[i], scene, base_dir));
     }
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s Mesh Count:  %zu FileFormat: %s", path, model->meshes.size(), ext.c_str());
+    LOG_INFO("Loaded Model: %s | Mesh Count: %zu | FileFormat: %s", path, model->meshes.size(), ext.c_str());
 
     return model;
 }
@@ -708,12 +708,12 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
 
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
+    // NOTE: this buffer is re-created each frame **optimize** soon
     GLuint instanceVBO;
     glGenBuffers(1, &instanceVBO);
 
-    // NOTE: soon i'll add color instance attribute too
-    // GLuint colorVBO;
-    // glGenBuffers(1, &colorVBO);
+    GLuint colorVBO;
+    glGenBuffers(1, &colorVBO);
 
     // DrawInstanced
     for (auto& [_, batch] : _instanced_batches) {
@@ -749,15 +749,16 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             glVertexAttribDivisor(3 + i, 1);
         }
 
-        // if (!batch.colors.empty()) {
-        //     glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
-        //     glBufferData(GL_ARRAY_BUFFER, batch.colors.size() * sizeof(glm::vec3), batch.colors.data(), GL_STATIC_DRAW);
+        if (!batch.colors.empty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
+            glBufferData(GL_ARRAY_BUFFER, batch.colors.size() * sizeof(glm::vec3), batch.colors.data(), GL_STATIC_DRAW);
 
-        //     glEnableVertexAttribArray(7);
-        //     glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0);
-        //     glVertexAttribDivisor(7, 1);
-        // }
+            glEnableVertexAttribArray(7);
+            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0);
+            glVertexAttribDivisor(7, 1);
+        }
 
+        //  TODO: we should create a 1x1 white texture and bind that instead of disabling texture usage in shader
         if (ogl_mesh->has_texture()) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
@@ -774,7 +775,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     }
 
     glDeleteBuffers(1, &instanceVBO);
-    // glDeleteBuffers(1, &colorVBO);
+    glDeleteBuffers(1, &colorVBO);
 
     _instanced_batches.clear();
 
@@ -802,6 +803,10 @@ void OpenglRenderer::draw_cube(const Transform3D& transform, const Cube& cube, c
 
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
 
+
+    if(skybox_mesh == nullptr || skybox_mesh->texture_id ==0){
+        return;
+    }
 
     glDepthFunc(GL_LEQUAL);
 

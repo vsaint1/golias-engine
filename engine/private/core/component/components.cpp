@@ -38,28 +38,28 @@ void Camera3D::update_vectors() {
 }
 
 
-glm::mat4 Camera3D::get_view() const {
-    return glm::lookAt(position, position + front, up);
+glm::mat4 Camera3D::get_view(const Transform3D& transform) const {
+    return glm::lookAt(transform.position, transform.position + front, up);
 }
 
 glm::mat4 Camera3D::get_projection(int w, int h) const {
     return glm::perspective(glm::radians(fov), (float) w / (float) h, 0.1f, view_distance);
 }
 
-void Camera3D::move_forward(float dt) {
-    position += front * speed * dt;
+void Camera3D::move_forward(Transform3D& transform,float dt) {
+    transform.position += front * speed * dt;
 }
 
-void Camera3D::move_backward(float dt) {
-    position -= front * speed * dt;
+void Camera3D::move_backward(Transform3D& transform,float dt) {
+    transform.position -= front * speed * dt;
 }
 
-void Camera3D::move_left(float dt) {
-    position -= right * speed * dt;
+void Camera3D::move_left(Transform3D& transform,float dt) {
+    transform.position -= right * speed * dt;
 }
 
-void Camera3D::move_right(float dt) {
-    position += right * speed * dt;
+void Camera3D::move_right(Transform3D& transform,float dt) {
+    transform.position += right * speed * dt;
 }
 
 void Camera3D::look_at(float xoffset, float yoffset, float sensitivity) {

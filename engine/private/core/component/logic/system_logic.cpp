@@ -3,8 +3,6 @@
 #include "core/binding/lua.h"
 #include "core/engine.h"
 
-#if defined(EMBER_2D)
-
 
 int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
     (void) e1;
@@ -13,7 +11,7 @@ int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e
 }
 
 void render_world_2d_system(flecs::entity e, Camera2D& camera) {
-    if (!e.is_valid() || !e.has<tags::MainCamera>()) {
+    if (!e.is_valid()) {
         return;
     }
 
@@ -36,7 +34,6 @@ void render_world_2d_system(flecs::entity e, Camera2D& camera) {
         if (e.has<Label2D>()) {
             render_labels_system(t, e.get_mut<Label2D>());
         }
-
     });
 }
 
@@ -104,14 +101,11 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
     //          t.world_position.y);
 }
 
-#endif
-
-#if defined(EMBER_3D)
 
 void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
 
-    if (!e.is_valid() || !e.has<tags::MainCamera>()) {
+    if (!e.is_valid()) {
         return;
     }
 
@@ -119,22 +113,18 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
     // Render all 3D models in the scene
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Model& model) {
-        
-      
-       auto  m = GEngine->get_renderer()->load_model(model.path.c_str());
-      
+        auto m = GEngine->get_renderer()->load_model(model.path.c_str());
+
         GEngine->get_renderer()->draw_model(t, m.get());
     });
 
     // Render all cubes in the scene
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Cube& cube) { GEngine->get_renderer()->draw_cube(t, cube); });
 
-
-    // Flush
-    GEngine->get_renderer()->flush(camera.get_view(), camera.get_projection(window.width, window.height));
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
+        GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));
+    });
 }
-
-#endif
 
 void setup_scripts_system(flecs::entity e, Script& script) {
     // Create a NEW lua_State for THIS script
@@ -160,8 +150,7 @@ void setup_scripts_system(flecs::entity e, Script& script) {
     const std::string& lua_script = lua_file.get_file_as_str();
 
     // Load & execute script file
-    if (luaL_loadstring(script.lua_state, lua_script.c_str()) || 
-        lua_pcall(script.lua_state, 0, 0, 0)) {
+    if (luaL_loadstring(script.lua_state, lua_script.c_str()) || lua_pcall(script.lua_state, 0, 0, 0)) {
         const char* err = lua_tostring(script.lua_state, -1);
         LOG_ERROR("Failed to load script %s: %s", script.path.c_str(), err);
         lua_pop(script.lua_state, 1);
@@ -169,7 +158,7 @@ void setup_scripts_system(flecs::entity e, Script& script) {
     }
 
     generate_bindings(script.lua_state);
-    
+
     push_entity_to_lua(script.lua_state, e);
 
     // Call _ready() if it exists
@@ -187,7 +176,7 @@ void setup_scripts_system(flecs::entity e, Script& script) {
     }
 }
 
-void process_event_scripts_system(Script& script, const SDL_Event& event) {
+void process_event_scripts_system(const Script& script, const SDL_Event& event) {
     if (!script.ready_called || !script.lua_state) {
         return;
     }
@@ -218,7 +207,7 @@ void process_scripts_system(Script& script) {
     lua_getglobal(script.lua_state, "_process");
     if (lua_isfunction(script.lua_state, -1)) {
         lua_pushnumber(script.lua_state, static_cast<lua_Number>(GEngine->get_timer().delta));
-        
+
         if (lua_pcall(script.lua_state, 1, 0, 0) != LUA_OK) {
             const char* err_msg = lua_tostring(script.lua_state, -1);
             LOG_ERROR("Error in _process() of %s: %s", script.path.c_str(), err_msg);

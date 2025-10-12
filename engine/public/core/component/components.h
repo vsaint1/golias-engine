@@ -177,30 +177,28 @@ public:
 // enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
 
-class Camera3D {
-public:
-    glm::vec3 position{0.0f, 1.5f, 4.0f};
+struct Camera3D {
     float yaw           = -90.0f; // Z
     float pitch         = 0.0f;
     float fov           = 45.0f;
     float speed         = 5.0f;
     float view_distance = 1000.f;
 
-    explicit Camera3D(glm::vec3 pos = {0, 1.5f, 4.0f}) : position(pos) {
+    explicit Camera3D()  {
         update_vectors();
     }
 
-    glm::mat4 get_view() const;
+    glm::mat4 get_view(const Transform3D& transform) const;
 
     glm::mat4 get_projection(int w, int h) const;
 
-    void move_forward(float dt);
+    void move_forward(Transform3D& transform, float dt);
 
-    void move_backward(float dt);
+    void move_backward(Transform3D& transform, float dt);
 
-    void move_left(float dt);
+    void move_left(Transform3D& transform, float dt);
 
-    void move_right(float dt);
+    void move_right(Transform3D& transform, float dt);
 
     void look_at(float xoffset, float yoffset, float sensitivity = 0.1f);
 

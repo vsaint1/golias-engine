@@ -16,6 +16,4 @@
 
 #include <nuklear.h>
 
-#include "nuklear_sdl3_renderer.h"
-
 #include "nuklear_sdl3_gl3.h"

@@ -36,11 +36,8 @@ public:
 
     ~Engine();
 
-    struct nk_context* nk_ctx = nullptr;
 
 private:
-    struct nk_font_atlas* font_atlas = nullptr;
-    struct nk_colorf bg;
 
     EngineConfig _config = {};
     Timer _timer         = {};
