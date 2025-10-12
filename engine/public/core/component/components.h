@@ -228,13 +228,25 @@ inline void serialize_components(flecs::world& ecs) {
     ecs.component<Camera2D>();
 
     ecs.component<Camera3D>() 
-    .member<glm::vec3>("position")
     .member<float>("yaw")
     .member<float>("pitch")
     .member<float>("fov")
     .member<float>("speed")
     .member<float>("view_distance");
 
+    ecs.component<Metallic>()
+        .member<glm::vec3>("specular")
+        .member<float>("value");
+
+    ecs.component<Material>()
+        .member<glm::vec3>("albedo")
+        .member<Metallic>("metallic")
+        .member<float>("roughness");
+    
+
+    ecs.component<MeshInstance3D>()
+        .member<glm::vec3>("size")
+        .member<Material>("material");
 
     ecs.component<Transform3D>().member<glm::vec3>("position").member<glm::vec3>("rotation").member<glm::vec3>("scale");
 

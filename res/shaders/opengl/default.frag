@@ -1,3 +1,4 @@
+
 out vec4 COLOR;
 
 in vec3 NORMAL;
@@ -10,12 +11,16 @@ uniform sampler2D TEXTURE;
 uniform vec3 LIGHT_POSITION;
 uniform vec3 LIGHT_COLOR; // DEFAULT vec3(1.0, 1.0, 1.0)
 
+struct CMetallic {
+    vec3 specular;
+    float value;
+};
+
 struct CMaterial {
     vec3 albedo;
-    vec3 specular;
-    float shininess;
-    vec3 emissive;
-    // TODO: handle `maps` 
+    CMetallic metallic;
+    float roughness;
+    // TODO: handle `textures` 
 };
 
 uniform CMaterial material;

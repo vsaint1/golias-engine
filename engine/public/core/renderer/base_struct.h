@@ -52,11 +52,15 @@ public:
     virtual ~Texture() = default;
 };
 
+struct Metallic {
+    glm::vec3 specular = glm::vec3(0.f); /// specular reflections
+    float value = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
+};
+
 struct Material {
     glm::vec3 albedo  = glm::vec3(1.f);
-    glm::vec3 specular = glm::vec3(1.f);
-    float shininess    = 1.f;
-    glm::vec3 emissive = glm::vec3(0.f);
+    Metallic metallic = {};
+    float roughness = 0.0f;  /// 0.0 -> mirror | 1.0 -> blurs
 };
 
 

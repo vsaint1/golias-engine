@@ -217,9 +217,9 @@ void generate_bindings(lua_State* L) {
     // MeshInstance3D
     lua.new_usertype<MeshInstance3D>("MeshInstance3D",
         "size", &MeshInstance3D::size,
-        "color", &MeshInstance3D::color
+        "material", &MeshInstance3D::material
     );
-    
+
     // Transform2D
     lua.new_usertype<Transform2D>("Transform2D",
         "position", &Transform2D::position,
