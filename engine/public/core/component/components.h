@@ -125,9 +125,9 @@ struct PhysicsBody {
     Uint32 id = 0;
 };
 
-struct Cube {
+struct MeshInstance3D {
     glm::vec3 size  = glm::vec3(1.f);
-    glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.5f);
+    glm::vec3 color = glm::vec3(1.f);
 };
 
 struct Model {

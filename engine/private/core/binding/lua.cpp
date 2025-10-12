@@ -214,6 +214,12 @@ void push_camera3d_to_lua(lua_State* L) {
 void generate_bindings(lua_State* L) {
     sol::state_view lua(L);
 
+    // MeshInstance3D
+    lua.new_usertype<MeshInstance3D>("MeshInstance3D",
+        "size", &MeshInstance3D::size,
+        "color", &MeshInstance3D::color
+    );
+    
     // Transform2D
     lua.new_usertype<Transform2D>("Transform2D",
         "position", &Transform2D::position,
@@ -536,7 +542,7 @@ void push_entity_table_to_lua(lua_State* L, flecs::entity e) {
         if (strcmp(component, "Transform3D") == 0) return entity.has<Transform3D>();
         if (strcmp(component, "Transform2D") == 0) return entity.has<Transform2D>();
         if (strcmp(component, "Camera3D") == 0) return entity.has<Camera3D>();
-        if (strcmp(component, "Cube") == 0) return entity.has<Cube>();
+        if (strcmp(component, "MeshInstance3D") == 0) return entity.has<MeshInstance3D>();
         if (strcmp(component, "Shape2D") == 0) return entity.has<Shape2D>();
         if (strcmp(component, "Script") == 0) return entity.has<Script>();
 

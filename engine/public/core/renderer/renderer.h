@@ -18,6 +18,11 @@ struct InstancedBatch {
 };
 
 
+struct GpuBuffer {
+    Uint32 instance_buffer = 0;
+    Uint32 color_buffer = 0;
+};
+
 /*!
 
     @brief Abstract base class for different rendering backends.
@@ -86,7 +91,7 @@ public:
     }
 
     // TODO: add shader parameter
-    virtual void draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader = nullptr) {
+    virtual void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader = nullptr) {
         LOG_WARN("draw_cube not implemented for this renderer");
     }
 
@@ -128,4 +133,6 @@ protected:
 
     // batching/instancing
     std::unordered_map<const Mesh*, InstancedBatch> _instanced_batches;
+
+    std::unordered_map<const Mesh*, GpuBuffer> _buffers;
 };

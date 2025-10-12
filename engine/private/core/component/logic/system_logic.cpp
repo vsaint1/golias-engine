@@ -119,7 +119,7 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     });
 
     // Render all cubes in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Cube& cube) { GEngine->get_renderer()->draw_cube(t, cube); });
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
         GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));

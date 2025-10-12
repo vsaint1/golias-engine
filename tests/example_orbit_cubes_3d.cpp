@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 
         glm::vec3 color = glm::vec3(random_number<float>(0.0f, 1.0f), random_number<float>(0.0f, 1.0f), random_number<float>(0.0f, 1.0f));
         glm::vec3 size = glm::vec3(random_number<float>(0.5f, 5.0f));
-        entity.set<Cube>({.size = size, .color = color});
+        entity.set<MeshInstance3D>({.size = size, .color = color});
      
         entity.set<Transform3D>({.position = {x, y, z}, .rotation = {0, (float) (rand() % 360), 0}, .scale = {1.0f, 1.0f, 1.0f}});
         entity.child_of(scene);

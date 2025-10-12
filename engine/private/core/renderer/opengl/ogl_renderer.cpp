@@ -272,7 +272,8 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-    LOG_INFO("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h, texID);
+    LOG_INFO("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h,
+             texID);
 
     SDL_DestroySurface(surf);
     return texID;
@@ -423,19 +424,11 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glCullFace(GL_BACK);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    // glEnable(GL_STENCIL_TEST);
+    // glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     // glViewport(0, 0, viewport.width, viewport.height);
-    glGenBuffers(1, &ogl_batch.instanceVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, ogl_batch.instanceVBO);
-    // allocate some capacity (e.g. 10k transforms)
-    glBufferData(GL_ARRAY_BUFFER, 10000 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 
-    glGenBuffers(1, &ogl_batch.colorVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, ogl_batch.colorVBO);
-    glBufferData(GL_ARRAY_BUFFER, 10000 * sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
-    ogl_batch.capacity = 10000;
 
     return true;
 }
@@ -707,14 +700,6 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
 }
 
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
-
-    // NOTE: this buffer is re-created each frame **optimize** soon
-    GLuint instanceVBO;
-    glGenBuffers(1, &instanceVBO);
-
-    GLuint colorVBO;
-    glGenBuffers(1, &colorVBO);
-
     // DrawInstanced
     for (auto& [_, batch] : _instanced_batches) {
         const Mesh* mesh = batch.mesh;
@@ -726,20 +711,24 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
         OpenglShader* ogl_shader = static_cast<OpenglShader*>(shader);
-
         shader->activate();
         ogl_shader->set_value("VIEW", view);
         ogl_shader->set_value("PROJECTION", projection);
 
-
         const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
-
         if (!ogl_shader->is_valid() || !ogl_mesh) {
             continue;
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STATIC_DRAW);
+        auto& buffers = _buffers[mesh];
+
+        if (buffers.instance_buffer == 0) {
+            glGenBuffers(1, &buffers.instance_buffer);
+            glGenBuffers(1, &buffers.color_buffer);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
 
         glBindVertexArray(ogl_mesh->vao);
 
@@ -749,16 +738,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             glVertexAttribDivisor(3 + i, 1);
         }
 
-        if (!batch.colors.empty()) {
-            glBindBuffer(GL_ARRAY_BUFFER, colorVBO);
-            glBufferData(GL_ARRAY_BUFFER, batch.colors.size() * sizeof(glm::vec3), batch.colors.data(), GL_STATIC_DRAW);
 
-            glEnableVertexAttribArray(7);
-            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0);
-            glVertexAttribDivisor(7, 1);
-        }
-
-        //  TODO: we should create a 1x1 white texture and bind that instead of disabling texture usage in shader
         if (ogl_mesh->has_texture()) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
@@ -768,34 +748,41 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             ogl_shader->set_value("material.albedo", mesh->material.albedo);
         }
 
+        if (!batch.colors.empty()) {
+            glBindBuffer(GL_ARRAY_BUFFER, buffers.color_buffer);
+            glBufferData(GL_ARRAY_BUFFER, batch.colors.size() * sizeof(glm::vec3), batch.colors.data(), GL_STREAM_DRAW);
+
+            glEnableVertexAttribArray(7);
+            glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*) 0);
+            glVertexAttribDivisor(7, 1);
+        }
+
+     
+
         auto mode = batch.mode == EDrawMode::LINES ? GL_LINES : GL_TRIANGLES;
         glDrawElementsInstanced(mode, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
-
-        glBindVertexArray(0);
     }
 
-    glDeleteBuffers(1, &instanceVBO);
-    glDeleteBuffers(1, &colorVBO);
+    glBindVertexArray(0);
 
     _instanced_batches.clear();
-
-    // Draw the "World Environment" ( the last )
     draw_environment(view, projection);
 }
 
-void OpenglRenderer::draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader) {
+
+void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) {
 
     if (!cube_mesh) {
         return;
     }
 
     Transform3D temp = transform;
-    temp.scale *= cube.size;
+    temp.scale       = cube.size;
 
-    auto& batch                  = _instanced_batches[cube_mesh.get()];
-    batch.mesh                   = cube_mesh.get();
+    auto& batch                 = _instanced_batches[cube_mesh.get()];
+    batch.mesh                  = cube_mesh.get();
     batch.mesh->material.albedo = cube.color;
-    batch.shader                 = default_shader;
+    batch.shader                = default_shader;
     batch.models.push_back(temp.get_model_matrix());
     batch.colors.push_back(cube.color);
     batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
@@ -804,7 +791,7 @@ void OpenglRenderer::draw_cube(const Transform3D& transform, const Cube& cube, c
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
 
 
-    if(skybox_mesh == nullptr || skybox_mesh->texture_id ==0){
+    if (skybox_mesh == nullptr || skybox_mesh->texture_id == 0) {
         return;
     }
 
@@ -855,6 +842,18 @@ void OpenglRenderer::draw_polygon(const Transform2D& transform, const std::vecto
 
 OpenglRenderer::~OpenglRenderer() {
 
+    for (auto& [_, buffer] : _buffers) {
+        if (buffer.instance_buffer) {
+            glDeleteBuffers(1, &buffer.instance_buffer);
+            buffer.instance_buffer = 0;
+        }
+        if (buffer.color_buffer) {
+            glDeleteBuffers(1, &buffer.color_buffer);
+            buffer.color_buffer = 0;
+        }
+    }
+
+    _buffers.clear();
 
     // cubemap resources
     delete skybox_mesh;
@@ -882,9 +881,8 @@ void OpenglRenderer::setup_default_shaders() {
 
 
     default_shader->activate();
-    default_shader->set_value("LIGHT_POSITION", glm::vec3(10, 10, 10));
+    default_shader->set_value("LIGHT_POSITION", glm::vec3(0, 100, 0));
     default_shader->set_value("LIGHT_COLOR", glm::vec3(1, 1, 1));
-    default_shader->set_value("TEXTURE", 0);
 }
 
 

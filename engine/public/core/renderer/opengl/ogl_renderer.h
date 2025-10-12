@@ -49,7 +49,7 @@ public:
 
     void draw_model(const Transform3D& t, const Model* model) override;
 
-    void draw_cube(const Transform3D& transform, const Cube& cube, const Shader* shader) override;
+    void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) override;
 
     void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
 

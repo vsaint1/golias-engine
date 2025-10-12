@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 
     auto player = GEngine->get_world()
                       .entity("Player")
-                      .set<Cube>({.size = {1, 2, 1}, .color = {1, 0, 0}})
+                      .set<MeshInstance3D>({.size = {1, 2, 1}, .color = {1, 0, 0}})
                       .set<Transform3D>({.position = {0, 2, 0}, .scale = {1, 1, 1}})
                       .set<Script>({"res://scripts/test.lua"})
                       .child_of(scene);
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 
     auto plane = GEngine->get_world()
                      .entity("plane")
-                     .set<Cube>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
+                     .set<MeshInstance3D>({.size = {100, 0.1f, 100}, .color = {0.3f, 0.8f, 0.3f}})
                      .set<Transform3D>({.position = {0, 0, 0}})
                      .child_of(scene);
 
