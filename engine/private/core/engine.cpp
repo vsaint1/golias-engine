@@ -212,13 +212,9 @@ void engine_core_loop() {
             app_win.height = new_h;
         }
 
-#if defined(EMBER_3D)
-        GEngine->get_world().each([&](flecs::entity e, const SDL_Event& event) {
-            if (e.has<Script>()) {
-                process_event_scripts_system(e.get_mut<Script>(), event);
-            }
+        GEngine->get_world().each([&](flecs::entity e, const Script& script) {
+                process_event_scripts_system(script, GEngine->event);
         });
-#endif
     }
 
 
@@ -259,19 +255,18 @@ Engine::~Engine() {
 
 void engine_setup_systems(flecs::world& world) {
 
-    scene_manager_system(world);
-
-
-#if defined(EMBER_3D)
+#pragma region 3D SYSTEMS
     world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).each(render_world_3d_system);
 
-#endif
+#pragma endregion
 
-#if defined(EMBER_2D)
 
+#pragma region 2D SYSTEMS
     world.system<Camera2D>("Render_World_2D_OnUpdate").kind(flecs::OnUpdate).each(render_world_2d_system);
 
-#endif
+#pragma endregion
+
+    scene_manager_system(world);
 
     world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<tags::ActiveScene>().up().each([&](flecs::entity e, Script& s) {
         if (s.path.empty()) {
