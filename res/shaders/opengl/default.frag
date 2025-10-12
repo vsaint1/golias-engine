@@ -1,11 +1,9 @@
-
 out vec4 COLOR;
 
 in vec3 NORMAL;
 in vec3 WORLD_POSITION;
 in vec2 UV;
-
-uniform vec3 CAMERA_POSITION;
+in vec3 INSTANCE_COLOR;
 
 uniform sampler2D TEXTURE;
 
@@ -24,9 +22,12 @@ uniform CMaterial material;
 
 uniform bool USE_TEXTURE;
 
+
 void main() {
 
     vec3 color = USE_TEXTURE ? texture(TEXTURE, UV).rgb : material.albedo;
+
+    color *= INSTANCE_COLOR;
 
     const float ambient_strength = 0.1;
 
