@@ -75,6 +75,13 @@ enum class EDrawMode {
     TRIANGLES,
 };
 
+enum class EDrawCommand{
+    MODEL,
+    MESH,
+    TEXT
+};
+
+
 struct Mesh {
     std::string name = "UNNAMED_MESH";
 

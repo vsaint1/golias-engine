@@ -4,6 +4,7 @@
 #include "core/ember_utils.h"
 #include "core/renderer/base_struct.h"
 
+
 /*!
     @brief Structure representing a batch of instanced meshes to be rendered.
 
@@ -15,6 +16,7 @@ struct InstancedBatch {
     std::vector<glm::mat4> models; /// model matrices for instancing
     std::vector<glm::vec3> colors; /// colors for instancing (later)
     EDrawMode mode = EDrawMode::TRIANGLES;
+    EDrawCommand command = EDrawCommand::MODEL;
 };
 
 

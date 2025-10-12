@@ -736,12 +736,17 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
             ogl_shader->set_value("USE_TEXTURE", 1);
+            ogl_shader->set_value("material.albedo", glm::vec3(1.0f));
         } else {
+
+
             ogl_shader->set_value("USE_TEXTURE", 0);
-            if (batch.colors.empty()) {
+
+            // Hack fix??
+            if (batch.command == EDrawCommand::MODEL) {
                 ogl_shader->set_value("material.albedo", mesh->material.albedo);
             } else {
-                ogl_shader->set_value("material.albedo", glm::vec3(1.0f, 1.0f, 1.0f)); 
+                ogl_shader->set_value("material.albedo", glm::vec3(1.0f, 1.0f, 1.0f));
             }
         }
 
@@ -790,7 +795,8 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
     batch.shader                = default_shader;
     batch.models.push_back(temp.get_model_matrix());
     batch.colors.push_back(mesh.material.albedo);
-    batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
+    batch.command = EDrawCommand::MESH;
+    batch.mode    = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 }
 
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
