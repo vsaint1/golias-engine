@@ -13,12 +13,6 @@
 #include <nuklear.h>
 
 
-#if defined(EMBER_2D)
-    #define NK_SDL3_RENDERER_IMPLEMENTATION
-    #include "nuklear_sdl3_renderer.h"
-#elif defined(EMBER_3D)
-    #define NK_SDL3_GL3_IMPLEMENTATION
-    #include "nuklear_sdl3_gl3.h"
-#else
-#error "Either EMBER_2D or EMBER_3D must be defined"
-#endif
+
+#define NK_SDL3_GL3_IMPLEMENTATION
+#include "nuklear_sdl3_gl3.h"
