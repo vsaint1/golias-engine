@@ -109,6 +109,7 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
         return;
     }
 
+
     const auto& window = GEngine->get_config().get_window();
 
     // Render all 3D models in the scene
@@ -124,6 +125,9 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
         GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));
     });
+    
+    
+
 }
 
 void setup_scripts_system(flecs::entity e, Script& script) {

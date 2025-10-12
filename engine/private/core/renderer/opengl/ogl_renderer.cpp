@@ -732,22 +732,28 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
         glBindVertexArray(ogl_mesh->vao);
 
-        for (int i = 0; i < 4; i++) {
-            glEnableVertexAttribArray(3 + i);
-            glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*) (i * sizeof(glm::vec4)));
-            glVertexAttribDivisor(3 + i, 1);
-        }
-
-
         if (ogl_mesh->has_texture()) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
             ogl_shader->set_value("USE_TEXTURE", 1);
         } else {
             ogl_shader->set_value("USE_TEXTURE", 0);
-            ogl_shader->set_value("material.albedo", mesh->material.albedo);
+            if (batch.colors.empty()) {
+                ogl_shader->set_value("material.albedo", mesh->material.albedo);
+            } else {
+                ogl_shader->set_value("material.albedo", glm::vec3(1.0f, 1.0f, 1.0f)); 
+            }
         }
 
+
+        // instanced model matrix (4 vec4)
+        for (int i = 0; i < 4; i++) {
+            glEnableVertexAttribArray(3 + i);
+            glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*) (i * sizeof(glm::vec4)));
+            glVertexAttribDivisor(3 + i, 1);
+        }
+
+        // instanced colors
         if (!batch.colors.empty()) {
             glBindBuffer(GL_ARRAY_BUFFER, buffers.color_buffer);
             glBufferData(GL_ARRAY_BUFFER, batch.colors.size() * sizeof(glm::vec3), batch.colors.data(), GL_STREAM_DRAW);
@@ -757,7 +763,6 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             glVertexAttribDivisor(7, 1);
         }
 
-     
 
         auto mode = batch.mode == EDrawMode::LINES ? GL_LINES : GL_TRIANGLES;
         glDrawElementsInstanced(mode, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
@@ -770,21 +775,21 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 }
 
 
-void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) {
+void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3D& mesh, const Shader* shader) {
 
     if (!cube_mesh) {
         return;
     }
 
     Transform3D temp = transform;
-    temp.scale       = cube.size;
+    temp.scale       = mesh.size;
 
     auto& batch                 = _instanced_batches[cube_mesh.get()];
     batch.mesh                  = cube_mesh.get();
-    batch.mesh->material.albedo = cube.color;
+    batch.mesh->material.albedo = mesh.material.albedo;
     batch.shader                = default_shader;
     batch.models.push_back(temp.get_model_matrix());
-    batch.colors.push_back(cube.color);
+    batch.colors.push_back(mesh.material.albedo);
     batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 }
 
