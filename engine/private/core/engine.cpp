@@ -45,6 +45,14 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
 
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
+
+    // NOTE: set log only in debug mode
+#if defined(NDEBUG)
+    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
+#endif
+
+    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_VERBOSE);
+
     if (!_config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
     }
@@ -84,7 +92,6 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         return false;
     }
 
-    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_VERBOSE);
 
     if (!TTF_Init()) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
@@ -147,7 +154,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     engine_setup_systems(this->_world);
 
 
-    LOG_INFO("Engine setup systems completed");
+    LOG_DEBUG("Engine setup systems completed");
 
 #pragma endregion
 
@@ -212,9 +219,7 @@ void engine_core_loop() {
             app_win.height = new_h;
         }
 
-        GEngine->get_world().each([&](flecs::entity e, const Script& script) {
-                process_event_scripts_system(script, GEngine->event);
-        });
+        GEngine->get_world().each([&](flecs::entity e, const Script& script) { process_event_scripts_system(script, GEngine->event); });
     }
 
 

@@ -10,7 +10,7 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
         return;
     }
 
-    LOG_WARN("ValidationLayer Type: 0x%x | Severity: 0x%x | ID: %u | Message: %s", type, severity, id, message);
+    LOG_DEBUG("ValidationLayer Type: 0x%x | Severity: 0x%x | ID: %u | Message: %s", type, severity, id, message);
 }
 
 
@@ -97,7 +97,7 @@ std::shared_ptr<OpenglMesh> generate_cube_mesh() {
 
 GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
 
-    LOG_INFO("Loading cubemap atlas: %s", atlasPath.c_str());
+    LOG_DEBUG("Loading cubemap atlas: %s", atlasPath.c_str());
 
 
     FileAccess file = FileAccess(atlasPath, ModeFlags::READ);
@@ -114,7 +114,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         return 0;
     }
 
-    LOG_INFO("Loaded surface (pre-convert): %dx%d, Pitch: %d", surf->w, surf->h, surf->pitch);
+    LOG_DEBUG("Loaded surface (pre-convert): %dx%d, Pitch: %d", surf->w, surf->h, surf->pitch);
 
     surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
     if (!surf) {
@@ -124,7 +124,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
 
     const int W = surf->w;
     const int H = surf->h;
-    LOG_INFO("Converted surface: %dx%d Pitch: %d BytesPerPixel: %d", W, H, surf->pitch, SDL_BYTESPERPIXEL(surf->format));
+    LOG_DEBUG("Converted surface: %dx%d Pitch: %d BytesPerPixel: %d", W, H, surf->pitch, SDL_BYTESPERPIXEL(surf->format));
 
     if (W <= 0 || H <= 0) {
         LOG_ERROR("Invalid surface dimensions %dx%d", W, H);
@@ -164,7 +164,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         return 0;
     }
 
-    LOG_INFO("Detected layout %d, Face size: %dx%d", layout, face_w, face_h);
+    LOG_DEBUG("Detected layout %d, Face size: %dx%d", layout, face_w, face_h);
 
     std::array<SDL_Rect, 6> faceRects;
 
@@ -272,7 +272,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-    LOG_INFO("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h,
+    LOG_DEBUG("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h,
              texID);
 
     SDL_DestroySurface(surf);
@@ -312,7 +312,7 @@ void OpenglRenderer::setup_cubemap() {
 
     skybox_mesh->texture_id = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
-    LOG_INFO("Environment setup complete");
+    LOG_DEBUG("Environment setup complete");
 }
 
 struct BatchGL {
