@@ -388,8 +388,9 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     for (GLuint i = 0; i < num_extensions; i++) {
         const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
 
+
         if (SDL_strcasecmp(ext, "GL_KHR_debug") == 0) {
-            LOG_INFO("KHR_debug extension supported, enabling validation layers");
+            LOG_DEBUG("KHR_debug extension supported, enabling validation layers");
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(ogl_validation_layer, nullptr);
