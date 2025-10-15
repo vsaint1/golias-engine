@@ -26,7 +26,8 @@ enum class CUBEMAP_ORIENTATION {
 enum class ETextureType {
     TEXTURE_2D, /// e.g. GL_TEXTURE_2D
     TEXTURE_3D, /// e.g. GL_TEXTURE_3D
-    TEXTURE_CUBE_MAP /// e.g. GL_TEXTURE_CUBE_MAP
+    TEXTURE_CUBE_MAP, /// e.g. GL_TEXTURE_CUBE_MAP
+    RENDER_TARGET /// e.g. Metal Depth Texture
 };
 
 /*!

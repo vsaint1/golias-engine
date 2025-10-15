@@ -9,6 +9,24 @@
 #define SHADER_HEADER "#version 330 core\n"
 #endif
 
+bool validate_gl_shader(GLuint shader, GLuint op) {
+    int success;
+    glGetShaderiv(shader, op, &success);
+
+    const char* op_str = (op == GL_COMPILE_STATUS)  ? "COMPILE"
+                       : (op == GL_LINK_STATUS)     ? "LINK"
+                       : (op == GL_VALIDATE_STATUS) ? "VALIDATE"
+                                                    : "UNKNOWN";
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        LOG_CRITICAL("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
+        return false;
+    }
+
+    return true;
+}
+
 OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragment) {
     LOG_INFO("Compiling Shaders Sources Vertex (%s) | Fragment (%s)", vertex.c_str(), fragment.c_str());
 
@@ -25,26 +43,10 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
+    bool success = validate_gl_shader(program, GL_COMPILE_STATUS);
+    success &= validate_gl_shader(program, GL_LINK_STATUS);
+    success &= validate_gl_shader(program, GL_VALIDATE_STATUS);
 
-        LOG_ERROR("Link error: %s", infoLog);
-        exit(-1);
-    }
-
-    glValidateProgram(program);
-    GLint validated;
-    glGetProgramiv(program, GL_VALIDATE_STATUS, &validated);
-    if (!validated) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        LOG_ERROR("Validation error: %s", infoLog);
-        exit(-1);
-
-    }
 
     SDL_assert(success == GL_TRUE);
 
@@ -66,15 +68,7 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
 
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char info_log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, info_log);
-        const char* type_str = type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT";
-        LOG_CRITICAL("[%s] - Shader compilation failed: %s", type_str, info_log);
-    }
-
+    bool success = validate_gl_shader(shader, GL_COMPILE_STATUS);
 
     EMBER_TIMER_END("Compiling Shaders");
 
@@ -98,18 +92,9 @@ Uint32 OpenglShader::get_uniform_location(const std::string& name) {
 }
 
 bool OpenglShader::is_valid() const {
-    int status;
 
-    glGetProgramiv(id, GL_VALIDATE_STATUS, &status);
-
-    char infoLog[512];
-    if (!status) {
-        glGetProgramInfoLog(id, 512, nullptr, infoLog);
-        LOG_CRITICAL("SHADER_PROGRAM validation failed: %s", infoLog);
-        return false;
-    }
-
-    return true;
+    bool validated = glIsProgram(id);
+    return validated;
 }
 
 void OpenglShader::activate() const {

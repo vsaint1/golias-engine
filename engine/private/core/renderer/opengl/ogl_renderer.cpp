@@ -385,9 +385,11 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     bool khr_debug_found = false;
 
+    // LOG_DEBUG("OpenGL Extensions:");
     for (GLuint i = 0; i < num_extensions; i++) {
         const char* ext = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, i));
 
+        // LOG_DEBUG("\t%s", ext);
 
         if (SDL_strcasecmp(ext, "GL_KHR_debug") == 0) {
             LOG_DEBUG("KHR_debug extension supported, enabling validation layers");
@@ -543,7 +545,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
 
     std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
 
-    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
+    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs   | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
                             | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
     // const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), ASSIMP_FLAGS, ext.c_str());
@@ -574,7 +576,7 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     }
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s | Mesh Count: %zu | FileFormat: %s", path, model->meshes.size(), ext.c_str());
+    LOG_INFO("Loaded Model: %s | Mesh Count: %zu  | FileFormat: %s", path, model->meshes.size(), ext.c_str());
 
     return model;
 }
@@ -651,6 +653,8 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
     m->vertex_count = mesh->mNumVertices;
     m->index_count  = indices.size();
+
+    LOG_DEBUG("Mesh: %s | Vertices: %d | Indices: %d | Texture: %d", m->name.data(), m->vertex_count, m->index_count, m->texture_id);
 
     glGenVertexArrays(1, &m->vao);
     glGenBuffers(1, &m->vbo);
