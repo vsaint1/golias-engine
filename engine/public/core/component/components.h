@@ -63,7 +63,7 @@ struct Shape2D {
  * @code{.lua}
  * 
  * local speed = 100
- * function ready()
+ * function _ready()
  *     print("Entity started!")
  * end
  *
