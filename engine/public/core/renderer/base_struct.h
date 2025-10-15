@@ -1,7 +1,12 @@
 #pragma once
 
 #include "stdafx.h"
+/*!
+    @brief Cube map orientation options
+    
+    @version 0.0.4
 
+*/
 enum class CUBEMAP_ORIENTATION {
     DEFAULT, // original layout
     TOP, //  (+Y)
@@ -9,6 +14,45 @@ enum class CUBEMAP_ORIENTATION {
     FLIP_X, // flip left-right
     FLIP_Y // flip up-down
 };
+
+
+/*!
+
+    @brief Texture types
+
+    @version  0.0.1
+
+*/
+enum class ETextureType {
+    TEXTURE_2D, /// e.g. GL_TEXTURE_2D
+    TEXTURE_3D, /// e.g. GL_TEXTURE_3D
+    TEXTURE_CUBE_MAP /// e.g. GL_TEXTURE_CUBE_MAP
+};
+
+/*!
+
+    @brief Draw modes
+    - LINES
+    - TRIANGLES
+
+    @version  0.0.1
+
+*/
+enum class EDrawMode {
+    LINES,
+    TRIANGLES,
+};
+
+/*!
+
+    @brief Draw commands for the renderer queue
+
+
+    @version  0.0.1
+
+*/
+enum class EDrawCommand { MODEL, MESH, TEXT, ENVIRONMENT };
+
 
 struct Tokens {
     std::string text;
@@ -18,20 +62,28 @@ struct Tokens {
 
 /*!
 
-    @brief Font Abstract class
+    @brief Font class
     - Get size of the text
-    - Render text to texture
+    - Get the underlying TTF_Font*
+
 
     @version  0.0.1
     @param string path The font path
 */
 class Font {
 public:
-    virtual ~Font() = default;
 
-    virtual glm::vec2 get_size(const std::string& text) {
-        return {0, 0};
+    Font(TTF_Font* font) : _font(font) {
     }
+
+    ~Font();
+
+    glm::vec2 get_size(const std::string& text);
+    TTF_Font* get_font() const;
+
+protected:
+ TTF_Font* _font = nullptr;
+
 };
 
 /*!
@@ -54,13 +106,13 @@ public:
 
 struct Metallic {
     glm::vec3 specular = glm::vec3(0.f); /// specular reflections
-    float value = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
+    float value        = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
 };
 
 struct Material {
     glm::vec3 albedo  = glm::vec3(1.f);
     Metallic metallic = {};
-    float roughness = 0.0f;  /// 0.0 -> mirror | 1.0 -> blurs
+    float roughness   = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
 };
 
 
@@ -70,26 +122,24 @@ struct Vertex {
     glm::vec2 uv;
 };
 
-enum class EDrawMode {
-    LINES,
-    TRIANGLES,
-};
+/*!
 
-enum class EDrawCommand{
-    MODEL,
-    MESH,
-    TEXT
-};
+    @brief Mesh Abstract class
+    - Bind the mesh
+    - Draw the mesh
+    - Unbind the mesh
 
+    @version  0.0.1
 
+*/
 struct Mesh {
-    std::string name = "UNNAMED_MESH";
+    std::string_view name = "UNNAMED_MESH";
 
     size_t vertex_count = 0;
     size_t index_count  = 0;
 
     std::vector<glm::vec3> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<Uint32> indices;
 
     Material material;
 

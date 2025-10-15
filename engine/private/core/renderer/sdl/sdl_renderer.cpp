@@ -57,7 +57,6 @@ void SDLRenderer::clear(glm::vec4 color) {
 
 void SDLRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     // TODO: flush geometry
-
 }
 
 void SDLRenderer::present() {
@@ -271,7 +270,7 @@ bool SDLRenderer::load_font(const std::string& name, const std::string& path, in
         return false;
     }
 
-    _fonts[name] = std::make_unique<SDLFont>(f);
+    _fonts[name] = std::make_unique<Font>(f);
     return true;
 }
 
@@ -323,12 +322,11 @@ void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& colo
     float y       = pos.y;
 
     for (auto& seg : segments) {
-        SDLFont* font = nullptr;
+        Font* font = nullptr;
         if (!font_name.empty()) {
-            font = seg.is_emoji ? dynamic_cast<SDLFont*>(_fonts[_emoji_font_name].get()) : dynamic_cast<SDLFont*>(_fonts[font_name].get());
+            font = seg.is_emoji ? _fonts[font_name].get() : _fonts[font_name].get();
         } else {
-            font = seg.is_emoji ? dynamic_cast<SDLFont*>(_fonts[_emoji_font_name].get())
-                                : dynamic_cast<SDLFont*>(_fonts[_default_font_name].get());
+            font = seg.is_emoji ? _fonts[_emoji_font_name].get() : _fonts[_default_font_name].get();
         }
 
         if (!font || !font->get_font()) {
