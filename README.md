@@ -1,4 +1,4 @@
-# Ember [![Build and Test](https://github.com/vsaint1/ember/actions/workflows/tests.yml/badge.svg)](https://github.com/vsaint1/ember/actions/workflows/tests.yml) [![C++ 20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) ![License](https://img.shields.io/github/license/vsaint1/ember_engine.svg)
+# Ember [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yml) [![Build and Test](https://github.com/vsaint1/ember/actions/workflows/tests.yml/badge.svg)](https://github.com/vsaint1/ember/actions/workflows/tests.yml) [![C++ 20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) ![License](https://img.shields.io/github/license/vsaint1/ember_engine.svg)
 
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android%20%7C%20iOS%20%7C%20Web-blue.svg)
 

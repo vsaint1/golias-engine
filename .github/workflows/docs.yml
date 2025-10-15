@@ -17,14 +17,13 @@ jobs:
 
       - name: Generate docs with Doxygen
         run: |
-          mkdir -p build/docs
           doxygen doxyfile
-          ls -R build/docs || true
+          ls -R build/html || true
 
       - name: Deploy docs to GH pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/docs/html
+          publish_dir: ./build/html
           publish_branch: gh-pages
           force_orphan: true
