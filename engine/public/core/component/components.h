@@ -7,8 +7,12 @@
 // ALL COMPONENTS ARE DEFINED HERE, PURE DATA AND SIMPLE LOGICS |
 // ==============================================================
 
+
+
+
 /*!
  * @brief Represents a 2D transformation position, scale, and rotation.
+ * @ingroup Components
  */
 struct Transform2D {
     glm::vec2 position = {0, 0};
@@ -24,11 +28,13 @@ struct Transform2D {
 
 /*!
  * @brief Different types of shapes that can be rendered.
+ * @ingroup Components
  */
 enum class ShapeType { RECTANGLE, TRIANGLE, CIRCLE, LINE, POLYGON };
 
 /*!
  * @brief Represents a shape with its properties for rendering.
+ * @ingroup Components
  */
 struct Shape2D {
     ShapeType type = ShapeType::RECTANGLE; /// Type of the shape
@@ -49,6 +55,32 @@ struct Shape2D {
 
 /*!
  * @brief Represents a script component that holds Lua script information.
+ * @ingroup Components
+ *
+ * This component manages Lua scripts associated with entities.
+ *
+ * Example usage in Lua:
+ * @code{.lua}
+ * 
+ * local speed = 100
+ * function ready()
+ *     print("Entity started!")
+ * end
+ *
+ * function _process(dt)
+ *     self.transform.position.x = self.transform.position.x + speed * dt
+ *     self.transform.position.y = self.transform.position.y + speed * dt
+ * end
+ * 
+ * function _input(event)
+ *    print("Input event received: " .. event.type)
+ * end
+ * 
+ * function _exit()
+ *    print("Entity exiting!")
+ * end
+ * 
+ * @endcode
  */
 struct Script {
     std::string path     = "";
@@ -60,6 +92,7 @@ struct Script {
 
 /*!
  * @brief Represents a label component for rendering text.
+ * @ingroup Components
  */
 struct Label2D {
     std::string text      = "";
@@ -71,6 +104,7 @@ struct Label2D {
 
 /*!
     * @brief Represents a 2D sprite component for rendering textures.
+    * @ingroup Components
 */
 struct Sprite2D {
     std::string texture_name = "";
@@ -95,11 +129,18 @@ namespace tags {
 }; // namespace tags
 
 
+/*!
+ * @brief Scene change request component to signal a scene switch.
+ * @ingroup Systems
+ */
 struct SceneChangeRequest {
     std::string name;
 };
 
-
+/*!
+ * @brief Represents material properties for 3D rendering.
+ * @ingroup Components
+ */
 struct Transform3D {
     glm::vec3 position{0.0f};
     glm::vec3 rotation{0.0f};
@@ -120,16 +161,25 @@ struct Transform3D {
  * @brief Represents a physics body for 2D or 3D physics simulations.
  * Jolt Physics -> BodyID
  * Box2D -> b2BodyId
+ * @ingroup Components
  */
 struct PhysicsBody {
     Uint32 id = 0;
 };
 
+/*!
+ * @brief Represents a 3D mesh instance with size and material properties.
+ * @ingroup Components
+ */
 struct MeshInstance3D {
-    glm::vec3 size  = glm::vec3(1.f);
+    glm::vec3 size    = glm::vec3(1.f);
     Material material = {};
 };
 
+/*!
+ * @brief Represents a 3D model loaded from a file.
+ * @ingroup Components
+ */
 struct Model {
     std::string path;
     std::vector<std::shared_ptr<Mesh>> meshes;
@@ -152,6 +202,17 @@ struct Follow {
     float smoothness = 0.1f;
 };
 
+/*!
+
+    @brief 2D Camera 
+    - Position
+    - Zoom
+    - Rotation
+
+    @ingroup Components
+    @version  0.0.1
+
+*/
 class Camera2D {
 public:
     glm::vec2 position{0.0f, 0.0f};
@@ -176,7 +237,19 @@ public:
 
 // enum MOVEMENT { FORWARD, BACKWARD, LEFT, RIGHT };
 
+/*!
 
+    @brief 3D Camera 
+    - Position
+    - Zoom
+    - Rotation
+    - View matrix
+    - Projection matrix
+
+    @ingroup Components
+    @version  0.0.1
+
+*/
 struct Camera3D {
     float yaw           = -90.0f; // Z
     float pitch         = 0.0f;
@@ -184,7 +257,7 @@ struct Camera3D {
     float speed         = 5.0f;
     float view_distance = 1000.f;
 
-    explicit Camera3D()  {
+    explicit Camera3D() {
         update_vectors();
     }
 
@@ -227,26 +300,15 @@ inline void serialize_components(flecs::world& ecs) {
 
     ecs.component<Camera2D>();
 
-    ecs.component<Camera3D>() 
-    .member<float>("yaw")
-    .member<float>("pitch")
-    .member<float>("fov")
-    .member<float>("speed")
-    .member<float>("view_distance");
+    ecs.component<Camera3D>().member<float>("yaw").member<float>("pitch").member<float>("fov").member<float>("speed").member<float>(
+        "view_distance");
 
-    ecs.component<Metallic>()
-        .member<glm::vec3>("specular")
-        .member<float>("value");
+    ecs.component<Metallic>().member<glm::vec3>("specular").member<float>("value");
 
-    ecs.component<Material>()
-        .member<glm::vec3>("albedo")
-        .member<Metallic>("metallic")
-        .member<float>("roughness");
-    
+    ecs.component<Material>().member<glm::vec3>("albedo").member<Metallic>("metallic").member<float>("roughness");
 
-    ecs.component<MeshInstance3D>()
-        .member<glm::vec3>("size")
-        .member<Material>("material");
+
+    ecs.component<MeshInstance3D>().member<glm::vec3>("size").member<Material>("material");
 
     ecs.component<Transform3D>().member<glm::vec3>("position").member<glm::vec3>("rotation").member<glm::vec3>("scale");
 

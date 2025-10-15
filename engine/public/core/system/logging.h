@@ -24,6 +24,8 @@
 
    @note Do not push sensitive data to the logs
 
+   @ingroup Logging
+
    @version 0.0.9
 
 */
@@ -60,6 +62,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_ERROR(...)                                                    \
     do {                                                                  \
@@ -75,6 +78,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_INFO(...)                                                     \
     do {                                                                  \
@@ -90,6 +94,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_DEBUG(...)                                                    \
     do {                                                                  \
@@ -105,6 +110,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_VERBOSE(...)                                                  \
     do {                                                                  \
@@ -120,6 +126,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_WARN(...)                                                     \
     do {                                                                  \
@@ -135,6 +142,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_TRACE(...)                                                    \
     do {                                                                  \
@@ -150,6 +158,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_CRITICAL(...)                                                 \
     do {                                                                  \
@@ -165,6 +174,7 @@ private:
    @version 0.0.1
    @param string c-string with `printf` format specifier
    @returns just print the message
+   @ingroup Logging
 */
 #define LOG_QUIT_ON_FAIL(x)              \
     if (!x) {                            \
@@ -178,6 +188,7 @@ private:
    @brief OpenGL error debug macro (for development)
    @version 0.0.1
    @returns just print the message
+   @ingroup Logging
 */
 #define GL_ERROR()                                  \
     {                                               \
@@ -191,7 +202,7 @@ private:
 
    @brief Timer macro
    @version 0.0.4
-
+   @ingroup Time
 */
 #define EMBER_TIMER_START() auto start = std::chrono::high_resolution_clock::now();
 
@@ -201,6 +212,7 @@ private:
    @brief Timer macro end
    @version 0.0.4
    @returns the messsage with the duration in ms
+   @ingroup Time
 */
 #define EMBER_TIMER_END(description)                                                                \
     do {                                                                                            \

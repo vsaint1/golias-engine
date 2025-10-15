@@ -7,6 +7,7 @@
    @brief Loads a given file from `res` folder
    - The file path is relative to `res` folder
 
+   @ingroup FileSystem
    @version 0.0.1
    @param file_path the path to the file in `res` folder
    @return File content as `string`
@@ -17,6 +18,7 @@ std::string load_assets_file(const std::string& file_path);
 
    @brief Loads a given file from `res` folder into memory
    - The file path is relative to `res` folder
+   @ingroup FileSystem
 
    @version 0.0.2
    @param file_path the path to the file in `res` folder
@@ -37,7 +39,6 @@ struct Ember_File {
 /*!
  *  @brief Engine virtual file system
  *
- *
  * @version 0.0.5
  */
 struct Ember_VFS {
@@ -55,6 +56,7 @@ ma_result _ember_init_vfs(Ember_VFS* vfs);
  * - WRITE      : Write-only access
  * - READ_WRITE : Read + Write access (read first, then write)
  * - WRITE_READ : Write + Read access (write first, then read)
+ * @ingroup FileSystem
  */
 enum class ModeFlags {
     READ, ///< Read-only access
@@ -68,10 +70,10 @@ enum class ModeFlags {
  * @brief A RAII wrapper for SDL3 file operations supporting read/write access.
  *
  * - `res://` (assets) and `user://` (writable user data) paths.
+ * @ingroup FileSystem
  */
 class FileAccess {
 public:
-
     /**
      * @brief Construct and optionally open a file.
      * @param file_path Path to the file (can be res:// or user://)
@@ -171,10 +173,13 @@ public:
 
     FileAccess& operator=(const FileAccess&) = delete;
 
-    SDL_IOStream* get_handle() const { return _file; }
+    SDL_IOStream* get_handle() const {
+        return _file;
+    }
+
 private:
     SDL_IOStream* _file = nullptr; ///< Internal SDL file handle
-    std::string _file_path;        ///< Full resolved file path
+    std::string _file_path; ///< Full resolved file path
 
     bool resolve_path(const std::string& file_path, ModeFlags mode_flags);
 };

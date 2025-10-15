@@ -7,6 +7,8 @@
  * @brief Supported rendering backends for the engine.
  *
  * @note  Not all backends were implemented.
+ * 
+ * @ingroup Configuration
  */
 enum class Backend {
     /**
@@ -41,14 +43,36 @@ enum class Backend {
     AUTO
 };
 
-enum class Orientation { LANDSCAPE_LEFT, LANDSCAPE_RIGHT, PORTRAIT, PORTRAIT_UPSIDE_DOWN };
-
-enum class AspectRatio {
-    NONE,
-    KEEP,
-    EXPAND,
+/*!
+* @brief Device orientation options.
+* @ingroup Configuration
+*/
+enum class Orientation { LANDSCAPE_LEFT, /// Landscape mode with home button on the right.
+    LANDSCAPE_RIGHT, /// Landscape mode with home button on the left.
+    PORTRAIT, /// Portrait mode with home button at the bottom.
+    PORTRAIT_UPSIDE_DOWN /// Portrait mode with home button at the top.
 };
 
+/*!
+* @brief How the viewport handles aspect ratio.
+*
+*
+* @ingroup Configuration
+*
+*/
+enum class AspectRatio {
+    NONE, /// No aspect ratio handling.
+    KEEP, /// Maintain aspect ratio, adding black bars if necessary.
+    EXPAND, /// Expand to fill the screen, potentially cropping content.
+};
+
+/*!
+    @brief Viewport rendering mode.
+    - VIEWPORT: Renders to a fixed-size viewport, maintaining aspect ratio.
+    - CANVAS  : Renders to fill the entire window, stretching as needed.
+
+    @ingroup Configuration
+*/
 enum class ViewportMode { VIEWPORT, CANVAS };
 
 /**
@@ -61,7 +85,10 @@ enum class TextureFiltering {
     NEAREST ///< Pixelated filtering.
 };
 
-
+/*!
+ * @brief Viewport configuration settings.
+ * @ingroup Configuration
+ */
 struct Viewport {
     int width   = 640;
     int height  = 320;
@@ -73,12 +100,20 @@ struct Viewport {
     bool load(const tinyxml2::XMLElement* root);
 };
 
+/*!
+ * @brief Environment settings such as clear color.
+ * @ingroup Configuration
+ */
 struct Environment {
     glm::vec4 clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
 
     bool load(const tinyxml2::XMLElement* root);
 };
 
+/*!
+ * @brief Application metadata and window settings.
+ * @ingroup Configuration
+ */
 struct Application {
     const char* name         = "Ember Engine - Window";
     const char* version      = "1.0";
@@ -93,6 +128,10 @@ struct Application {
     bool load(const tinyxml2::XMLElement* root);
 };
 
+/*!
+ * @brief Performance-related settings.
+ * @ingroup Configuration
+ */
 struct Performance {
     bool is_multithreaded = false;
     int physics_fps       = 60;
@@ -101,6 +140,10 @@ struct Performance {
     bool load(const tinyxml2::XMLElement* root);
 };
 
+/*!
+ * @brief Renderer device settings.
+ * @ingroup Configuration
+ */
 struct RendererDevice {
     Backend backend                    = Backend::AUTO;
     TextureFiltering texture_filtering = TextureFiltering::NEAREST;
@@ -110,10 +153,18 @@ struct RendererDevice {
     [[nodiscard]] const char* get_backend_str() const;
 };
 
-enum class WindowMode { WINDOWED, MAXIMIZED, MINIMIZED, FULLSCREEN };
+enum class WindowMode { WINDOWED, /// Windowed mode.
+    MAXIMIZED, /// Maximized mode.
+    MINIMIZED, /// Minimized mode.
+    FULLSCREEN /// Fullscreen mode.
+};
 
+/*!
+ * @brief Window configuration settings.
+ * @ingroup Configuration
+ */
 struct Window {
-    int width = 1280;
+    int width  = 1280;
     int height = 720;
 
     WindowMode window_mode = WindowMode::WINDOWED;
@@ -123,9 +174,13 @@ struct Window {
     bool load(const tinyxml2::XMLElement* root);
 };
 
+/*!
+ * @brief Engine configuration loaded from `project.xml`.
+ * @ingroup Configuration
+ */
 struct EngineConfig {
 
-    bool is_debug      = false;
+    bool is_debug = false;
 
     Orientation orientation = Orientation::LANDSCAPE_LEFT;
 
