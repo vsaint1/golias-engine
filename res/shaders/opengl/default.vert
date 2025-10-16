@@ -20,7 +20,7 @@ out vec3 INSTANCE_COLOR;
 uniform mat4 VIEW;
 uniform mat4 PROJECTION;
 
-const int MAX_BONES = 200;
+const int MAX_BONES = 250; // ~16KB limit
 
 uniform bool USE_SKELETON;
 uniform mat4 BONES[MAX_BONES];
