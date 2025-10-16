@@ -459,28 +459,73 @@ bool OpenglRenderer::load_font(const std::string& name, const std::string& path,
     return true;
 }
 
-std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path) {
+std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
 
 
     if (_textures.contains(name)) {
         return _textures[name];
     }
 
-    LOG_INFO("Loading texture: %s", path.c_str());
+    SDL_Surface* surf = nullptr;
 
-    FileAccess file_access(path, ModeFlags::READ);
+    if (ai_embedded_tex) {
 
-    if (!file_access.is_open()) {
-        LOG_ERROR("Failed to open texture file: %s", path.c_str());
-        return nullptr;
-    }
+        LOG_INFO("Loading embedded texture: %s (%ux%u)", name.c_str(), ai_embedded_tex->mWidth, ai_embedded_tex->mHeight);
 
-    SDL_Surface* surf = IMG_Load_IO(file_access.get_handle(), false);
-    // SDL_Surface* surf = IMG_Load(path.c_str());
 
-    if (!surf) {
-        LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
-        return nullptr;
+        // (mHeight == 0 means compressed)
+        if (ai_embedded_tex->mHeight == 0) {
+            // Compressed texture (e.g., PNG, JPEG)
+            SDL_IOStream* rw = SDL_IOFromConstMem(ai_embedded_tex->pcData, ai_embedded_tex->mWidth);
+            if (!rw) {
+                LOG_ERROR("Failed to create SDL_IOStream from embedded texture data");
+                return nullptr;
+            }
+
+            surf = IMG_Load_IO(rw, true);
+            if (!surf) {
+                LOG_ERROR("Failed to load compressed embedded texture: %s", SDL_GetError());
+                return nullptr;
+            }
+        } else {
+            // Uncompressed ARGB8888 texture
+            surf = SDL_CreateSurface(ai_embedded_tex->mWidth, ai_embedded_tex->mHeight, SDL_PIXELFORMAT_RGBA32);
+            if (!surf) {
+                LOG_ERROR("Failed to create surface for embedded texture: %s", SDL_GetError());
+                return nullptr;
+            }
+
+            aiTexel* texels = ai_embedded_tex->pcData;
+            Uint32* pixels  = (Uint32*) surf->pixels;
+
+            for (unsigned int i = 0; i < ai_embedded_tex->mWidth * ai_embedded_tex->mHeight; i++) {
+                // ARGB to RGBA
+                Uint8 r   = texels[i].r;
+                Uint8 g   = texels[i].g;
+                Uint8 b   = texels[i].b;
+                Uint8 a   = texels[i].a;
+                pixels[i] = SDL_MapSurfaceRGBA(surf, r, g, b, a);
+            }
+        }
+    } else {
+
+
+        LOG_INFO("Loading texture: %s", path.c_str());
+
+        FileAccess file_access(path, ModeFlags::READ);
+
+        if (!file_access.is_open()) {
+            LOG_ERROR("Failed to open texture file: %s", path.c_str());
+            return nullptr;
+        }
+
+        surf = IMG_Load_IO(file_access.get_handle(), false);
+        // SDL_Surface* surf = IMG_Load(path.c_str());
+
+        if (!surf) {
+            LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
+            return nullptr;
+        }
     }
 
     auto texture = std::make_shared<Texture>();
@@ -510,13 +555,14 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     texture->height = surf->h;
     texture->path   = path;
 
-    LOG_INFO("Texture Info: Id %d Size %dx%d Path: %s", texture->id, surf->w, surf->h, path.c_str());
+    LOG_INFO("Texture Info: Id %d | Size %dx%d | Path: %s | Embedded: %s", texture->id, surf->w, surf->h, path.c_str(), ai_embedded_tex != nullptr ? "Yes" : "No");
 
     _textures[name] = texture;
 
     SDL_DestroySurface(surf);
     return texture;
 }
+
 
 
 std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
@@ -574,8 +620,15 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     _models[path] = model;
 
     if (scene->HasAnimations()) {
+
+
         LOG_INFO("Loaded Model: %s | Meshes: %zu | Animations: %u | Format: %s", path, model->meshes.size(), scene->mNumAnimations,
                  ext.c_str());
+
+        for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
+            LOG_DEBUG("    [%u] - %s", i, scene->mAnimations[i]->mName.C_Str());
+        }
+
     } else {
         LOG_INFO("Loaded Model: %s | Meshes: %zu | Format: %s", path, model->meshes.size(), ext.c_str());
     }
@@ -605,12 +658,32 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
-            const std::string texture_path = base_dir + texPath.C_Str();
-            const auto tex                 = load_texture(texPath.C_Str(), texture_path);
-            m->texture_id                  = tex ? tex->id : 0;
-        }
+            std::string texPathStr = texPath.C_Str();
 
-        // m->material.shininess = mat->Get(AI_MATKEY_SHININESS, m->material.shininess) == AI_SUCCESS ? m->material.shininess : 1.0f;
+            // Check if it's an embedded texture (path starts with '*')
+            if (texPathStr[0] == '*') {
+                // Embedded texture - extract index
+                int texIndex = std::atoi(texPathStr.c_str() + 1);
+
+                if (texIndex >= 0 && texIndex < scene->mNumTextures) {
+                    const aiTexture* embeddedTex = scene->mTextures[texIndex];
+
+                    std::string embedded_path = "embedded_tex_" + std::to_string(texIndex);
+
+                    // Load embedded texture
+                    const auto tex = load_texture(embeddedTex->mFilename.C_Str(), embedded_path, embeddedTex);
+                    m->texture_id  = tex ? tex->id : 0;
+                } else {
+                    LOG_WARN("Embedded texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
+                }
+
+            } else {
+                // Load external texture file
+                const std::string texture_path = base_dir + texPathStr;
+                const auto tex                 = load_texture(texPathStr, texture_path, nullptr);
+                m->texture_id                  = tex ? tex->id : 0;
+            }
+        }
     }
 
     std::vector<float> verts; // vertex attributes
@@ -663,11 +736,11 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     if (mesh->HasBones()) {
         m->has_bones = true;
 
-     
+
         bone_ids.resize(mesh->mNumVertices, glm::ivec4(0));
         bone_weights.resize(mesh->mNumVertices, glm::vec4(0.0f));
 
-   
+
         std::vector<int> bone_counts(mesh->mNumVertices, 0);
 
         LOG_DEBUG("Mesh '%s' has %u bones", m->name.data(), mesh->mNumBones);
@@ -694,7 +767,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
                 bone_index = m->bone_map[bone_name];
             }
 
-            
+
             for (unsigned int j = 0; j < bone->mNumWeights; j++) {
                 unsigned int vertex_id = bone->mWeights[j].mVertexId;
                 float weight           = bone->mWeights[j].mWeight;
@@ -727,7 +800,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
                   m->texture_id);
     }
 
-    // TODO: improve this setup 
+    // TODO: improve this setup
     glGenVertexArrays(1, &m->vao);
     glGenBuffers(1, &m->vbo);
     glGenBuffers(1, &m->ebo);
@@ -804,7 +877,7 @@ void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* mode
         return;
     }
 
- 
+
     bone_count = bone_count > MAX_BONES ? SDL_min(bone_count, MAX_BONES) : bone_count;
 
     for (auto& mesh : model->meshes) {
@@ -814,12 +887,12 @@ void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* mode
 
         auto& batch  = _instanced_batches[mesh.get()];
         batch.mesh   = mesh.get();
-        batch.shader = default_shader; 
+        batch.shader = default_shader;
         batch.models.push_back(t.get_model_matrix());
         batch.colors.push_back(glm::vec3(1.0f));
         batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
 
-        
+
         batch.bone_transforms = bone_transforms;
         batch.bone_count      = bone_count;
     }
@@ -854,15 +927,15 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
-        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
 
         glBindVertexArray(ogl_mesh->vao);
 
-        // TODO: refactor to send SSBO for bones 
+        // TODO: refactor to send SSBO for bones
         if (mesh->has_bones) {
             ogl_shader->set_value("USE_SKELETON", 1);
 
-            int count               = batch.bone_count < MAX_BONES ? batch.bone_count : MAX_BONES;
+            int count = batch.bone_count < MAX_BONES ? batch.bone_count : MAX_BONES;
 
             if (batch.bone_transforms && batch.bone_count > 0) {
                 ogl_shader->set_value("BONES", batch.bone_transforms, count);
@@ -917,6 +990,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glBindVertexArray(0);
 
     _instanced_batches.clear();
+
     draw_environment(view, projection);
 }
 
