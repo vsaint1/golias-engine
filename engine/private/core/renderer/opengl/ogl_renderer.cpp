@@ -461,7 +461,7 @@ bool OpenglRenderer::load_font(const std::string& name, const std::string& path,
 
 std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
 
-   
+
     if (_textures.contains(name)) {
         return _textures[name];
     }
@@ -490,8 +490,8 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     _textures[name] = texture;
 
     SDL_DestroySurface(texture->surface);
-    texture->surface = nullptr; 
-    
+    texture->surface = nullptr;
+
     return texture;
 }
 
@@ -502,66 +502,10 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
         return _models[path];
     }
 
-    std::string base_dir = ASSETS_PATH + path;
+    auto model = Renderer::load_model(path);
 
-    auto importer = std::make_shared<Assimp::Importer>();
-
-    std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
-
-    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
-                            | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
-
-    const aiScene* scene = importer->ReadFile(base_dir, ASSIMP_FLAGS);
-
-    if (!scene || !scene->mRootNode) {
-        LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer->GetErrorString());
-        return nullptr;
-    }
-
-    auto model  = std::make_shared<Model>();
-    model->path = path;
-
-    // Store importer and scene to keep animation data alive
-    model->importer = importer;
-    model->scene    = scene;
-
-    // Store global inverse transform for animation
-    glm::mat4 globalTransform = glm::mat4(1.0f);
-    if (scene->mRootNode) {
-        aiMatrix4x4 root = scene->mRootNode->mTransformation;
-        globalTransform  = glm::transpose(glm::make_mat4(&root.a1));
-    }
-
-    model->global_inverse_transform = glm::inverse(globalTransform);
-
-    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
-        aiMaterial* mat = scene->mMaterials[i];
-        aiString name;
-        if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
-            LOG_DEBUG("Material %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
-        }
-    }
-
-    base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        LOG_DEBUG("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
-        model->meshes.push_back(load_mesh(scene->mMeshes[i], scene, base_dir));
-    }
-
-    _models[path] = model;
-
-    if (scene->HasAnimations()) {
-
-
-        LOG_INFO("Loaded Model: %s | Meshes: %zu | Animations: %u | Format: %s", path, model->meshes.size(), scene->mNumAnimations,
-                 ext.c_str());
-
-        for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
-            LOG_DEBUG("    [%u] - %s", i, scene->mAnimations[i]->mName.C_Str());
-        }
-
-    } else {
-        LOG_INFO("Loaded Model: %s | Meshes: %zu | Format: %s", path, model->meshes.size(), ext.c_str());
+    if (model) {
+        _models[path] = model;
     }
 
     return model;

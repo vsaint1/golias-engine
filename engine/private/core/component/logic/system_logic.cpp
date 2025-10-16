@@ -2,159 +2,10 @@
 
 #include "core/binding/lua.h"
 #include "core/engine.h"
-
-#pragma region FUNCTION HELPERS
-// =======================================================
-// SOME FUNCTIONS HELPER FOR MANY SYSTEMS                |
-// =======================================================
-
-const aiNodeAnim* find_node_anim(const aiAnimation* animation, const std::string& nodeName) {
-    for (unsigned int i = 0; i < animation->mNumChannels; i++) {
-        const aiNodeAnim* nodeAnim = animation->mChannels[i];
-        if (std::string(nodeAnim->mNodeName.C_Str()) == nodeName) {
-            return nodeAnim;
-        }
-    }
-    return nullptr;
-}
-
-glm::vec3 interpolate_pos(float animTime, const aiNodeAnim* nodeAnim) {
-    // Single keyframe - no interpolation needed
-    if (nodeAnim->mNumPositionKeys == 1) {
-        const aiVector3D& v = nodeAnim->mPositionKeys[0].mValue;
-        return glm::vec3(v.x, v.y, v.z);
-    }
-
-    unsigned int positionIndex = 0;
-    for (unsigned int i = 0; i < nodeAnim->mNumPositionKeys - 1; i++) {
-        if (animTime < (float) nodeAnim->mPositionKeys[i + 1].mTime) {
-            positionIndex = i;
-            break;
-        }
-    }
-
-    unsigned int nextIndex = positionIndex + 1;
-    float deltaTime        = (float) (nodeAnim->mPositionKeys[nextIndex].mTime - nodeAnim->mPositionKeys[positionIndex].mTime);
-    
-    if (deltaTime < 0.0001f) {
-        const aiVector3D& v = nodeAnim->mPositionKeys[positionIndex].mValue;
-        return glm::vec3(v.x, v.y, v.z);
-    }
-    
-    float factor = (animTime - (float) nodeAnim->mPositionKeys[positionIndex].mTime) / deltaTime;
-
-    const aiVector3D& start = nodeAnim->mPositionKeys[positionIndex].mValue;
-    const aiVector3D& end   = nodeAnim->mPositionKeys[nextIndex].mValue;
-
-    return glm::mix(glm::vec3(start.x, start.y, start.z), 
-                    glm::vec3(end.x, end.y, end.z), factor);
-}
-
-glm::quat interpolate_rot(float animTime, const aiNodeAnim* nodeAnim) {
-    // Single keyframe - no interpolation needed
-    if (nodeAnim->mNumRotationKeys == 1) {
-        const aiQuaternion& q = nodeAnim->mRotationKeys[0].mValue;
-        return glm::quat(q.w, q.x, q.y, q.z);
-    }
-
-    unsigned int rotationIndex = 0;
-    for (unsigned int i = 0; i < nodeAnim->mNumRotationKeys - 1; i++) {
-        if (animTime < (float) nodeAnim->mRotationKeys[i + 1].mTime) {
-            rotationIndex = i;
-            break;
-        }
-    }
-
-    unsigned int nextIndex = rotationIndex + 1;
-    float deltaTime        = (float) (nodeAnim->mRotationKeys[nextIndex].mTime - nodeAnim->mRotationKeys[rotationIndex].mTime);
-    
-  
-    if (deltaTime < 0.0001f) {
-        const aiQuaternion& q = nodeAnim->mRotationKeys[rotationIndex].mValue;
-        return glm::quat(q.w, q.x, q.y, q.z);
-    }
-    
-    float factor = (animTime - (float) nodeAnim->mRotationKeys[rotationIndex].mTime) / deltaTime;
-
-    const aiQuaternion& startQuat = nodeAnim->mRotationKeys[rotationIndex].mValue;
-    const aiQuaternion& endQuat   = nodeAnim->mRotationKeys[nextIndex].mValue;
-
-    return glm::slerp(glm::quat(startQuat.w, startQuat.x, startQuat.y, startQuat.z),
-                      glm::quat(endQuat.w, endQuat.x, endQuat.y, endQuat.z), factor);
-}
-
-glm::vec3 interpolate_scale(float animTime, const aiNodeAnim* nodeAnim) {
-    // Single keyframe - no interpolation needed
-    if (nodeAnim->mNumScalingKeys == 1) {
-        const aiVector3D& v = nodeAnim->mScalingKeys[0].mValue;
-        return glm::vec3(v.x, v.y, v.z);
-    }
-
-    unsigned int scaleIndex = 0;
-    for (unsigned int i = 0; i < nodeAnim->mNumScalingKeys - 1; i++) {
-        if (animTime < (float) nodeAnim->mScalingKeys[i + 1].mTime) {
-            scaleIndex = i;
-            break;
-        }
-    }
-
-    unsigned int nextIndex = scaleIndex + 1;
-    float deltaTime        = (float) (nodeAnim->mScalingKeys[nextIndex].mTime - nodeAnim->mScalingKeys[scaleIndex].mTime);
-    
-    if (deltaTime < 0.0001f) {
-        const aiVector3D& v = nodeAnim->mScalingKeys[scaleIndex].mValue;
-        return glm::vec3(v.x, v.y, v.z);
-    }
-    
-    float factor = (animTime - (float) nodeAnim->mScalingKeys[scaleIndex].mTime) / deltaTime;
-
-    const aiVector3D& start = nodeAnim->mScalingKeys[scaleIndex].mValue;
-    const aiVector3D& end   = nodeAnim->mScalingKeys[nextIndex].mValue;
-
-    return glm::mix(glm::vec3(start.x, start.y, start.z), 
-                    glm::vec3(end.x, end.y, end.z), factor);
-}
-
-void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& parentTransform, const aiAnimation* animation,
-                         const Model& model, std::unordered_map<std::string, glm::mat4>& boneTransforms) {
-
-    std::string nodeName(node->mName.C_Str());
-    glm::mat4 nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-
-    const aiNodeAnim* nodeAnim = find_node_anim(animation, nodeName);
-
-    if (nodeAnim) {
-        glm::vec3 position = interpolate_pos(animTime, nodeAnim);
-        glm::quat rotation = interpolate_rot(animTime, nodeAnim);
-        glm::vec3 scale    = interpolate_scale(animTime, nodeAnim);
-
-        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
-        glm::mat4 rotationMatrix    = glm::mat4_cast(rotation);
-        glm::mat4 scaleMatrix       = glm::scale(glm::mat4(1.0f), scale);
-
-        nodeTransform = translationMatrix * rotationMatrix * scaleMatrix;
-    }
-
-    glm::mat4 globalTransform = parentTransform * nodeTransform;
-    boneTransforms[nodeName]  = globalTransform;
-
-    for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        read_node_hierarchy(animTime, node->mChildren[i], globalTransform, animation, model, boneTransforms);
-    }
-}
-
-
-int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
-    (void) e1;
-    (void) e2;
-    return t1->z_index - t2->z_index;
-}
-
-
-#pragma endregion
-
+#include "core/component/logic/system_helper.h"
 
 #pragma region 2D SYSTEMS
+
 void render_world_2d_system(flecs::entity e, Camera2D& camera) {
     if (!e.is_valid()) {
         return;
@@ -363,6 +214,8 @@ void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transfor
 
 #pragma endregion
 
+
+#pragma region COMMON SYSTEMS
 void setup_scripts_system(flecs::entity e, Script& script) {
     // Create a NEW lua_State for THIS script
     script.lua_state = luaL_newstate();
@@ -492,3 +345,5 @@ void scene_manager_system(flecs::world& world) {
             it.entity(i).remove<SceneChangeRequest>();
         });
 }
+
+#pragma endregion

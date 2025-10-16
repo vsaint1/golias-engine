@@ -109,11 +109,7 @@ public:
         LOG_WARN("draw_environment not implemented for this renderer");
     }
 
-    virtual std::shared_ptr<Model> load_model(const char* path) {
-
-        LOG_WARN("LoadModel not implemented for this renderer");
-        return nullptr;
-    }
+    virtual std::shared_ptr<Model> load_model(const char* path);
 
 protected:
     SDL_Window* _window = nullptr;
