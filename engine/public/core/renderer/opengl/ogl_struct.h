@@ -32,6 +32,8 @@ public:
 
     void set_value(const std::string& name, glm::vec4 value, Uint32 count = 1) override;
 
+    void set_value(const std::string& name, const glm::mat4* values, Uint32 count) override;
+
     void destroy() override;
 
     unsigned int get_id() const override;
@@ -91,6 +93,10 @@ public:
     Uint32 vbo        = 0;
     Uint32 ebo        = 0;
     Uint32 texture_id = 0;
+
+    // Skinning support
+    Uint32 bone_id_vbo     = 0;  // VBO for bone IDs (ivec4)
+    Uint32 bone_weight_vbo = 0;  // VBO for bone weights (vec4)
 
     bool has_texture() const override { return texture_id != 0; }
 

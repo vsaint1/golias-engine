@@ -144,6 +144,16 @@ void OpenglShader::set_value(const std::string& name, glm::mat4 value, Uint32 co
     glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(value));
 }
 
+void OpenglShader::set_value(const std::string& name, const glm::mat4* values, Uint32 count) {
+    if (values == nullptr || count == 0) {
+        LOG_WARN("OpenglShader::set_value - Invalid matrix array or count is zero");
+        return;
+    }
+
+    const Uint32 location = get_uniform_location(name);
+    glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(*values));
+}
+
 void OpenglShader::set_value(const std::string& name, glm::vec2 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform2fv(location, count, glm::value_ptr(value));
@@ -181,6 +191,18 @@ void OpenglMesh::destroy() {
 
     if (vbo) {
         glDeleteBuffers(1, &vbo);
+    }
+
+    if (ebo) {
+        glDeleteBuffers(1, &ebo);
+    }
+
+    if (bone_id_vbo) {
+        glDeleteBuffers(1, &bone_id_vbo);
+    }
+
+    if (bone_weight_vbo) {
+        glDeleteBuffers(1, &bone_weight_vbo);
     }
 
     if (vao) {
