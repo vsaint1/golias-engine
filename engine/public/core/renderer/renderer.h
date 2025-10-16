@@ -49,8 +49,8 @@ public:
 
     virtual bool load_font(const std::string& name, const std::string& path, int size = 16) = 0;
 
-    virtual std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path = "") = 0;
-
+    virtual std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path = "", const aiTexture* ai_embedded_tex = nullptr) = 0;
+    
     virtual void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
                               bool flip_h = false, bool flip_v = false, const glm::vec4& color = glm::vec4(1, 1, 1, 1)) = 0;
 

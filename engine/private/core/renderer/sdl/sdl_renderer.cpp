@@ -274,7 +274,7 @@ bool SDLRenderer::load_font(const std::string& name, const std::string& path, in
     return true;
 }
 
-std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path) {
+std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path,const aiTexture* ai_embedded_tex) {
 
     if (_textures.find(name) != _textures.end()) {
         return _textures[name];
