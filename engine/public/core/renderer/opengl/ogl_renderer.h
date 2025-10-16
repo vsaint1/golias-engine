@@ -49,11 +49,14 @@ public:
 
     void draw_model(const Transform3D& t, const Model* model) override;
 
+    void draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) override;
+
     void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) override;
 
     void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
 
     std::shared_ptr<Model> load_model(const char* path) override;
+
 
 private:
     SDL_GLContext _context = nullptr;

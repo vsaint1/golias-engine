@@ -121,6 +121,9 @@ struct Vertex {
     glm::vec2 uv;
 };
 
+constexpr int MAX_BONES = 200;
+
+
 /*!
     @brief Bone structure for skeletal animation
     - Stores offset matrix (inverse bind pose) and final transform

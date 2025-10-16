@@ -102,6 +102,174 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 }
 
 
+const aiNodeAnim* find_node_anim(const aiAnimation* animation, const std::string& nodeName) {
+    for (unsigned int i = 0; i < animation->mNumChannels; i++) {
+        const aiNodeAnim* nodeAnim = animation->mChannels[i];
+        if (std::string(nodeAnim->mNodeName.C_Str()) == nodeName) {
+            return nodeAnim;
+        }
+    }
+    return nullptr;
+}
+
+glm::vec3 interpolate_pos(float animTime, const aiNodeAnim* nodeAnim) {
+    if (nodeAnim->mNumPositionKeys == 1) {
+        aiVector3D v = nodeAnim->mPositionKeys[0].mValue;
+        return glm::vec3(v.x, v.y, v.z);
+    }
+
+    unsigned int positionIndex = 0;
+    for (unsigned int i = 0; i < nodeAnim->mNumPositionKeys - 1; i++) {
+        if (animTime < (float) nodeAnim->mPositionKeys[i + 1].mTime) {
+            positionIndex = i;
+            break;
+        }
+    }
+
+    unsigned int nextIndex = positionIndex + 1;
+    float deltaTime        = (float) (nodeAnim->mPositionKeys[nextIndex].mTime - nodeAnim->mPositionKeys[positionIndex].mTime);
+    float factor           = (animTime - (float) nodeAnim->mPositionKeys[positionIndex].mTime) / deltaTime;
+
+    const aiVector3D& start = nodeAnim->mPositionKeys[positionIndex].mValue;
+    const aiVector3D& end   = nodeAnim->mPositionKeys[nextIndex].mValue;
+
+    glm::vec3 startVec(start.x, start.y, start.z);
+    glm::vec3 endVec(end.x, end.y, end.z);
+
+    return glm::mix(startVec, endVec, factor);
+}
+
+glm::quat interpolate_rot(float animTime, const aiNodeAnim* nodeAnim) {
+    if (nodeAnim->mNumRotationKeys == 1) {
+        aiQuaternion q = nodeAnim->mRotationKeys[0].mValue;
+        return glm::quat(q.w, q.x, q.y, q.z);
+    }
+
+    unsigned int rotationIndex = 0;
+    for (unsigned int i = 0; i < nodeAnim->mNumRotationKeys - 1; i++) {
+        if (animTime < (float) nodeAnim->mRotationKeys[i + 1].mTime) {
+            rotationIndex = i;
+            break;
+        }
+    }
+
+    unsigned int nextIndex = rotationIndex + 1;
+    float deltaTime        = (float) (nodeAnim->mRotationKeys[nextIndex].mTime - nodeAnim->mRotationKeys[rotationIndex].mTime);
+    float factor           = (animTime - (float) nodeAnim->mRotationKeys[rotationIndex].mTime) / deltaTime;
+
+    const aiQuaternion& startQuat = nodeAnim->mRotationKeys[rotationIndex].mValue;
+    const aiQuaternion& endQuat   = nodeAnim->mRotationKeys[nextIndex].mValue;
+
+    glm::quat start(startQuat.w, startQuat.x, startQuat.y, startQuat.z);
+    glm::quat end(endQuat.w, endQuat.x, endQuat.y, endQuat.z);
+
+    return glm::slerp(start, end, factor);
+}
+
+glm::vec3 interpolate_scale(float animTime, const aiNodeAnim* nodeAnim) {
+    if (nodeAnim->mNumScalingKeys == 1) {
+        aiVector3D v = nodeAnim->mScalingKeys[0].mValue;
+        return glm::vec3(v.x, v.y, v.z);
+    }
+
+    unsigned int scaleIndex = 0;
+    for (unsigned int i = 0; i < nodeAnim->mNumScalingKeys - 1; i++) {
+        if (animTime < (float) nodeAnim->mScalingKeys[i + 1].mTime) {
+            scaleIndex = i;
+            break;
+        }
+    }
+
+    unsigned int nextIndex = scaleIndex + 1;
+    float deltaTime        = (float) (nodeAnim->mScalingKeys[nextIndex].mTime - nodeAnim->mScalingKeys[scaleIndex].mTime);
+    float factor           = (animTime - (float) nodeAnim->mScalingKeys[scaleIndex].mTime) / deltaTime;
+
+    const aiVector3D& start = nodeAnim->mScalingKeys[scaleIndex].mValue;
+    const aiVector3D& end   = nodeAnim->mScalingKeys[nextIndex].mValue;
+
+    glm::vec3 startVec(start.x, start.y, start.z);
+    glm::vec3 endVec(end.x, end.y, end.z);
+
+    return glm::mix(startVec, endVec, factor);
+}
+
+void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& parentTransform, const aiAnimation* animation,
+                         const Model& model, std::unordered_map<std::string, glm::mat4>& boneTransforms) {
+    std::string nodeName(node->mName.C_Str());
+    glm::mat4 nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+
+    const aiNodeAnim* nodeAnim = find_node_anim(animation, nodeName);
+
+    if (nodeAnim) {
+        glm::vec3 position = interpolate_pos(animTime, nodeAnim);
+        glm::quat rotation = interpolate_rot(animTime, nodeAnim);
+        glm::vec3 scale    = interpolate_scale(animTime, nodeAnim);
+
+        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
+        glm::mat4 rotationMatrix    = glm::mat4_cast(rotation);
+        glm::mat4 scaleMatrix       = glm::scale(glm::mat4(1.0f), scale);
+
+        nodeTransform = translationMatrix * rotationMatrix * scaleMatrix;
+    }
+
+    glm::mat4 globalTransform = parentTransform * nodeTransform;
+    boneTransforms[nodeName]  = globalTransform;
+
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        read_node_hierarchy(animTime, node->mChildren[i], globalTransform, animation, model, boneTransforms);
+    }
+}
+
+void update_animation(Model& model, Animation3D& anim, float deltaTime) {
+    if (!model.scene || !model.scene->HasAnimations() || !anim.playing) {
+        return;
+    }
+
+    if (anim.current_animation >= (int) model.scene->mNumAnimations) {
+        anim.current_animation = 0;
+    }
+
+    const aiAnimation* animation = model.scene->mAnimations[anim.current_animation];
+
+    anim.time += deltaTime * anim.speed;
+
+    float duration       = (float) animation->mDuration;
+    float ticksPerSecond = (float) (animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25.0f);
+    float timeInTicks    = anim.time * ticksPerSecond;
+
+    if (anim.loop) {
+        timeInTicks = fmod(timeInTicks, duration);
+    } else {
+        if (timeInTicks >= duration) {
+            timeInTicks  = duration;
+            anim.playing = false;
+        }
+    }
+
+    std::unordered_map<std::string, glm::mat4> nodeTransforms;
+    read_node_hierarchy(timeInTicks, model.scene->mRootNode, glm::mat4(1.0f), animation, model, nodeTransforms);
+
+    constexpr int MAX_BONES = 200;
+    anim.bone_transforms.resize(MAX_BONES, glm::mat4(1.0f));
+
+    for (const auto& mesh : model.meshes) {
+        if (!mesh->has_bones) {
+            continue;
+        }
+
+        for (size_t i = 0; i < mesh->bones.size() && i < MAX_BONES; i++) {
+            const Bone& bone = mesh->bones[i];
+
+            auto it = nodeTransforms.find(bone.name);
+            if (it != nodeTransforms.end()) {
+                anim.bone_transforms[i] = model.global_inverse_transform * it->second * bone.offset_matrix;
+            } else {
+                anim.bone_transforms[i] = glm::mat4(1.0f);
+            }
+        }
+    }
+}
+
 void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
 
@@ -112,22 +280,51 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
     const auto& window = GEngine->get_config().get_window();
 
-    // Render all 3D models in the scene
+    // Render all 3D models in the scene (non-animated)
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Model& model) {
-        auto m = GEngine->get_renderer()->load_model(model.path.c_str());
+        // Skip entities with Animation3D component (they're handled by animation system)
+        if (e.has<Animation3D>()) {
+            return;
+        }
 
+        // TODO: create system to handle model loading
+        auto m = GEngine->get_renderer()->load_model(model.path.c_str());
         GEngine->get_renderer()->draw_model(t, m.get());
     });
 
     // Render all cubes in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
+    GEngine->get_world().each(
+        [&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
         GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));
     });
-    
-    
+}
 
+void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transform3D& transform) {
+    if (!model.scene && !model.path.empty()) {
+        auto loaded = GEngine->get_renderer()->load_model(model.path.c_str());
+        if (loaded) {
+            model.importer                 = loaded->importer;
+            model.scene                    = loaded->scene;
+            model.global_inverse_transform = loaded->global_inverse_transform;
+            model.meshes                   = loaded->meshes;
+
+            // LOG_DEBUG("Loaded model for animation: %s", model.path.c_str());
+            // if (model.scene && model.scene->HasAnimations()) {
+            //     LOG_DEBUG("  Found %u animations:", model.scene->mNumAnimations);
+            //     for (unsigned int i = 0; i < model.scene->mNumAnimations; i++) {
+            //         LOG_DEBUG("    [%u] %s", i, model.scene->mAnimations[i]->mName.C_Str());
+            //     }
+            // }
+        }
+    }
+
+    update_animation(model, anim, GEngine->get_timer().delta);
+
+    if (!anim.bone_transforms.empty()) {
+        GEngine->get_renderer()->draw_animated_model(transform, &model, anim.bone_transforms.data(), anim.bone_transforms.size());
+    }
 }
 
 void setup_scripts_system(flecs::entity e, Script& script) {

@@ -273,7 +273,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     LOG_DEBUG("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h,
-             texID);
+              texID);
 
     SDL_DestroySurface(surf);
     return texID;
@@ -526,40 +526,36 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     }
 
     std::string base_dir = ASSETS_PATH + path;
-    // FileAccess file(path, ModeFlags::READ);
 
-    // std::string base_dir = file.get_path();
-    // if (!file.is_open()) {
-    //     LOG_ERROR("Failed to open model file: %s", path);
-    //     return nullptr;
-    // }
-
-    // const auto buffer = file.get_file_as_bytes();
-
-    // if (buffer.empty()) {
-    //     LOG_ERROR("Failed to import Model");
-    //     return nullptr;
-    // }
-
-    Assimp::Importer importer;
+    auto importer = std::make_shared<Assimp::Importer>();
 
     std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
 
-    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs   | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
+    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
                             | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
-    // const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), ASSIMP_FLAGS, ext.c_str());
-
-    // NOTE: on android this doesnt work, needs to read from memory buffer
-    const aiScene* scene = importer.ReadFile(base_dir, ASSIMP_FLAGS);
+    const aiScene* scene = importer->ReadFile(base_dir, ASSIMP_FLAGS);
 
     if (!scene || !scene->mRootNode) {
-        LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
+        LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer->GetErrorString());
         return nullptr;
     }
 
     auto model  = std::make_shared<Model>();
     model->path = path;
+
+    // Store importer and scene to keep animation data alive
+    model->importer = importer;
+    model->scene    = scene;
+
+    // Store global inverse transform for animation
+    glm::mat4 globalTransform = glm::mat4(1.0f);
+    if (scene->mRootNode) {
+        aiMatrix4x4 root = scene->mRootNode->mTransformation;
+        globalTransform  = glm::transpose(glm::make_mat4(&root.a1));
+    }
+
+    model->global_inverse_transform = glm::inverse(globalTransform);
 
     for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* mat = scene->mMaterials[i];
@@ -576,7 +572,13 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
     }
 
     _models[path] = model;
-    LOG_INFO("Loaded Model: %s | Mesh Count: %zu  | FileFormat: %s", path, model->meshes.size(), ext.c_str());
+
+    if (scene->HasAnimations()) {
+        LOG_INFO("Loaded Model: %s | Meshes: %zu | Animations: %u | Format: %s", path, model->meshes.size(), scene->mNumAnimations,
+                 ext.c_str());
+    } else {
+        LOG_INFO("Loaded Model: %s | Meshes: %zu | Format: %s", path, model->meshes.size(), ext.c_str());
+    }
 
     return model;
 }
@@ -654,20 +656,93 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     m->vertex_count = mesh->mNumVertices;
     m->index_count  = indices.size();
 
-    LOG_DEBUG("Mesh: %s | Vertices: %d | Indices: %d | Texture: %d", m->name.data(), m->vertex_count, m->index_count, m->texture_id);
+    // Process bone data if present
+    std::vector<glm::ivec4> bone_ids;
+    std::vector<glm::vec4> bone_weights;
 
+    if (mesh->HasBones()) {
+        m->has_bones = true;
+
+     
+        bone_ids.resize(mesh->mNumVertices, glm::ivec4(0));
+        bone_weights.resize(mesh->mNumVertices, glm::vec4(0.0f));
+
+   
+        std::vector<int> bone_counts(mesh->mNumVertices, 0);
+
+        LOG_DEBUG("Mesh '%s' has %u bones", m->name.data(), mesh->mNumBones);
+
+        // Build bone map and extract bone data
+        for (unsigned int i = 0; i < mesh->mNumBones; i++) {
+            aiBone* bone          = mesh->mBones[i];
+            std::string bone_name = bone->mName.C_Str();
+
+            int bone_index = -1;
+            if (m->bone_map.find(bone_name) == m->bone_map.end()) {
+                bone_index             = m->bones.size();
+                m->bone_map[bone_name] = bone_index;
+
+                Bone b;
+                b.name = bone_name;
+
+                // Store offset matrix (inverse bind pose)
+                aiMatrix4x4 offset = bone->mOffsetMatrix;
+                b.offset_matrix    = glm::transpose(glm::make_mat4(&offset.a1));
+
+                m->bones.push_back(b);
+            } else {
+                bone_index = m->bone_map[bone_name];
+            }
+
+            
+            for (unsigned int j = 0; j < bone->mNumWeights; j++) {
+                unsigned int vertex_id = bone->mWeights[j].mVertexId;
+                float weight           = bone->mWeights[j].mWeight;
+
+                if (weight == 0.0f) {
+                    continue;
+                }
+
+                if (vertex_id >= mesh->mNumVertices) {
+                    LOG_DEBUG("Bone '%s' references out-of-bounds vertex %u", bone_name.c_str(), vertex_id);
+                    continue;
+                }
+
+                int slot = bone_counts[vertex_id];
+                if (slot < 4) {
+                    bone_ids[vertex_id][slot]     = bone_index;
+                    bone_weights[vertex_id][slot] = weight;
+                    bone_counts[vertex_id]++;
+                } else {
+                    LOG_DEBUG("Vertex %u has more than 4 bone influences (skipping)", vertex_id);
+                }
+            }
+        }
+
+
+        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Bones: %zu | Texture: %u", m->name.data(), m->vertex_count, m->index_count,
+                  m->bones.size(), m->texture_id);
+    } else {
+        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Texture: %u (no bones)", m->name.data(), m->vertex_count, m->index_count,
+                  m->texture_id);
+    }
+
+    // TODO: improve this setup 
     glGenVertexArrays(1, &m->vao);
     glGenBuffers(1, &m->vbo);
     glGenBuffers(1, &m->ebo);
 
     glBindVertexArray(m->vao);
 
+    // Upload vertex data (position, normal, uv)
     glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
 
+    // Upload index data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
+    // Vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
@@ -677,7 +752,27 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
     glEnableVertexAttribArray(2);
 
+    // Upload bone data if present
+    if (mesh->HasBones()) {
+        auto ogl_mesh = static_cast<OpenglMesh*>(m.get());
+
+        // Bone IDs (ivec4 at location 8)
+        glGenBuffers(1, &ogl_mesh->bone_id_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_id_vbo);
+        glBufferData(GL_ARRAY_BUFFER, bone_ids.size() * sizeof(glm::ivec4), bone_ids.data(), GL_STATIC_DRAW);
+        glVertexAttribIPointer(8, 4, GL_INT, sizeof(glm::ivec4), (void*) 0);
+        glEnableVertexAttribArray(8);
+
+        // Bone Weights (vec4 at location 9)
+        glGenBuffers(1, &ogl_mesh->bone_weight_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_weight_vbo);
+        glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(glm::vec4), bone_weights.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*) 0);
+        glEnableVertexAttribArray(9);
+    }
+
     glBindVertexArray(0);
+
 
     return m;
 }
@@ -701,6 +796,32 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
         batch.models.push_back(t.get_model_matrix());
         batch.colors.push_back(glm::vec3(1.0f));
         batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
+    }
+}
+
+void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) {
+    if (!model || !default_shader) {
+        return;
+    }
+
+ 
+    bone_count = bone_count > MAX_BONES ? SDL_min(bone_count, MAX_BONES) : bone_count;
+
+    for (auto& mesh : model->meshes) {
+        if (!mesh || !mesh->has_bones) {
+            continue;
+        }
+
+        auto& batch  = _instanced_batches[mesh.get()];
+        batch.mesh   = mesh.get();
+        batch.shader = default_shader; 
+        batch.models.push_back(t.get_model_matrix());
+        batch.colors.push_back(glm::vec3(1.0f));
+        batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
+
+        
+        batch.bone_transforms = bone_transforms;
+        batch.bone_count      = bone_count;
     }
 }
 
@@ -733,10 +854,25 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
-        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
 
         glBindVertexArray(ogl_mesh->vao);
 
+        // TODO: refactor to send SSBO for bones 
+        if (mesh->has_bones) {
+            ogl_shader->set_value("USE_SKELETON", 1);
+
+            int count               = batch.bone_count < MAX_BONES ? batch.bone_count : MAX_BONES;
+
+            if (batch.bone_transforms && batch.bone_count > 0) {
+                ogl_shader->set_value("BONES", batch.bone_transforms, count);
+            }
+
+        } else {
+            ogl_shader->set_value("USE_SKELETON", 0);
+        }
+
+        // TODO: refactor the Texture handling
         if (ogl_mesh->has_texture()) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
@@ -894,7 +1030,6 @@ void OpenglRenderer::setup_default_shaders() {
         default_shader = nullptr;
         return;
     }
-
 
     default_shader->activate();
     default_shader->set_value("LIGHT_POSITION", glm::vec3(0, 100, 0));
