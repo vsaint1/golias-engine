@@ -3,104 +3,10 @@
 #include "core/binding/lua.h"
 #include "core/engine.h"
 
-
-int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
-    (void) e1;
-    (void) e2;
-    return t1->z_index - t2->z_index;
-}
-
-void render_world_2d_system(flecs::entity e, Camera2D& camera) {
-    if (!e.is_valid()) {
-        return;
-    }
-
-    auto& world = GEngine->get_world();
-
-    auto q = world.query_builder<Transform2D>().order_by(sort_by_z_index).build();
-
-    q.each([&](flecs::entity e, Transform2D& t) {
-        update_transforms_system(e, t);
-
-
-        if (e.has<Shape2D>()) {
-            render_primitives_system(t, e.get_mut<Shape2D>());
-        }
-
-        if (e.has<Sprite2D>()) {
-            render_sprites_system(t, e.get_mut<Sprite2D>());
-        }
-
-        if (e.has<Label2D>()) {
-            render_labels_system(t, e.get_mut<Label2D>());
-        }
-    });
-}
-
-void render_primitives_system(Transform2D& t, Shape2D& s) {
-    switch (s.type) {
-    case ShapeType::TRIANGLE:
-        GEngine->get_renderer()->draw_triangle(t, s.size.x, s.color, s.filled);
-        break;
-    case ShapeType::RECTANGLE:
-        GEngine->get_renderer()->draw_rect(t, s.size.x, s.size.y, s.color, s.filled);
-        break;
-    case ShapeType::CIRCLE:
-        GEngine->get_renderer()->draw_circle(t, s.radius, s.color, s.filled);
-        break;
-    case ShapeType::LINE:
-        GEngine->get_renderer()->draw_line(t, s.end, s.color);
-        break;
-    case ShapeType::POLYGON:
-        GEngine->get_renderer()->draw_polygon(t, s.vertices, s.color, s.filled);
-        break;
-    }
-}
-
-void render_labels_system(Transform2D& t, Label2D& l) {
-
-    // LOG_INFO("Rendering label: %s at position (%.2f, %.2f)", l.text.c_str(), t.world_position.x, t.world_position.y);
-    GEngine->get_renderer()->draw_text(t, l.color, l.font_name.c_str(), "%s", l.text.c_str());
-}
-
-void render_sprites_system(Transform2D& t, Sprite2D& sprite) {
-
-    if (!sprite.texture_name.empty()) {
-
-        auto texture = GEngine->get_renderer()->load_texture(sprite.texture_name);
-        if (texture) {
-            glm::vec4 source = sprite.source;
-
-            glm::vec4 dest = {0, 0, source.z, source.w};
-
-            GEngine->get_renderer()->draw_texture(t, texture.get(), dest, source, sprite.flip_h, sprite.flip_v, sprite.color);
-        }
-    }
-}
-
-
-void update_transforms_system(flecs::entity e, Transform2D& t) {
-    auto parent = e.parent();
-    if (parent.is_valid() && parent.has<Transform2D>()) {
-        const Transform2D& parent_t = parent.get<Transform2D>();
-
-        // Update world position, scale and rotation based on parent's transform
-        t.world_position = parent_t.world_position + t.position;
-
-        t.world_scale = parent_t.world_scale * t.scale;
-
-        t.world_rotation = parent_t.world_rotation + t.rotation;
-    } else {
-        // No parent with Transform2D, so local is world
-        t.world_position = t.position;
-        t.world_scale    = t.scale;
-        t.world_rotation = t.rotation;
-    }
-
-    // LOG_INFO("Entity: %s, Local Pos: (%.2f, %.2f), World Pos: (%.2f, %.2f)", e.name().c_str(), t.position.x, t.position.y, t.world_position.x,
-    //          t.world_position.y);
-}
-
+#pragma region FUNCTION HELPERS
+// =======================================================
+// SOME FUNCTIONS HELPER FOR MANY SYSTEMS                |
+// =======================================================
 
 const aiNodeAnim* find_node_anim(const aiAnimation* animation, const std::string& nodeName) {
     for (unsigned int i = 0; i < animation->mNumChannels; i++) {
@@ -237,6 +143,111 @@ void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& pa
     }
 }
 
+
+int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
+    (void) e1;
+    (void) e2;
+    return t1->z_index - t2->z_index;
+}
+
+
+#pragma endregion
+
+
+#pragma region 2D SYSTEMS
+void render_world_2d_system(flecs::entity e, Camera2D& camera) {
+    if (!e.is_valid()) {
+        return;
+    }
+
+    auto& world = GEngine->get_world();
+
+    auto q = world.query_builder<Transform2D>().order_by(sort_by_z_index).build();
+
+    q.each([&](flecs::entity e, Transform2D& t) {
+        update_transforms_system(e, t);
+
+
+        if (e.has<Shape2D>()) {
+            render_primitives_system(t, e.get_mut<Shape2D>());
+        }
+
+        if (e.has<Sprite2D>()) {
+            render_sprites_system(t, e.get_mut<Sprite2D>());
+        }
+
+        if (e.has<Label2D>()) {
+            render_labels_system(t, e.get_mut<Label2D>());
+        }
+    });
+}
+
+void render_primitives_system(Transform2D& t, Shape2D& s) {
+    switch (s.type) {
+    case ShapeType::TRIANGLE:
+        GEngine->get_renderer()->draw_triangle(t, s.size.x, s.color, s.filled);
+        break;
+    case ShapeType::RECTANGLE:
+        GEngine->get_renderer()->draw_rect(t, s.size.x, s.size.y, s.color, s.filled);
+        break;
+    case ShapeType::CIRCLE:
+        GEngine->get_renderer()->draw_circle(t, s.radius, s.color, s.filled);
+        break;
+    case ShapeType::LINE:
+        GEngine->get_renderer()->draw_line(t, s.end, s.color);
+        break;
+    case ShapeType::POLYGON:
+        GEngine->get_renderer()->draw_polygon(t, s.vertices, s.color, s.filled);
+        break;
+    }
+}
+
+void render_labels_system(Transform2D& t, Label2D& l) {
+
+    // LOG_INFO("Rendering label: %s at position (%.2f, %.2f)", l.text.c_str(), t.world_position.x, t.world_position.y);
+    GEngine->get_renderer()->draw_text(t, l.color, l.font_name.c_str(), "%s", l.text.c_str());
+}
+
+void render_sprites_system(Transform2D& t, Sprite2D& sprite) {
+
+    if (!sprite.texture_name.empty()) {
+
+        auto texture = GEngine->get_renderer()->load_texture(sprite.texture_name);
+        if (texture) {
+            glm::vec4 source = sprite.source;
+
+            glm::vec4 dest = {0, 0, source.z, source.w};
+
+            GEngine->get_renderer()->draw_texture(t, texture.get(), dest, source, sprite.flip_h, sprite.flip_v, sprite.color);
+        }
+    }
+}
+
+
+void update_transforms_system(flecs::entity e, Transform2D& t) {
+    auto parent = e.parent();
+    if (parent.is_valid() && parent.has<Transform2D>()) {
+        const Transform2D& parent_t = parent.get<Transform2D>();
+
+        // Update world position, scale and rotation based on parent's transform
+        t.world_position = parent_t.world_position + t.position;
+
+        t.world_scale = parent_t.world_scale * t.scale;
+
+        t.world_rotation = parent_t.world_rotation + t.rotation;
+    } else {
+        // No parent with Transform2D, so local is world
+        t.world_position = t.position;
+        t.world_scale    = t.scale;
+        t.world_rotation = t.rotation;
+    }
+
+    // LOG_INFO("Entity: %s, Local Pos: (%.2f, %.2f), World Pos: (%.2f, %.2f)", e.name().c_str(), t.position.x, t.position.y, t.world_position.x,
+    //          t.world_position.y);
+}
+#pragma endregion
+
+#pragma region 3D SYSTEMS
 void update_animation(Model& model, Animation3D& anim, float deltaTime) {
     if (!model.scene || !model.scene->HasAnimations() || !anim.playing) {
         return;
@@ -267,6 +278,11 @@ void update_animation(Model& model, Animation3D& anim, float deltaTime) {
     nodeTransforms.reserve(animation->mNumChannels); // Pre-allocate
     
     read_node_hierarchy(timeInTicks, model.scene->mRootNode, glm::mat4(1.0f), animation, model, nodeTransforms);
+
+    // Ensure bone_transforms is properly sized
+    if (anim.bone_transforms.size() < MAX_BONES) {
+        anim.bone_transforms.resize(MAX_BONES, glm::mat4(1.0f));
+    }
 
     for (const auto& mesh : model.meshes) {
         if (!mesh->has_bones) {
@@ -318,7 +334,7 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 }
 
 void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transform3D& transform) {
-    // Optimization: Lazy load model only once on first frame
+   
     if (!model.scene && !model.path.empty()) {
         auto loaded = GEngine->get_renderer()->load_model(model.path.c_str());
         if (loaded) {
@@ -344,6 +360,8 @@ void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transfor
         GEngine->get_renderer()->draw_animated_model(transform, &model, anim.bone_transforms.data(), anim.bone_transforms.size());
     }
 }
+
+#pragma endregion
 
 void setup_scripts_system(flecs::entity e, Script& script) {
     // Create a NEW lua_State for THIS script
