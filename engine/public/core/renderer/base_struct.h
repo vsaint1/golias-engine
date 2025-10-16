@@ -99,7 +99,7 @@ public:
     int width        = 0;
     int height       = 0;
     std::string path = "";
-
+    SDL_Surface* surface = nullptr;
     virtual ~Texture() = default;
 };
 

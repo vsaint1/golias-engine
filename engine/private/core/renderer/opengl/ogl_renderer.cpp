@@ -461,80 +461,15 @@ bool OpenglRenderer::load_font(const std::string& name, const std::string& path,
 
 std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
 
-
+   
     if (_textures.contains(name)) {
         return _textures[name];
     }
 
-    SDL_Surface* surf = nullptr;
+    auto texture = Renderer::load_texture(name, path, ai_embedded_tex);
 
-    if (ai_embedded_tex) {
-
-        LOG_INFO("Loading embedded texture: %s (%ux%u)", name.c_str(), ai_embedded_tex->mWidth, ai_embedded_tex->mHeight);
-
-
-        // (mHeight == 0 means compressed)
-        if (ai_embedded_tex->mHeight == 0) {
-            // Compressed texture (e.g., PNG, JPEG)
-            SDL_IOStream* rw = SDL_IOFromConstMem(ai_embedded_tex->pcData, ai_embedded_tex->mWidth);
-            if (!rw) {
-                LOG_ERROR("Failed to create SDL_IOStream from embedded texture data");
-                return nullptr;
-            }
-
-            surf = IMG_Load_IO(rw, true);
-            if (!surf) {
-                LOG_ERROR("Failed to load compressed embedded texture: %s", SDL_GetError());
-                return nullptr;
-            }
-        } else {
-            // Uncompressed ARGB8888 texture
-            surf = SDL_CreateSurface(ai_embedded_tex->mWidth, ai_embedded_tex->mHeight, SDL_PIXELFORMAT_RGBA32);
-            if (!surf) {
-                LOG_ERROR("Failed to create surface for embedded texture: %s", SDL_GetError());
-                return nullptr;
-            }
-
-            aiTexel* texels = ai_embedded_tex->pcData;
-            Uint32* pixels  = (Uint32*) surf->pixels;
-
-            for (unsigned int i = 0; i < ai_embedded_tex->mWidth * ai_embedded_tex->mHeight; i++) {
-                // ARGB to RGBA
-                Uint8 r   = texels[i].r;
-                Uint8 g   = texels[i].g;
-                Uint8 b   = texels[i].b;
-                Uint8 a   = texels[i].a;
-                pixels[i] = SDL_MapSurfaceRGBA(surf, r, g, b, a);
-            }
-        }
-    } else {
-
-
-        LOG_INFO("Loading texture: %s", path.c_str());
-
-        FileAccess file_access(path, ModeFlags::READ);
-
-        if (!file_access.is_open()) {
-            LOG_ERROR("Failed to open texture file: %s", path.c_str());
-            return nullptr;
-        }
-
-        surf = IMG_Load_IO(file_access.get_handle(), false);
-        // SDL_Surface* surf = IMG_Load(path.c_str());
-
-        if (!surf) {
-            LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
-            return nullptr;
-        }
-    }
-
-    auto texture = std::make_shared<Texture>();
-
-    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
-
-    if (!surf) {
-        LOG_ERROR("Failed to convert texture to RGBA32: %s", SDL_GetError());
-        SDL_DestroySurface(surf);
+    if (!texture || !texture->surface) {
+        LOG_ERROR("Failed to load texture surface: %s", name.c_str());
         return nullptr;
     }
 
@@ -547,22 +482,18 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->surface->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    texture->id     = texID;
-    texture->width  = surf->w;
-    texture->height = surf->h;
-    texture->path   = path;
-
-    LOG_INFO("Texture Info: Id %d | Size %dx%d | Path: %s | Embedded: %s", texture->id, surf->w, surf->h, path.c_str(), ai_embedded_tex != nullptr ? "Yes" : "No");
+    texture->id = texID;
 
     _textures[name] = texture;
 
-    SDL_DestroySurface(surf);
+    SDL_DestroySurface(texture->surface);
+    texture->surface = nullptr; 
+    
     return texture;
 }
-
 
 
 std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {

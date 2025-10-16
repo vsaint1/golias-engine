@@ -276,44 +276,20 @@ bool SDLRenderer::load_font(const std::string& name, const std::string& path, in
 
 std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path,const aiTexture* ai_embedded_tex) {
 
-    if (_textures.find(name) != _textures.end()) {
+     if (_textures.contains(name)) {
         return _textures[name];
     }
 
-    FileAccess file(path, ModeFlags::READ);
+    auto texture = Renderer::load_texture(name, path, nullptr);
 
-    if (!file.is_open()) {
-        LOG_ERROR("Failed to open Texture file %s", path.c_str());
-        return nullptr;
-    }
 
-    SDL_Surface* surface = IMG_Load_IO(file.get_handle(), false);
+    _textures[name] = texture;
 
-    if (!surface) {
-        LOG_ERROR("Failed to load Texture %s: %s", path.c_str(), SDL_GetError());
-        return nullptr;
-    }
+    SDL_DestroySurface(texture->surface);
+    texture->surface = nullptr; 
 
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(_renderer, surface);
 
-    if (!texture) {
-        LOG_ERROR("Failed to create Texture from surface %s: %s", path.c_str(), SDL_GetError());
-        SDL_DestroySurface(surface);
-
-        return nullptr;
-    }
-
-    std::shared_ptr<SDLTexture> tex = std::make_shared<SDLTexture>(texture);
-    tex->width                      = surface->w;
-    tex->height                     = surface->h;
-    tex->path                       = path;
-
-    SDL_DestroySurface(surface);
-
-    LOG_INFO("Loaded Texture Name: %s, Size (%dx%d), Path: %s", name.c_str(), tex->width, tex->height, tex->path.c_str());
-
-    _textures[name] = tex;
-    return _textures[name];
+    return texture;
 }
 
 void SDLRenderer::draw_text_internal(const glm::vec2& pos, const glm::vec4& color, const std::string& font_name, const std::string& text) {

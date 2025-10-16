@@ -30,7 +30,7 @@ public:
 
     bool load_font(const std::string& name, const std::string& path, int size) override;
     
-    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path,const aiTexture* ai_embedded_tex) override;
+    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path,const aiTexture* ai_embedded_tex);
 
     void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
                       bool flip_h, bool flip_v, const glm::vec4& color) override;
