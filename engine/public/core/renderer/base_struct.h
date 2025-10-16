@@ -73,7 +73,6 @@ struct Tokens {
 */
 class Font {
 public:
-
     Font(TTF_Font* font) : _font(font) {
     }
 
@@ -83,8 +82,7 @@ public:
     TTF_Font* get_font() const;
 
 protected:
- TTF_Font* _font = nullptr;
-
+    TTF_Font* _font = nullptr;
 };
 
 /*!
@@ -124,6 +122,22 @@ struct Vertex {
 };
 
 /*!
+    @brief Bone structure for skeletal animation
+    - Stores offset matrix (inverse bind pose) and final transform
+    - Used in GPU skinning for animated meshes
+
+    @version 0.0.1
+*/
+struct Bone {
+    std::string name;
+    glm::mat4 offset_matrix; // Inverse bind pose matrix
+    glm::mat4 final_transform; // Final transform to upload to GPU
+
+    Bone() : offset_matrix(1.0f), final_transform(1.0f) {
+    }
+};
+
+/*!
 
     @brief Mesh Abstract class
     - Bind the mesh
@@ -143,6 +157,11 @@ struct Mesh {
     std::vector<Uint32> indices;
 
     Material material;
+
+    // Animation support
+    bool has_bones = false;
+    std::unordered_map<std::string, int> bone_map; // Bone name -> bone index
+    std::vector<Bone> bones; // All bones in this mesh
 
     virtual bool has_texture() const = 0;
 
@@ -196,6 +215,8 @@ public:
     virtual void set_value(const std::string& name, glm::vec4 value, Uint32 count) = 0;
 
     virtual void set_value(const std::string& name, Uint32 value) = 0;
+
+    virtual void set_value(const std::string& name, const glm::mat4* values, Uint32 count) = 0;
 
     virtual void destroy() = 0;
 

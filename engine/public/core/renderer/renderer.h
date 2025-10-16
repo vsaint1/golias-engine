@@ -17,6 +17,9 @@ struct InstancedBatch {
     std::vector<glm::vec3> colors; /// colors for instancing (later)
     EDrawMode mode = EDrawMode::TRIANGLES;
     EDrawCommand command = EDrawCommand::MODEL;
+    
+    const glm::mat4* bone_transforms = nullptr;  /// Pointer to bone transforms (if has animation/bones)
+    int bone_count = 0;                          /// Number of bones
 };
 
 
@@ -92,11 +95,16 @@ public:
         LOG_WARN("draw_model not implemented for this renderer");
     }
 
+       virtual void draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count){
+        LOG_WARN("draw_animated_model not implemented for this renderer");
+    }
+    
     // TODO: add shader parameter
     virtual void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader = nullptr) {
         LOG_WARN("draw_cube not implemented for this renderer");
     }
 
+ 
     virtual void draw_environment(const glm::mat4& view, const glm::mat4& projection) {
         LOG_WARN("draw_environment not implemented for this renderer");
     }
