@@ -67,6 +67,7 @@ target("engine")
         set_toolchains("msvc")
 
         add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "_CRT_SECURE_NO_WARNINGS")
+        add_cxflags("/bigobj") 
     end
 
     if is_plat("android") or is_plat("linux") then
