@@ -1,5 +1,6 @@
 #include "core/renderer/renderer.h"
 
+#include "core/io/assimp_io.h"
 #include <core/engine.h>
 
 
@@ -130,16 +131,34 @@ std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const s
 
 std::shared_ptr<Model> Renderer::load_model(const char* path) {
 
-    std::string base_dir = ASSETS_PATH + path;
 
-    auto importer = std::make_shared<Assimp::Importer>();
+    std::string path_str = path;
+    
+    if (path_str.rfind("res://", 0) == 0) {
+        path_str = path_str.substr(6); // Remove "res://"
+    }
 
-    std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
+    std::string base_dir = ASSETS_PATH;
+
+    size_t last_slash = path_str.find_last_of("/\\");
+    if (last_slash != std::string::npos) {
+        base_dir += path_str.substr(0, last_slash + 1);
+    }
+
+    LOG_INFO("Loading model: %s (base_dir: %s)", path, base_dir.c_str());
+
+    auto importer   = std::make_shared<Assimp::Importer>();
+    std::string ext = path_str.substr(path_str.find_last_of('.') + 1);
+
+    // Set custom IOSystem to handle external files (.mtl, textures) through FileAccess
+    importer->SetIOHandler(new SDLIOSystem(base_dir));
 
     const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
                             | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
-    const aiScene* scene = importer->ReadFile(base_dir, ASSIMP_FLAGS);
+    std::string filename = (last_slash != std::string::npos) ? path_str.substr(last_slash + 1) : path_str;
+
+    const aiScene* scene = importer->ReadFile(filename, ASSIMP_FLAGS);
 
     if (!scene || !scene->mRootNode) {
         LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer->GetErrorString());
@@ -170,7 +189,6 @@ std::shared_ptr<Model> Renderer::load_model(const char* path) {
         }
     }
 
-    base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         LOG_DEBUG("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
         model->meshes.push_back(load_mesh(scene->mMeshes[i], scene, base_dir));

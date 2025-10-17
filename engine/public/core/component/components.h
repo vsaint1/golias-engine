@@ -188,14 +188,8 @@ struct Model {
     std::shared_ptr<Assimp::Importer> importer = nullptr;
     const aiScene* scene                       = nullptr;
     glm::mat4 global_inverse_transform         = glm::mat4(1.0f);
-
-    // Model() = default;
-
-    // Model(Model&&) noexcept            = default;
-    // Model& operator=(Model&&) noexcept = default;
-
-    // Model(const Model&)            = delete;
-    // Model& operator=(const Model&) = delete;
+    
+    bool is_loaded = false;
 
 
     ~Model();

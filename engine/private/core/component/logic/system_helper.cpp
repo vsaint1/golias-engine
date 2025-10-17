@@ -112,8 +112,10 @@ void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& pa
                          const Model& model, std::unordered_map<std::string, glm::mat4>& bone_map) {
 
     std::string nodeName(node->mName.C_Str());
-    glm::mat4 nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-
+    const aiMatrix4x4& nodeTransformAI = node->mTransformation;
+    
+    glm::mat4 nodeTransform;
+    
     const aiNodeAnim* nodeAnim = find_node_anim(animation, nodeName);
 
     if (nodeAnim) {
@@ -121,15 +123,19 @@ void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& pa
         glm::quat rotation = interpolate_rot(animTime, nodeAnim);
         glm::vec3 scale    = interpolate_scale(animTime, nodeAnim);
 
-        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), position);
-        glm::mat4 rotationMatrix    = glm::mat4_cast(rotation);
-        glm::mat4 scaleMatrix       = glm::scale(glm::mat4(1.0f), scale);
-
-        nodeTransform = translationMatrix * rotationMatrix * scaleMatrix;
+        glm::mat4 rotMat = glm::mat4_cast(rotation);
+        
+        nodeTransform[0] = rotMat[0] * scale.x;
+        nodeTransform[1] = rotMat[1] * scale.y;
+        nodeTransform[2] = rotMat[2] * scale.z;
+        nodeTransform[3] = glm::vec4(position, 1.0f);
+    } else {
+       
+        nodeTransform = glm::transpose(glm::make_mat4(&nodeTransformAI.a1));
     }
 
     glm::mat4 globalTransform = parentTransform * nodeTransform;
-    bone_map[nodeName]  = globalTransform;
+    bone_map[nodeName] = globalTransform;
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         read_node_hierarchy(animTime, node->mChildren[i], globalTransform, animation, model, bone_map);

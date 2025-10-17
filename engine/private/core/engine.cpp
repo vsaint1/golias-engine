@@ -129,8 +129,25 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         Logger::initialize();
     }
 
+    int driver_count = SDL_GetNumRenderDrivers();
 
-    LOG_INFO("Renderer Selected: %s", _config.get_renderer_device().get_backend_str());
+    if (driver_count < 1) {
+        LOG_ERROR("No render drivers available");
+        return false;
+    }
+
+    std::string renderer_list;
+    renderer_list.reserve(driver_count * 16);
+    for (int i = 0; i < driver_count; ++i) {
+        const char* name = SDL_GetRenderDriver(i);
+        renderer_list += name;
+        renderer_list += (i < driver_count - 1) ? ", " : "";
+    }
+
+    LOG_INFO("Available Backends Count (%d), List %s", driver_count, renderer_list.c_str());
+
+    LOG_INFO("Backend Selected: %s", _config.get_renderer_device().get_backend_str());
+
 
     // TODO: later we can add support for other renderers (Vulkan, OpenGL, etc.)
     _renderer = create_renderer_internal(_window, _config);
@@ -261,7 +278,14 @@ Engine::~Engine() {
 void engine_setup_systems(flecs::world& world) {
 
 #pragma region 3D SYSTEMS
-    world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).each(render_world_3d_system);
+
+    world.system<Model, Animation3D, Transform3D>("Animation_System_OnUpdate")
+        .kind(flecs::OnUpdate)
+        .with<tags::ActiveScene>()
+        .up()
+        .each(animation_system);
+
+    world.system<Camera3D>("Render_World_3D_OnUpdate").kind(flecs::OnUpdate).with<tags::ActiveScene>().up().each(render_world_3d_system);
 
 #pragma endregion
 

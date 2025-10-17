@@ -19,12 +19,14 @@ Script::~Script() {
 }
 
 Model::~Model() {
-    if (scene){
-        importer->FreeScene();
+    if (is_loaded && scene) {
+        LOG_DEBUG("Releasing model: %s", path.c_str());
+        if (importer) {
+            importer->FreeScene();
+        }
         scene = nullptr;
     }
     
-    LOG_DEBUG("Releasing model: %s", path.c_str());
     // automatically all ~destructors
     meshes.clear();
 }

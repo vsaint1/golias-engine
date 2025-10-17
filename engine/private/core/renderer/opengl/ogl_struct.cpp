@@ -92,6 +92,11 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
 
     EMBER_TIMER_END("Compiling Shaders");
 
+    if (!success) {
+        LOG_CRITICAL("Shader compilation failed, deleting shader");
+        glDeleteShader(shader);
+        return 0;
+    }
 
     return shader;
 }
@@ -233,10 +238,6 @@ void OpenglMesh::destroy() {
         bone_weight_vbo = 0;
     }
 
-    if (bone_ssbo) {
-        glDeleteBuffers(1, &bone_ssbo);
-        bone_ssbo = 0;
-    }
 
     if (vao) {
         glDeleteVertexArrays(1, &vao);
