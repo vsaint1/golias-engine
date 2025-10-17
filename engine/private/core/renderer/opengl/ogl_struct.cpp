@@ -4,24 +4,40 @@
 
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
+#define SHADER_HEADER "#version 300 es\nprecision highp float;\n\n"
 #else
-#define SHADER_HEADER "#version 330 core\n"
+#define SHADER_HEADER "#version 330 core\n\n"
 #endif
 
-bool validate_gl_shader(GLuint shader, GLuint op) {
-    int success;
-    glGetShaderiv(shader, op, &success);
+bool validate_gl_shader(GLuint handle, GLenum op, bool is_program = false) {
+    GLint success = 0;
+    char infoLog[1024];
 
     const char* op_str = (op == GL_COMPILE_STATUS)  ? "COMPILE"
                        : (op == GL_LINK_STATUS)     ? "LINK"
                        : (op == GL_VALIDATE_STATUS) ? "VALIDATE"
                                                     : "UNKNOWN";
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        LOG_CRITICAL("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
-        return false;
+
+    if (is_program) {
+        if (op == GL_VALIDATE_STATUS) {
+            glValidateProgram(handle);
+        }
+        
+       
+        glGetProgramiv(handle, op, &success);
+        if (!success) {
+            glGetProgramInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
+            LOG_CRITICAL("OPENGLPROGRAM::%s:ERROR: %s", op_str, infoLog);
+            return false;
+        }
+       
+    } else {
+        glGetShaderiv(handle, op, &success);
+        if (!success) {
+            glGetShaderInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
+            LOG_CRITICAL("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
+            return false;
+        }
     }
 
     return true;
@@ -43,9 +59,9 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    bool success = validate_gl_shader(program, GL_COMPILE_STATUS);
-    success &= validate_gl_shader(program, GL_LINK_STATUS);
-    success &= validate_gl_shader(program, GL_VALIDATE_STATUS);
+    bool success = validate_gl_shader(program, GL_LINK_STATUS, true);
+    
+    success &= validate_gl_shader(program, GL_VALIDATE_STATUS, true);
 
     if (!success) {
         LOG_CRITICAL("Shader program setup failed, exiting");
@@ -68,6 +84,7 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
     EMBER_TIMER_START();
 
     Uint32 shader = glCreateShader(type);
+    
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
 
@@ -214,6 +231,11 @@ void OpenglMesh::destroy() {
     if (bone_weight_vbo) {
         glDeleteBuffers(1, &bone_weight_vbo);
         bone_weight_vbo = 0;
+    }
+
+    if (bone_ssbo) {
+        glDeleteBuffers(1, &bone_ssbo);
+        bone_ssbo = 0;
     }
 
     if (vao) {

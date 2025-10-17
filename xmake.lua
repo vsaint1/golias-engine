@@ -83,8 +83,6 @@ target("runtime")
     add_deps("engine")
     add_includedirs("engine/public")
 
-    add_packages("imgui","imguizmo")
-
     if is_plat("android") then
         set_basename("client")
         set_kind("shared")
@@ -109,6 +107,8 @@ target("runtime")
            "-s EXPORTED_RUNTIME_METHODS=cwrap",
            "-s STACK_SIZE=1mb",
            "--preload-file=res@/res",
+           "-s NO_DISABLE_EXCEPTION_CATCHING",
+           "-s ALLOW_MEMORY_GROWTH=1",
            "-g")
 
      end
