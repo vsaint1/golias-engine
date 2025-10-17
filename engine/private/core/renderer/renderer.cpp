@@ -1,5 +1,7 @@
 #include "core/renderer/renderer.h"
 
+#include <core/engine.h>
+
 
 void Renderer::set_default_fonts(const std::string& text_font, const std::string& emoji_font) {
     _default_font_name = text_font;
@@ -80,7 +82,32 @@ std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const s
         }
     }
 
-    auto texture = std::make_shared<Texture>();
+    std::shared_ptr<Texture> texture = nullptr;
+
+    switch (GEngine->get_config().get_renderer_device().backend) {
+    case Backend::GL_COMPATIBILITY:
+        texture = std::make_shared<OpenglTexture>();
+        break;
+    case Backend::AUTO:
+        texture = std::make_shared<SDLTexture>();
+        break;
+    case Backend::VK_FORWARD:
+        // texture = std::make_shared<VulkanTexture>();
+        LOG_ERROR("Vulkan texture loading not implemented yet");
+        break;
+    case Backend::DIRECTX12:
+        // texture = std::make_shared<DirectX12Texture>();
+        LOG_ERROR("DirectX12 texture loading not implemented yet");
+        break;
+    case Backend::METAL:
+        // texture = std::make_shared<MetalTexture>();
+        LOG_ERROR("Metal texture loading not implemented yet");
+        break;
+    default:
+        texture = std::make_shared<Texture>();
+        break;
+    }
+
 
     surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
 

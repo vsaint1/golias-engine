@@ -19,23 +19,6 @@ bool SDLRenderer::initialize(SDL_Window* window) {
         return false;
     }
 
-    int driver_count = SDL_GetNumRenderDrivers();
-
-    if (driver_count < 1) {
-        LOG_ERROR("No render drivers available");
-        return false;
-    }
-
-    std::string renderer_list;
-    renderer_list.reserve(driver_count * 16);
-    for (int i = 0; i < driver_count; ++i) {
-        const char* name = SDL_GetRenderDriver(i);
-        renderer_list += name;
-        renderer_list += (i < driver_count - 1) ? ", " : "";
-    }
-
-    LOG_INFO("Available backends (%d): %s", driver_count, renderer_list.c_str());
-
     const char* renderer_name = SDL_GetRendererName(_renderer);
 
     const auto& viewport = GEngine->get_config().get_viewport();

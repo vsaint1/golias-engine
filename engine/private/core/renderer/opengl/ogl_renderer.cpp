@@ -473,12 +473,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
         return nullptr;
     }
 
-    // TODO: Should handle better this, for now im creating 2 shared ptrs (base and opengl)
-    auto ogl_texture    = std::make_shared<OpenglTexture>();
-    ogl_texture->width  = texture->width;
-    ogl_texture->height = texture->height;
-    ogl_texture->path   = texture->path;
-    ogl_texture->target = ETextureTarget::TEXTURE_2D;
+    texture->target = ETextureTarget::TEXTURE_2D;
 
     GLuint texID;
     glGenTextures(1, &texID);
@@ -492,14 +487,13 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->surface->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    ogl_texture->id = texID;
-
-    _textures[name] = ogl_texture;
+    texture->id = texID;
+    _textures[name] = texture;
 
     SDL_DestroySurface(texture->surface);
     texture->surface = nullptr;
 
-    return ogl_texture;
+    return texture;
 }
 
 
