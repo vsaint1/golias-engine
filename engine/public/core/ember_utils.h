@@ -17,3 +17,7 @@ inline NumType random_number(NumType min, NumType max) {
     std::uniform_real_distribution<NumType> dis(min, max);
     return dis(gen);
 }
+
+inline float randf(float min = 0.0f, float max = 1.0f) {
+    return random_number(min, max);
+}
