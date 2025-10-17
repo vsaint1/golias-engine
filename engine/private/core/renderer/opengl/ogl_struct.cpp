@@ -47,9 +47,12 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     success &= validate_gl_shader(program, GL_LINK_STATUS);
     success &= validate_gl_shader(program, GL_VALIDATE_STATUS);
 
-
-    SDL_assert(success == GL_TRUE);
-
+    if (!success) {
+        LOG_CRITICAL("Shader program setup failed, exiting");
+        glDeleteProgram(program);
+        program = 0;
+        exit(EXIT_FAILURE);
+    }
 
     glDeleteShader(vs);
     glDeleteShader(fs);
