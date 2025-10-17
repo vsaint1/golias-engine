@@ -169,6 +169,10 @@ void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 co
     glUniform4fv(location, count, glm::value_ptr(value));
 }
 
+void OpenglMesh::upload_to_gpu() {
+   
+}
+
 void OpenglMesh::bind() {
     glBindVertexArray(vao);
 }
@@ -176,10 +180,10 @@ void OpenglMesh::bind() {
 void OpenglMesh::draw(EDrawMode mode) {
 
     auto draw_mode = mode == EDrawMode::TRIANGLES ? GL_TRIANGLES : GL_LINES;
-    if (ebo) {
-        glDrawElements(draw_mode, index_count, GL_UNSIGNED_INT, 0);
+    if (ebo && !indices.empty()) {
+        glDrawElements(draw_mode, static_cast<GLsizei>(index_count), GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(draw_mode, 0, vertex_count);
+        glDrawArrays(draw_mode, 0, static_cast<GLsizei>(vertex_count));
     }
 }
 
@@ -191,30 +195,65 @@ void OpenglMesh::destroy() {
 
     if (vbo) {
         glDeleteBuffers(1, &vbo);
+        vbo = 0;
     }
 
     if (ebo) {
         glDeleteBuffers(1, &ebo);
+        ebo = 0;
     }
 
     if (bone_id_vbo) {
         glDeleteBuffers(1, &bone_id_vbo);
+        bone_id_vbo = 0;
     }
 
     if (bone_weight_vbo) {
         glDeleteBuffers(1, &bone_weight_vbo);
+        bone_weight_vbo = 0;
     }
 
     if (vao) {
         glDeleteVertexArrays(1, &vao);
+        vao = 0;
     }
 
-    if (texture_id) {
-        glDeleteTextures(1, &texture_id);
-    }
+    material.reset(); // free material resource
+
 }
 
 
 OpenglMesh::~OpenglMesh() {
     destroy();
+}
+
+
+GLuint gl_texture_target_cast(ETextureTarget target) {
+    switch (target) {
+    case ETextureTarget::TEXTURE_2D:
+        return GL_TEXTURE_2D;
+    case ETextureTarget::TEXTURE_3D:
+        return GL_TEXTURE_3D;
+    case ETextureTarget::TEXTURE_CUBE_MAP:
+        return GL_TEXTURE_CUBE_MAP;
+    case ETextureTarget::RENDER_TARGET:
+        SDL_Log("RENDER_TARGET not directly supported in OpenGL");
+        return GL_TEXTURE_2D; // Fallback
+    default:
+        SDL_Log("Unknown texture target");
+        return GL_TEXTURE_2D; // Fallback
+    }
+}
+
+
+void OpenglTexture::bind(Uint32 slot) {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(gl_texture_target_cast(target), id);
+}
+
+OpenglTexture::~OpenglTexture() {
+    if (is_valid()) {
+        glDeleteTextures(1, &id);
+        id = -1;
+    }
 }
