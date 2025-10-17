@@ -18,16 +18,16 @@
 - [ ] **Lighting System** (Directional, Point, Spot)
 - [ ] **Shadow Mapping**
 - [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)
-- [ ] **Animation System** (Skeletal Animation)
+- [x] **Animation System** (Skeletal Animation)
 - [ ] **Terrain System** (coming soon)
+- [x] **Skybox Support** (Cubemap -> 6 faces or Equirectangular)
 
 ### 2D Features
 - [x] **2D Sprite Rendering**
 - [x] **Text/Shaping Rendering** (TrueType fonts and Emojis)
-- [x] **Text Shaping** (HarfBuzz)
+- [x] **Text Shaping** (SDL_TTF + HarfBuzz)
 - [ ] **Tilemap Support** (Orthogonal, Isometric)
-- [ ] **Audio System** (coming soon)
-- [ ] **2D Physics**
+- [ ] **2D Physics** 
 
 
 ### General Features
@@ -86,6 +86,7 @@
 | Huge City            | ![City](docs/3d_map_huge.png)       | Large city scene rendering demo (Web)        |
 | 3D Physics Example   | ![3D Physics](docs/3d_physics.png)  | 3D physics simulation with thousands of models |
 | 2D Text Rendering    | ![2D Text](docs/2d_text.png)        | 2D text rendering with shaping (HarfBuzz)    |
+| 3D Animation Demo    | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo  |
 ---
 
 ## 🛠 Building for WASM

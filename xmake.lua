@@ -2,7 +2,7 @@ set_project("ember_engine")
 set_languages("cxx20")
 set_license("MIT")
 
-local base_version = "0.0.3"
+local base_version = "0.0.5"
 
 set_version(base_version, {build = "%Y%m%d%H%M"})
 
