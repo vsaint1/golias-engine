@@ -95,7 +95,7 @@ std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const s
     texture->path    = path;
     texture->surface = surf;
 
-    LOG_INFO("Texture Info: Size %dx%d | Path: %s | Embedded: %s", texture->width, texture->height, texture->path.c_str(),
+    LOG_INFO("Texture Info: Size %dx%d | Path: %s | Embedded: %s", texture->width, texture->height, texture->path.data(),
              ai_embedded_tex != nullptr ? "Yes" : "No");
     return texture;
 }
