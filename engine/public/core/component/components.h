@@ -203,7 +203,7 @@ struct Animation3D {
     int current_animation = 0;      // Index of the current animation
     float time = 0.0f;              // Current playback time in seconds
     float speed = 1.0f;             // Playback speed multiplier
-    bool playing = true;            // Is animation playing?
+    bool is_playing = true;            // Is animation playing?
     bool loop = true;               // Should animation loop?
     
     // Computed bone transforms (uploaded to GPU)

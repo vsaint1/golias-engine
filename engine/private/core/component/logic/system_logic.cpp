@@ -100,7 +100,7 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 
 #pragma region 3D SYSTEMS
 void update_animation(Model& model, Animation3D& anim, float deltaTime) {
-    if (!model.scene || !model.scene->HasAnimations() || !anim.playing) {
+    if (!model.scene || !model.scene->HasAnimations() || !anim.is_playing) {
         return;
     }
 
@@ -121,7 +121,7 @@ void update_animation(Model& model, Animation3D& anim, float deltaTime) {
     } else {
         if (timeInTicks >= duration) {
             timeInTicks  = duration;
-            anim.playing = false;
+            anim.is_playing = false;
         }
     }
 
