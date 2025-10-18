@@ -8,6 +8,9 @@ target("mini_audio")
 
     add_files("src/stb_vorbis.c")
 
+    if is_plat("wasm") then
+        add_cxflags("-std=gnu99")
+    end
 
     if is_plat("iphoneos") then
         add_frameworks("AudioToolbox", "AVFoundation", "CoreFoundation", "Foundation")
