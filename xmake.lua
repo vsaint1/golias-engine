@@ -26,10 +26,15 @@ add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}
 add_requires("assimp v5.4.0", {configs = {shared = false}})
 add_requires("nuklear 4.12.7", {configs = {shared = false}})
 
+add_options("test", {description = "Build unit tests", default = false, type = "boolean"})
 
-if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
+local tests_enabled = get_config("test")
+
+
+if tests_enabled then 
     add_requires("doctest v2.4.9", {configs = {shared = false}})
-end
+end 
+
 
 printf("Ember Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version %s | Date: %s\n", base_version, os.date("%Y-%m-%d %H:%M"))
 
@@ -47,6 +52,8 @@ target("engine")
     add_includedirs("vendor/sol2", {public = true})
 
     set_pcxxheader("engine/public/stdafx.h")
+
+    add_defines("MINIAUDIO_IMPLEMENTATION")
 
     add_packages(
         "libsdl3",
@@ -84,35 +91,36 @@ target("runtime")
     add_deps("engine")
     add_includedirs("engine/public")
 
+
     if is_plat("android") then
         set_basename("client")
         set_kind("shared")
         add_syslinks("log", "android", "m", "dl")
     end
 
- if is_plat("wasm") then
-        
-       set_basename("index")
+    if is_plat("wasm") then
+            
+        set_basename("index")
 
-       add_ldflags(
-           "-s FULL_ES3=1",
-           "-s MIN_WEBGL_VERSION=2",
-           "-s MAX_WEBGL_VERSION=2",
-           "-s ASSERTIONS=1",
-           "-s FETCH=1",
-           "-s USE_SDL=3",
-           "-s USE_SDL_IMAGE=2",
-           "-s USE_SDL_TTF=2",
-           "-s USE_FREETYPE=1",
-           "-s ALLOW_MEMORY_GROWTH=1 ",
-           "-s EXPORTED_RUNTIME_METHODS=cwrap",
-           "-s STACK_SIZE=1mb",
-           "--preload-file=res@/res",
-           "-s NO_DISABLE_EXCEPTION_CATCHING",
-           "-s ALLOW_MEMORY_GROWTH=1",
-           "-g")
+        add_ldflags(
+            "-s FULL_ES3=1",
+            "-s MIN_WEBGL_VERSION=2",
+            "-s MAX_WEBGL_VERSION=2",
+            "-s ASSERTIONS=1",
+            "-s FETCH=1",
+            "-s USE_SDL=3",
+            "-s USE_SDL_IMAGE=2",
+            "-s USE_SDL_TTF=2",
+            "-s USE_FREETYPE=1",
+            "-s ALLOW_MEMORY_GROWTH=1 ",
+            "-s EXPORTED_RUNTIME_METHODS=cwrap",
+            "-s STACK_SIZE=1mb",
+            "--preload-file=res@/res",
+            "-s NO_DISABLE_EXCEPTION_CATCHING",
+            "-s ALLOW_MEMORY_GROWTH=1",
+            "-g")
 
-     end
+    end
 
     if not (is_plat("wasm") or is_plat("android")) then
         after_build(function (target)
@@ -120,8 +128,9 @@ target("runtime")
         end)
     end
 
--- === Tests ===
-if not (is_plat("wasm") or is_plat("android") or is_plat("iphoneos")) then
+
+
+if tests_enabled then
     for _, file in ipairs(os.files("tests/test_*.cpp")) do
         local name = path.basename(file)
         target(name)

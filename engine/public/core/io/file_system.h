@@ -36,17 +36,7 @@ struct Ember_File {
     SDL_IOStream* stream;
 };
 
-/*!
- *  @brief Engine virtual file system
- *
- * @version 0.0.5
- */
-struct Ember_VFS {
-    ma_vfs_callbacks base;
-};
 
-
-ma_result _ember_init_vfs(Ember_VFS* vfs);
 
 /**
  * @brief Flags to indicate access modes.
