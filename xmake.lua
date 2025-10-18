@@ -22,7 +22,7 @@ add_requires("libsdl3_image 3.2.0", {configs = {shared = use_shared}})
 add_requires("flecs v4.1.1", {configs = {shared = false}})
 add_requires("nlohmann_json v3.12.0", {configs = {shared = false}})
 add_requires("glm 1.0.1", {configs = {shared = false}})
-add_requires("miniaudio 0.11.23", "tinyxml2 11.0.0", {configs = {shared = false}})
+add_requires("tinyxml2 11.0.0", {configs = {shared = false}})
 add_requires("assimp v5.4.0", {configs = {shared = false}})
 add_requires("nuklear 4.12.7", {configs = {shared = false}})
 
@@ -53,8 +53,10 @@ target("engine")
 
     set_pcxxheader("engine/public/stdafx.h")
 
-    add_defines("MINIAUDIO_IMPLEMENTATION")
-
+    add_includedirs("vendor/mini_audio/include",{public = true})
+    includes("vendor/mini_audio")
+    add_deps("mini_audio") 
+    
     add_packages(
         "libsdl3",
         "libsdl3_ttf",
@@ -63,7 +65,6 @@ target("engine")
         "flecs",
         "nlohmann_json",
         "glm",
-        "miniaudio",
         "tinyxml2",
         "assimp",
         "nuklear",
