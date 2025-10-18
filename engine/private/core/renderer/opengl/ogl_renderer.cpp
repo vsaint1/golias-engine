@@ -520,6 +520,7 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
                                       bool is_filled) {
 }
 
+// TODO: refactor to reduce code duplication with other backends
 std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
     auto m  = std::make_unique<OpenglMesh>();
     m->name = mesh->mName.C_Str();
