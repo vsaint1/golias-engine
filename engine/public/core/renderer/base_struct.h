@@ -199,7 +199,7 @@ struct Mesh {
     size_t vertex_count = 0;
     size_t index_count  = 0;
 
-    std::vector<glm::vec3> vertices;
+    std::vector<Vertex> vertices;
     std::vector<Uint32> indices;
 
     std::unique_ptr<Material> material = std::make_unique<Material>();

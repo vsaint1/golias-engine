@@ -317,7 +317,7 @@ void OpenglRenderer::setup_cubemap() {
 
     skybox_shader = new OpenglShader("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
-    skybox_mesh->material->albedo_texture =  load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
+    skybox_mesh->material->albedo_texture = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     LOG_DEBUG("Environment setup complete");
 }
@@ -487,7 +487,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->surface->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    texture->id = texID;
+    texture->id     = texID;
     _textures[name] = texture;
 
     SDL_DestroySurface(texture->surface);
@@ -557,42 +557,35 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
             } else {
                 // Load external texture file
                 const std::string texture_path = base_dir + texPathStr;
-                m->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
+                m->material->albedo_texture    = load_texture(texture_path, texture_path, nullptr);
             }
         }
     }
 
-    std::vector<float> verts; // vertex attributes
+    std::vector<Vertex> verts;
     std::vector<unsigned int> indices; // element indices
 
-    verts.reserve(mesh->mNumVertices * 8);
-    m->vertices.reserve(mesh->mNumVertices);
+    verts.reserve(mesh->mNumVertices);
     indices.reserve(mesh->mNumFaces * 3);
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         const aiVector3D& v = mesh->mVertices[i];
-        verts.push_back(v.x);
-        verts.push_back(v.y);
-        verts.push_back(v.z);
-        m->vertices.push_back(glm::vec3(v.x, v.y, v.z));
+        Vertex vert;
+        vert.position = glm::vec3(v.x, v.y, v.z);
 
         if (mesh->HasNormals()) {
-            verts.push_back(mesh->mNormals[i].x);
-            verts.push_back(mesh->mNormals[i].y);
-            verts.push_back(mesh->mNormals[i].z);
+            vert.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
         } else {
-            verts.push_back(0);
-            verts.push_back(0);
-            verts.push_back(0);
+            vert.normal = glm::vec3(0);
         }
 
         if (mesh->HasTextureCoords(0)) {
-            verts.push_back(mesh->mTextureCoords[0][i].x);
-            verts.push_back(mesh->mTextureCoords[0][i].y);
+            vert.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
         } else {
-            verts.push_back(0);
-            verts.push_back(0);
+            vert.uv = glm::vec2(0);
         }
+
+        verts.push_back(vert);
     }
 
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
@@ -685,7 +678,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
     // Upload vertex data (position, normal, uv)
     glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
-    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
 
     // Upload index data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
@@ -881,10 +874,10 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
     Transform3D temp = transform;
     temp.scale       = mesh.size;
 
-    auto& batch                 = _instanced_batches[cube_mesh.get()];
-    batch.mesh                  = cube_mesh.get();
+    auto& batch                  = _instanced_batches[cube_mesh.get()];
+    batch.mesh                   = cube_mesh.get();
     batch.mesh->material->albedo = mesh.material.albedo;
-    batch.shader                = default_shader;
+    batch.shader                 = default_shader;
     batch.models.push_back(temp.get_model_matrix());
     batch.colors.push_back(mesh.material.albedo);
     batch.command = EDrawCommand::MESH;
