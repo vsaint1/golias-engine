@@ -31,7 +31,7 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
         }
     }
 
-    if (renderer && !renderer->initialize(window)) {
+    if (!renderer || !renderer->initialize(window)) {
         LOG_ERROR("Renderer initialization failed, shutting down");
 
         delete renderer;

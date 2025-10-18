@@ -131,11 +131,11 @@ std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const s
 
 std::shared_ptr<Model> Renderer::load_model(const char* path) {
 
-
     std::string path_str = path;
-    
-    if (path_str.rfind("res://", 0) == 0) {
-        path_str = path_str.substr(6); // Remove "res://"
+
+    std::size_t pos = path_str.find("//");
+    if (pos != std::string::npos && pos + 2 < path_str.size()) {
+        path_str = path_str.substr(pos + 2);
     }
 
     std::string base_dir = ASSETS_PATH;
@@ -151,7 +151,8 @@ std::shared_ptr<Model> Renderer::load_model(const char* path) {
     std::string ext = path_str.substr(path_str.find_last_of('.') + 1);
 
     // Set custom IOSystem to handle external files (.mtl, textures) through FileAccess
-    importer->SetIOHandler(new SDLIOSystem(base_dir));
+    auto ioSystem = new SDLIOSystem(base_dir);
+    importer->SetIOHandler(ioSystem);
 
     const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
                             | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;

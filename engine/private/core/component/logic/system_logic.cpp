@@ -240,12 +240,6 @@ void setup_scripts_system(flecs::entity e, Script& script) {
     script.lua_state = luaL_newstate();
     luaL_openlibs(script.lua_state);
 
-    // Strip res:// prefix if present
-    std::string script_path = script.path;
-    if (script_path.rfind("res://", 0) == 0) {
-        script_path = script_path.substr(6); // Remove "res://"
-    }
-
     // Custom Lua loader function that uses FileAccess
     auto custom_loader = [](lua_State* L) -> int {
         std::string module_name = lua_tostring(L, 1);
