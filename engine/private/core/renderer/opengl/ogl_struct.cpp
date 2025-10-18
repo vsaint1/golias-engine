@@ -4,24 +4,40 @@
 
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision mediump float;\n"
+#define SHADER_HEADER "#version 300 es\nprecision highp float;\n\n"
 #else
-#define SHADER_HEADER "#version 330 core\n"
+#define SHADER_HEADER "#version 330 core\n\n"
 #endif
 
-bool validate_gl_shader(GLuint shader, GLuint op) {
-    int success;
-    glGetShaderiv(shader, op, &success);
+bool validate_gl_shader(GLuint handle, GLenum op, bool is_program = false) {
+    GLint success = 0;
+    char infoLog[1024];
 
     const char* op_str = (op == GL_COMPILE_STATUS)  ? "COMPILE"
                        : (op == GL_LINK_STATUS)     ? "LINK"
                        : (op == GL_VALIDATE_STATUS) ? "VALIDATE"
                                                     : "UNKNOWN";
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        LOG_CRITICAL("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
-        return false;
+
+    if (is_program) {
+        if (op == GL_VALIDATE_STATUS) {
+            glValidateProgram(handle);
+        }
+        
+       
+        glGetProgramiv(handle, op, &success);
+        if (!success) {
+            glGetProgramInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
+            LOG_CRITICAL("OPENGLPROGRAM::%s:ERROR: %s", op_str, infoLog);
+            return false;
+        }
+       
+    } else {
+        glGetShaderiv(handle, op, &success);
+        if (!success) {
+            glGetShaderInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
+            LOG_CRITICAL("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
+            return false;
+        }
     }
 
     return true;
@@ -43,13 +59,16 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glAttachShader(program, fs);
     glLinkProgram(program);
 
-    bool success = validate_gl_shader(program, GL_COMPILE_STATUS);
-    success &= validate_gl_shader(program, GL_LINK_STATUS);
-    success &= validate_gl_shader(program, GL_VALIDATE_STATUS);
+    bool success = validate_gl_shader(program, GL_LINK_STATUS, true);
+    
+    success &= validate_gl_shader(program, GL_VALIDATE_STATUS, true);
 
-
-    SDL_assert(success == GL_TRUE);
-
+    if (!success) {
+        LOG_CRITICAL("Shader program setup failed, exiting");
+        glDeleteProgram(program);
+        program = 0;
+        exit(EXIT_FAILURE);
+    }
 
     glDeleteShader(vs);
     glDeleteShader(fs);
@@ -65,6 +84,7 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
     EMBER_TIMER_START();
 
     Uint32 shader = glCreateShader(type);
+    
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
 
@@ -72,6 +92,11 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
 
     EMBER_TIMER_END("Compiling Shaders");
 
+    if (!success) {
+        LOG_CRITICAL("Shader compilation failed, deleting shader");
+        glDeleteShader(shader);
+        return 0;
+    }
 
     return shader;
 }
@@ -144,6 +169,16 @@ void OpenglShader::set_value(const std::string& name, glm::mat4 value, Uint32 co
     glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(value));
 }
 
+void OpenglShader::set_value(const std::string& name, const glm::mat4* values, Uint32 count) {
+    if (values == nullptr || count == 0) {
+        LOG_WARN("OpenglShader::set_value - Invalid matrix array or count is zero");
+        return;
+    }
+
+    const Uint32 location = get_uniform_location(name);
+    glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(*values));
+}
+
 void OpenglShader::set_value(const std::string& name, glm::vec2 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform2fv(location, count, glm::value_ptr(value));
@@ -159,6 +194,10 @@ void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 co
     glUniform4fv(location, count, glm::value_ptr(value));
 }
 
+void OpenglMesh::upload_to_gpu() {
+   
+}
+
 void OpenglMesh::bind() {
     glBindVertexArray(vao);
 }
@@ -166,10 +205,10 @@ void OpenglMesh::bind() {
 void OpenglMesh::draw(EDrawMode mode) {
 
     auto draw_mode = mode == EDrawMode::TRIANGLES ? GL_TRIANGLES : GL_LINES;
-    if (ebo) {
-        glDrawElements(draw_mode, index_count, GL_UNSIGNED_INT, 0);
+    if (ebo && !indices.empty()) {
+        glDrawElements(draw_mode, static_cast<GLsizei>(index_count), GL_UNSIGNED_INT, 0);
     } else {
-        glDrawArrays(draw_mode, 0, vertex_count);
+        glDrawArrays(draw_mode, 0, static_cast<GLsizei>(vertex_count));
     }
 }
 
@@ -181,18 +220,66 @@ void OpenglMesh::destroy() {
 
     if (vbo) {
         glDeleteBuffers(1, &vbo);
+        vbo = 0;
     }
+
+    if (ebo) {
+        glDeleteBuffers(1, &ebo);
+        ebo = 0;
+    }
+
+    if (bone_id_vbo) {
+        glDeleteBuffers(1, &bone_id_vbo);
+        bone_id_vbo = 0;
+    }
+
+    if (bone_weight_vbo) {
+        glDeleteBuffers(1, &bone_weight_vbo);
+        bone_weight_vbo = 0;
+    }
+
 
     if (vao) {
         glDeleteVertexArrays(1, &vao);
+        vao = 0;
     }
 
-    if (texture_id) {
-        glDeleteTextures(1, &texture_id);
-    }
+    material.reset(); // free material resource
+
 }
 
 
 OpenglMesh::~OpenglMesh() {
     destroy();
+}
+
+
+GLuint gl_texture_target_cast(ETextureTarget target) {
+    switch (target) {
+    case ETextureTarget::TEXTURE_2D:
+        return GL_TEXTURE_2D;
+    case ETextureTarget::TEXTURE_3D:
+        return GL_TEXTURE_3D;
+    case ETextureTarget::TEXTURE_CUBE_MAP:
+        return GL_TEXTURE_CUBE_MAP;
+    case ETextureTarget::RENDER_TARGET:
+        SDL_Log("RENDER_TARGET not directly supported in OpenGL");
+        return GL_TEXTURE_2D; // Fallback
+    default:
+        SDL_Log("Unknown texture target");
+        return GL_TEXTURE_2D; // Fallback
+    }
+}
+
+
+void OpenglTexture::bind(Uint32 slot) {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(gl_texture_target_cast(target), id);
+}
+
+OpenglTexture::~OpenglTexture() {
+    if (is_valid()) {
+        glDeleteTextures(1, &id);
+        id = -1;
+    }
 }

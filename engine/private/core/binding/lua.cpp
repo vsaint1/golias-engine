@@ -175,11 +175,26 @@ void push_camera3d_to_lua(lua_State* L) {
     sol::state_view lua(L);
     
     lua.new_usertype<Camera3D>("Camera3D",
-        "yaw", &Camera3D::yaw,
-        "pitch", &Camera3D::pitch,
-        "fov", &Camera3D::fov,
-        "speed", &Camera3D::speed,
-        "view_distance", &Camera3D::view_distance,
+        "yaw", sol::property(
+            [](Camera3D& c) { return c.yaw; },
+            [](Camera3D& c, float v) { c.yaw = v; }
+        ),
+        "pitch", sol::property(
+            [](Camera3D& c) { return c.pitch; },
+            [](Camera3D& c, float v) { c.pitch = v; }
+        ),
+        "fov", sol::property(
+            [](Camera3D& c) { return c.fov; },
+            [](Camera3D& c, float v) { c.fov = v; }
+        ),
+        "speed", sol::property(
+            [](Camera3D& c) { return c.speed; },
+            [](Camera3D& c, float v) { c.speed = v; }
+        ),
+        "view_distance", sol::property(
+            [](Camera3D& c) { return c.view_distance; },
+            [](Camera3D& c, float v) { c.view_distance = v; }
+        ),
         
         "get_view_matrix", [](Camera3D& cam, Transform3D& transform) -> glm::mat4 {
             return cam.get_view(transform);
@@ -207,73 +222,156 @@ void push_camera3d_to_lua(lua_State* L) {
                 cam.look_at(xoffset, yoffset, sensitivity);
             }
         ),
-        "zoom", &Camera3D::zoom
+        "zoom", [](Camera3D& cam, float yoffset) {
+            cam.zoom(yoffset);
+        }
     );
 }
 
 void generate_bindings(lua_State* L) {
     sol::state_view lua(L);
 
-    // MeshInstance3D
+    // MeshInstance3D - use sol::property for complex types
     lua.new_usertype<MeshInstance3D>("MeshInstance3D",
-        "size", &MeshInstance3D::size,
-        "material", &MeshInstance3D::material
+        "size", sol::property(
+            [](MeshInstance3D& m) { return m.size; },
+            [](MeshInstance3D& m, const glm::vec3& v) { m.size = v; }
+        ),
+        "material", sol::property(
+            [](MeshInstance3D& m) { return m.material; },
+            [](MeshInstance3D& m, const Material& mat) { m.material = mat; }
+        )
     );
 
-    // Transform2D
+    // Transform2D - use sol::property
     lua.new_usertype<Transform2D>("Transform2D",
-        "position", &Transform2D::position,
-        "scale", &Transform2D::scale,
-        "rotation", &Transform2D::rotation
+        "position", sol::property(
+            [](Transform2D& t) { return t.position; },
+            [](Transform2D& t, const glm::vec2& v) { t.position = v; }
+        ),
+        "scale", sol::property(
+            [](Transform2D& t) { return t.scale; },
+            [](Transform2D& t, const glm::vec2& v) { t.scale = v; }
+        ),
+        "rotation", sol::property(
+            [](Transform2D& t) { return t.rotation; },
+            [](Transform2D& t, float r) { t.rotation = r; }
+        )
     );
 
-    // Transform3D
+    // Transform3D - use sol::property
     lua.new_usertype<Transform3D>("Transform3D",
-        "position", &Transform3D::position,
-        "rotation", &Transform3D::rotation,
-        "scale", &Transform3D::scale
+        "position", sol::property(
+            [](Transform3D& t) { return t.position; },
+            [](Transform3D& t, const glm::vec3& v) { t.position = v; }
+        ),
+        "rotation", sol::property(
+            [](Transform3D& t) { return t.rotation; },
+            [](Transform3D& t, const glm::vec3& v) { t.rotation = v; }
+        ),
+        "scale", sol::property(
+            [](Transform3D& t) { return t.scale; },
+            [](Transform3D& t, const glm::vec3& v) { t.scale = v; }
+        )
     );
 
-    // Shape2D
+    // Shape2D - use sol::property
     lua.new_usertype<Shape2D>("Shape2D",
-        "color", &Shape2D::color,
-        "filled", &Shape2D::filled
+        "color", sol::property(
+            [](Shape2D& s) { return s.color; },
+            [](Shape2D& s, const glm::vec4& c) { s.color = c; }
+        ),
+        "filled", sol::property(
+            [](Shape2D& s) { return s.filled; },
+            [](Shape2D& s, bool f) { s.filled = f; }
+        )
     );
 
-    // Label2D
+    // Label2D - use sol::property
     lua.new_usertype<Label2D>("Label2D",
-        "text", &Label2D::text,
-        "color", &Label2D::color,
-        "font_name", &Label2D::font_name,
-        "font_size", &Label2D::font_size
+        "text", sol::property(
+            [](Label2D& l) { return l.text; },
+            [](Label2D& l, const std::string& t) { l.text = t; }
+        ),
+        "color", sol::property(
+            [](Label2D& l) { return l.color; },
+            [](Label2D& l, const glm::vec4& c) { l.color = c; }
+        ),
+        "font_name", sol::property(
+            [](Label2D& l) { return l.font_name; },
+            [](Label2D& l, const std::string& f) { l.font_name = f; }
+        ),
+        "font_size", sol::property(
+            [](Label2D& l) { return l.font_size; },
+            [](Label2D& l, int s) { l.font_size = s; }
+        )
     );
 
-    // vec2
+    // vec2 - use sol::property for member access
     lua.new_usertype<glm::vec2>("Vector2",
         sol::constructors<glm::vec2(), glm::vec2(float, float)>(),
-        "x", &glm::vec2::x,
-        "y", &glm::vec2::y
+        "x", sol::property(
+            [](glm::vec2& v) { return v.x; },
+            [](glm::vec2& v, float val) { v.x = val; }
+        ),
+        "y", sol::property(
+            [](glm::vec2& v) { return v.y; },
+            [](glm::vec2& v, float val) { v.y = val; }
+        )
     );
 
-    // vec3
+    // vec3 - use sol::property for member access
     lua.new_usertype<glm::vec3>("Vector3",
         sol::constructors<glm::vec3(), glm::vec3(float, float, float)>(),
-        "x", &glm::vec3::x,
-        "y", &glm::vec3::y,
-        "z", &glm::vec3::z
+        "x", sol::property(
+            [](glm::vec3& v) { return v.x; },
+            [](glm::vec3& v, float val) { v.x = val; }
+        ),
+        "y", sol::property(
+            [](glm::vec3& v) { return v.y; },
+            [](glm::vec3& v, float val) { v.y = val; }
+        ),
+        "z", sol::property(
+            [](glm::vec3& v) { return v.z; },
+            [](glm::vec3& v, float val) { v.z = val; }
+        )
     );
 
-    // vec4
+    // vec4 - use sol::property for member access
     lua.new_usertype<glm::vec4>("Vector4",
         sol::constructors<glm::vec4(), glm::vec4(float, float, float, float)>(),
-        "x", &glm::vec4::x,
-        "y", &glm::vec4::y,
-        "z", &glm::vec4::z,
-        "w", &glm::vec4::w,
-        "r", &glm::vec4::r,
-        "g", &glm::vec4::g,
-        "b", &glm::vec4::b,
-        "a", &glm::vec4::a
+        "x", sol::property(
+            [](glm::vec4& v) { return v.x; },
+            [](glm::vec4& v, float val) { v.x = val; }
+        ),
+        "y", sol::property(
+            [](glm::vec4& v) { return v.y; },
+            [](glm::vec4& v, float val) { v.y = val; }
+        ),
+        "z", sol::property(
+            [](glm::vec4& v) { return v.z; },
+            [](glm::vec4& v, float val) { v.z = val; }
+        ),
+        "w", sol::property(
+            [](glm::vec4& v) { return v.w; },
+            [](glm::vec4& v, float val) { v.w = val; }
+        ),
+        "r", sol::property(
+            [](glm::vec4& v) { return v.r; },
+            [](glm::vec4& v, float val) { v.r = val; }
+        ),
+        "g", sol::property(
+            [](glm::vec4& v) { return v.g; },
+            [](glm::vec4& v, float val) { v.g = val; }
+        ),
+        "b", sol::property(
+            [](glm::vec4& v) { return v.b; },
+            [](glm::vec4& v, float val) { v.b = val; }
+        ),
+        "a", sol::property(
+            [](glm::vec4& v) { return v.a; },
+            [](glm::vec4& v, float val) { v.a = val; }
+        )
     );
 
     push_camera3d_to_lua(L);
@@ -290,24 +388,48 @@ void generate_bindings(lua_State* L) {
         "get_window", &EngineConfig::get_window
     );
 
-    // Viewport
+    // Viewport - use sol::property for simple types too for consistency
     lua.new_usertype<Viewport>("Viewport",
-        "width", &Viewport::width,
-        "height", &Viewport::height,
-        "scale", &Viewport::scale
+        "width", sol::property(
+            [](Viewport& v) { return v.width; },
+            [](Viewport& v, int w) { v.width = w; }
+        ),
+        "height", sol::property(
+            [](Viewport& v) { return v.height; },
+            [](Viewport& v, int h) { v.height = h; }
+        ),
+        "scale", sol::property(
+            [](Viewport& v) { return v.scale; },
+            [](Viewport& v, float s) { v.scale = s; }
+        )
     );
 
-    // Window
+    // Window - use sol::property
     lua.new_usertype<Window>("Window",
-        "width", &Window::width,
-        "height", &Window::height,
-        "dpi_scale", &Window::dpi_scale
+        "width", sol::property(
+            [](Window& w) { return w.width; },
+            [](Window& w, int v) { w.width = v; }
+        ),
+        "height", sol::property(
+            [](Window& w) { return w.height; },
+            [](Window& w, int v) { w.height = v; }
+        ),
+        "dpi_scale", sol::property(
+            [](Window& w) { return w.dpi_scale; },
+            [](Window& w, float v) { w.dpi_scale = v; }
+        )
     );
 
-    // RendererDevice
+    // RendererDevice - use sol::property
     lua.new_usertype<RendererDevice>("RendererDevice",
-        "backend", &RendererDevice::backend,
-        "texture_filtering", &RendererDevice::texture_filtering
+        "backend", sol::property(
+            [](RendererDevice& r) { return r.backend; },
+            [](RendererDevice& r, Backend b) { r.backend = b; }
+        ),
+        "texture_filtering", sol::property(
+            [](RendererDevice& r) { return r.texture_filtering; },
+            [](RendererDevice& r, TextureFiltering t) { r.texture_filtering = t; }
+        )
     );
 
     // Push Input table

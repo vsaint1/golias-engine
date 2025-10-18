@@ -95,8 +95,9 @@ std::shared_ptr<OpenglMesh> generate_cube_mesh() {
 }
 
 
-GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
+std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
 
+    auto cubemap_texture = std::make_shared<OpenglTexture>();
     LOG_DEBUG("Loading cubemap atlas: %s", atlasPath.c_str());
 
 
@@ -104,14 +105,14 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
 
     if (!file.is_open()) {
         LOG_ERROR("Failed to open file %s", atlasPath.c_str());
-        return 0;
+        return cubemap_texture;
     }
 
     SDL_Surface* surf = IMG_Load_IO(file.get_handle(), false);
 
     if (!surf) {
         LOG_ERROR("Failed to load %s -> %s", atlasPath.c_str(), SDL_GetError());
-        return 0;
+        return cubemap_texture;
     }
 
     LOG_DEBUG("Loaded surface (pre-convert): %dx%d, Pitch: %d", surf->w, surf->h, surf->pitch);
@@ -119,7 +120,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
     if (!surf) {
         LOG_ERROR("Conversion failed %s", atlasPath.c_str());
-        return 0;
+        return cubemap_texture;
     }
 
     const int W = surf->w;
@@ -129,7 +130,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     if (W <= 0 || H <= 0) {
         LOG_ERROR("Invalid surface dimensions %dx%d", W, H);
         SDL_DestroySurface(surf);
-        return 0;
+        return cubemap_texture;
     }
 
     int face_w = 0, face_h = 0;
@@ -155,13 +156,13 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     } else {
         LOG_WARN("Unknown atlas layout (%dx%d).", W, H);
         SDL_DestroySurface(surf);
-        return 0;
+        return cubemap_texture;
     }
 
     if (face_w <= 0 || face_h <= 0) {
         LOG_ERROR("Invalid face dimensions computed: %dx%d", face_w, face_h);
         SDL_DestroySurface(surf);
-        return 0;
+        return cubemap_texture;
     }
 
     LOG_DEBUG("Detected layout %d, Face size: %dx%d", layout, face_w, face_h);
@@ -220,7 +221,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
         if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) {
             LOG_ERROR("Face rect %d out of surface bounds: x=%d y=%d w=%d h=%d surface=%dx%d", i, r.x, r.y, r.w, r.h, W, H);
             SDL_DestroySurface(surf);
-            return 0;
+            return cubemap_texture;
         }
     }
 
@@ -252,7 +253,7 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
                           i, y, start, end, surfaceBytes, r.x, r.y, r.w, r.h, pitch);
                 SDL_DestroySurface(surf);
                 glDeleteTextures(1, &texID);
-                return 0;
+                return cubemap_texture;
             }
 
             // copy one row
@@ -273,10 +274,16 @@ GLuint load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orie
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     LOG_DEBUG("Loaded Cubemap atlas %s (%dx%d) Layout %d Face %dx%d Texture Handle: %d", atlasPath.c_str(), W, H, layout, face_w, face_h,
-             texID);
+              texID);
+
+    cubemap_texture->id     = texID;
+    cubemap_texture->width  = face_w;
+    cubemap_texture->height = face_h;
+    cubemap_texture->path   = atlasPath;
+    cubemap_texture->target = ETextureTarget::TEXTURE_CUBE_MAP;
 
     SDL_DestroySurface(surf);
-    return texID;
+    return cubemap_texture;
 }
 
 
@@ -310,18 +317,11 @@ void OpenglRenderer::setup_cubemap() {
 
     skybox_shader = new OpenglShader("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
-    skybox_mesh->texture_id = load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
+    skybox_mesh->material->albedo_texture =  load_cubemap_atlas("res://environment_sky.png", CUBEMAP_ORIENTATION::DEFAULT);
 
     LOG_DEBUG("Environment setup complete");
 }
 
-struct BatchGL {
-    GLuint instanceVBO;
-    GLuint colorVBO;
-    size_t capacity; // how many instances this buffer can hold
-};
-
-static BatchGL ogl_batch;
 
 bool OpenglRenderer::initialize(SDL_Window* window) {
 
@@ -459,39 +459,21 @@ bool OpenglRenderer::load_font(const std::string& name, const std::string& path,
     return true;
 }
 
-std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path) {
+std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
 
 
     if (_textures.contains(name)) {
         return _textures[name];
     }
 
-    LOG_INFO("Loading texture: %s", path.c_str());
+    auto texture = Renderer::load_texture(name, path, ai_embedded_tex);
 
-    FileAccess file_access(path, ModeFlags::READ);
-
-    if (!file_access.is_open()) {
-        LOG_ERROR("Failed to open texture file: %s", path.c_str());
+    if (!texture || !texture->surface) {
+        LOG_ERROR("Failed to load texture surface: %s", name.c_str());
         return nullptr;
     }
 
-    SDL_Surface* surf = IMG_Load_IO(file_access.get_handle(), false);
-    // SDL_Surface* surf = IMG_Load(path.c_str());
-
-    if (!surf) {
-        LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
-        return nullptr;
-    }
-
-    auto texture = std::make_shared<Texture>();
-
-    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
-
-    if (!surf) {
-        LOG_ERROR("Failed to convert texture to RGBA32: %s", SDL_GetError());
-        SDL_DestroySurface(surf);
-        return nullptr;
-    }
+    texture->target = ETextureTarget::TEXTURE_2D;
 
     GLuint texID;
     glGenTextures(1, &texID);
@@ -502,19 +484,15 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surf->w, surf->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->surface->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    texture->id     = texID;
-    texture->width  = surf->w;
-    texture->height = surf->h;
-    texture->path   = path;
-
-    LOG_INFO("Texture Info: Id %d Size %dx%d Path: %s", texture->id, surf->w, surf->h, path.c_str());
-
+    texture->id = texID;
     _textures[name] = texture;
 
-    SDL_DestroySurface(surf);
+    SDL_DestroySurface(texture->surface);
+    texture->surface = nullptr;
+
     return texture;
 }
 
@@ -525,58 +503,11 @@ std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
         return _models[path];
     }
 
-    std::string base_dir = ASSETS_PATH + path;
-    // FileAccess file(path, ModeFlags::READ);
+    auto model = Renderer::load_model(path);
 
-    // std::string base_dir = file.get_path();
-    // if (!file.is_open()) {
-    //     LOG_ERROR("Failed to open model file: %s", path);
-    //     return nullptr;
-    // }
-
-    // const auto buffer = file.get_file_as_bytes();
-
-    // if (buffer.empty()) {
-    //     LOG_ERROR("Failed to import Model");
-    //     return nullptr;
-    // }
-
-    Assimp::Importer importer;
-
-    std::string ext = base_dir.substr(base_dir.find_last_of(".") + 1);
-
-    const auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs   | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
-                            | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
-
-    // const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), ASSIMP_FLAGS, ext.c_str());
-
-    // NOTE: on android this doesnt work, needs to read from memory buffer
-    const aiScene* scene = importer.ReadFile(base_dir, ASSIMP_FLAGS);
-
-    if (!scene || !scene->mRootNode) {
-        LOG_ERROR("Failed to load Model: %s, Error: %s", path, importer.GetErrorString());
-        return nullptr;
+    if (model) {
+        _models[path] = model;
     }
-
-    auto model  = std::make_shared<Model>();
-    model->path = path;
-
-    for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
-        aiMaterial* mat = scene->mMaterials[i];
-        aiString name;
-        if (mat->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
-            LOG_DEBUG("Material %d/%d Name: %s", i + 1, scene->mNumMaterials, name.C_Str());
-        }
-    }
-
-    base_dir = base_dir.substr(0, base_dir.find_last_of("/\\") + 1);
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        LOG_DEBUG("Loading Mesh %d/%d  Name: %s", i + 1, scene->mNumMeshes, scene->mMeshes[i]->mName.C_Str());
-        model->meshes.push_back(load_mesh(scene->mMeshes[i], scene, base_dir));
-    }
-
-    _models[path] = model;
-    LOG_INFO("Loaded Model: %s | Mesh Count: %zu  | FileFormat: %s", path, model->meshes.size(), ext.c_str());
 
     return model;
 }
@@ -599,16 +530,35 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
         aiColor3D c(0.5f, 0.5f, 0.5f);
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
-        m->material.albedo = {c.r, c.g, c.b};
+        m->material->albedo = {c.r, c.g, c.b};
 
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
-            const std::string texture_path = base_dir + texPath.C_Str();
-            const auto tex                 = load_texture(texPath.C_Str(), texture_path);
-            m->texture_id                  = tex ? tex->id : 0;
-        }
+            std::string texPathStr = texPath.C_Str();
 
-        // m->material.shininess = mat->Get(AI_MATKEY_SHININESS, m->material.shininess) == AI_SUCCESS ? m->material.shininess : 1.0f;
+            // Check if it's an embedded texture (path starts with '*')
+            if (texPathStr[0] == '*') {
+                // Embedded texture - extract index
+                int texIndex = std::atoi(texPathStr.c_str() + 1);
+
+                if (texIndex >= 0 && texIndex < scene->mNumTextures) {
+                    const aiTexture* embeddedTex = scene->mTextures[texIndex];
+
+                    // Use base_dir to make key unique per model
+                    std::string embedded_path = base_dir + "embedded_tex_" + std::to_string(texIndex);
+
+                    // Load embedded texture
+                    m->material->albedo_texture = load_texture(embedded_path, embedded_path, embeddedTex);
+                } else {
+                    LOG_WARN("Embedded texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
+                }
+
+            } else {
+                // Load external texture file
+                const std::string texture_path = base_dir + texPathStr;
+                m->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
+            }
+        }
     }
 
     std::vector<float> verts; // vertex attributes
@@ -654,20 +604,93 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     m->vertex_count = mesh->mNumVertices;
     m->index_count  = indices.size();
 
-    LOG_DEBUG("Mesh: %s | Vertices: %d | Indices: %d | Texture: %d", m->name.data(), m->vertex_count, m->index_count, m->texture_id);
+    // Process bone data if present
+    std::vector<glm::ivec4> bone_ids;
+    std::vector<glm::vec4> bone_weights;
 
+    if (mesh->HasBones()) {
+        m->has_bones = true;
+
+
+        bone_ids.resize(mesh->mNumVertices, glm::ivec4(0));
+        bone_weights.resize(mesh->mNumVertices, glm::vec4(0.0f));
+
+
+        std::vector<int> bone_counts(mesh->mNumVertices, 0);
+
+        LOG_DEBUG("Mesh '%s' has %u bones", m->name.data(), mesh->mNumBones);
+
+        // Build bone map and extract bone data
+        for (unsigned int i = 0; i < mesh->mNumBones; i++) {
+            aiBone* bone          = mesh->mBones[i];
+            std::string bone_name = bone->mName.C_Str();
+
+            int bone_index = -1;
+            if (m->bone_map.find(bone_name) == m->bone_map.end()) {
+                bone_index             = m->bones.size();
+                m->bone_map[bone_name] = bone_index;
+
+                Bone b;
+                b.name = bone_name;
+
+                // Store offset matrix (inverse bind pose)
+                aiMatrix4x4 offset = bone->mOffsetMatrix;
+                b.offset_matrix    = glm::transpose(glm::make_mat4(&offset.a1));
+
+                m->bones.push_back(b);
+            } else {
+                bone_index = m->bone_map[bone_name];
+            }
+
+
+            for (unsigned int j = 0; j < bone->mNumWeights; j++) {
+                unsigned int vertex_id = bone->mWeights[j].mVertexId;
+                float weight           = bone->mWeights[j].mWeight;
+
+                if (weight == 0.0f) {
+                    continue;
+                }
+
+                if (vertex_id >= mesh->mNumVertices) {
+                    LOG_DEBUG("Bone '%s' references out-of-bounds vertex %u", bone_name.c_str(), vertex_id);
+                    continue;
+                }
+
+                int slot = bone_counts[vertex_id];
+                if (slot < 4) {
+                    bone_ids[vertex_id][slot]     = bone_index;
+                    bone_weights[vertex_id][slot] = weight;
+                    bone_counts[vertex_id]++;
+                } else {
+                    LOG_DEBUG("Vertex %u has more than 4 bone influences (skipping)", vertex_id);
+                }
+            }
+        }
+
+
+        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Bones: %zu | Has Texture: %s", m->name.data(), m->vertex_count, m->index_count,
+                  m->bones.size(), m->material->is_valid() ? "Yes" : "No");
+    } else {
+        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Has Texture: %s (no bones)", m->name.data(), m->vertex_count, m->index_count,
+                  m->material->is_valid() ? "Yes" : "No");
+    }
+
+    // TODO: improve this setup
     glGenVertexArrays(1, &m->vao);
     glGenBuffers(1, &m->vbo);
     glGenBuffers(1, &m->ebo);
 
     glBindVertexArray(m->vao);
 
+    // Upload vertex data (position, normal, uv)
     glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
     glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
 
+    // Upload index data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
+    // Vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
@@ -677,7 +700,27 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
     glEnableVertexAttribArray(2);
 
+    // Upload bone data if present
+    if (mesh->HasBones()) {
+        auto ogl_mesh = static_cast<OpenglMesh*>(m.get());
+
+        // Bone IDs (ivec4 at location 8)
+        glGenBuffers(1, &ogl_mesh->bone_id_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_id_vbo);
+        glBufferData(GL_ARRAY_BUFFER, bone_ids.size() * sizeof(glm::ivec4), bone_ids.data(), GL_STATIC_DRAW);
+        glVertexAttribIPointer(8, 4, GL_INT, sizeof(glm::ivec4), (void*) 0);
+        glEnableVertexAttribArray(8);
+
+        // Bone Weights (vec4 at location 9)
+        glGenBuffers(1, &ogl_mesh->bone_weight_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_weight_vbo);
+        glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(glm::vec4), bone_weights.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*) 0);
+        glEnableVertexAttribArray(9);
+    }
+
     glBindVertexArray(0);
+
 
     return m;
 }
@@ -704,6 +747,32 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
     }
 }
 
+void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) {
+    if (!model || !default_shader) {
+        return;
+    }
+
+
+    bone_count = bone_count > MAX_BONES ? SDL_min(bone_count, MAX_BONES) : bone_count;
+
+    for (auto& mesh : model->meshes) {
+        if (!mesh || !mesh->has_bones) {
+            continue;
+        }
+
+        auto& batch  = _instanced_batches[mesh.get()];
+        batch.mesh   = mesh.get();
+        batch.shader = default_shader;
+        batch.models.push_back(t.get_model_matrix());
+        batch.colors.push_back(glm::vec3(1.0f));
+        batch.mode = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
+
+
+        batch.bone_transforms = bone_transforms;
+        batch.bone_count      = bone_count;
+    }
+}
+
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     // DrawInstanced
     for (auto& [_, batch] : _instanced_batches) {
@@ -725,6 +794,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             continue;
         }
 
+
         auto& buffers = _buffers[mesh];
 
         if (buffers.instance_buffer == 0) {
@@ -737,9 +807,24 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
         glBindVertexArray(ogl_mesh->vao);
 
-        if (ogl_mesh->has_texture()) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, ogl_mesh->texture_id);
+        // TODO: refactor to send SSBO for bones
+        if (mesh->has_bones) {
+            ogl_shader->set_value("USE_SKELETON", 1);
+
+            int count = batch.bone_count < MAX_BONES ? batch.bone_count : MAX_BONES;
+
+            if (batch.bone_transforms && batch.bone_count > 0) {
+                ogl_shader->set_value("BONES", batch.bone_transforms, count);
+            }
+
+        } else {
+            ogl_shader->set_value("USE_SKELETON", 0);
+        }
+
+        if (mesh->material && mesh->material->is_valid()) {
+
+            mesh->material->bind();
+
             ogl_shader->set_value("USE_TEXTURE", 1);
             ogl_shader->set_value("material.albedo", glm::vec3(1.0f));
         } else {
@@ -748,8 +833,8 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             ogl_shader->set_value("USE_TEXTURE", 0);
 
             // Hack fix??
-            if (batch.command == EDrawCommand::MODEL) {
-                ogl_shader->set_value("material.albedo", mesh->material.albedo);
+            if (batch.command == EDrawCommand::MODEL && mesh->material) {
+                ogl_shader->set_value("material.albedo", mesh->material->albedo);
             } else {
                 ogl_shader->set_value("material.albedo", glm::vec3(1.0f, 1.0f, 1.0f));
             }
@@ -781,6 +866,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glBindVertexArray(0);
 
     _instanced_batches.clear();
+
     draw_environment(view, projection);
 }
 
@@ -796,7 +882,7 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
 
     auto& batch                 = _instanced_batches[cube_mesh.get()];
     batch.mesh                  = cube_mesh.get();
-    batch.mesh->material.albedo = mesh.material.albedo;
+    batch.mesh->material->albedo = mesh.material.albedo;
     batch.shader                = default_shader;
     batch.models.push_back(temp.get_model_matrix());
     batch.colors.push_back(mesh.material.albedo);
@@ -807,7 +893,7 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
 
 
-    if (skybox_mesh == nullptr || skybox_mesh->texture_id == 0) {
+    if (skybox_mesh == nullptr || !skybox_mesh->material->is_valid()) {
         return;
     }
 
@@ -819,8 +905,8 @@ void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& pr
     skybox_shader->set_value("PROJECTION", projection);
 
     skybox_mesh->bind();
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_mesh->texture_id);
+
+    skybox_mesh->material->bind();
 
     skybox_mesh->draw(EDrawMode::TRIANGLES);
 
@@ -894,7 +980,6 @@ void OpenglRenderer::setup_default_shaders() {
         default_shader = nullptr;
         return;
     }
-
 
     default_shader->activate();
     default_shader->set_value("LIGHT_POSITION", glm::vec3(0, 100, 0));

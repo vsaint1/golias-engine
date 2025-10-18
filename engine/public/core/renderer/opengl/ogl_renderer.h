@@ -18,7 +18,8 @@ public:
 
     bool load_font(const std::string& name, const std::string& path, int size) override;
 
-    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path) override;
+    std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex);
+    
 
     void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source, bool flip_h,
                       bool flip_v, const glm::vec4& color) override;
@@ -49,11 +50,14 @@ public:
 
     void draw_model(const Transform3D& t, const Model* model) override;
 
+    void draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) override;
+
     void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) override;
 
     void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
 
     std::shared_ptr<Model> load_model(const char* path) override;
+
 
 private:
     SDL_GLContext _context = nullptr;

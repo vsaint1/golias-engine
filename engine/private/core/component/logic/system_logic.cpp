@@ -1,14 +1,10 @@
 #include "core/component/logic/system_logic.h"
 
 #include "core/binding/lua.h"
+#include "core/component/logic/system_helper.h"
 #include "core/engine.h"
 
-
-int sort_by_z_index(flecs::entity_t e1, const Transform2D* t1, flecs::entity_t e2, const Transform2D* t2) {
-    (void) e1;
-    (void) e2;
-    return t1->z_index - t2->z_index;
-}
+#pragma region 2D SYSTEMS
 
 void render_world_2d_system(flecs::entity e, Camera2D& camera) {
     if (!e.is_valid()) {
@@ -100,7 +96,65 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
     // LOG_INFO("Entity: %s, Local Pos: (%.2f, %.2f), World Pos: (%.2f, %.2f)", e.name().c_str(), t.position.x, t.position.y, t.world_position.x,
     //          t.world_position.y);
 }
+#pragma endregion
 
+#pragma region 3D SYSTEMS
+void update_animation(Model& model, Animation3D& anim, float deltaTime) {
+    if (!model.scene || !model.scene->HasAnimations() || !anim.is_playing) {
+        return;
+    }
+
+    if (anim.current_animation >= model.scene->mNumAnimations) {
+        anim.current_animation = 0;
+    }
+
+    const aiAnimation* animation = model.scene->mAnimations[anim.current_animation];
+
+    anim.time += deltaTime * anim.speed;
+
+    float duration       = (float) animation->mDuration;
+    float ticksPerSecond = (float) (animation->mTicksPerSecond != 0 ? animation->mTicksPerSecond : 25.0f);
+    float timeInTicks    = anim.time * ticksPerSecond;
+
+    if (anim.loop) {
+        timeInTicks = fmod(timeInTicks, duration);
+    } else {
+        if (timeInTicks >= duration) {
+            timeInTicks  = duration;
+            anim.is_playing = false;
+        }
+    }
+
+    std::unordered_map<std::string, glm::mat4> nodeTransforms;
+    nodeTransforms.reserve(animation->mNumChannels); // Pre-allocate
+
+    read_node_hierarchy(timeInTicks, model.scene->mRootNode, glm::mat4(1.0f), animation, model, nodeTransforms);
+
+    // Ensure bone_transforms is properly sized
+    if (anim.bone_transforms.size() < MAX_BONES) {
+        anim.bone_transforms.resize(MAX_BONES, glm::mat4(1.0f));
+    }
+
+    const glm::mat4& globalInv = model.global_inverse_transform;
+
+    for (const auto& mesh : model.meshes) {
+        if (!mesh->has_bones) {
+            continue;
+        }
+
+        // const size_t boneCount = std::min(mesh->bones.size(), static_cast<size_t>(MAX_BONES));
+        for (size_t i = 0; i < mesh->bones.size(); i++) {
+            const Bone& bone = mesh->bones[i];
+
+            auto it = nodeTransforms.find(bone.name);
+            if (it != nodeTransforms.end()) {
+                anim.bone_transforms[i] = globalInv * it->second * bone.offset_matrix;
+            } else {
+                anim.bone_transforms[i] = glm::mat4(1.0f);
+            }
+        }
+    }
+}
 
 void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
@@ -112,35 +166,186 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
 
     const auto& window = GEngine->get_config().get_window();
 
-    // Render all 3D models in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Model& model) {
-        auto m = GEngine->get_renderer()->load_model(model.path.c_str());
+    // Render all 3D models in the scene (non-animated)
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, Model& model) {
+        
+        if (e.has<Animation3D>()) {
+            return;
+        }
 
-        GEngine->get_renderer()->draw_model(t, m.get());
+        if (!model.is_loaded && !model.path.empty()) {
+            auto loaded = GEngine->get_renderer()->load_model(model.path.c_str());
+            if (loaded) {
+                model.importer = loaded->importer;
+                model.scene = loaded->scene;
+                model.global_inverse_transform = loaded->global_inverse_transform;
+                model.meshes = loaded->meshes;
+                model.is_loaded = true;
+            } else {
+                LOG_ERROR("Failed to load model: %s", model.path.c_str());
+                model.path.clear();
+                return;
+            }
+        }
+        
+        if (model.is_loaded){
+            GEngine->get_renderer()->draw_model(t, &model);
+        }
     });
 
-    // Render all cubes in the scene
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
+    // Render all MeshInstance3D components
+    GEngine->get_world().each(
+        [&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
         GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));
     });
-    
-    
-
 }
 
+void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transform3D& transform) {
+
+    if (!model.is_loaded && !model.path.empty()) {
+        auto loaded = GEngine->get_renderer()->load_model(model.path.c_str());
+        if (loaded) {
+            model.importer                 = loaded->importer;
+            model.scene                    = loaded->scene;
+            model.global_inverse_transform = loaded->global_inverse_transform;
+            model.meshes                   = loaded->meshes;
+            model.is_loaded                   = true;
+        } else {
+            LOG_ERROR("Failed to load animated model: %s", model.path.c_str());
+            model.path.clear();
+            return;
+        }
+    }
+
+    if (!model.scene) {
+        return;
+    }
+
+    update_animation(model, anim, GEngine->get_timer().delta);
+
+
+    if (!anim.bone_transforms.empty()) {
+        GEngine->get_renderer()->draw_animated_model(transform, &model, anim.bone_transforms.data(), anim.bone_transforms.size());
+    }
+}
+
+#pragma endregion
+
+
+#pragma region COMMON SYSTEMS
 void setup_scripts_system(flecs::entity e, Script& script) {
     // Create a NEW lua_State for THIS script
     script.lua_state = luaL_newstate();
     luaL_openlibs(script.lua_state);
 
-    // Setup package path for this state
+    // Custom Lua loader function that uses FileAccess
+    auto custom_loader = [](lua_State* L) -> int {
+        std::string module_name = lua_tostring(L, 1);
+        
+        // Get package.path
+        lua_getglobal(L, "package");
+        lua_getfield(L, -1, "path");
+        std::string package_path = lua_tostring(L, -1);
+        lua_pop(L, 2);
+        
+        // Split package.path by ';' and try each path
+        std::istringstream path_stream(package_path);
+        std::string path_pattern;
+        
+        while (std::getline(path_stream, path_pattern, ';')) {
+            // Replace '?' with module name
+            size_t pos = path_pattern.find('?');
+            if (pos != std::string::npos) {
+                std::string file_path = path_pattern;
+                file_path.replace(pos, 1, module_name);
+                
+                // Try to open the file using FileAccess
+                FileAccess file(file_path, ModeFlags::READ);
+                if (file.is_open()) {
+                    std::string content = file.get_file_as_str();
+                    
+                    // Load the module content
+                    if (luaL_loadbuffer(L, content.c_str(), content.length(), file_path.c_str()) == LUA_OK) {
+                        return 1; // Return the loaded chunk
+                    }
+                }
+            }
+        }
+        
+        // Module not found
+        lua_pushfstring(L, "\n\tno file found using FileAccess");
+        return 1;
+    };
+
+    // Register custom loader
+    lua_getglobal(script.lua_state, "package");
+    lua_getfield(script.lua_state, -1, "searchers");
+    
+    // Insert our custom loader at position 2 (after the preload searcher)
+    int num_searchers = lua_rawlen(script.lua_state, -1);
+    for (int i = num_searchers; i >= 2; i--) {
+        lua_rawgeti(script.lua_state, -1, i);
+        lua_rawseti(script.lua_state, -2, i + 1);
+    }
+    
+    lua_pushcfunction(script.lua_state, [](lua_State* L) -> int {
+        std::string module_name = lua_tostring(L, 1);
+        
+        // Get package.path
+        lua_getglobal(L, "package");
+        lua_getfield(L, -1, "path");
+        std::string package_path = lua_tostring(L, -1);
+        lua_pop(L, 2);
+        
+        // Split package.path by ';' and try each path
+        std::istringstream path_stream(package_path);
+        std::string path_pattern;
+        
+        while (std::getline(path_stream, path_pattern, ';')) {
+            // Replace '?' with module name
+            size_t pos = path_pattern.find('?');
+            if (pos != std::string::npos) {
+                std::string file_path = path_pattern;
+                file_path.replace(pos, 1, module_name);
+                
+                // Try to open the file using FileAccess
+                FileAccess file(file_path, ModeFlags::READ);
+                if (file.is_open()) {
+                    std::string content = file.get_file_as_str();
+                    
+                    // Load the module content
+                    if (luaL_loadbuffer(L, content.c_str(), content.length(), file_path.c_str()) == LUA_OK) {
+                        return 1; // Return the loaded chunk
+                    }
+                }
+            }
+        }
+        
+        // Module not found
+        lua_pushfstring(L, "\n\tno file found using FileAccess");
+        return 1;
+    });
+    lua_rawseti(script.lua_state, -2, 2);
+    lua_pop(script.lua_state, 2); // pop searchers and package
+
+
+
+    // Setup package path for this state to search in scripts directory
     lua_getglobal(script.lua_state, "package");
     lua_getfield(script.lua_state, -1, "path");
     std::string path = lua_tostring(script.lua_state, -1);
     lua_pop(script.lua_state, 1);
-    path.append(";./res/scripts/?.lua;res/scripts/?.lua;./?.lua");
+    
+    // Add search paths relative to ASSETS_PATH
+    std::string assets_path = ASSETS_PATH;
+    path = assets_path + "scripts/?.lua;" +
+           assets_path + "?.lua;" +
+           path;
+    
+    LOG_INFO("Lua package.path set to: %s", path.c_str());
+    
     lua_pushstring(script.lua_state, path.c_str());
     lua_setfield(script.lua_state, -2, "path");
     lua_pop(script.lua_state, 1);
@@ -149,8 +354,14 @@ void setup_scripts_system(flecs::entity e, Script& script) {
 
     script.ready_called = false;
 
-    // Load the Lua script from file
+    // Load the Lua script from file using ASSETS_PATH
     FileAccess lua_file(script.path, ModeFlags::READ);
+    
+    if (!lua_file.is_open()) {
+        LOG_ERROR("Failed to open script file: %s", script.path.c_str());
+        return;
+    }
+    
     const std::string& lua_script = lua_file.get_file_as_str();
 
     // Load & execute script file
@@ -259,3 +470,5 @@ void scene_manager_system(flecs::world& world) {
             it.entity(i).remove<SceneChangeRequest>();
         });
 }
+
+#pragma endregion

@@ -15,6 +15,8 @@
 */
 class SDLTexture : public Texture {
 public:
+    SDLTexture() = default;
+    
     SDLTexture(SDL_Texture* tex) : _texture(tex) {
     }
 

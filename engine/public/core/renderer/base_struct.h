@@ -18,12 +18,12 @@ enum class CUBEMAP_ORIENTATION {
 
 /*!
 
-    @brief Texture types
+    @brief Texture target
 
     @version  0.0.1
 
 */
-enum class ETextureType {
+enum class ETextureTarget {
     TEXTURE_2D, /// e.g. GL_TEXTURE_2D
     TEXTURE_3D, /// e.g. GL_TEXTURE_3D
     TEXTURE_CUBE_MAP, /// e.g. GL_TEXTURE_CUBE_MAP
@@ -73,7 +73,6 @@ struct Tokens {
 */
 class Font {
 public:
-
     Font(TTF_Font* font) : _font(font) {
     }
 
@@ -83,8 +82,7 @@ public:
     TTF_Font* get_font() const;
 
 protected:
- TTF_Font* _font = nullptr;
-
+    TTF_Font* _font = nullptr;
 };
 
 /*!
@@ -97,12 +95,28 @@ protected:
 */
 class Texture {
 public:
-    Uint32 id        = 0;
-    int width        = 0;
-    int height       = 0;
-    std::string path = "";
+    Uint32 id             = -1;
+    int width             = 0;
+    int height            = 0;
+    std::string_view path;
+    SDL_Surface* surface  = nullptr;
+
+
+    Texture() = default;
+
+    // todo: add more texture properties
+    virtual void bind(Uint32 slot = 0) {
+        SDL_Log("Texture::activate - Not implemented for this renderer");
+    }
+
+    virtual bool is_valid() const {
+        return id != -1;
+    }
 
     virtual ~Texture() = default;
+
+    ETextureTarget target = ETextureTarget::TEXTURE_2D;
+
 };
 
 struct Metallic {
@@ -110,17 +124,63 @@ struct Metallic {
     float value        = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
 };
 
+/*!
+
+    @brief Material structure
+    - Albedo texture
+    - Albedo color
+    - Metallic properties
+    - Roughness
+
+    @version 0.0.1
+
+*/
 struct Material {
-    glm::vec3 albedo  = glm::vec3(1.f);
-    Metallic metallic = {};
-    float roughness   = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
+    std::shared_ptr<Texture> albedo_texture = nullptr;
+    glm::vec3 albedo                        = glm::vec3(1.f);
+    Metallic metallic                       = {};
+    float roughness                         = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
+
+
+    bool is_valid() const;
+
+    // TODO: Additional textures (normal, metallic, roughness, etc.) and properties
+    void bind();
 };
 
+/*!
 
+    @brief Vertex structure
+    - Position
+    - Normal
+    - UV coordinates
+
+    @version  0.0.1
+
+*/
 struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
+    glm::vec3 position; /// 3D position
+    glm::vec3 normal; /// 3D normal
+    glm::vec2 uv; /// 2D texture coordinates
+};
+
+constexpr int MAX_BONES = 250; /// I NEED TO UPGRADE OPENGL TO SUPPORT SSBO </3
+
+
+/*!
+    @brief Bone structure for skeletal animation
+    - Stores offset matrix (inverse bind pose) and final transform
+    - Used in GPU skinning for animated meshes
+
+    @version 0.0.1
+*/
+struct Bone {
+    std::string name;
+    glm::mat4 offset_matrix = glm::mat4(1.f); // Inverse bind pose matrix
+    glm::mat4 final_transform = glm::mat4(1.f); // Final transform to upload to GPU
+
+    Bone() = default;
+
 };
 
 /*!
@@ -142,11 +202,16 @@ struct Mesh {
     std::vector<glm::vec3> vertices;
     std::vector<Uint32> indices;
 
-    Material material;
+    std::unique_ptr<Material> material = std::make_unique<Material>();
 
-    virtual bool has_texture() const = 0;
+    // Animation support
+    bool has_bones = false;
+    std::unordered_map<std::string, int> bone_map; // Bone name -> bone index
+    std::vector<Bone> bones; // All bones in this mesh
 
     virtual void bind() = 0;
+
+    virtual void upload_to_gpu() = 0;
 
     virtual void draw(EDrawMode mode = EDrawMode::TRIANGLES) = 0;
 
@@ -196,6 +261,8 @@ public:
     virtual void set_value(const std::string& name, glm::vec4 value, Uint32 count) = 0;
 
     virtual void set_value(const std::string& name, Uint32 value) = 0;
+
+    virtual void set_value(const std::string& name, const glm::mat4* values, Uint32 count) = 0;
 
     virtual void destroy() = 0;
 

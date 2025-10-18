@@ -184,17 +184,34 @@ struct Model {
     std::string path;
     std::vector<std::shared_ptr<Mesh>> meshes;
 
-    // Model() = default;
-
-    // Model(Model&&) noexcept            = default;
-    // Model& operator=(Model&&) noexcept = default;
-
-    // Model(const Model&)            = delete;
-    // Model& operator=(const Model&) = delete;
+    // Animation support - keep Assimp data alive for skeletal animations
+    std::shared_ptr<Assimp::Importer> importer = nullptr;
+    const aiScene* scene                       = nullptr;
+    glm::mat4 global_inverse_transform         = glm::mat4(1.0f);
+    
+    bool is_loaded = false;
 
 
     ~Model();
 };
+
+/*!
+ * @brief Animation component for skeletal animation playback
+ * @ingroup Components
+ */
+struct Animation3D {
+    int current_animation = 0;      // Index of the current animation
+    float time = 0.0f;              // Current playback time in seconds
+    float speed = 1.0f;             // Playback speed multiplier
+    bool is_playing = true;            // Is animation playing?
+    bool loop = true;               // Should animation loop?
+    
+    // Computed bone transforms (uploaded to GPU)
+    std::vector<glm::mat4> bone_transforms;
+    
+    // Animation3D() = default;
+};
+
 
 struct Follow {
     flecs::entity target;

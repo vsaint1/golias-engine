@@ -37,7 +37,7 @@ android {
 
                 logLevel 'verbose'
                 abiFilters  'x86_64'
-                targets 'client'
+                targets 'runtime'
             }
         }
     }

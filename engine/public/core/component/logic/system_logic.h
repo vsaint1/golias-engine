@@ -55,6 +55,12 @@ void render_world_2d_system(flecs::entity e, Camera2D& camera);
 */
 void render_world_3d_system(flecs::entity e, Camera3D& camera);
 
+/*!
+@brief System to update and render animated 3D models.
+@ingroup Systems
+*/
+void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transform3D& transform);
+
 #pragma endregion
 
 
