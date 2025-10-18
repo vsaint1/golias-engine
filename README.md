@@ -86,7 +86,7 @@
 | Huge City            | ![City](docs/3d_map_huge.png)       | Large city scene rendering demo (Web)        |
 | 3D Physics Example   | ![3D Physics](docs/3d_physics.png)  | 3D physics simulation with thousands of models |
 | 2D Text Rendering    | ![2D Text](docs/2d_text.png)        | 2D text rendering with shaping (HarfBuzz)    |
-| 3D Animation Demo    | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo  |
+| 3D Animation Demo (Android)    | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo  |
 ---
 
 ## 🛠 Building for WASM
