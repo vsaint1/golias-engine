@@ -36,4 +36,7 @@ void Material::bind() {
         albedo_texture->bind();
     }
 
+    if (metallic.texture && metallic.texture->is_valid()) {
+        metallic.texture->bind(1);
+    }
 }
