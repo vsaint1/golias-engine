@@ -97,7 +97,7 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 // 7 = visualize NdotL (diffuse term)
 // 8 = visualize specular highlights
 // 9 = visualize view direction
-int DEBUG_MODE = 1;
+int DEBUG_MODE = 0;
 
 
 void main()
