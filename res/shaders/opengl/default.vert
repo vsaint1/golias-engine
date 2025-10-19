@@ -20,7 +20,7 @@ out vec4 FRAG_POS_LIGHT_SPACE;
 
 uniform mat4 VIEW;
 uniform mat4 PROJECTION;
-uniform mat4 LIGHT_SPACE_MATRIX;
+uniform mat4 LIGHT_PROJECTION;
 
 const int MAX_BONES = 250; // ~16KB limit
 
@@ -61,5 +61,5 @@ void main() {
     UV = a_tex_coord;
     gl_Position = PROJECTION * VIEW * vec4(WORLD_POSITION, 1.0);
     INSTANCE_COLOR = a_instance_color;
-    FRAG_POS_LIGHT_SPACE = LIGHT_SPACE_MATRIX * vec4(WORLD_POSITION, 1.0);
+    FRAG_POS_LIGHT_SPACE = LIGHT_PROJECTION * vec4(WORLD_POSITION, 1.0);
 }
