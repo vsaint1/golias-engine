@@ -72,6 +72,7 @@ private:
 
     OpenglShader* default_shader = nullptr;
     OpenglShader* skybox_shader  = nullptr;
+    OpenglShader* shadow_shader  = nullptr;
 
 protected:
 

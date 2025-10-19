@@ -322,6 +322,11 @@ void OpenglRenderer::setup_cubemap() {
     LOG_DEBUG("Environment setup complete");
 }
 
+// TODO: refactor this when make the Framebuffer class
+Uint32 shadowFBO   = 0;
+Uint32 shadowTexID = 0;
+Uint32 shadowWidth = 2048, shadowHeight = 2048; // Higher resolution = sharper shadows
+
 
 bool OpenglRenderer::initialize(SDL_Window* window) {
 
@@ -431,6 +436,30 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     // glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     // glViewport(0, 0, viewport.width, viewport.height);
+    glGenFramebuffers(1, &shadowFBO);
+
+    glGenTextures(1, &shadowTexID);
+    glBindTexture(GL_TEXTURE_2D, shadowTexID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexID, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LOG_ERROR("Shadow Framebuffer not complete!");
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
     return true;
@@ -439,14 +468,14 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 void OpenglRenderer::clear(glm::vec4 color) {
 
     // NOTE: Nuklear disables depth test, so we need to re-enable it each frame
-    glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     // TODO: handle viewport/window changes
-    const auto& window = GEngine->get_config().get_window();
-    glViewport(0, 0, window.width, window.height);
-    glClearColor(color.r, color.g, color.b, color.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // const auto& window = GEngine->get_config().get_window();
+    // glViewport(0, 0, window.width, window.height);
+    // glClearColor(color.r, color.g, color.b, color.a);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenglRenderer::present() {
@@ -777,7 +806,97 @@ void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* mode
 }
 
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
-    // DrawInstanced
+
+    // Simple directional light setup
+    // Light direction: vector pointing FROM scene UP TO the sun
+    glm::vec3 to_light = glm::normalize(glm::vec3(1.0f, 2.0f, 1.0f)); // Sun is up and to the side
+
+    // Adjust scene center to cover your entities better
+    // Your entities range from Z=-10 to Z=30, X=-10 to X=5, Y=0 to Y=5
+    glm::vec3 scene_center   = glm::vec3(0.0f, 2.0f, 10.0f); // Shifted forward to cover Z range
+    glm::vec3 light_position = scene_center + to_light * 80.0f; // Further away for larger coverage
+
+    // For shader: direction light comes FROM (opposite of to_light)
+    glm::vec3 lightDir = -to_light;
+
+    glm::mat4 orthgonalProjection = glm::ortho(-80.0f, 80.0f, -80.0f, 80.0f, 0.1f, 1000.0f);
+    glm::mat4 lightView           = glm::lookAt(light_position, scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 lightProjection     = orthgonalProjection * lightView;
+
+
+#pragma region SHADOW_PASS
+    glEnable(GL_DEPTH_TEST);
+
+    glViewport(0, 0, shadowWidth, shadowHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    shadow_shader->activate();
+    shadow_shader->set_value("LIGHT_PROJECTION", lightProjection);
+
+
+    // Render all batches to shadow map (instanced rendering)
+    for (auto& [_, batch] : _instanced_batches) {
+        const Mesh* mesh = batch.mesh;
+        auto& models     = batch.models;
+
+        if (!mesh || models.empty()) {
+            continue;
+        }
+
+        const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
+        if (!ogl_mesh) {
+            continue;
+        }
+
+        auto& buffers = _buffers[mesh];
+        if (buffers.instance_buffer == 0) {
+            glGenBuffers(1, &buffers.instance_buffer);
+            glGenBuffers(1, &buffers.color_buffer);
+        }
+
+
+        glBindVertexArray(ogl_mesh->vao);
+
+        // Upload instance model matrices
+        glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
+
+        // Set up instanced model matrix attributes (location 3-6 for mat4)
+        // CRITICAL: Buffer must be bound when setting up attributes
+        for (int i = 0; i < 4; i++) {
+            glEnableVertexAttribArray(3 + i);
+            glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*) (i * sizeof(glm::vec4)));
+            glVertexAttribDivisor(3 + i, 1);
+        }
+
+        if (mesh->has_bones) {
+            shadow_shader->set_value("USE_SKELETON", 1);
+
+            int count = batch.bone_count < MAX_BONES ? batch.bone_count : MAX_BONES;
+
+            if (batch.bone_transforms && batch.bone_count > 0) {
+                shadow_shader->set_value("BONES", batch.bone_transforms, count);
+            }
+
+        } else {
+            shadow_shader->set_value("USE_SKELETON", 0);
+        }
+
+        glDrawElementsInstanced(GL_TRIANGLES, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
+    }
+
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#pragma endregion
+
+#pragma region RENDER_PASS
+
+    const auto& window = GEngine->get_config().get_window();
+    glViewport(0, 0, window.width, window.height);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     for (auto& [_, batch] : _instanced_batches) {
         const Mesh* mesh = batch.mesh;
         auto shader      = batch.shader;
@@ -791,6 +910,11 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         ogl_shader->activate();
         ogl_shader->set_value("VIEW", view);
         ogl_shader->set_value("PROJECTION", projection);
+        ogl_shader->set_value("CAMERA_POSITION", glm::vec3(glm::transpose(view)[3]));
+
+        // Set up directional light (sun)
+        ogl_shader->set_value("LIGHT_DIRECTION", lightDir); // Direction light comes FROM
+        ogl_shader->set_value("LIGHT_PROJECTION", lightProjection);
 
         const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
         if (!ogl_shader->is_valid() || !ogl_mesh) {
@@ -849,12 +973,24 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             metallic_val = mesh->material->metallic.value;
         }
 
-        // Apply to shader
         ogl_shader->set_value("USE_TEXTURE", use_texture);
         ogl_shader->set_value("material.albedo", albedo);
-        ogl_shader->set_value("material.ambient", ambient);
-        ogl_shader->set_value("material.metallic.specular", specular);
-        ogl_shader->set_value("material.metallic.value", metallic_val);
+        // ogl_shader->set_value("material.ambient", ambient);
+        // ogl_shader->set_value("material.metallic.specular", specular);
+        // ogl_shader->set_value("material.metallic.value", metallic_val);
+        // ogl_shader->set_value("material.roughness", 0.5f);
+
+        // Bind textures
+        if (use_texture && mesh->material && mesh->material->albedo_texture) {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, mesh->material->albedo_texture->id);
+            ogl_shader->set_value("TEXTURE", 0);
+        }
+
+        // Bind shadow map to texture unit 1
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, shadowTexID);
+        ogl_shader->set_value("SHADOW_TEXTURE", 1);
 
 
         // instanced model matrix (4 vec4)
@@ -879,11 +1015,16 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         glDrawElementsInstanced(mode, ogl_mesh->index_count, GL_UNSIGNED_INT, 0, models.size());
     }
 
-    glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // glBindVertexArray(0);
+#pragma endregion
+
+#pragma region ENVIRONMENT_PASS
     _instanced_batches.clear();
+#pragma endregion
 
-    draw_environment(view, projection);
+    // draw_environment(view, projection);
 }
 
 
@@ -971,6 +1112,9 @@ OpenglRenderer::~OpenglRenderer() {
         }
     }
 
+    glDeleteTextures(1, &shadowTexID);
+    glDeleteFramebuffers(1, &shadowFBO);
+
     _buffers.clear();
 
     // cubemap resources
@@ -983,6 +1127,10 @@ OpenglRenderer::~OpenglRenderer() {
     // default shader
     delete default_shader;
     default_shader = nullptr;
+
+    delete shadow_shader;
+    shadow_shader = nullptr;
+
     SDL_GL_DestroyContext(_context);
 }
 
@@ -998,8 +1146,17 @@ void OpenglRenderer::setup_default_shaders() {
     }
 
     default_shader->activate();
-    default_shader->set_value("LIGHT_POSITION", glm::vec3(2.0f, 4.0f, 1.0f));
-    default_shader->set_value("LIGHT_COLOR", glm::vec3(1, 1, 1));
+    default_shader->set_value("LIGHT_COLOR", glm::vec3(1.0f, 0.95f, 0.8f)); // Warm sun color
+    // default_shader->set_value("TEXTURE", 0);
+    // default_shader->set_value("SHADOW_TEXTURE", 1);
+
+    shadow_shader = new OpenglShader("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
+    if (!shadow_shader->is_valid()) {
+        LOG_ERROR("Failed to create shadow shader");
+        delete shadow_shader;
+        shadow_shader = nullptr;
+        return;
+    }
 }
 
 
