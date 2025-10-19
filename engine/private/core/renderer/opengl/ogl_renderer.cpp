@@ -529,9 +529,18 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
-        aiColor3D c(0.5f, 0.5f, 0.5f);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, c);
-        m->material->albedo = {c.r, c.g, c.b};
+        aiColor3D kd(0.0f, 0.0f, 0.0f);
+        mat->Get(AI_MATKEY_COLOR_DIFFUSE, kd);
+        m->material->albedo = {kd.r, kd.g, kd.b};
+
+        aiColor3D ka(0.0f, 0.0f, 0.0f);
+        mat->Get(AI_MATKEY_COLOR_AMBIENT, ka);
+        m->material->ambient = {ka.r, ka.g, ka.b};
+
+        aiColor3D ks(0.0f, 0.0f, 0.0f);
+        mat->Get(AI_MATKEY_COLOR_SPECULAR, ks);
+        m->material->metallic.specular = {ks.r, ks.g, ks.b};
+
 
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
@@ -779,7 +788,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
         OpenglShader* ogl_shader = static_cast<OpenglShader*>(shader);
-        shader->activate();
+        ogl_shader->activate();
         ogl_shader->set_value("VIEW", view);
         ogl_shader->set_value("PROJECTION", projection);
 
@@ -815,24 +824,37 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             ogl_shader->set_value("USE_SKELETON", 0);
         }
 
-        if (mesh->material && mesh->material->is_valid()) {
 
+        glm::vec3 albedo   = glm::vec3(1.0f);
+        glm::vec3 ambient  = glm::vec3(0.0f);
+        glm::vec3 specular = glm::vec3(0.0f);
+        float metallic_val = 0.0f;
+        int use_texture    = 0;
+
+        // If the mesh has a valid material, use it
+        if (mesh->material && mesh->material->is_valid()) {
             mesh->material->bind();
 
-            ogl_shader->set_value("USE_TEXTURE", 1);
-            ogl_shader->set_value("material.albedo", glm::vec3(1.0f));
-        } else {
-
-
-            ogl_shader->set_value("USE_TEXTURE", 0);
-
-            // Hack fix??
-            if (batch.command == EDrawCommand::MODEL && mesh->material) {
-                ogl_shader->set_value("material.albedo", mesh->material->albedo);
-            } else {
-                ogl_shader->set_value("material.albedo", glm::vec3(1.0f, 1.0f, 1.0f));
-            }
+            albedo       = mesh->material->albedo;
+            ambient      = mesh->material->ambient;
+            specular     = mesh->material->metallic.specular;
+            metallic_val = mesh->material->metallic.value;
+            use_texture  = mesh->material->albedo_texture ? 1 : 0;
         }
+        // If material is invalid but exists (MODEL fallback)
+        else if (mesh->material && batch.command == EDrawCommand::MODEL) {
+            albedo       = mesh->material->albedo;
+            ambient      = mesh->material->ambient;
+            specular     = mesh->material->metallic.specular;
+            metallic_val = mesh->material->metallic.value;
+        }
+
+        // Apply to shader
+        ogl_shader->set_value("USE_TEXTURE", use_texture);
+        ogl_shader->set_value("material.albedo", albedo);
+        ogl_shader->set_value("material.ambient", ambient);
+        ogl_shader->set_value("material.metallic.specular", specular);
+        ogl_shader->set_value("material.metallic.value", metallic_val);
 
 
         // instanced model matrix (4 vec4)
@@ -976,7 +998,7 @@ void OpenglRenderer::setup_default_shaders() {
     }
 
     default_shader->activate();
-    default_shader->set_value("LIGHT_POSITION", glm::vec3(0, 100, 0));
+    default_shader->set_value("LIGHT_POSITION", glm::vec3(2.0f, 4.0f, 1.0f));
     default_shader->set_value("LIGHT_COLOR", glm::vec3(1, 1, 1));
 }
 
