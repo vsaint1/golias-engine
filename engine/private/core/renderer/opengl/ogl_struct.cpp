@@ -275,6 +275,7 @@ GLuint gl_texture_target_cast(ETextureTarget target) {
 void OpenglTexture::bind(Uint32 slot) {
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(gl_texture_target_cast(target), id);
+    // LOG_DEBUG("Binding texture ID %d to slot %d", id, slot);
 }
 
 OpenglTexture::~OpenglTexture() {
