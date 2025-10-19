@@ -50,34 +50,29 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
     if (NdotL < 0.0) return 0.0;
 
     // Bias to reduce acne
-    float bias = max(0.0015 * (1.0 - NdotL), 0.0003);
-
-    // --- Variable softness based on distance ---
-    float distance_from_light = abs(frag_pos_light_space.z / frag_pos_light_space.w);
-    float filter_radius = mix(0.0015, 0.005, clamp(distance_from_light * 0.5, 0.0, 1.0));
+    float bias = max(0.002 * (1.0 - NdotL), 0.0005);
 
     vec2 texel_size = 1.0 / textureSize(SHADOW_TEXTURE, 0);
+    
 
-    // --- Poisson disk offsets for smoother sampling ---
-    const vec2 poisson_disk[16] = vec2[](
-        vec2(-0.942, -0.399), vec2( 0.945, -0.768),
-        vec2(-0.094, -0.929), vec2( 0.345, -0.237),
-        vec2(-0.802, -0.145), vec2(-0.421, -0.967),
-        vec2(-0.99,  0.108), vec2(-0.445,  0.529),
-        vec2(-0.24,  0.717), vec2(-0.122,  0.023),
-        vec2( 0.287,  0.967), vec2( 0.548,  0.731),
-        vec2( 0.753,  0.284), vec2( 0.964, -0.196),
-        vec2( 0.414, -0.738), vec2( 0.605, -0.549)
+    const vec2 samples[16] = vec2[](
+        vec2(-0.7071, 0.7071), vec2(-0.0000, -0.8750),
+        vec2(0.5303, 0.5303), vec2(-0.6250, -0.0000),
+        vec2(0.3536, -0.3536), vec2(-0.0000, 0.3750),
+        vec2(0.1768, 0.1768), vec2(0.1250, 0.0000),
+        vec2(-0.1768, 0.1768), vec2(0.0000, -0.1250),
+        vec2(0.8839, -0.8839), vec2(-0.8125, -0.5625),
+        vec2(0.6830, 0.7500), vec2(-0.3125, 0.7500),
+        vec2(0.5000, -0.6875), vec2(0.9375, 0.3125)
     );
-
-    // Random rotation to reduce banding
-    float angle = fract(sin(dot(proj_coords.xy, vec2(12.9898, 78.233))) * 43758.5453) * 6.2831;
-    mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-
+    
     float shadow = 0.0;
-    for (int i = 0; i < 16; ++i) {
-        vec2 offset = rotation * poisson_disk[i] * filter_radius;
-        float pcf_depth = texture(SHADOW_TEXTURE, proj_coords.xy + offset * texel_size).r;
+    float radius = 1.5; // Controls softness: 1.0 = sharp, 2.0 = soft
+    
+    for(int i = 0; i < 16; i++)
+    {
+        vec2 offset = samples[i] * texel_size * radius;
+        float pcf_depth = texture(SHADOW_TEXTURE, proj_coords.xy + offset).r;
         shadow += (current_depth - bias) > pcf_depth ? 1.0 : 0.0;
     }
     shadow /= 16.0;
