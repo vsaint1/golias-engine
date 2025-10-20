@@ -53,8 +53,8 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
     float bias = 0.0005 + 0.001 * (1.0 - NdotL);
     
 
-    vec2 texel_size = 1.0 / textureSize(SHADOW_TEXTURE, 0);
-    
+    vec2 texel_size = 1.0 / vec2(textureSize(SHADOW_TEXTURE, 0));   
+     
     // Poisson disk sampling pattern - 32 samples for higher quality
     const vec2 samples[32] = vec2[](
         vec2(-0.94201624, -0.39906216),
