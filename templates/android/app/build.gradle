@@ -34,7 +34,7 @@ android {
             xmake {
                 sdkver 28
                 path '../../../xmake.lua'
-
+                buildMode "debug"
                 logLevel 'verbose'
                 abiFilters  'x86_64'
                 targets 'runtime'

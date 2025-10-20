@@ -95,6 +95,8 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
     if (!success) {
         LOG_CRITICAL("Shader compilation failed, deleting shader");
         glDeleteShader(shader);
+        exit(EXIT_FAILURE);
+
         return 0;
     }
 
