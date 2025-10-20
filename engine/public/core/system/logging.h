@@ -35,7 +35,7 @@ public:
 
     static void initialize(const char* app_identifier = "com.ember.engine.app");
 
-    void push(const std::string& formatted_log);
+    void push(std::string_view formatted_log);
 
 
 private:
@@ -51,7 +51,7 @@ private:
     std::condition_variable _condition = std::condition_variable();
     std::atomic<bool> _is_running = false;
 
-    std::deque<std::string> _log_queue = std::deque<std::string>();
+    std::deque<std::string_view> _log_queue = std::deque<std::string_view>();
 
     SDL_IOStream* file = nullptr;
 };

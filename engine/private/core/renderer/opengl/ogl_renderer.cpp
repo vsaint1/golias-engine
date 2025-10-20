@@ -234,12 +234,12 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
 
+    // Allocate single reusable buffer for all faces (memory optimization)
+    std::vector<Uint8> faceData(face_w * face_h * bytesPerPixel);
+
     for (int i = 0; i < 6; ++i) {
         const SDL_Rect& r = faceRects[i];
         // LOG_INFO("Uploading face %d: x=%d y=%d w=%d h=%d pitch=%d", i, r.x, r.y, r.w, r.h, pitch);
-
-        // allocate buffer for face
-        std::vector<Uint8> faceData(r.w * r.h * bytesPerPixel);
 
         for (int y = 0; y < r.h; ++y) {
             int row = r.y + y;
@@ -325,7 +325,7 @@ void OpenglRenderer::setup_cubemap() {
 // TODO: refactor this when make the Framebuffer class
 Uint32 shadowFBO   = 0;
 Uint32 shadowTexID = 0;
-Uint32 shadowWidth = 2048, shadowHeight = 2048; 
+Uint32 shadowWidth = 2048, shadowHeight = 2048;
 
 
 bool OpenglRenderer::initialize(SDL_Window* window) {
@@ -505,6 +505,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
         LOG_ERROR("Failed to load texture surface: %s", name.c_str());
         return nullptr;
     }
+    
 
     texture->target = ETextureTarget::TEXTURE_2D;
 
@@ -522,6 +523,9 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     texture->id     = texID;
     _textures[name] = texture;
+    
+    LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)", 
+              name.c_str(), texID, texture->width, texture->height);
 
     SDL_DestroySurface(texture->surface);
     texture->surface = nullptr;
@@ -553,45 +557,33 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
                                       bool is_filled) {
 }
 
-// TODO: refactor to reduce code duplication with other backends
 std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
-    auto m  = std::make_unique<OpenglMesh>();
-    m->name = mesh->mName.C_Str();
+    auto ogl_mesh  = std::make_unique<OpenglMesh>();
 
+    parse_meshes(mesh, scene, base_dir,*ogl_mesh);
 
+    // TODO: we should create a parse_materials function to reduce code duplication
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-
-        aiColor3D kd(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, kd);
-        m->material->albedo = {kd.r, kd.g, kd.b};
-
-        aiColor3D ka(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_AMBIENT, ka);
-        m->material->ambient = {ka.r, ka.g, ka.b};
-
-        aiColor3D ks(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_SPECULAR, ks);
-        m->material->metallic.specular = {ks.r, ks.g, ks.b};
-
-
+        
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             std::string texPathStr = texPath.C_Str();
+            
 
             // Check if it's an embedded texture (path starts with '*')
             if (texPathStr[0] == '*') {
                 // Embedded texture - extract index
                 int texIndex = std::atoi(texPathStr.c_str() + 1);
 
-                if (texIndex >= 0 && texIndex < scene->mNumTextures) {
+                if (texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures) {
                     const aiTexture* embeddedTex = scene->mTextures[texIndex];
 
                     // Use base_dir to make key unique per model
-                    std::string embedded_path = base_dir + "embedded_tex_" + std::to_string(texIndex);
+                    texPathStr = base_dir + "embedded_tex_" + std::to_string(texIndex);
 
-                    // Load embedded texture
-                    m->material->albedo_texture = load_texture(embedded_path, embedded_path, embeddedTex);
+                    // Load embedded texture (now OpenGL context is available)
+                    ogl_mesh->material->albedo_texture = load_texture(texPathStr, texPathStr, embeddedTex);
                 } else {
                     LOG_WARN("Embedded texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
                 }
@@ -599,132 +591,29 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
             } else {
                 // Load external texture file
                 const std::string texture_path = base_dir + texPathStr;
-                m->material->albedo_texture    = load_texture(texture_path, texture_path, nullptr);
+                ogl_mesh->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
             }
         }
     }
 
-    std::vector<Vertex> verts;
-    std::vector<unsigned int> indices; // element indices
-
-    verts.reserve(mesh->mNumVertices);
-    indices.reserve(mesh->mNumFaces * 3);
-
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        const aiVector3D& v = mesh->mVertices[i];
-        Vertex vert;
-        vert.position = glm::vec3(v.x, v.y, v.z);
-
-        if (mesh->HasNormals()) {
-            vert.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-        } else {
-            vert.normal = glm::vec3(0);
-        }
-
-        if (mesh->HasTextureCoords(0)) {
-            vert.uv = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-        } else {
-            vert.uv = glm::vec2(0);
-        }
-
-        verts.push_back(vert);
-    }
-
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        const aiFace& face = mesh->mFaces[i];
-        for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            indices.push_back(face.mIndices[j]);
-        }
-    }
-
-    m->vertex_count = mesh->mNumVertices;
-    m->index_count  = indices.size();
-
-    // Process bone data if present
     std::vector<glm::ivec4> bone_ids;
     std::vector<glm::vec4> bone_weights;
-
-    if (mesh->HasBones()) {
-        m->has_bones = true;
-
-
-        bone_ids.resize(mesh->mNumVertices, glm::ivec4(0));
-        bone_weights.resize(mesh->mNumVertices, glm::vec4(0.0f));
-
-
-        std::vector<int> bone_counts(mesh->mNumVertices, 0);
-
-        LOG_DEBUG("Mesh '%s' has %u bones", m->name.data(), mesh->mNumBones);
-
-        // Build bone map and extract bone data
-        for (unsigned int i = 0; i < mesh->mNumBones; i++) {
-            aiBone* bone          = mesh->mBones[i];
-            std::string bone_name = bone->mName.C_Str();
-
-            int bone_index = -1;
-            if (m->bone_map.find(bone_name) == m->bone_map.end()) {
-                bone_index             = m->bones.size();
-                m->bone_map[bone_name] = bone_index;
-
-                Bone b;
-                b.name = bone_name;
-
-                // Store offset matrix (inverse bind pose)
-                aiMatrix4x4 offset = bone->mOffsetMatrix;
-                b.offset_matrix    = glm::transpose(glm::make_mat4(&offset.a1));
-
-                m->bones.push_back(b);
-            } else {
-                bone_index = m->bone_map[bone_name];
-            }
-
-
-            for (unsigned int j = 0; j < bone->mNumWeights; j++) {
-                unsigned int vertex_id = bone->mWeights[j].mVertexId;
-                float weight           = bone->mWeights[j].mWeight;
-
-                if (weight == 0.0f) {
-                    continue;
-                }
-
-                if (vertex_id >= mesh->mNumVertices) {
-                    LOG_DEBUG("Bone '%s' references out-of-bounds vertex %u", bone_name.c_str(), vertex_id);
-                    continue;
-                }
-
-                int slot = bone_counts[vertex_id];
-                if (slot < 4) {
-                    bone_ids[vertex_id][slot]     = bone_index;
-                    bone_weights[vertex_id][slot] = weight;
-                    bone_counts[vertex_id]++;
-                } else {
-                    LOG_DEBUG("Vertex %u has more than 4 bone influences (skipping)", vertex_id);
-                }
-            }
-        }
-
-
-        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Bones: %zu | Has Texture: %s", m->name.data(), m->vertex_count, m->index_count,
-                  m->bones.size(), m->material->is_valid() ? "Yes" : "No");
-    } else {
-        LOG_DEBUG("Mesh '%s': Vertices: %u | Indices: %u | Has Texture: %s (no bones)", m->name.data(), m->vertex_count, m->index_count,
-                  m->material->is_valid() ? "Yes" : "No");
-    }
+    parse_bones(mesh, bone_ids, bone_weights,*ogl_mesh);
 
     // TODO: improve this setup
-    glGenVertexArrays(1, &m->vao);
-    glGenBuffers(1, &m->vbo);
-    glGenBuffers(1, &m->ebo);
+    glGenVertexArrays(1, &ogl_mesh->vao);
+    glGenBuffers(1, &ogl_mesh->vbo);
+    glGenBuffers(1, &ogl_mesh->ebo);
 
-    glBindVertexArray(m->vao);
+    glBindVertexArray(ogl_mesh->vao);
 
     // Upload vertex data (position, normal, uv)
-    glBindBuffer(GL_ARRAY_BUFFER, m->vbo);
-    glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vertex), verts.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->vbo);
+    glBufferData(GL_ARRAY_BUFFER, ogl_mesh->vertices.size() * sizeof(Vertex), ogl_mesh->vertices.data(), GL_STATIC_DRAW);
 
     // Upload index data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ogl_mesh->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, ogl_mesh->indices.size() * sizeof(unsigned int), ogl_mesh->indices.data(), GL_STATIC_DRAW);
 
     // Vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
@@ -738,19 +627,18 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
     // Upload bone data if present
     if (mesh->HasBones()) {
-        auto ogl_mesh = static_cast<OpenglMesh*>(m.get());
 
         // Bone IDs (ivec4 at location 8)
         glGenBuffers(1, &ogl_mesh->bone_id_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_id_vbo);
-        glBufferData(GL_ARRAY_BUFFER, bone_ids.size() * sizeof(glm::ivec4), bone_ids.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, bone_ids.size() * sizeof(glm::ivec4), bone_ids.data(), GL_DYNAMIC_DRAW);
         glVertexAttribIPointer(8, 4, GL_INT, sizeof(glm::ivec4), (void*) 0);
         glEnableVertexAttribArray(8);
 
         // Bone Weights (vec4 at location 9)
         glGenBuffers(1, &ogl_mesh->bone_weight_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->bone_weight_vbo);
-        glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(glm::vec4), bone_weights.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, bone_weights.size() * sizeof(glm::vec4), bone_weights.data(), GL_DYNAMIC_DRAW);
         glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*) 0);
         glEnableVertexAttribArray(9);
     }
@@ -758,7 +646,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     glBindVertexArray(0);
 
 
-    return m;
+    return ogl_mesh;
 }
 
 
@@ -919,7 +807,7 @@ glEnable(GL_MULTISAMPLE);
         ogl_shader->activate();
         ogl_shader->set_value("VIEW", view);
         ogl_shader->set_value("PROJECTION", projection);
-        ogl_shader->set_value("CAMERA_POSITION", glm::vec3(glm::transpose(view)[3]));
+        ogl_shader->set_value("CAMERA_POSITION", glm::vec3(glm::inverse(view)[3]));
 
         // Set up directional light (sun)
         ogl_shader->set_value("LIGHT_DIRECTION", lightDir); // Direction light comes FROM
