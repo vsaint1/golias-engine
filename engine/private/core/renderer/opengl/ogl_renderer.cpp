@@ -325,7 +325,7 @@ void OpenglRenderer::setup_cubemap() {
 // TODO: refactor this when make the Framebuffer class
 Uint32 shadowFBO   = 0;
 Uint32 shadowTexID = 0;
-Uint32 shadowWidth = 2048, shadowHeight = 2048; // Higher resolution = sharper shadows
+Uint32 shadowWidth = 2048, shadowHeight = 2048; 
 
 
 bool OpenglRenderer::initialize(SDL_Window* window) {
@@ -348,10 +348,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
 
 #endif
-
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
@@ -380,6 +376,11 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _context = glContext;
     _window  = window;
 
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    
 
     SDL_GL_SetSwapInterval(0);
 
@@ -428,10 +429,12 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     cube_mesh = generate_cube_mesh();
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    glEnable(GL_DEPTH_TEST);
+    int msaa_buffers = 0, msaa_samples = 0;
+    SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &msaa_buffers);
+    SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &msaa_samples);
+    LOG_INFO("MSAA: %dx (buffers=%d, samples=%d) %s", msaa_samples, msaa_buffers, msaa_samples, 
+             glIsEnabled(GL_MULTISAMPLE) ? "ENABLED" : "DISABLED");
+    
     // glEnable(GL_STENCIL_TEST);
     // glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -447,8 +450,9 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
-
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    
+    LOG_INFO("Shadow Map: %dx%d with GL_LINEAR filtering for soft shadows", shadowWidth, shadowHeight);
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexID, 0);
@@ -809,21 +813,23 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
     // Simple directional light setup
     // Light direction: vector pointing FROM scene UP TO the sun
-    glm::vec3 to_light = glm::normalize(glm::vec3(1.0f, 2.0f, 1.0f)); // Sun is up and to the side
-
-    // Adjust scene center to cover your entities better
-    // Your entities range from Z=-10 to Z=30, X=-10 to X=5, Y=0 to Y=5
-    glm::vec3 scene_center   = glm::vec3(0.0f, 2.0f, 10.0f); // Shifted forward to cover Z range
-    glm::vec3 light_position = scene_center + to_light * 80.0f; // Further away for larger coverage
+    glm::vec3 to_light = glm::normalize(glm::vec3(1.0f, 2.5f, 1.0f)); // Sun higher in sky
+    
+    // TODO: Calculate dynamic scene bounds from all rendered objects
+    // For now, using larger fixed bounds to capture more of the scene
+    glm::vec3 scene_center   = glm::vec3(0.0f, 5.0f, 10.0f); // Center of your scene
+    glm::vec3 light_position = scene_center + to_light * 100.0f; // Far enough to act as directional
 
     // For shader: direction light comes FROM (opposite of to_light)
     glm::vec3 lightDir = -to_light;
 
-    glm::mat4 orthgonalProjection = glm::ortho(-80.0f, 80.0f, -80.0f, 80.0f, 0.1f, 1000.0f);
+    // Larger orthographic bounds to capture full scene (adjust these if shadows get cut off)
+    float shadow_extent = 120.0f;  // Increased from 80 to capture more
+    glm::mat4 orthgonalProjection = glm::ortho(-shadow_extent, shadow_extent, -shadow_extent, shadow_extent, 0.1f, 1000.0f);
     glm::mat4 lightView           = glm::lookAt(light_position, scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 lightProjection     = orthgonalProjection * lightView;
 
-
+glDisable(GL_MULTISAMPLE);
 #pragma region SHADOW_PASS
     glEnable(GL_DEPTH_TEST);
 
@@ -890,12 +896,15 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #pragma endregion
 
+glEnable(GL_MULTISAMPLE);
 #pragma region RENDER_PASS
 
     const auto& window = GEngine->get_config().get_window();
     glViewport(0, 0, window.width, window.height);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // LOG_DEBUG("MSAA during render: %s", glIsEnabled(GL_MULTISAMPLE) ? "ON" : "OFF");
 
     for (auto& [_, batch] : _instanced_batches) {
         const Mesh* mesh = batch.mesh;
@@ -1017,14 +1026,17 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // glBindVertexArray(0);
+    glBindVertexArray(0);
+    _instanced_batches.clear();
+
 #pragma endregion
+
 
 #pragma region ENVIRONMENT_PASS
-    _instanced_batches.clear();
+    draw_environment(view, projection);
+
 #pragma endregion
 
-    // draw_environment(view, projection);
 }
 
 

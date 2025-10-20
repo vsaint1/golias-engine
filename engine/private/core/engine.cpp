@@ -53,6 +53,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_VERBOSE);
 
+
     if (!_config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
     }
@@ -100,6 +101,13 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
+
+   
+    if (renderer_config.backend == Backend::GL_COMPATIBILITY) {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);  // 8x MSAA
+        
+    }
 
     app_win.width  = window_w;
     app_win.height = window_h;
@@ -180,7 +188,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _timer.start();
 
-    SDL_ShowWindow(_window);
+    // SDL_ShowWindow(_window); // now shown after renderer  setup
 
     is_running = true;
 
