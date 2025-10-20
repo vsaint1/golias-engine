@@ -10,9 +10,9 @@
 #define NK_INCLUDE_STANDARD_BOOL
 #define NK_INCLUDE_COMMAND_USERDATA
 
-#include <nuklear.h>
+// #include <nuklear.h>
 
 
 
 #define NK_SDL3_GL3_IMPLEMENTATION
-#include "nuklear_sdl3_gl3.h"
+// #include "nuklear_sdl3_gl3.h"
