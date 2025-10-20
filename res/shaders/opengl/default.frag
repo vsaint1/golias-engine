@@ -32,7 +32,7 @@ uniform bool USE_TEXTURE;
 
 
 // --------------------------------------
-// PCF shadow calculation (3x3 kernel)
+// SHADOW CALCULATION BASED ON CAMERA DISTANCE
 // --------------------------------------
 float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 {
@@ -46,39 +46,82 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
         return 0.0;
 
     float current_depth = proj_coords.z;
-    float NdotL = dot(normal, light_dir);
-    if (NdotL < 0.0) return 0.0;
+    float NdotL = max(dot(normal, light_dir), 0.0);
+    
+    if (NdotL < 0.01) return 1.0; // Surfaces facing away are in shadow
 
-    // Bias to reduce acne
-    float bias = max(0.002 * (1.0 - NdotL), 0.0005);
+    float bias = 0.0005 + 0.001 * (1.0 - NdotL);
+    
 
     vec2 texel_size = 1.0 / textureSize(SHADOW_TEXTURE, 0);
     
-
-    const vec2 samples[16] = vec2[](
-        vec2(-0.7071, 0.7071), vec2(-0.0000, -0.8750),
-        vec2(0.5303, 0.5303), vec2(-0.6250, -0.0000),
-        vec2(0.3536, -0.3536), vec2(-0.0000, 0.3750),
-        vec2(0.1768, 0.1768), vec2(0.1250, 0.0000),
-        vec2(-0.1768, 0.1768), vec2(0.0000, -0.1250),
-        vec2(0.8839, -0.8839), vec2(-0.8125, -0.5625),
-        vec2(0.6830, 0.7500), vec2(-0.3125, 0.7500),
-        vec2(0.5000, -0.6875), vec2(0.9375, 0.3125)
+    // Poisson disk sampling pattern - 32 samples for higher quality
+    const vec2 samples[32] = vec2[](
+        vec2(-0.94201624, -0.39906216),
+        vec2(0.94558609, -0.76890725),
+        vec2(-0.094184101, -0.92938870),
+        vec2(0.34495938, 0.29387760),
+        vec2(-0.91588581, 0.45771432),
+        vec2(-0.81544232, -0.87912464),
+        vec2(-0.38277543, 0.27676845),
+        vec2(0.97484398, 0.75648379),
+        vec2(0.44323325, -0.97511554),
+        vec2(0.53742981, -0.47373420),
+        vec2(-0.26496911, -0.41893023),
+        vec2(0.79197514, 0.19090188),
+        vec2(-0.24188840, 0.99706507),
+        vec2(-0.81409955, 0.91437590),
+        vec2(0.19984126, 0.78641367),
+        vec2(0.14383161, -0.14100790),
+        // Additional 16 samples for smoother shadows
+        vec2(0.59490621, 0.44508049),
+        vec2(-0.67888541, 0.06997144),
+        vec2(0.18650039, -0.56448567),
+        vec2(-0.12964488, 0.46467763),
+        vec2(0.71628402, -0.31403765),
+        vec2(-0.46671849, -0.69000623),
+        vec2(0.32782465, 0.88611004),
+        vec2(-0.58654654, 0.73139274),
+        vec2(0.87689108, -0.01333499),
+        vec2(-0.03935671, 0.85738134),
+        vec2(0.06747698, -0.23559207),
+        vec2(-0.39294919, -0.16617249),
+        vec2(0.46717972, -0.70563352),
+        vec2(-0.76943421, -0.45486257),
+        vec2(0.27653325, 0.13415599),
+        vec2(-0.52173114, 0.35023832)
     );
     
-    float shadow = 0.0;
-    float radius = 1.5; // Controls softness: 1.0 = sharp, 2.0 = soft
+    // Distance-adaptive radius
+    // Close up: smaller radius to avoid pixelation
+    // Far away: larger radius for soft shadows
+    float distance_to_camera = length(CAMERA_POSITION - WORLD_POSITION);
+    float adaptive_radius = mix(0.5, 2.5, clamp(distance_to_camera / 50.0, 0.0, 1.0));
     
-    for(int i = 0; i < 16; i++)
+    // Also scale by depth to reduce perspective aliasing
+    float depth_scale = mix(1.0, 0.3, current_depth);
+    adaptive_radius *= depth_scale;
+    
+    float shadow = 0.0;
+    
+    // Sample count based on distance
+    int sample_count = distance_to_camera < 20.0 ? 32 : 12;
+    
+    for(int i = 0; i < sample_count; i++)
     {
-        vec2 offset = samples[i] * texel_size * radius;
+        vec2 offset = samples[i] * texel_size * adaptive_radius;
         float pcf_depth = texture(SHADOW_TEXTURE, proj_coords.xy + offset).r;
         shadow += (current_depth - bias) > pcf_depth ? 1.0 : 0.0;
     }
-    shadow /= 16.0;
+    shadow /= float(sample_count);
+    
+    // Smooth transition at shadow edges
+    shadow = smoothstep(0.0, 1.0, shadow);
 
     return shadow;
 }
+
+
 
 
 // DEBUG MODES:
@@ -92,6 +135,7 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 // 7 = visualize NdotL (diffuse term)
 // 8 = visualize specular highlights
 // 9 = visualize view direction
+// TODO: use a uniform ???
 int DEBUG_MODE = 0;
 
 
