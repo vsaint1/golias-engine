@@ -141,6 +141,10 @@ int DEBUG_MODE = 0;
 
 void main()
 {
+
+    vec4 alph_test = texture(TEXTURE, UV);
+    if (alph_test.a < 0.1) discard;
+
     // Compute normalized light-space depth once
     float depth_norm = clamp(FRAG_POS_LIGHT_SPACE.z / FRAG_POS_LIGHT_SPACE.w * 0.5 + 0.5, 0.0, 1.0);
 

@@ -784,6 +784,8 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #pragma endregion
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
 #pragma region RENDER_PASS
 
@@ -918,7 +920,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     _instanced_batches.clear();
 
 #pragma endregion
-
+    glDisable(GL_BLEND);
 
 #pragma region ENVIRONMENT_PASS
     draw_environment(view, projection);
