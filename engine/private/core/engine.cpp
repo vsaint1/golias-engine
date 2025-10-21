@@ -143,13 +143,12 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
 #pragma region ENGINE_WINDOW_ICON
 
-    // SDL_Surface* logo_surface = IMG_Load((ASSETS_PATH + "icon.png").c_str());
     int w, h, channels;
     SDL_Surface* logo_surface = nullptr;
     stbi_uc* logo_pixels = stbi_load((ASSETS_PATH + "icon.png").c_str(), &w, &h, &channels, 4);
 
     if (logo_pixels) {
-        logo_surface = SDL_CreateSurfaceFrom( w, h,SDL_PIXELFORMAT_ARGB32, logo_pixels,w * 4);
+        logo_surface = SDL_CreateSurfaceFrom( w, h,SDL_PIXELFORMAT_RGBA32, logo_pixels,w * 4);
         SDL_SetWindowIcon(_window, logo_surface);
         SDL_DestroySurface(logo_surface);
         stbi_image_free(logo_pixels);
