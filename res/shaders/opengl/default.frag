@@ -23,7 +23,7 @@ struct Metallic {
 struct Material {
     vec3 albedo;
     Metallic metallic;
-    float roughness; 
+    float roughness;
 };
 
 uniform Material material;
@@ -47,14 +47,14 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 
     float current_depth = proj_coords.z;
     float NdotL = max(dot(normal, light_dir), 0.0);
-    
+
     if (NdotL < 0.01) return 1.0; // Surfaces facing away are in shadow
 
     float bias = 0.0005 + 0.001 * (1.0 - NdotL);
-    
 
-    vec2 texel_size = 1.0 / vec2(textureSize(SHADOW_TEXTURE, 0));   
-     
+
+    vec2 texel_size = 1.0 / vec2(textureSize(SHADOW_TEXTURE, 0));
+
     // Poisson disk sampling pattern - 32 samples for higher quality
     const vec2 samples[32] = vec2[](
         vec2(-0.94201624, -0.39906216),
@@ -91,22 +91,22 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
         vec2(0.27653325, 0.13415599),
         vec2(-0.52173114, 0.35023832)
     );
-    
+
     // Distance-adaptive radius
     // Close up: smaller radius to avoid pixelation
     // Far away: larger radius for soft shadows
     float distance_to_camera = length(CAMERA_POSITION - WORLD_POSITION);
     float adaptive_radius = mix(0.5, 2.5, clamp(distance_to_camera / 50.0, 0.0, 1.0));
-    
+
     // Also scale by depth to reduce perspective aliasing
     float depth_scale = mix(1.0, 0.3, current_depth);
     adaptive_radius *= depth_scale;
-    
+
     float shadow = 0.0;
-    
+
     // Sample count based on distance
     int sample_count = distance_to_camera < 20.0 ? 32 : 12;
-    
+
     for(int i = 0; i < sample_count; i++)
     {
         vec2 offset = samples[i] * texel_size * adaptive_radius;
@@ -114,7 +114,7 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
         shadow += (current_depth - bias) > pcf_depth ? 1.0 : 0.0;
     }
     shadow /= float(sample_count);
-    
+
     // Smooth transition at shadow edges
     shadow = smoothstep(0.0, 1.0, shadow);
 
@@ -141,10 +141,6 @@ int DEBUG_MODE = 0;
 
 void main()
 {
-
-    vec4 alph_test = texture(TEXTURE, UV);
-    if (alph_test.a < 0.1) discard;
-
     // Compute normalized light-space depth once
     float depth_norm = clamp(FRAG_POS_LIGHT_SPACE.z / FRAG_POS_LIGHT_SPACE.w * 0.5 + 0.5, 0.0, 1.0);
 

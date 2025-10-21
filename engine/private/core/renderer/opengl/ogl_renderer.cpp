@@ -327,7 +327,7 @@ void OpenglRenderer::setup_cubemap() {
 // TODO: refactor this when make the Framebuffer class
 Uint32 shadowFBO   = 0;
 Uint32 shadowTexID = 0;
-Uint32 shadowWidth = 2048, shadowHeight = 2048;
+Uint32 shadowWidth = 8192, shadowHeight = 8192;
 
 
 bool OpenglRenderer::initialize(SDL_Window* window) {

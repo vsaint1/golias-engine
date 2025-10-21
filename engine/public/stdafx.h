@@ -14,7 +14,7 @@
 #define FLECS_META
 #define FLECS_CPP
 #define FLECS_PIPELINE
-#include "flecs.h"
+#include <flecs/flecs.h>
 
 #include <string>
 #include <unordered_map>

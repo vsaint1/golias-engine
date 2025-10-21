@@ -16,13 +16,14 @@ if (NOT EXISTS ${ASSETS_FOLDER})
     message(FATAL_ERROR "Resources folder not found: ${ASSETS_FOLDER}")
 endif ()
 
+message(STATUS "Using assets folder: ${ASSETS_FOLDER}")
 
 
 # =========================================================
 #  PLATFORM SPECIFIC CONFIGURATION
 # =========================================================
 if (UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC -Wall")
 endif ()
 
 if (APPLE)
@@ -61,8 +62,6 @@ if (ANDROID)
     set_target_properties(${PROJECT_NAME} PROPERTIES
             OUTPUT_NAME "client"
             SUFFIX ".so")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -fexceptions -fPIC -Wall")
 
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 endif ()

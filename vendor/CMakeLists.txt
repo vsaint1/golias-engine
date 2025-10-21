@@ -58,5 +58,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
     lua
     sol2
     assimp
-    flecs_static
+    flecs
 )
