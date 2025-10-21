@@ -102,12 +102,14 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
 
-   
+    // TODO: find other solution for MSAA on OpenGLES
+#if !defined(SDL_PLATFORM_ANDROID) || !defined(SDL_PLATFORM_IOS) || !defined(SDL_PLATFORM_EMSCRIPTEN)
     if (renderer_config.backend == Backend::GL_COMPATIBILITY) {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);  // 8x MSAA
         
     }
+#endif
 
     app_win.width  = window_w;
     app_win.height = window_h;

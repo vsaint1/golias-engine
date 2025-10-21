@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    
+
     auto& world = GEngine->get_world();
 
 
@@ -38,15 +38,15 @@ int main(int argc, char* argv[]) {
         world.entity("MainCamera").set<Transform3D>({.position = {0, 5, 10}, .rotation = {-0.4f, 0, 0}}).add<Camera3D>().child_of(player);
 
 
-    // for (int i = 0; i < 5; i++) {
-    //     for (int j = 0; j < 5; j++) {
-    //         auto godette = world.entity()
-    //                            .set<Model>({.path = "res://sprites/obj/godette/godette.glb"})
-    //                            .set<Transform3D>({.position = {-10 + i * 2, 0, -5 + j * 2}, .rotation = {0, randf() * 360, 0}})
-    //                            .set<Animation3D>({.current_animation = 23})
-    //                            .child_of(scene);
-    //     }
-    // }
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            auto godette = world.entity()
+                               .set<Model>({.path = "res://sprites/obj/godette/godette.glb"})
+                               .set<Transform3D>({.position = {-10 + i * 2, 0, -5 + j * 2}, .rotation = {0, randf() * 360, 0}})
+                               .set<Animation3D>({.current_animation = 23})
+                               .child_of(scene);
+        }
+    }
 
 
     auto nagon = world.entity("Nagon")

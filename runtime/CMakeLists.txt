@@ -53,13 +53,15 @@ file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_S
 # ANDROID
 # -----------------------------
 if (ANDROID)
-    set(CMAKE_ANDROID_PACKAGE_NAME ${APP_IDENTIFIER})
-    set(CMAKE_ANDROID_VERSION_NAME ${APP_VERSION})
-    set(CMAKE_ANDROID_VERSION_CODE 1)
 
     file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
 
     add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ANDROID_FILES})
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+            OUTPUT_NAME "client"
+            SUFFIX ".so")
+
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 endif ()
 

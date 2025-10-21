@@ -5,6 +5,8 @@ project(engine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
+add_definitions(-DENGINE_VERSION="${ENGINE_VERSION}")
+
 file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp" "private/*.c")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/renderer/.mm")

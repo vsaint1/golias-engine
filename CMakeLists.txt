@@ -9,16 +9,23 @@ set(CMAKE_C_STANDARD 99)
 # OUTPUT DIRECTORIES
 # TODO: separate the server and client output directories
 # =========================================================
+set(CMAKE_DEBUG_POSTFIX "")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
+
+if (ANDROID)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/templates/android/app/src/main/jniLibs/${ANDROID_ABI}")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/templates/android/app/src/main/jniLibs/${ANDROID_ABI}")
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(ENGINE_VERSION "1.0.0")
+set(ENGINE_VERSION "0.0.5")
 
-add_definitions(-DENGINE_VERSION_STR="${ENGINE_VERSION}")
+string(TIMESTAMP BUILD_TS "%Y-%m-%d %H:%M")
+message("Ember Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version ${ENGINE_VERSION} | Date: ${BUILD_TS}")
 
-message("Ember Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version ${ENGINE_VERSION} | Date: ${CMAKE_BUILD_DATE}")
 # =========================================================
 # ENGINE CONFIGURATION
 # TODO: build client shared and server static
