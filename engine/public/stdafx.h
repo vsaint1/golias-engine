@@ -1,7 +1,6 @@
 #pragma once
 #define NOMINMAX
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <chrono>
 #include <stdio.h>
@@ -73,3 +72,4 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 
 #include "nuklear_include.h"
 
+#include <stb_image.h>

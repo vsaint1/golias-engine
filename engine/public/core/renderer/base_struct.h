@@ -98,8 +98,9 @@ public:
     Uint32 id  = -1;
     int width  = 0;
     int height = 0;
+    int pitch = 0; /// Number of bytes in a row of pixel data
     std::string_view path;
-    SDL_Surface* surface = nullptr;
+    void* pixels      = nullptr; /// Raw pixel data before uploading to GPU **MUST** be freed after upload
 
 
     Texture() = default;

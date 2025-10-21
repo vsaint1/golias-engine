@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
                      .child_of(scene);
 
     auto barrel = world.entity()
-                      .set<Model>({.path = "res://sprites/obj/wine_barrel_01_4k.obj"})
+                      .set<Model>({.path = "res://sprites/obj/sponza.obj"})
                       .set<Transform3D>({.position = {0, 0, 5}})
                       .child_of(scene);
 
@@ -79,6 +79,8 @@ int main(int argc, char* argv[]) {
     //                        })
     //                        .child_of(scene);
     // }
+
+
     auto car = world.entity().set<Model>({.path = "res://sprites/obj/Car.obj"}).set<Transform3D>({.position = {-40, 0, 0}}).child_of(scene);
 
 
