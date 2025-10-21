@@ -333,19 +333,19 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
-        /* GLES 3.0 -> GLSL: 300 */
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    /* GLES 3.0 -> GLSL: 300 */
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 
 #elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
 
-        /* OPENGL 3.3 -> GLSL: 330*/
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    /* OPENGL 3.3 -> GLSL: 330*/
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
 
 #endif
@@ -453,12 +453,12 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexID, 0);
 
-    glDrawBuffer(GL_NONE);
+    glDrawBuffers(0, nullptr);
     glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         LOG_ERROR("Shadow Framebuffer not complete!");
-    }else{
+    } else {
         LOG_INFO("Shadow Framebuffer completed");
     }
 
@@ -523,8 +523,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     texture->id     = texID;
     _textures[name] = texture;
 
-    LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)",
-              name.c_str(), texID, texture->width, texture->height);
+    LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)", name.c_str(), texID, texture->width, texture->height);
 
     SDL_DestroySurface(texture->surface);
     texture->surface = nullptr;
@@ -557,9 +556,9 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
 }
 
 std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
-    auto ogl_mesh  = std::make_unique<OpenglMesh>();
+    auto ogl_mesh = std::make_unique<OpenglMesh>();
 
-    parse_meshes(mesh, scene, base_dir,*ogl_mesh);
+    parse_meshes(mesh, scene, base_dir, *ogl_mesh);
 
     // TODO: we should create a parse_materials function to reduce code duplication
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
@@ -589,7 +588,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
             } else {
                 // Load external texture file
-                const std::string texture_path = base_dir + texPathStr;
+                const std::string texture_path     = base_dir + texPathStr;
                 ogl_mesh->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
             }
         }
@@ -597,7 +596,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
     std::vector<glm::ivec4> bone_ids;
     std::vector<glm::vec4> bone_weights;
-    parse_bones(mesh, bone_ids, bone_weights,*ogl_mesh);
+    parse_bones(mesh, bone_ids, bone_weights, *ogl_mesh);
 
     // TODO: improve this setup
     glGenVertexArrays(1, &ogl_mesh->vao);
@@ -711,12 +710,12 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glm::vec3 lightDir = -to_light;
 
     // Larger orthographic bounds to capture full scene (adjust these if shadows get cut off)
-    float shadow_extent = 120.0f;  // Increased from 80 to capture more
+    float shadow_extent           = 120.0f; // Increased from 80 to capture more
     glm::mat4 orthgonalProjection = glm::ortho(-shadow_extent, shadow_extent, -shadow_extent, shadow_extent, 0.1f, 1000.0f);
     glm::mat4 lightView           = glm::lookAt(light_position, scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 lightProjection     = orthgonalProjection * lightView;
 
-glDisable(GL_MULTISAMPLE);
+    glDisable(GL_MULTISAMPLE);
 #pragma region SHADOW_PASS
     glEnable(GL_DEPTH_TEST);
 
@@ -783,7 +782,7 @@ glDisable(GL_MULTISAMPLE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #pragma endregion
 
-glEnable(GL_MULTISAMPLE);
+    glEnable(GL_MULTISAMPLE);
 #pragma region RENDER_PASS
 
     const auto& window = GEngine->get_config().get_window();
@@ -923,7 +922,6 @@ glEnable(GL_MULTISAMPLE);
     draw_environment(view, projection);
 
 #pragma endregion
-
 }
 
 
