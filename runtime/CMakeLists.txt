@@ -62,6 +62,8 @@ if (ANDROID)
             OUTPUT_NAME "client"
             SUFFIX ".so")
 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -frtti -fexceptions -fPIC -Wall")
+
     target_link_libraries(${PROJECT_NAME} PUBLIC android log GLESv3 m dl)
 endif ()
 

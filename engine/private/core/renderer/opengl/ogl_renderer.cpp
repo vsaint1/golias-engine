@@ -330,24 +330,7 @@ Uint32 shadowWidth = 2048, shadowHeight = 2048;
 
 bool OpenglRenderer::initialize(SDL_Window* window) {
 
-#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
-    /* GLES 3.0 -> GLSL: 300 */
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-
-#elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
-
-    /* OPENGL 3.3 -> GLSL: 330*/
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
-
-
-#endif
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
@@ -376,11 +359,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     _context = glContext;
     _window  = window;
 
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-
-    
 
     SDL_GL_SetSwapInterval(0);
 
@@ -432,9 +410,9 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     int msaa_buffers = 0, msaa_samples = 0;
     SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &msaa_buffers);
     SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &msaa_samples);
-    LOG_INFO("MSAA: %dx (buffers=%d, samples=%d) %s", msaa_samples, msaa_buffers, msaa_samples, 
+    LOG_INFO("MSAA: %dx (buffers=%d, samples=%d) %s", msaa_samples, msaa_buffers, msaa_samples,
              glIsEnabled(GL_MULTISAMPLE) ? "ENABLED" : "DISABLED");
-    
+
     // glEnable(GL_STENCIL_TEST);
     // glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -451,13 +429,14 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
 
     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    
+
     LOG_INFO("Shadow Map: %dx%d with GL_LINEAR filtering for soft shadows", shadowWidth, shadowHeight);
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexID, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
+
+//    glDrawBuffer(GL_NONE);
+//    glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         LOG_ERROR("Shadow Framebuffer not complete!");
@@ -505,7 +484,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
         LOG_ERROR("Failed to load texture surface: %s", name.c_str());
         return nullptr;
     }
-    
+
 
     texture->target = ETextureTarget::TEXTURE_2D;
 
@@ -523,8 +502,8 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     texture->id     = texID;
     _textures[name] = texture;
-    
-    LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)", 
+
+    LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)",
               name.c_str(), texID, texture->width, texture->height);
 
     SDL_DestroySurface(texture->surface);
@@ -565,11 +544,11 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
     // TODO: we should create a parse_materials function to reduce code duplication
     if (scene->mNumMaterials > mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
-        
+
         aiString texPath;
         if (mat->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == AI_SUCCESS) {
             std::string texPathStr = texPath.C_Str();
-            
+
 
             // Check if it's an embedded texture (path starts with '*')
             if (texPathStr[0] == '*') {
@@ -702,7 +681,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     // Simple directional light setup
     // Light direction: vector pointing FROM scene UP TO the sun
     glm::vec3 to_light = glm::normalize(glm::vec3(1.0f, 2.5f, 1.0f)); // Sun higher in sky
-    
+
     // TODO: Calculate dynamic scene bounds from all rendered objects
     // For now, using larger fixed bounds to capture more of the scene
     glm::vec3 scene_center   = glm::vec3(0.0f, 5.0f, 10.0f); // Center of your scene
@@ -791,7 +770,7 @@ glEnable(GL_MULTISAMPLE);
     glViewport(0, 0, window.width, window.height);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
     // LOG_DEBUG("MSAA during render: %s", glIsEnabled(GL_MULTISAMPLE) ? "ON" : "OFF");
 
     for (auto& [_, batch] : _instanced_batches) {
