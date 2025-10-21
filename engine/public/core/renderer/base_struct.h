@@ -95,11 +95,11 @@ protected:
 */
 class Texture {
 public:
-    Uint32 id             = -1;
-    int width             = 0;
-    int height            = 0;
+    Uint32 id  = -1;
+    int width  = 0;
+    int height = 0;
     std::string_view path;
-    SDL_Surface* surface  = nullptr;
+    SDL_Surface* surface = nullptr;
 
 
     Texture() = default;
@@ -116,12 +116,12 @@ public:
     virtual ~Texture() = default;
 
     ETextureTarget target = ETextureTarget::TEXTURE_2D;
-
 };
 
 struct Metallic {
-    glm::vec3 specular = glm::vec3(0.f); /// specular reflections
-    float value        = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
+    glm::vec3 specular               = glm::vec3(0.f); /// specular reflections
+    float value                      = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
+    std::shared_ptr<Texture> texture = nullptr;
 };
 
 /*!
@@ -137,9 +137,13 @@ struct Metallic {
 */
 struct Material {
     std::shared_ptr<Texture> albedo_texture = nullptr;
+    glm::vec3 ambient                       = glm::vec3(0.f);
     glm::vec3 albedo                        = glm::vec3(1.f);
     Metallic metallic                       = {};
-    float roughness                         = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
+
+    float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
+    float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent
+    int illumination_mode = 0; // TODO: define illumination modes
 
 
     bool is_valid() const;
@@ -176,11 +180,10 @@ constexpr int MAX_BONES = 250; /// I NEED TO UPGRADE OPENGL TO SUPPORT SSBO </3
 */
 struct Bone {
     std::string name;
-    glm::mat4 offset_matrix = glm::mat4(1.f); // Inverse bind pose matrix
+    glm::mat4 offset_matrix   = glm::mat4(1.f); // Inverse bind pose matrix
     glm::mat4 final_transform = glm::mat4(1.f); // Final transform to upload to GPU
 
     Bone() = default;
-
 };
 
 /*!
@@ -199,7 +202,7 @@ struct Mesh {
     size_t vertex_count = 0;
     size_t index_count  = 0;
 
-    std::vector<glm::vec3> vertices;
+    std::vector<Vertex> vertices;
     std::vector<Uint32> indices;
 
     std::unique_ptr<Material> material = std::make_unique<Material>();
@@ -276,3 +279,12 @@ protected:
 
     std::unordered_map<std::string, Uint32> _uniforms;
 };
+
+// Forward declaration
+class Renderer;
+
+void parse_material(aiMesh* ai_mesh, const aiScene* scene, const std::string& base_dir, Mesh& mesh_ref);
+
+void parse_meshes(aiMesh* ai_mesh, const aiScene* scene, const std::string& base_dir, Mesh& mesh_ref);
+
+void parse_bones(aiMesh* ai_mesh,std::vector<glm::ivec4>& bone_ids, std::vector<glm::vec4>& bone_weights, Mesh& mesh_ref  );

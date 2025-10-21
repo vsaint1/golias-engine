@@ -1,0 +1,52 @@
+name: build
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  emscripten:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Ubuntu SDL3 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git make \
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
+
+      - name: Install emscripten SDK
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "EMSDK=${{ github.workspace }}/emsdk" >> $GITHUB_ENV
+          echo "EM_CONFIG=${{ github.workspace }}/emsdk/.emscripten" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/emsdk" >> $GITHUB_PATH
+
+      - name: Configure emscripten and run preset (ENGINE)
+        run: |
+          source emsdk/emsdk_env.sh
+          emcmake cmake --preset=web-release \
+            -DBUILD_SERVER=OFF \
+            -DBUILD_RUNTIME=OFF \
+            -DBUILD_TESTING=ON
+
+      - name: Build emscripten
+        run: |
+          source emsdk/emsdk_env.sh
+          mkdir -p build/webgl/release
+          emmake cmake --build build/webgl/release

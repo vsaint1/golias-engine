@@ -1,17 +1,11 @@
-//def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
-//def buildAsApplication = !buildAsLibrary
-//
-//if (buildAsApplication) {
-//    apply plugin: 'com.android.application'
-//} else {
-//    apply plugin: 'com.android.library'
-//}
+def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+def buildAsApplication = !buildAsLibrary
 
-plugins {
-    id("com.android.application")
-    id("org.tboox.gradle-xmake-plugin") version "1.2.3"
+if (buildAsApplication) {
+    apply plugin: 'com.android.application'
+} else {
+    apply plugin: 'com.android.library'
 }
-
 
 android {
     compileSdkVersion 34
@@ -21,65 +15,61 @@ android {
     }
 
 
-    namespace  "com.vsaint1.ember_engine"
+    if (buildAsApplication) {
+        namespace  "com.emberengine.app"
+    }
 
     defaultConfig {
-        applicationId 'com.vsaint1.ember_engine'
-        minSdk 28
-        targetSdk 34
+        minSdkVersion 28
+        targetSdkVersion 34
         versionCode 1
-        versionName '1.0'
-
+        versionName "1.0"
         externalNativeBuild {
-            xmake {
-                sdkver 28
-                path '../../../xmake.lua'
-
-                logLevel 'verbose'
-                abiFilters  'x86_64'
-                targets 'runtime'
+            cmake {
+                arguments "-DANDROID_APP_PLATFORM=android-28", "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=ON"
             }
         }
     }
 
-
     buildTypes {
-
         debug {
             applicationIdSuffix ".debug"
             debuggable true
             externalNativeBuild {
-                xmake {
-                    buildMode 'debug'
+                cmake {
+                    // abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' // DETECT AUTO
+
                 }
             }
         }
-
         release {
             minifyEnabled false
             debuggable false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             externalNativeBuild {
-                xmake {
-                    buildMode 'release'
+                cmake {
+                    abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' // ALL
 
                 }
             }
         }
     }
 
-
-//    applicationVariants.all { variant ->
-//        tasks["merge${variant.name.capitalize()}Assets"]
-//                .dependsOn("xmakeBuild${variant.name.capitalize()}")
-//    }
+    applicationVariants.all { variant ->
+        tasks["merge${variant.name.capitalize()}Assets"]
+                .dependsOn("externalNativeBuild${variant.name.capitalize()}")
+    }
 
     if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
-
         sourceSets.main {
             jniLibs.srcDir 'libs'
         }
-
+        externalNativeBuild {
+            cmake {
+                path "../../../CMakeLists.txt"
+                version "3.22.1"
+            }
+        }
 
     }
 
@@ -91,25 +81,22 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    ndkVersion '27.0.12077973'
-    buildToolsVersion '34.0.0'
 
-//    if (buildAsLibrary) {
-//        libraryVariants.all { variant ->
-//            variant.outputs.each { output ->
-//                def outputFile = output.outputFile
-//                if (outputFile != null && outputFile.name.endsWith(".aar")) {
-//                    def fileName = "org.libsdl.app.aar";
-//                    output.outputFile = new File(outputFile.parent, fileName);
-//                }
-//            }
-//        }
-//    }
+    if (buildAsLibrary) {
+        libraryVariants.all { variant ->
+            variant.outputs.each { output ->
+                def outputFile = output.outputFile
+                if (outputFile != null && outputFile.name.endsWith(".aar")) {
+                    def fileName = "org.libsdl.app.aar";
+                    output.outputFile = new File(outputFile.parent, fileName);
+                }
+            }
+        }
+    }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
 }
 
 tasks.register('copyDependencies') {
@@ -120,7 +107,7 @@ tasks.register('copyDependencies') {
     }
 
     copy {
-        from '../../../res'
+        from '../../res'
         into 'src/main/res/drawable'
         include 'icon.png'
     }

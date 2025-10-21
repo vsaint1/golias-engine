@@ -24,7 +24,7 @@ void Logger::initialize(const char* app_identifier) {
     logging._thread         = SDL_CreateThread(fn_thread, "LogThread", &logging);
 }
 
-void Logger::push(const std::string& formatted_log) {
+void Logger::push(std::string_view formatted_log) {
 
     if (!_is_running || _thread == nullptr) {
         return;
@@ -98,14 +98,13 @@ void Logger::log_thread() {
         _condition.wait(lock, [this]() { return !_log_queue.empty() || !_is_running; });
 
         while (!_log_queue.empty()) {
-            std::string msg = _log_queue.front();
+            auto& msg = _log_queue.front();
+
             _log_queue.pop_front();
 
             lock.unlock();
 
-            msg.append("\n");
-
-            SDL_WriteIO(file, msg.c_str(), msg.size());
+            SDL_WriteIO(file, msg.data(), msg.size());
 
             lock.lock();
         }

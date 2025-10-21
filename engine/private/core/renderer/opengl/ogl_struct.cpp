@@ -95,6 +95,8 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
     if (!success) {
         LOG_CRITICAL("Shader compilation failed, deleting shader");
         glDeleteShader(shader);
+        exit(EXIT_FAILURE);
+
         return 0;
     }
 
@@ -275,6 +277,7 @@ GLuint gl_texture_target_cast(ETextureTarget target) {
 void OpenglTexture::bind(Uint32 slot) {
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(gl_texture_target_cast(target), id);
+    // LOG_DEBUG("Binding texture ID %d to slot %d", id, slot);
 }
 
 OpenglTexture::~OpenglTexture() {

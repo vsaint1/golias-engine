@@ -53,6 +53,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_VERBOSE);
 
+
     if (!_config.load()) {
         LOG_CRITICAL("Failed to load config file (project.xml)");
     }
@@ -72,6 +73,14 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     if (renderer_config.backend == Backend::GL_COMPATIBILITY) {
         window_flags |= SDL_WINDOW_OPENGL;
+
+
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     }
 
     auto& app_win = _config.get_window();
@@ -101,8 +110,28 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "1");
 
+
+
     app_win.width  = window_w;
     app_win.height = window_h;
+
+    int driver_count = SDL_GetNumRenderDrivers();
+
+    if (driver_count < 1) {
+        LOG_ERROR("No render drivers available");
+        return false;
+    }
+
+    std::string renderer_list;
+    renderer_list.reserve(driver_count * 16);
+    for (int i = 0; i < driver_count; ++i) {
+        const char* name = SDL_GetRenderDriver(i);
+        renderer_list += name;
+        renderer_list += (i < driver_count - 1) ? ", " : "";
+    }
+
+    LOG_INFO("Available Backends Count (%d), List %s", driver_count, renderer_list.c_str());
+
 
     _window = SDL_CreateWindow(app_config.name, window_w, window_h, window_flags);
 
@@ -129,22 +158,6 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
         Logger::initialize();
     }
 
-    int driver_count = SDL_GetNumRenderDrivers();
-
-    if (driver_count < 1) {
-        LOG_ERROR("No render drivers available");
-        return false;
-    }
-
-    std::string renderer_list;
-    renderer_list.reserve(driver_count * 16);
-    for (int i = 0; i < driver_count; ++i) {
-        const char* name = SDL_GetRenderDriver(i);
-        renderer_list += name;
-        renderer_list += (i < driver_count - 1) ? ", " : "";
-    }
-
-    LOG_INFO("Available Backends Count (%d), List %s", driver_count, renderer_list.c_str());
 
     LOG_INFO("Backend Selected: %s", _config.get_renderer_device().get_backend_str());
 
@@ -180,7 +193,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     _timer.start();
 
-    SDL_ShowWindow(_window);
+    // SDL_ShowWindow(_window); // now shown after renderer  setup
 
     is_running = true;
 

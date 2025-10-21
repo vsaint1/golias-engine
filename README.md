@@ -14,9 +14,10 @@
 ### 3D Features
 - [x] **Model Loading** (OBJ, FBX, GLTF/GLB)
 - [ ] **PBR (Physically Based Rendering)**
+- [x] **Blinn-Phong Shading Model**
 - [ ] **3D Physics** (coming soon)
 - [ ] **Lighting System** (Directional, Point, Spot)
-- [ ] **Shadow Mapping**
+- [x] **Shadow Mapping**
 - [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)
 - [x] **Animation System** (Skeletal Animation)
 - [ ] **Terrain System** (coming soon)

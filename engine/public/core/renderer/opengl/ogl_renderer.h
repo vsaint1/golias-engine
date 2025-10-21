@@ -20,6 +20,7 @@ public:
 
     std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex);
     
+    std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) override;
 
     void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source, bool flip_h,
                       bool flip_v, const glm::vec4& color) override;
@@ -66,14 +67,15 @@ private:
 
     void setup_cubemap();
 
-protected:
-    std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) override;
-
     OpenglMesh* skybox_mesh               = nullptr;
     std::shared_ptr<OpenglMesh> cube_mesh = nullptr;
 
     OpenglShader* default_shader = nullptr;
     OpenglShader* skybox_shader  = nullptr;
+    OpenglShader* shadow_shader  = nullptr;
+
+protected:
+
 
     std::vector<Tokens> parse_text(const std::string& text) override;
 

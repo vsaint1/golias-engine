@@ -15,7 +15,7 @@
 #define FLECS_META
 #define FLECS_CPP
 #define FLECS_PIPELINE
-#include <flecs.h>
+#include "flecs.h"
 
 #include <string>
 #include <unordered_map>
@@ -29,7 +29,7 @@
 
 #include <glad.h>
 
-#include <nlohmann/json.hpp>
+#include "json.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>

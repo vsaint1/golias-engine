@@ -51,6 +51,13 @@ public:
 
     std::shared_ptr<Texture> load_texture(const std::string& name, const std::string& path = "", const aiTexture* ai_embedded_tex = nullptr);
     
+    
+    virtual std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
+        LOG_WARN("load_meshes not implemented for this renderer");
+        return nullptr;
+    }
+
+    
     virtual void draw_texture(const Transform2D& transform, Texture* texture, const glm::vec4& dest, const glm::vec4& source,
                               bool flip_h = false, bool flip_v = false, const glm::vec4& color = glm::vec4(1, 1, 1, 1)) = 0;
 
@@ -113,11 +120,6 @@ public:
 
 protected:
     SDL_Window* _window = nullptr;
-
-    virtual std::unique_ptr<Mesh> load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
-        LOG_WARN("load_meshes not implemented for this renderer");
-        return nullptr;
-    }
 
     std::string vformat(const char* fmt, va_list args);
 
