@@ -178,8 +178,8 @@ void SDLRenderer::draw_polygon(const Transform2D& transform, const std::vector<g
     std::vector<SDL_FPoint> pts;
     for (const auto& v : points) {
         float cosr = cos(transform.rotation), sinr = sin(transform.rotation);
-        float x = v.x * transform.scale.x, y = v.y * transform.scale.y;
-        float rx = x * cosr - y * sinr, ry = x * sinr + y * cosr;
+        float x    = v.x * transform.scale.x, y    = v.y * transform.scale.y;
+        float rx   = x * cosr - y * sinr, ry       = x * sinr + y * cosr;
         pts.push_back({transform.position.x + rx, transform.position.y + ry});
     }
 
@@ -257,9 +257,9 @@ bool SDLRenderer::load_font(const std::string& name, const std::string& path, in
     return true;
 }
 
-std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path,const aiTexture* ai_embedded_tex) {
+std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
 
-     if (_textures.contains(name)) {
+    if (_textures.contains(name)) {
         return _textures[name];
     }
 
@@ -268,8 +268,8 @@ std::shared_ptr<Texture> SDLRenderer::load_texture(const std::string& name, cons
 
     _textures[name] = texture;
 
-    SDL_DestroySurface(texture->surface);
-    texture->surface = nullptr; 
+    free(texture->pixels);
+    texture->pixels = nullptr;
 
 
     return texture;

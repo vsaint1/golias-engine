@@ -3,7 +3,6 @@
 #include "core/io/assimp_io.h"
 #include <core/engine.h>
 
-
 void Renderer::set_default_fonts(const std::string& text_font, const std::string& emoji_font) {
     _default_font_name = text_font;
     _emoji_font_name   = emoji_font;
@@ -19,114 +18,102 @@ std::string Renderer::vformat(const char* fmt, va_list args) {
 }
 
 std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const std::string& path, const aiTexture* ai_embedded_tex) {
-
-
-    SDL_Surface* surf = nullptr;
+    int width = 0, height = 0, channels = 0;
+    unsigned char* pixels = nullptr;
 
     if (ai_embedded_tex) {
-
         LOG_INFO("Loading embedded texture: %s (%ux%u)", name.c_str(), ai_embedded_tex->mWidth, ai_embedded_tex->mHeight);
 
-
-        // (mHeight == 0 means compressed)
+        // Compressed texture (e.g., PNG/JPG)
         if (ai_embedded_tex->mHeight == 0) {
-            // Compressed texture (e.g., PNG, JPEG)
-            SDL_IOStream* rw = SDL_IOFromConstMem(ai_embedded_tex->pcData, ai_embedded_tex->mWidth);
-            if (!rw) {
-                LOG_ERROR("Failed to create SDL_IOStream from embedded texture data");
-                return nullptr;
-            }
+            const unsigned char* data = reinterpret_cast<const unsigned char*>(ai_embedded_tex->pcData);
+            size_t data_size = ai_embedded_tex->mWidth;
 
-            surf = IMG_Load_IO(rw, true);
-            if (!surf) {
-                LOG_ERROR("Failed to load compressed embedded texture: %s", SDL_GetError());
+            pixels = stbi_load_from_memory(data, static_cast<int>(data_size), &width, &height, &channels, STBI_rgb_alpha);
+
+            if (!pixels) {
+                LOG_ERROR("Failed to decode embedded compressed texture: %s", stbi_failure_reason());
                 return nullptr;
             }
         } else {
-            // Uncompressed ARGB8888 texture
-            surf = SDL_CreateSurface(ai_embedded_tex->mWidth, ai_embedded_tex->mHeight, SDL_PIXELFORMAT_RGBA32);
-            if (!surf) {
-                LOG_ERROR("Failed to create surface for embedded texture: %s", SDL_GetError());
+            // Uncompressed ARGB8888 - convert to match stbi format
+            width = ai_embedded_tex->mWidth;
+            height = ai_embedded_tex->mHeight;
+            channels = 4;
+
+            pixels = (unsigned char*)SDL_malloc(width * height * 4);
+
+            if (!pixels) {
+                LOG_ERROR("Failed to allocate memory for embedded uncompressed texture");
                 return nullptr;
             }
 
-            aiTexel* texels = ai_embedded_tex->pcData;
-            Uint32* pixels  = (Uint32*) surf->pixels;
-
-            for (unsigned int i = 0; i < ai_embedded_tex->mWidth * ai_embedded_tex->mHeight; i++) {
-                // ARGB to RGBA
-                Uint8 r   = texels[i].r;
-                Uint8 g   = texels[i].g;
-                Uint8 b   = texels[i].b;
-                Uint8 a   = texels[i].a;
-                pixels[i] = SDL_MapSurfaceRGBA(surf, r, g, b, a);
+            const aiTexel* texels = ai_embedded_tex->pcData;
+            for (unsigned int i = 0; i < width * height; ++i) {
+                pixels[i * 4 + 0] = texels[i].r;
+                pixels[i * 4 + 1] = texels[i].g;
+                pixels[i * 4 + 2] = texels[i].b;
+                pixels[i * 4 + 3] = texels[i].a;
             }
         }
-    } else {
-
-
+    }else {
         LOG_INFO("Loading texture: %s", path.c_str());
 
-        FileAccess file_access(path, ModeFlags::READ);
+        FileAccess file(path, ModeFlags::READ);
 
-        if (!file_access.is_open()) {
+        if (!file.is_open()) {
             LOG_ERROR("Failed to open texture file: %s", path.c_str());
             return nullptr;
         }
 
-        surf = IMG_Load_IO(file_access.get_handle(), false);
-        // SDL_Surface* surf = IMG_Load(path.c_str());
+        const auto& buffer = file.get_file_as_bytes();
 
-        if (!surf) {
-            LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), SDL_GetError());
+        pixels = stbi_load_from_memory((stbi_uc*)buffer.data(),buffer.size(), &width, &height, &channels, STBI_rgb_alpha);
+
+        if (!pixels) {
+            LOG_ERROR("Failed to load texture: %s, Error: %s", path.c_str(), stbi_failure_reason());
             return nullptr;
         }
+
     }
 
     std::shared_ptr<Texture> texture = nullptr;
-
     switch (GEngine->get_config().get_renderer_device().backend) {
-    case Backend::GL_COMPATIBILITY:
-        texture = std::make_shared<OpenglTexture>();
-        break;
-    case Backend::AUTO:
-        texture = std::make_shared<SDLTexture>();
-        break;
-    case Backend::VK_FORWARD:
-        // texture = std::make_shared<VulkanTexture>();
-        LOG_ERROR("Vulkan texture loading not implemented yet");
-        break;
-    case Backend::DIRECTX12:
-        // texture = std::make_shared<DirectX12Texture>();
-        LOG_ERROR("DirectX12 texture loading not implemented yet");
-        break;
-    case Backend::METAL:
-        // texture = std::make_shared<MetalTexture>();
-        LOG_ERROR("Metal texture loading not implemented yet");
-        break;
-    default:
-        texture = std::make_shared<Texture>();
-        break;
+        case Backend::GL_COMPATIBILITY:
+            texture = std::make_shared<OpenglTexture>();
+            break;
+        case Backend::AUTO:
+            texture = std::make_shared<SDLTexture>();
+            break;
+        case Backend::VK_FORWARD:
+            LOG_ERROR("Vulkan texture loading not implemented yet");
+            break;
+        case Backend::DIRECTX12:
+            LOG_ERROR("DirectX12 texture loading not implemented yet");
+            break;
+        case Backend::METAL:
+            LOG_ERROR("Metal texture loading not implemented yet");
+            break;
+        default:
+            texture = std::make_shared<Texture>();
+            break;
     }
 
+    constexpr int BYTES_PER_PIXEL = 4;
 
-    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
+    texture->width = width;
+    texture->height = height;
+    texture->path = path;
+    texture->pitch = width * BYTES_PER_PIXEL;
+    texture->pixels = pixels; // THIS: MUST be freed after uploading to GPU
 
-    if (!surf) {
-        LOG_ERROR("Failed to convert texture to RGBA32: %s", SDL_GetError());
-        SDL_DestroySurface(surf);
-        return nullptr;
-    }
-
-    texture->width   = surf->w;
-    texture->height  = surf->h;
-    texture->path    = path;
-    texture->surface = surf;
-
-    LOG_INFO("Texture Info: Size %dx%d | Path: %s | Embedded: %s", texture->width, texture->height, texture->path.data(),
+    LOG_INFO("Texture Info: Size %dx%d | Path: %s | Embedded: %s",
+             texture->width, texture->height, texture->path.data(),
              ai_embedded_tex != nullptr ? "Yes" : "No");
+
     return texture;
 }
+
 
 
 std::shared_ptr<Model> Renderer::load_model(const char* path) {

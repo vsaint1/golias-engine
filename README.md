@@ -90,17 +90,19 @@
 | 3D Animation Demo (Android)    | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo  |
 ---
 
-## 🛠 Building for WASM
+## 🛠 Building for WebGL
 
 To build the Web version of the engine, you need [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) installed and activated.
 
+> ⚠️ **Note:** Make sure to source the `emsdk_env.sh` script to set up the environment variables before building.
+
+Then, run the following commands in your terminal:
 ```bash
 git clone https://github.com/vsaint1/ember_engine.git
 cd ember_engine
+git submodule update --init --recursive
 
+emcmake cmake --preset=web-debug
 
-xmake f -p wasm
-xmake build
-
-
-python3 -m http.server -b 0.0.0.0 8080
+emmake cmake --build build/webgl/debug
+```

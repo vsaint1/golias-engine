@@ -60,6 +60,10 @@ int main(int argc, char* argv[]) {
                       .set<Transform3D>({.position = {0, 0, 5}})
                       .child_of(scene);
 
+    auto sponza = world.entity()
+                      .set<Model>({.path = "res://sprites/obj/sponza.obj"})
+                      .set<Transform3D>({.position = {0, 0, 5}})
+                      .child_of(scene);
 
     // for (int i = 0; i < 25; i++) {
     //     float x = -15.0f + i * 3.0f;

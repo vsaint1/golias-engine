@@ -36,7 +36,6 @@ add_subdirectory(SDL EXCLUDE_FROM_ALL)
 add_subdirectory(tinyxml)
 add_subdirectory(glm)
 add_subdirectory(json)
-add_subdirectory(SDL_image)
 add_subdirectory(SDL_ttf)
 add_subdirectory(lua)
 add_subdirectory(sol2)
@@ -52,7 +51,6 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
     stb_image
     mini_audio
     SDL3::SDL3
-    SDL3_image-static
     SDL3_ttf-static
     tinyxml
     glm

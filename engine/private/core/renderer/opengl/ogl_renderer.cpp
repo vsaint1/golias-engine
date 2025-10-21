@@ -56,9 +56,9 @@ std::shared_ptr<OpenglMesh> generate_cube_mesh() {
     };
 
     std::vector<unsigned int> indices = {
-        0,  1,  2,  0,  2,  3, // Front
-        4,  5,  6,  4,  6,  7, // Back
-        8,  9,  10, 8,  10, 11, // Left
+        0, 1, 2, 0, 2, 3, // Front
+        4, 5, 6, 4, 6, 7, // Back
+        8, 9, 10, 8, 10, 11, // Left
         12, 13, 14, 12, 14, 15, // Right
         16, 17, 18, 16, 18, 19, // Top
         20, 21, 22, 20, 22, 23 // Bottom
@@ -108,28 +108,27 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
         return cubemap_texture;
     }
 
-    SDL_Surface* surf = IMG_Load_IO(file.get_handle(), false);
+    int W, H, channels;
 
-    if (!surf) {
-        LOG_ERROR("Failed to load %s -> %s", atlasPath.c_str(), SDL_GetError());
+    stbi_uc* pixels = stbi_load_from_memory(
+        (stbi_uc*) file.get_file_as_bytes().data(),
+        file.get_file_as_bytes().size(),
+        &W,
+        &H,
+        &channels,
+        STBI_rgb_alpha
+        );
+
+    if (!pixels) {
+        LOG_ERROR("Failed to load texture from file %s", atlasPath.c_str());
         return cubemap_texture;
     }
 
-    LOG_DEBUG("Loaded surface (pre-convert): %dx%d, Pitch: %d", surf->w, surf->h, surf->pitch);
-
-    surf = SDL_ConvertSurface(surf, SDL_PIXELFORMAT_RGBA32);
-    if (!surf) {
-        LOG_ERROR("Conversion failed %s", atlasPath.c_str());
-        return cubemap_texture;
-    }
-
-    const int W = surf->w;
-    const int H = surf->h;
-    LOG_DEBUG("Converted surface: %dx%d Pitch: %d BytesPerPixel: %d", W, H, surf->pitch, SDL_BYTESPERPIXEL(surf->format));
+    LOG_DEBUG("Converted surface: %dx%d Pitch: %d BytesPerPixel: %d", W, H, W * 4, 4);
 
     if (W <= 0 || H <= 0) {
         LOG_ERROR("Invalid surface dimensions %dx%d", W, H);
-        SDL_DestroySurface(surf);
+        stbi_image_free(pixels);
         return cubemap_texture;
     }
 
@@ -155,13 +154,13 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
         face_h = H / 3;
     } else {
         LOG_WARN("Unknown atlas layout (%dx%d).", W, H);
-        SDL_DestroySurface(surf);
+        stbi_image_free(pixels);
         return cubemap_texture;
     }
 
     if (face_w <= 0 || face_h <= 0) {
         LOG_ERROR("Invalid face dimensions computed: %dx%d", face_w, face_h);
-        SDL_DestroySurface(surf);
+        stbi_image_free(pixels);
         return cubemap_texture;
     }
 
@@ -186,7 +185,9 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
         faceRects[5] = SDL_Rect{2 * face_w, 1 * face_h, face_w, face_h}; // -Z
     } else {
         int fw = face_w, fh = face_h;
-        auto R       = [&](int cx, int cy) { return SDL_Rect{cx * fw, cy * fh, fw, fh}; };
+        auto R = [&](int cx, int cy) {
+            return SDL_Rect{cx * fw, cy * fh, fw, fh};
+        };
         faceRects[0] = R(2, 1); // +X
         faceRects[1] = R(0, 1); // -X
         faceRects[2] = R(1, 0); // +Y
@@ -220,14 +221,13 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
         const SDL_Rect& r = faceRects[i];
         if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) {
             LOG_ERROR("Face rect %d out of surface bounds: x=%d y=%d w=%d h=%d surface=%dx%d", i, r.x, r.y, r.w, r.h, W, H);
-            SDL_DestroySurface(surf);
+            stbi_image_free(pixels);
             return cubemap_texture;
         }
     }
 
-    Uint8* pixels           = static_cast<Uint8*>(surf->pixels);
-    int pitch               = surf->pitch;
-    const int bytesPerPixel = 4;
+    constexpr int BYTES_PER_PIXEL = 4;
+    int pitch               = W * BYTES_PER_PIXEL;
     const int surfaceBytes  = pitch * H;
 
     GLuint texID = 0;
@@ -235,7 +235,7 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
     glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
 
     // Allocate single reusable buffer for all faces (memory optimization)
-    std::vector<Uint8> faceData(face_w * face_h * bytesPerPixel);
+    std::vector<Uint8> faceData(face_w * face_h * BYTES_PER_PIXEL);
 
     for (int i = 0; i < 6; ++i) {
         const SDL_Rect& r = faceRects[i];
@@ -244,22 +244,22 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
         for (int y = 0; y < r.h; ++y) {
             int row = r.y + y;
             // compute byte offsets
-            long start = static_cast<long>(row) * pitch + static_cast<long>(r.x) * bytesPerPixel;
-            long end   = start + static_cast<long>(r.w) * bytesPerPixel;
+            long start = static_cast<long>(row) * pitch + static_cast<long>(r.x) * BYTES_PER_PIXEL;
+            long end   = start + static_cast<long>(r.w) * BYTES_PER_PIXEL;
 
             if (start < 0 || end > surfaceBytes) {
                 LOG_ERROR("Index out of bounds detected while copying face %d row %d: start=%ld end=%ld surfaceBytes=%d (rect x=%d y=%d "
                           "w=%d h=%d pitch=%d)",
                           i, y, start, end, surfaceBytes, r.x, r.y, r.w, r.h, pitch);
-                SDL_DestroySurface(surf);
+                stbi_image_free(pixels);
                 glDeleteTextures(1, &texID);
                 return cubemap_texture;
             }
 
             // copy one row
             Uint8* src = pixels + start;
-            Uint8* dst = faceData.data() + (y * r.w * bytesPerPixel);
-            SDL_memcpy(dst, src, r.w * bytesPerPixel);
+            Uint8* dst = faceData.data() + (y * r.w * BYTES_PER_PIXEL);
+            SDL_memcpy(dst, src, r.w * BYTES_PER_PIXEL);
         }
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -279,10 +279,12 @@ std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, 
     cubemap_texture->id     = texID;
     cubemap_texture->width  = face_w;
     cubemap_texture->height = face_h;
+    cubemap_texture->pitch = W * channels;
     cubemap_texture->path   = atlasPath;
     cubemap_texture->target = ETextureTarget::TEXTURE_CUBE_MAP;
 
-    SDL_DestroySurface(surf);
+    stbi_image_free(pixels);
+
     return cubemap_texture;
 }
 
@@ -291,17 +293,17 @@ void OpenglRenderer::setup_cubemap() {
 
     // CUBE MAP POS
     constexpr float skybox_vertices[] = {
-        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+        -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 
-        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
 
-        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+        -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
 
     skybox_mesh               = new OpenglMesh();
     skybox_mesh->vertex_count = 36;
@@ -500,7 +502,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     auto texture = Renderer::load_texture(name, path, ai_embedded_tex);
 
-    if (!texture || !texture->surface) {
+    if (!texture || !texture->pixels) {
         LOG_ERROR("Failed to load texture surface: %s", name.c_str());
         return nullptr;
     }
@@ -517,7 +519,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->surface->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture->width, texture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     texture->id     = texID;
@@ -525,8 +527,8 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 
     LOG_DEBUG("Successfully uploaded texture '%s' to GPU with ID=%u (size=%dx%d)", name.c_str(), texID, texture->width, texture->height);
 
-    SDL_DestroySurface(texture->surface);
-    texture->surface = nullptr;
+    free(texture->pixels);
+    texture->pixels = nullptr;
 
     return texture;
 }
