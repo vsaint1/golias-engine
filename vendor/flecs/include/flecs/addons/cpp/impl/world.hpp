@@ -40,7 +40,7 @@ inline void world::init_builtin_components() {
     rest::_::init(*this);
 #   endif
 #   ifdef FLECS_META
-    meta::_::init(*this);
+    // meta::_::init(*this);
 #   endif
 #   ifdef FLECS_SCRIPT
     script::_::init(*this);
