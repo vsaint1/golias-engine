@@ -430,16 +430,18 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-    LOG_INFO("Shadow Map: %dx%d with GL_LINEAR filtering for soft shadows", shadowWidth, shadowHeight);
+    LOG_INFO("Shadow Map: %dx%d with GL_LINEAR", shadowWidth, shadowHeight);
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowTexID, 0);
 
-//    glDrawBuffer(GL_NONE);
-//    glReadBuffer(GL_NONE);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         LOG_ERROR("Shadow Framebuffer not complete!");
+    }else{
+        LOG_INFO("Shadow Framebuffer completed");
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
