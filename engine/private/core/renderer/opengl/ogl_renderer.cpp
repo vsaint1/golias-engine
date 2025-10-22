@@ -746,6 +746,8 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glm::mat4 lightProjection     = orthgonalProjection * lightView;
 
     glDisable(GL_MULTISAMPLE);
+
+    glCullFace(GL_FRONT);
 #pragma region SHADOW_PASS
     glEnable(GL_DEPTH_TEST);
 
@@ -815,6 +817,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
+    glCullFace(GL_BACK);
 #pragma region RENDER_PASS
 
     const auto& window = GEngine->get_config().get_window();
