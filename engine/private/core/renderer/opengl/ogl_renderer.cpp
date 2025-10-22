@@ -559,6 +559,7 @@ void OpenglRenderer::draw_triangle_3d(const glm::vec3& v1, const glm::vec3& v2, 
 
 std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* scene, const std::string& base_dir) {
     auto ogl_mesh = std::make_unique<OpenglMesh>();
+    ogl_mesh->material->shader = default_shader;
 
     parse_meshes(mesh, scene, base_dir, *ogl_mesh);
 
@@ -594,6 +595,32 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
                 ogl_mesh->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
             }
         }
+
+        if (mat->GetTexture(aiTextureType_NORMALS, 0, &texPath) == AI_SUCCESS) {
+            std::string texPathStr = texPath.C_Str();
+
+            if (texPathStr[0] == '*') {
+                int texIndex = std::atoi(texPathStr.c_str() + 1);
+
+                if (texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures) {
+                    const aiTexture* embeddedTex = scene->mTextures[texIndex];
+
+                    texPathStr = base_dir + "embedded_normal_" + std::to_string(texIndex);
+
+                    ogl_mesh->material->normal_texture = load_texture(texPathStr, texPathStr, embeddedTex);
+                } else {
+                    LOG_WARN("Embedded normal texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
+                }
+
+            } else {
+                const std::string texture_path     = base_dir + texPathStr;
+                ogl_mesh->material->normal_texture = load_texture(texture_path, texture_path, nullptr);
+            }
+
+
+        }
+
+
     }
 
     std::vector<glm::ivec4> bone_ids;
@@ -696,6 +723,7 @@ void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* mode
         batch.bone_count      = bone_count;
     }
 }
+
 
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
@@ -816,7 +844,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         ogl_shader->set_value("LIGHT_PROJECTION", lightProjection);
 
         const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
-        if (!ogl_shader->is_valid() || !ogl_mesh) {
+        if (!ogl_shader->is_valid()) {
             continue;
         }
 
@@ -848,48 +876,13 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
 
-        glm::vec3 albedo   = glm::vec3(1.0f);
-        glm::vec3 ambient  = glm::vec3(0.0f);
-        glm::vec3 specular = glm::vec3(0.0f);
-        float metallic_val = 0.0f;
-        int use_texture    = 0;
+        mesh->material->bind();
 
-        // If the mesh has a valid material, use it
-        if (mesh->material && mesh->material->is_valid()) {
-            mesh->material->bind();
 
-            albedo       = mesh->material->albedo;
-            ambient      = mesh->material->ambient;
-            specular     = mesh->material->metallic.specular;
-            metallic_val = mesh->material->metallic.value;
-            use_texture  = mesh->material->albedo_texture ? 1 : 0;
-        }
-        // If material is invalid but exists (MODEL fallback)
-        else if (mesh->material && batch.command == EDrawCommand::MODEL) {
-            albedo       = mesh->material->albedo;
-            ambient      = mesh->material->ambient;
-            specular     = mesh->material->metallic.specular;
-            metallic_val = mesh->material->metallic.value;
-        }
 
-        ogl_shader->set_value("USE_TEXTURE", use_texture);
-        ogl_shader->set_value("material.albedo", albedo);
-        // ogl_shader->set_value("material.ambient", ambient);
-        // ogl_shader->set_value("material.metallic.specular", specular);
-        // ogl_shader->set_value("material.metallic.value", metallic_val);
-        // ogl_shader->set_value("material.roughness", 0.5f);
-
-        // Bind textures
-        if (use_texture && mesh->material && mesh->material->albedo_texture) {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, mesh->material->albedo_texture->id);
-            ogl_shader->set_value("TEXTURE", 0);
-        }
-
-        // Bind shadow map to texture unit 1
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, shadowTexID);
-        ogl_shader->set_value("SHADOW_TEXTURE", 1);
+        ogl_shader->set_value("SHADOW_TEXTURE", 2);
 
 
         // instanced model matrix (4 vec4)
@@ -941,6 +934,9 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
     auto& batch                  = _instanced_batches[cube_mesh.get()];
     batch.mesh                   = cube_mesh.get();
     batch.mesh->material->albedo = mesh.material.albedo;
+    batch.mesh->material->albedo_texture = mesh.material.albedo_texture;
+    batch.mesh->material->normal_texture = mesh.material.normal_texture;
+    batch.mesh->material->shader = default_shader;
     batch.shader                 = default_shader;
     batch.models.push_back(temp.get_model_matrix());
     batch.colors.push_back(mesh.material.albedo);
