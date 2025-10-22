@@ -747,7 +747,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
     glDisable(GL_MULTISAMPLE);
 
-    glCullFace(GL_FRONT);
+    // glCullFace(GL_FRONT);
 #pragma region SHADOW_PASS
     glEnable(GL_DEPTH_TEST);
 
@@ -883,6 +883,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
 
 
+        // TODO: refactor this to use FBO
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, shadowTexID);
         ogl_shader->set_value("SHADOW_TEXTURE", 2);

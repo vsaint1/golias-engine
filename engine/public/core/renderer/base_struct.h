@@ -114,7 +114,7 @@ public:
         return id != -1;
     }
 
-    virtual ~Texture() = default;
+    virtual ~Texture();
 
     ETextureTarget target = ETextureTarget::TEXTURE_2D;
 };
@@ -154,7 +154,7 @@ struct Material {
     bool is_valid() const;
 
     // TODO: Additional textures (normal, metallic, roughness, etc.) and properties
-    void bind();
+    void bind() const;
 };
 
 /*!

@@ -24,6 +24,13 @@ TTF_Font* Font::get_font() const {
     return _font;
 }
 
+// in case i forget xd
+Texture::~Texture() {
+    if (pixels != nullptr) {
+        free(pixels);
+        pixels = nullptr;
+    }
+}
 
 bool Material::is_valid() const {
     const bool albedo_valid = albedo_texture != nullptr && albedo_texture->is_valid();
@@ -33,7 +40,7 @@ bool Material::is_valid() const {
     return validated;
 }
 
-void Material::bind() {
+void Material::bind() const {
 
     if (shader && shader->is_valid()) {
 
@@ -47,32 +54,32 @@ void Material::bind() {
     }
 
     if (albedo_texture && albedo_texture->is_valid()) {
-        albedo_texture->bind();
+        albedo_texture->bind(ALBEDO_TEXTURE_UNIT);
         if (shader && shader->is_valid()) {
-            shader->set_value("TEXTURE", 0);
-            shader->set_value("USE_TEXTURE", true); // ALBEDO
+            shader->set_value("ALBEDO_TEXTURE", ALBEDO_TEXTURE_UNIT);
+            shader->set_value("USE_ALBEDO_TEXTURE", true);
 
         }
     } else {
         if (shader && shader->is_valid()) {
-            shader->set_value("USE_TEXTURE", false); // ALBEDO
+            shader->set_value("USE_ALBEDO_TEXTURE", false);
         }
     }
 
     if (normal_texture && normal_texture->is_valid()) {
-        normal_texture->bind(1);
+        normal_texture->bind(NORMAL_MAP_TEXTURE_UNIT);
         if (shader && shader->is_valid()) {
-            shader->set_value("NORMAL_TEXTURE", 1);
-            shader->set_value("USE_NORMAL_MAP", true);
+            shader->set_value("NORMAL_MAP_TEXTURE", NORMAL_MAP_TEXTURE_UNIT);
+            shader->set_value("USE_NORMAL_MAP_TEXTURE", true);
         }
     } else {
         if (shader && shader->is_valid()) {
-            shader->set_value("USE_NORMAL_MAP", false);
+            shader->set_value("USE_NORMAL_MAP_TEXTURE", false);
         }
     }
 
     // if (metallic.texture && metallic.texture->is_valid()) {
-    //     metallic.texture->bind(2);
+    //     metallic.texture->bind(METALLIC_TEXTURE_UNIT);
     // }
 }
 

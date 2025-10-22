@@ -6,8 +6,8 @@ in vec2 UV;
 in vec3 INSTANCE_COLOR;
 in vec4 FRAG_POS_LIGHT_SPACE;
 
-uniform sampler2D TEXTURE;
-uniform sampler2D NORMAL_TEXTURE;
+uniform sampler2D ALBEDO_TEXTURE;
+uniform sampler2D NORMAL_MAP_TEXTURE;
 uniform sampler2D SHADOW_TEXTURE;
 
 // DIRECTIONAL LIGHT (SUN)
@@ -30,8 +30,8 @@ struct Material {
 
 uniform Material material;
 
-uniform bool USE_TEXTURE;
-uniform bool USE_NORMAL_MAP;
+uniform bool USE_ALBEDO_TEXTURE;
+uniform bool USE_NORMAL_MAP_TEXTURE;
 
 
 float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
@@ -110,7 +110,7 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 
 vec3 calculate_normal_map(vec2 uv, vec3 normal_ws){
 
-    vec3 tangent_normal = texture(NORMAL_TEXTURE, UV).rgb * 2.0 - 1.0; // Convert from [0,1] to [-1,1]
+    vec3 tangent_normal = texture(NORMAL_MAP_TEXTURE, UV).rgb * 2.0 - 1.0; // Convert from [0,1] to [-1,1]
 
     // R X-AXIS
     // G Y-AXIS
@@ -162,8 +162,8 @@ void enable_debug_mode(int mode, vec3 N, vec3 L, vec2 uv, vec3 albedo, float sha
         COLOR = vec4(vec3(NdotL), 1.0);
     } else if (mode == 6) {
         // Visualize normal map (tangent space, raw)
-        if (USE_NORMAL_MAP) {
-            vec3 tangent_normal = texture(NORMAL_TEXTURE, uv).rgb;
+        if (USE_NORMAL_MAP_TEXTURE) {
+            vec3 tangent_normal = texture(NORMAL_MAP_TEXTURE, uv).rgb;
             COLOR = vec4(tangent_normal, 1.0);
         } else {
             COLOR = vec4(0.5, 0.5, 1.0, 1.0); // Default tangent space normal
@@ -180,15 +180,15 @@ void main()
 
     vec3 N = normalize(NORMAL);
 
-    if (USE_NORMAL_MAP) {
+    if (USE_NORMAL_MAP_TEXTURE) {
         N = calculate_normal_map(UV, normal_ws);
     }
 
     vec3 albedo;
     float alpha = 1.0;
 
-    if (USE_TEXTURE) {
-        vec4 tex_sample = texture(TEXTURE, UV);
+    if (USE_ALBEDO_TEXTURE) {
+        vec4 tex_sample = texture(ALBEDO_TEXTURE, UV);
         if (tex_sample.a < 0.1)
             discard;
         albedo = tex_sample.rgb;
