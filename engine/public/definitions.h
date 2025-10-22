@@ -1,9 +1,9 @@
 
-#define ENGINE_NAME        "EMBER_ENGINE"
+#define ENGINE_NAME        "GOLIAS_ENGINE"
 #define ENGINE_VERSION_STR "0.0.5"
 
-#define ENGINE_DEFAULT_FOLDER_NAME "Ember Engine"
-#define ENGINE_PACKAGE_NAME "com.ember.engine.app"
+#define ENGINE_DEFAULT_FOLDER_NAME "Golias Engine"
+#define ENGINE_PACKAGE_NAME "com.golias.engine.app"
 
 
 /*!

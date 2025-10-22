@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(ember_engine)
+project(golias_engine)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
@@ -18,7 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(ENGINE_VERSION "0.0.5")
 
 string(TIMESTAMP BUILD_TS "%Y-%m-%d %H:%M")
-message("Ember Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version ${ENGINE_VERSION} | Date: ${BUILD_TS}")
+message("Golias Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12) | Version ${ENGINE_VERSION} | Date: ${BUILD_TS}")
 
 # =========================================================
 # ENGINE CONFIGURATION
@@ -27,13 +27,13 @@ message("Ember Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12)
 option(WITH_EDITOR "Build the engine with editor support" OFF)
 option(BUILD_SERVER "Build server binaries" OFF)
 option(BUILD_RUNTIME "Build runtime binaries" ON)
-option(BUILD_EMBER_TESTS "Build tests" OFF)
+option(BUILD_GOLIAS_TESTS "Build tests" OFF)
 
 message(STATUS "Build configuration:")
 message(STATUS "  WITH_EDITOR: ${WITH_EDITOR}")
 message(STATUS "  BUILD RUNTIME (CLIENT): ${BUILD_RUNTIME}")
 message(STATUS "  BUILD RUNTIME (SERVER): ${BUILD_SERVER}")
-message(STATUS "  BUILD TESTS: ${BUILD_EMBER_TESTS}")
+message(STATUS "  BUILD TESTS: ${BUILD_GOLIAS_TESTS}")
 message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
 
 # =========================================================
@@ -70,11 +70,11 @@ add_subdirectory(engine)
 # =========================================================
 # TESTS
 # =========================================================
-if (BUILD_EMBER_TESTS)
+if (BUILD_Golias_TESTS)
     enable_testing()
 endif ()
 
-if (BUILD_EMBER_TESTS)
+if (BUILD_Golias_TESTS)
     add_subdirectory(tests)
 endif ()
 

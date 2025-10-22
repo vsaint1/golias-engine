@@ -1,12 +1,13 @@
-# Ember [![Build and Test](https://github.com/vsaint1/ember_engine/actions/workflows/build.yml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/build.yml) [![docs](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yml/badge.svg)](https://github.com/vsaint1/ember_engine/actions/workflows/docs.yml)  [![C++ 20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) ![License](https://img.shields.io/github/license/vsaint1/ember_engine.svg)
+# Golias Engine [![Build and Test](https://github.com/vsaint1/Golias_engine/actions/workflows/build.yml/badge.svg)](https://github.com/vsaint1/Golias_engine/actions/workflows/build.yml) [![docs](https://github.com/vsaint1/Golias_engine/actions/workflows/docs.yml/badge.svg)](https://github.com/vsaint1/Golias_engine/actions/workflows/docs.yml)  [![C++ 20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://isocpp.org/std/the-standard) ![License](https://img.shields.io/github/license/vsaint1/Golias_engine.svg)
 
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android%20%7C%20iOS%20%7C%20Web-blue.svg)
 
-**Ember** is a lightweight and modular **2D/3D game engine/framework** written in **C/C++**, designed to be **simple yet
+**Golias Engine** is a lightweight and modular **2D/3D game engine/framework** written in **C/C++**, designed to be *
+*simple yet
 powerful**.
 
 > ⚠️ **Note:** Currently there is no `Editor` and one is unlikely to exist in the future.  
-> Ember focuses on code-driven development, cross-platform compatibility, and learning.
+> Golias focuses on code-driven development, cross-platform compatibility, and learning.
 
 ---
 
@@ -61,7 +62,6 @@ powerful**.
 
 > ⚠️ **Note:** Proprietary APIs for consoles are not publicly available and thus cannot be implemented or tested.
 
-
 | Platform                                                               | Type  | Backend                 | Status            |
 |------------------------------------------------------------------------|-------|-------------------------|-------------------|
 | Windows, Linux, macOS, Android, iOS, Web.                              | 2D/3D | OpenGL/ES Compatibility | ✅ Fully supported |
@@ -81,23 +81,23 @@ powerful**.
 
 ## 📚 Documentation & Examples
 
-- [Official Documentation](https://vsaint1.github.io/ember_engine)
-- [Examples](https://github.com/vsaint1/ember_engine/tree/main/examples) *(coming soon)*
-- [Tests](https://github.com/vsaint1/ember_engine/tree/main/tests)
+- [Official Documentation](https://vsaint1.github.io/golias-engine)
+- [Examples](https://github.com/vsaint1/Golias_engine/tree/main/examples) *(coming soon)*
+- [Tests](https://github.com/vsaint1/Golias_engine/tree/main/tests)
 
 ---
 
-## 🎮 Games & Demos Created with Ember
+## 🎮 Games & Demos Created with Golias
 
-| Game                        | Screenshot                             | Description                                           |
-|-----------------------------|----------------------------------------|-------------------------------------------------------|
-| Flappy Bird                 | ![Flappy](docs/2d_flappy.png)          | Simple Flappy Bird clone using Ember Engine (**old**) |
-| Node Physics Example        | ![Node Physics](docs/2d_node_phys.png) | 2D physics simulation (**old**)                       |
-| 3D Wireframe                | ![Wireframe](docs/3d_wireframe.png)    | Basic 3D wireframe rendering demo                     |
-| Huge City                   | ![City](docs/3d_map_huge.png)          | Large city scene rendering demo (Web)                 |
-| 3D Physics Example          | ![3D Physics](docs/3d_physics.png)     | 3D physics simulation with thousands of models        |
-| 2D Text Rendering           | ![2D Text](docs/2d_text.png)           | 2D text rendering with shaping (HarfBuzz)             |
-| 3D Animation Demo (Android) | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo          |
+| Game                        | Screenshot                             | Description                                            |
+|-----------------------------|----------------------------------------|--------------------------------------------------------|
+| Flappy Bird                 | ![Flappy](docs/2d_flappy.png)          | Simple Flappy Bird clone using Golias Engine (**old**) |
+| Node Physics Example        | ![Node Physics](docs/2d_node_phys.png) | 2D physics simulation (**old**)                        |
+| 3D Wireframe                | ![Wireframe](docs/3d_wireframe.png)    | Basic 3D wireframe rendering demo                      |
+| Huge City                   | ![City](docs/3d_map_huge.png)          | Large city scene rendering demo (Web)                  |
+| 3D Physics Example          | ![3D Physics](docs/3d_physics.png)     | 3D physics simulation with thousands of models         |
+| 2D Text Rendering           | ![2D Text](docs/2d_text.png)           | 2D text rendering with shaping (HarfBuzz)              |
+| 3D Animation Demo (Android) | ![3D Animation](docs/3d_animation.png) | 3D model loading and skeletal animation demo           |
 
 ---
 
@@ -111,8 +111,8 @@ need [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) in
 Then, run the following commands in your terminal:
 
 ```bash
-git clone https://github.com/vsaint1/ember_engine.git
-cd ember_engine
+git clone https://github.com/vsaint1/golias-engine.git
+cd Golias_engine
 git submodule update --init --recursive
 
 emcmake cmake --preset=web-debug
@@ -140,4 +140,5 @@ emmake cmake --build build/webgl/debug
 > All third-party libraries are vendored as git submodules or included directly in the `vendor/` directory.
 
 # License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
     auto upper_plane =
         world.entity("upper_plane")
-            .set<MeshInstance3D>({.size = {10, 1, 10}, .material = {.ambient = {0.1f, 0.1f, 0.1f}, .albedo = {1.f, 1.f, 1.f}}})
+            .set<MeshInstance3D>({.size = {10, 1, 10}, .material = {.ambient = {0.1f, 0.1f, 0.1f}, .albedo = {1.f, 0,0}}})
             .set<Transform3D>({.position = {25, 10, 0}})
             .child_of(scene);
 
@@ -34,6 +34,7 @@ int main(int argc, char* argv[]) {
                   .set<Model>({.path = "res://sprites/obj/DamagedHelmet.glb"})
                   .set<Transform3D>({.position = {-10, 2, 30}, .rotation = {0, 180, 0}, .scale = {1, 1, 1}})
                   .child_of(scene);
+
     auto camera =
         world.entity("MainCamera").set<Transform3D>({.position = {0, 5, 10}, .rotation = {-0.4f, 0, 0}}).add<Camera3D>().child_of(player);
 
@@ -51,19 +52,25 @@ int main(int argc, char* argv[]) {
 
     auto nagon = world.entity("Nagon")
                      .set<Model>({.path = "res://sprites/obj/nagonford/Nagonford_Animated.glb"})
-                     .set<Transform3D>({.position = {0, 2.5f, -10}, .scale = {5, 5, 5}})
+                     .set<Transform3D>({.position = {0, 3.f, -10}, .scale = {5, 5, 5}})
                      .set<Animation3D>({.current_animation = 43})
                      .child_of(scene);
+
 
     auto barrel = world.entity()
                       .set<Model>({.path = "res://sprites/obj/wine_barrel_01_4k.obj"})
                       .set<Transform3D>({.position = {0, 0, 5}})
                       .child_of(scene);
 
-    auto sponza = world.entity()
-                      .set<Model>({.path = "res://sprites/obj/sponza.obj"})
-                      .set<Transform3D>({.position = {0, 0, 5}})
-                      .child_of(scene);
+    // auto gopher = world.entity()
+    //                         .set<Model>({.path = "res://sprites/obj/go_gopher.glb"})
+    //                         .set<Transform3D>({.position = {5, 10, 5}})
+    //                         .child_of(scene);
+
+    // auto sponza = world.entity()
+    //                   .set<Model>({.path = "res://sprites/obj/sponza/sponza.glb"})
+    //                   .set<Transform3D>({.position = {0, 0, 5}})
+    //                   .child_of(scene);
 
     // for (int i = 0; i < 25; i++) {
     //     float x = -15.0f + i * 3.0f;
@@ -83,7 +90,8 @@ int main(int argc, char* argv[]) {
     //                        })
     //                        .child_of(scene);
     // }
-    auto car = world.entity().set<Model>({.path = "res://sprites/obj/Car.obj"}).set<Transform3D>({.position = {-40, 0, 0}}).child_of(scene);
+
+    auto car = world.entity().set<Model>({.path = "res://sprites/obj/Car.obj"}).set<Transform3D>({.position = {-40, 2, 0}}).child_of(scene);
 
 
     auto plane = world.entity("plane")

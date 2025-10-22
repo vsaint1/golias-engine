@@ -1,6 +1,5 @@
-package com.emberengine.app;
+package com.golias.engine.app;
 
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import org.libsdl.app.SDLActivity;

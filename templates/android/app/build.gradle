@@ -16,7 +16,7 @@ android {
 
 
     if (buildAsApplication) {
-        namespace  "com.emberengine.app"
+        namespace  "com.golias.engine.app"
     }
 
     defaultConfig {

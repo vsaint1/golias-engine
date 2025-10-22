@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(ember_runtime)
+project(golias_runtime)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
@@ -23,7 +23,7 @@ message(STATUS "Using assets folder: ${ASSETS_FOLDER}")
 #  PLATFORM SPECIFIC CONFIGURATION
 # =========================================================
 if (UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC -Wall -pthread")
 endif ()
 
 if (APPLE)

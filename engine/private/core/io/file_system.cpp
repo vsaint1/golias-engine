@@ -144,7 +144,7 @@ bool FileAccess::file_exists(const std::string& file_path) {
     if (file_path.rfind("res://", 0) == 0) {
         path = ASSETS_PATH + file_path.substr(6);
     } else if (file_path.rfind("user://", 0) == 0) {
-        char* prefPath = SDL_GetPrefPath("Ember", "com.ember.engine.app");
+        char* prefPath = SDL_GetPrefPath("Golias", "com.golias.engine.app");
         if (!prefPath) return false;
         path = std::string(prefPath) + file_path.substr(7);
         SDL_free(prefPath);
