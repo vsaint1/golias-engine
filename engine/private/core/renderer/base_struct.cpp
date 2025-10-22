@@ -27,20 +27,53 @@ TTF_Font* Font::get_font() const {
 
 bool Material::is_valid() const {
     const bool albedo_valid = albedo_texture != nullptr && albedo_texture->is_valid();
+    const bool normal_valid = normal_texture != nullptr && normal_texture->is_valid();
 
-    const bool validated = albedo_valid; // && normal_valid && normal_map && etc.
+    const bool validated = albedo_valid || normal_valid;
     return validated;
 }
 
 void Material::bind() {
 
-    if (albedo_texture && albedo_texture->is_valid()) {
-        albedo_texture->bind();
+    if (shader && shader->is_valid()) {
+
+        shader->activate();
+
+        shader->set_value("material.albedo", albedo, 1);
+        shader->set_value("material.ambient", ambient, 1);
+        shader->set_value("material.metallic.specular", metallic.specular, 1);
+        shader->set_value("material.metallic.value", metallic.value);
+        shader->set_value("material.roughness", roughness);
     }
 
-    if (metallic.texture && metallic.texture->is_valid()) {
-        metallic.texture->bind(1);
+    if (albedo_texture && albedo_texture->is_valid()) {
+        albedo_texture->bind();
+        if (shader && shader->is_valid()) {
+            shader->set_value("TEXTURE", 0);
+            shader->set_value("USE_TEXTURE", true); // ALBEDO
+
+        }
+    } else {
+        if (shader && shader->is_valid()) {
+            shader->set_value("USE_TEXTURE", false); // ALBEDO
+        }
     }
+
+    if (normal_texture && normal_texture->is_valid()) {
+        normal_texture->bind(1);
+        if (shader && shader->is_valid()) {
+            shader->set_value("NORMAL_TEXTURE", 1);
+            shader->set_value("USE_NORMAL_MAP", true);
+        }
+    } else {
+        if (shader && shader->is_valid()) {
+            shader->set_value("USE_NORMAL_MAP", false);
+        }
+    }
+
+    // if (metallic.texture && metallic.texture->is_valid()) {
+    //     metallic.texture->bind(2);
+    // }
 }
 
 // TODO: implement this function

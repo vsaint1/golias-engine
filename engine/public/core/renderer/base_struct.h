@@ -125,6 +125,7 @@ struct Metallic {
     std::shared_ptr<Texture> texture = nullptr;
 };
 
+class Shader;
 /*!
 
     @brief Material structure
@@ -141,6 +142,9 @@ struct Material {
     glm::vec3 ambient                       = glm::vec3(0.f);
     glm::vec3 albedo                        = glm::vec3(1.f);
     Metallic metallic                       = {};
+    std::shared_ptr<Texture> normal_texture = nullptr;
+    Shader* shader          = nullptr;
+
 
     float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
     float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent
@@ -268,12 +272,12 @@ public:
 
     virtual void set_value(const std::string& name, const glm::mat4* values, Uint32 count) = 0;
 
+
     virtual void destroy() = 0;
 
     virtual Uint32 get_id() const = 0;
 
     virtual bool is_valid() const = 0;
-
 
 protected:
     Uint32 id = 0;
