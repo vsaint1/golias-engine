@@ -7,6 +7,6 @@ set(CMAKE_C_STANDARD 99)
 
 add_library(flecs STATIC flecs.c flecs.h)
 
-add_compile_definitions(-Dflecs_EXPORTS)
+target_compile_definitions(flecs PRIVATE flecs_EXPORTS)
 
 target_include_directories(flecs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

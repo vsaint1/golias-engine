@@ -23,7 +23,7 @@ message(STATUS "Using assets folder: ${ASSETS_FOLDER}")
 #  PLATFORM SPECIFIC CONFIGURATION
 # =========================================================
 if (UNIX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC")
 endif ()
 
 if (APPLE)
@@ -55,9 +55,7 @@ file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_S
 # -----------------------------
 if (ANDROID)
 
-    file(GLOB_RECURSE ANDROID_FILES "engine/private/core/platform/android/*.c")
-
-    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${ANDROID_FILES})
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             OUTPUT_NAME "client"
@@ -73,11 +71,9 @@ if (APPLE AND NOT BUILD_SHARED_LIBS)
     set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
     set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
     set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/res")
-    file(GLOB_RECURSE IOS_FILES "engine/private/core/platform/ios/*.mm")
-    set(METAL_SHADERS "${CMAKE_SOURCE_DIR}/res/shaders/metal/default.metal")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
-            ${SOURCES} ${METAL_SHADERS} ${LAUNCH_SCREEN} ${ASSETS_PATH} ${IOS_FILES})
+            ${SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
 
     find_library(IO ImageIO REQUIRED)
     find_library(CS CoreServices REQUIRED)
@@ -125,17 +121,14 @@ endif ()
 # -----------------------------
 if (APPLE AND BUILD_SHARED_LIBS)
     set(RESOURCES "${CMAKE_SOURCE_DIR}/res")
-    file(GLOB_RECURSE MAC_FILES "engine/private/core/platform/macos/*.mm")
-    file(GLOB_RECURSE METAL_FILES "engine/private/core/renderer/metal/*.mm")
 
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE
-            ${SOURCES} ${METAL_SHADERS} ${RESOURCES} ${MAC_FILES} ${METAL_FILES})
+            ${SOURCES} ${RESOURCES})
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             MACOSX_BUNDLE TRUE
             RESOURCE "${RESOURCES}")
 
-    # TODO: refactor to find_library
     target_link_libraries(${PROJECT_NAME} PRIVATE
             "-framework CoreGraphics"
             "-framework CoreAudio"
@@ -153,12 +146,9 @@ endif ()
 # Windows (MSVC)
 # TODO: MinGW?
 # -----------------------------
-if (MSVC)
+if (WIN32)
 
-
-    file(GLOB_RECURSE WIN_FILES "engine/private/core/platform/windows/*.c")
-
-    add_executable(${PROJECT_NAME} ${SOURCES} ${WIN_FILES})
+    add_executable(${PROJECT_NAME} ${SOURCES})
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -175,14 +165,14 @@ endif ()
 # -----------------------------
 if (EMSCRIPTEN)
 
-    file(GLOB_RECURSE WEB_FILES "engine/private/core/platform/web/*.c")
 
-    add_executable(${PROJECT_NAME} ${SOURCES} ${WEB_FILES})
+    add_executable(${PROJECT_NAME} ${SOURCES} )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
             OUTPUT_NAME "index"
             SUFFIX ".html")
 
+    # TODO: handle custom shell file
     # set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
 
     # if (NOT EXISTS ${SHELL_HTML_FILE})
