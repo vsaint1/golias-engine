@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['icon_5fpath_190',['icon_path',['../structApplication.html#affc3efaaa89a6614e31ed9185bbd5179',1,'Application']]],
+  ['id_191',['id',['../structPhysicsBody.html#a3b500b2c6f0950265fead4b8c9d575e8',1,'PhysicsBody::id()'],['../classTexture.html#a740c0bee630ec079fb58d379e021f839',1,'Texture::id()'],['../classShader.html#a576b81e72c4e70c6d528fbaa07156f1c',1,'Shader::id()']]],
+  ['illumination_5fmode_192',['illumination_mode',['../structMaterial.html#a2a565db75fa10e2f18c3f75a33f73261',1,'Material']]],
+  ['importer_193',['importer',['../structModel.html#aa21c4eb48a28b7efc4beb354f678cb5e',1,'Model']]],
+  ['index_5fcount_194',['index_count',['../structMesh.html#a9a709cb2d89346aac8b267813913106e',1,'Mesh']]],
+  ['indices_195',['indices',['../structMesh.html#a714f6cd392f13b1d96992cf77730d388',1,'Mesh']]],
+  ['initialize_196',['initialize',['../classEngine.html#a2eeb14b89f04e87614b59db389017ec8',1,'Engine::initialize()'],['../classOpenglRenderer.html#aa663a0ddafe5e491d5de9227ef0f231d',1,'OpenglRenderer::initialize()'],['../classRenderer.html#a566c49b93b35b3c410c261dfc6564ad7',1,'Renderer::initialize()'],['../classSDLRenderer.html#a6500ce1c17848f1a1c278dedce7996dc',1,'SDLRenderer::initialize()'],['../classLogger.html#ae4867d4bc5eb6db75a34b024fe19a2ff',1,'Logger::initialize()']]],
+  ['instance_5fbuffer_197',['instance_buffer',['../structGpuBuffer.html#a1badb7467c4858f83925a98ed771601f',1,'GpuBuffer']]],
+  ['instancedbatch_198',['InstancedBatch',['../structInstancedBatch.html',1,'']]],
+  ['interpolate_5fpos_199',['interpolate_pos',['../system__helper_8h.html#ae6ba8559b93c19693b83aa0f7eedb88b',1,'interpolate_pos(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp'],['../system__helper_8cpp.html#ae6ba8559b93c19693b83aa0f7eedb88b',1,'interpolate_pos(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp']]],
+  ['interpolate_5frot_200',['interpolate_rot',['../system__helper_8h.html#af70f9093a55c7c3c0032cc22a6fa8908',1,'interpolate_rot(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp'],['../system__helper_8cpp.html#af70f9093a55c7c3c0032cc22a6fa8908',1,'interpolate_rot(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp']]],
+  ['interpolate_5fscale_201',['interpolate_scale',['../system__helper_8h.html#a194ad50f6154e77e5e60d5a22f362d7d',1,'interpolate_scale(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp'],['../system__helper_8cpp.html#a194ad50f6154e77e5e60d5a22f362d7d',1,'interpolate_scale(float animTime, const aiNodeAnim *nodeAnim):&#160;system_helper.cpp']]],
+  ['is_5fcharacter_5femoji_202',['is_character_emoji',['../ember__utils_8h.html#a4b00bd95f60cac83718de3a366ec4032',1,'is_character_emoji(uint32_t cp):&#160;ember_utils.cpp'],['../ember__utils_8cpp.html#a4b00bd95f60cac83718de3a366ec4032',1,'is_character_emoji(uint32_t cp):&#160;ember_utils.cpp']]],
+  ['is_5fdebug_203',['is_debug',['../structEngineConfig.html#ab612a32f2ff64b93fa3f31a5897b9d8c',1,'EngineConfig']]],
+  ['is_5femoji_204',['is_emoji',['../structTokens.html#ae258e7b13b0f1298466ef07fb2c6723b',1,'Tokens']]],
+  ['is_5ffullscreen_205',['is_fullscreen',['../structApplication.html#a9a30c03bd8aed9a505f8e0dc98b4d4df',1,'Application']]],
+  ['is_5fkey_5fpressed_206',['is_key_pressed',['../engine__api_8h.html#acfa34a9dcf676bc795fa751ecbb4b867',1,'is_key_pressed(int key_code):&#160;engine_api.cpp'],['../engine__api_8cpp.html#acfa34a9dcf676bc795fa751ecbb4b867',1,'is_key_pressed(int key_code):&#160;engine_api.cpp']]],
+  ['is_5floaded_207',['is_loaded',['../structModel.html#a2d00545b6370cc63f8a2553695fe2036',1,'Model']]],
+  ['is_5fmultithreaded_208',['is_multithreaded',['../structPerformance.html#ab9eb81ed0826fe69250458bec84db65b',1,'Performance']]],
+  ['is_5fopen_209',['is_open',['../classFileAccess.html#af4264677ea7bf131f83870df7993fcde',1,'FileAccess']]],
+  ['is_5fplaying_210',['is_playing',['../structAnimation3D.html#a995ffde68ded0b685b3b23c655fac50b',1,'Animation3D']]],
+  ['is_5fresizable_211',['is_resizable',['../structApplication.html#af63ada34948ee2b687e32b1da4f5dcd1',1,'Application']]],
+  ['is_5frunning_212',['is_running',['../classEngine.html#ad0106de4cd5aaf9e5f403b91d2a68203',1,'Engine']]],
+  ['is_5fvalid_213',['is_valid',['../classOpenglShader.html#ae0531fa0fefd575d2201964011254ea4',1,'OpenglShader::is_valid()'],['../classShader.html#ab0f73eb1452b1ad7c57ad0d6892cba27',1,'Shader::is_valid()'],['../structMaterial.html#a7ab0d87e0eab01a501790f4f3c5c95cd',1,'Material::is_valid()'],['../classTexture.html#a3b9b807f74366e755b97ef0e952276ee',1,'Texture::is_valid()']]],
+  ['is_5fvsync_214',['is_vsync',['../structEngineConfig.html#a00127a5427835dfb61f6d9259e165697',1,'EngineConfig']]]
+];
