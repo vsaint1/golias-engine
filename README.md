@@ -16,14 +16,18 @@ powerful**.
 ### 3D Features
 
 - [x] **Model Loading** (OBJ, FBX, GLTF/GLB)
-- [ ] **PBR (Physically Based Rendering)**
+- [x] **PBR (Physically Based Rendering)** `SIMPLIFIED`
 - [x] **Blinn-Phong Shading Model**
 - [ ] **3D Physics** (coming soon)
 - [ ] **Lighting System** (Directional, Point, Spot)
+  - [x] **Directional Light**
+  - [ ] **Point Light**
+  - [ ] **Spot Light** (coming soon)
 - [x] **Shadow Mapping**
 - [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)
 - [x] **Animation System** (Skeletal Animation)
-- [ ] **Terrain System** (coming soon)
+  - [ ] **GPU** Skinning
+- [ ] **Level of Detail (LOD) Support** (coming soon)
 - [x] **Skybox Support** (Cubemap -> 6 faces or Equirectangular)
 
 ### 2D Features
