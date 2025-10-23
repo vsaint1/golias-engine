@@ -572,25 +572,20 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
             std::string texPathStr = texPath.C_Str();
 
 
-            // Check if it's an embedded texture (path starts with '*')
             if (texPathStr[0] == '*') {
-                // Embedded texture - extract index
                 int texIndex = std::atoi(texPathStr.c_str() + 1);
 
                 if (texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures) {
                     const aiTexture* embeddedTex = scene->mTextures[texIndex];
 
-                    // Use base_dir to make key unique per model
                     texPathStr = base_dir + "embedded_tex_" + std::to_string(texIndex);
 
-                    // Load embedded texture (now OpenGL context is available)
                     ogl_mesh->material->albedo_texture = load_texture(texPathStr, texPathStr, embeddedTex);
                 } else {
                     LOG_WARN("Embedded texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
                 }
 
             } else {
-                // Load external texture file
                 const std::string texture_path     = base_dir + texPathStr;
                 ogl_mesh->material->albedo_texture = load_texture(texture_path, texture_path, nullptr);
             }
@@ -617,9 +612,55 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
                 ogl_mesh->material->normal_texture = load_texture(texture_path, texture_path, nullptr);
             }
 
+        }
+
+
+        if (mat->GetTexture(aiTextureType_METALNESS, 0, &texPath) == AI_SUCCESS) {
+            std::string texPathStr = texPath.C_Str();
+
+            if (texPathStr[0] == '*') {
+                int texIndex = std::atoi(texPathStr.c_str() + 1);
+
+                if (texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures) {
+                    const aiTexture* embeddedTex = scene->mTextures[texIndex];
+
+                    texPathStr = base_dir + "embedded_metalness_" + std::to_string(texIndex);
+
+                    ogl_mesh->material->metallic.texture = load_texture(texPathStr, texPathStr, embeddedTex);
+                } else {
+                    LOG_WARN("Embedded metalness texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
+                }
+
+            } else {
+                const std::string texture_path     = base_dir + texPathStr;
+                ogl_mesh->material->metallic.texture = load_texture(texture_path, texture_path, nullptr);
+            }
 
         }
 
+
+        if (mat->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texPath) == AI_SUCCESS) {
+            std::string texPathStr = texPath.C_Str();
+
+            if (texPathStr[0] == '*') {
+                int texIndex = std::atoi(texPathStr.c_str() + 1);
+
+                if (texIndex >= 0 && static_cast<unsigned int>(texIndex) < scene->mNumTextures) {
+                    const aiTexture* embeddedTex = scene->mTextures[texIndex];
+
+                    texPathStr = base_dir + "embedded_ao_" + std::to_string(texIndex);
+
+                    ogl_mesh->material->ambient_occlusion.texture = load_texture(texPathStr, texPathStr, embeddedTex);
+                } else {
+                    LOG_WARN("Embedded ambient occlusion texture index %d out of range (scene has %u textures)", texIndex, scene->mNumTextures);
+                }
+
+            } else {
+                const std::string texture_path     = base_dir + texPathStr;
+                ogl_mesh->material->ambient_occlusion.texture = load_texture(texture_path, texture_path, nullptr);
+            }
+
+        }
 
     }
 
@@ -736,18 +777,14 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glm::vec3 scene_center   = glm::vec3(0.0f, 5.0f, 10.0f); // Center of your scene
     glm::vec3 light_position = scene_center + to_light * 100.0f; // Far enough to act as directional
 
-    // For shader: direction light comes FROM (opposite of to_light)
-    glm::vec3 lightDir = -to_light;
-
     // Larger orthographic bounds to capture full scene (adjust these if shadows get cut off)
     float shadow_extent           = 120.0f; // Increased from 80 to capture more
     glm::mat4 orthgonalProjection = glm::ortho(-shadow_extent, shadow_extent, -shadow_extent, shadow_extent, 0.1f, 1000.0f);
     glm::mat4 lightView           = glm::lookAt(light_position, scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 lightProjection     = orthgonalProjection * lightView;
 
-    glDisable(GL_MULTISAMPLE);
 
-    // glCullFace(GL_FRONT);
+    glDisable(GL_MULTISAMPLE);
 #pragma region SHADOW_PASS
     glEnable(GL_DEPTH_TEST);
 
@@ -814,9 +851,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 #pragma endregion
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_MULTISAMPLE);
+    glEnable(GL_MULTISAMPLE); // TODO: render/use Multi sample FBO
     glCullFace(GL_BACK);
 #pragma region RENDER_PASS
 
@@ -842,9 +877,10 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         ogl_shader->set_value("PROJECTION", projection);
         ogl_shader->set_value("CAMERA_POSITION", glm::vec3(glm::inverse(view)[3]));
 
-        // Set up directional light (sun)
-        ogl_shader->set_value("LIGHT_DIRECTION", lightDir); // Direction light comes FROM
         ogl_shader->set_value("LIGHT_PROJECTION", lightProjection);
+        
+
+
 
         const OpenglMesh* ogl_mesh = static_cast<const OpenglMesh*>(mesh);
         if (!ogl_shader->is_valid()) {
@@ -878,15 +914,12 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
             ogl_shader->set_value("USE_SKELETON", 0);
         }
 
-
         mesh->material->bind();
 
-
-
         // TODO: refactor this to use FBO
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, shadowTexID);
-        ogl_shader->set_value("SHADOW_TEXTURE", 2);
+        ogl_shader->set_value("SHADOW_TEXTURE", SHADOW_TEXTURE_UNIT);
 
 
         // instanced model matrix (4 vec4)
@@ -917,7 +950,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
     _instanced_batches.clear();
 
 #pragma endregion
-    glDisable(GL_BLEND);
+
 
 #pragma region ENVIRONMENT_PASS
     draw_environment(view, projection);
@@ -938,6 +971,10 @@ void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3
     auto& batch                  = _instanced_batches[cube_mesh.get()];
     batch.mesh                   = cube_mesh.get();
     batch.mesh->material->albedo = mesh.material.albedo;
+    batch.mesh->material->metallic = mesh.material.metallic;
+    batch.mesh->material->ambient_occlusion = mesh.material.ambient_occlusion;
+    batch.mesh->material->roughness = mesh.material.roughness;
+
     batch.mesh->material->albedo_texture = mesh.material.albedo_texture;
     batch.mesh->material->normal_texture = mesh.material.normal_texture;
     batch.mesh->material->shader = default_shader;
@@ -1047,9 +1084,11 @@ void OpenglRenderer::setup_default_shaders() {
     }
 
     default_shader->activate();
-    default_shader->set_value("LIGHT_COLOR", glm::vec3(1.0f, 0.95f, 0.8f)); // Warm sun color
-    // default_shader->set_value("TEXTURE", 0);
-    // default_shader->set_value("SHADOW_TEXTURE", 1);
+
+    default_shader->set_value("directional_light.direction", glm::vec3(-1.0f, -2.5f, -1.0f));
+    default_shader->set_value("directional_light.color", glm::vec3(1.0f, 0.95f, 0.8f)); // Warm sun color
+    default_shader->set_value("directional_light.intensity", 1.0f);
+
 
     shadow_shader = new OpenglShader("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
     if (!shadow_shader->is_valid()) {
