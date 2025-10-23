@@ -47,9 +47,8 @@ void Material::bind() const {
         shader->activate();
 
         shader->set_value("material.albedo", albedo, 1);
-        shader->set_value("material.ambient", ambient, 1);
-        shader->set_value("material.metallic.specular", metallic.specular, 1);
-        shader->set_value("material.metallic.value", metallic.value);
+        shader->set_value("material.ao", ambient_occlusion.value);
+        shader->set_value("material.metallic", metallic.value);
         shader->set_value("material.roughness", roughness);
     }
 
@@ -78,9 +77,30 @@ void Material::bind() const {
         }
     }
 
-    // if (metallic.texture && metallic.texture->is_valid()) {
-    //     metallic.texture->bind(METALLIC_TEXTURE_UNIT);
-    // }
+    if (metallic.texture && metallic.texture->is_valid()) {
+        metallic.texture->bind(METALLIC_ROUGHNESS_TEXTURE_UNIT);
+        if (shader && shader->is_valid()) {
+            shader->set_value("METALLIC_ROUGHNESS_TEXTURE", METALLIC_ROUGHNESS_TEXTURE_UNIT);
+            shader->set_value("USE_METALLIC_ROUGHNESS_TEXTURE", true);
+        }
+    } else {
+        if (shader && shader->is_valid()) {
+            shader->set_value("USE_METALLIC_ROUGHNESS_TEXTURE", false);
+        }
+    }
+
+    if (ambient_occlusion.texture && ambient_occlusion.texture->is_valid()) {
+        ambient_occlusion.texture->bind(AMBIENT_OCCLUSION_TEXTURE_UNIT);
+        if (shader && shader->is_valid()) {
+            shader->set_value("AO_TEXTURE", AMBIENT_OCCLUSION_TEXTURE_UNIT);
+            shader->set_value("USE_AO_TEXTURE", true);
+        }
+    } else {
+        if (shader && shader->is_valid()) {
+            shader->set_value("USE_AO_TEXTURE", false);
+        }
+    }
+
 }
 
 // TODO: implement this function
@@ -103,15 +123,23 @@ void parse_meshes(aiMesh* ai_mesh, const aiScene* scene, const std::string& base
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, kd);
         mesh_ref.material->albedo = {kd.r, kd.g, kd.b};
 
-        aiColor3D ka(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_AMBIENT, ka);
-        mesh_ref.material->ambient = {ka.r, ka.g, ka.b};
+        // **DEPRECATED** this shouldnt be used in PBR
+        // aiColor3D ka(0.0f, 0.0f, 0.0f);
+        // mat->Get(AI_MATKEY_COLOR_AMBIENT, ka);
+        // mesh_ref.material->ambient = {ka.r, ka.g, ka.b};
 
-        aiColor3D ks(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_SPECULAR, ks);
-        mesh_ref.material->metallic.specular = {ks.r, ks.g, ks.b};
+        // aiColor3D ks(0.0f, 0.0f, 0.0f);
+        // mat->Get(AI_MATKEY_COLOR_SPECULAR, ks);
+        // mesh_ref.material->metallic.specular = {ks.r, ks.g, ks.b};
 
         float metalness = 0.0f;
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, metalness);
+        mesh_ref.material->metallic.value = metalness;
+
+        float roughness = 0.0f;
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
+        mesh_ref.material->roughness = roughness;
+
     }
 
     std::vector<Vertex> verts;
