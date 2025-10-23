@@ -120,13 +120,13 @@ public:
 };
 
 struct Metallic {
-    float value                      = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
     std::shared_ptr<Texture> texture = nullptr;
+    float value                      = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
 };
 
 struct AmbientOcclusion {
-    std::shared_ptr<Texture> texture = nullptr;
-    float value = 1.0f; /// 1.0 -> full AO | 0.0 -> no AO
+    std::shared_ptr<Texture> texture = nullptr; /// 1.0 -> full AO | 0.0 -> no AO **R CHANNEL**
+    float value = 0.0f; /// **UNUSED**
 };
 
 class Shader;
@@ -149,6 +149,7 @@ struct Material {
 
     Metallic metallic                       = {};
     AmbientOcclusion ambient_occlusion      = {};
+
     float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
     float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent
     int illumination_mode = 0; // TODO: define illumination modes
@@ -156,9 +157,6 @@ struct Material {
     std::shared_ptr<Texture> normal_texture = nullptr; /// Normal map
 
     Shader* shader          = nullptr;
-
-
-
 
     bool is_valid() const;
 

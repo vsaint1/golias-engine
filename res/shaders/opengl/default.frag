@@ -18,7 +18,6 @@ struct Material {
     vec3 albedo;
     float metallic;
     float roughness;
-    float ao;
 };
 
 struct DIRECTIONAL_LIGHT {
@@ -264,8 +263,7 @@ void enable_debug_mode(int mode, vec3 n, vec3 l, vec2 uv, vec3 albedo, float sha
             COLOR = vec4(vec3(roughness), 1.0); // Roughness
             break;
         case 8:
-            COLOR = vec4(vec3(ao), 1.0); // AO (NOT IMPLEMENTED)
-
+            COLOR = vec4(vec3(texture(AO_TEXTURE, UV).r), 1.0); // AO visualization
             break;
         default:
             COLOR = vec4(1.0, 0.0, 1.0, 1.0); // Invalid mode
@@ -295,15 +293,20 @@ void main()
 
     float metallic = material.metallic;
     float roughness = material.roughness;
-    float ao = material.ao;
+    float ao = 0.0f;
 
-    // Green channel = roughness, Blue channel = metallic (glTF 2.0 format)
+    // Red = Ambient Occlusion, Green channel = roughness, Blue channel = metallic (glTF 2.0 format)
     if (USE_METALLIC_ROUGHNESS_TEXTURE) {
         vec3 mr_sample = texture(METALLIC_ROUGHNESS_TEXTURE, UV).rgb;
         metallic = mr_sample.b;
         roughness = mr_sample.g;
+
+        if (!USE_AO_TEXTURE) {
+            ao = mr_sample.r;
+        }
     }
 
+    // Ambient Occlusion Texture overrides R channel of Metallic-Roughness texture
     if (USE_AO_TEXTURE) {
         ao = texture(AO_TEXTURE, UV).r;
     }

@@ -47,7 +47,7 @@ void Material::bind() const {
         shader->activate();
 
         shader->set_value("material.albedo", albedo, 1);
-        shader->set_value("material.ao", ambient_occlusion.value);
+        // shader->set_value("material.ao", ambient_occlusion.value);
         shader->set_value("material.metallic", metallic.value);
         shader->set_value("material.roughness", roughness);
     }
