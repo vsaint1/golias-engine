@@ -120,9 +120,13 @@ public:
 };
 
 struct Metallic {
-    glm::vec3 specular               = glm::vec3(0.f); /// specular reflections
     float value                      = 0.0f; /// 0.0 -> non-metal | 1.0 -> metal
     std::shared_ptr<Texture> texture = nullptr;
+};
+
+struct AmbientOcclusion {
+    std::shared_ptr<Texture> texture = nullptr;
+    float value = 1.0f; /// 1.0 -> full AO | 0.0 -> no AO
 };
 
 class Shader;
@@ -138,17 +142,22 @@ class Shader;
 
 */
 struct Material {
-    std::shared_ptr<Texture> albedo_texture = nullptr;
-    glm::vec3 ambient                       = glm::vec3(0.f);
     glm::vec3 albedo                        = glm::vec3(1.f);
+    std::shared_ptr<Texture> albedo_texture = nullptr;
+
+    glm::vec3 ambient                       = glm::vec3(0.f); /// KD **DEPRECATED**
+
     Metallic metallic                       = {};
-    std::shared_ptr<Texture> normal_texture = nullptr;
-    Shader* shader          = nullptr;
-
-
+    AmbientOcclusion ambient_occlusion      = {};
     float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
     float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent
     int illumination_mode = 0; // TODO: define illumination modes
+
+    std::shared_ptr<Texture> normal_texture = nullptr; /// Normal map
+
+    Shader* shader          = nullptr;
+
+
 
 
     bool is_valid() const;
