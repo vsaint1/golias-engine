@@ -8,8 +8,6 @@
 // ==============================================================
 
 
-
-
 /*!
  * @brief Represents a 2D transformation position, scale, and rotation.
  * @ingroup Components
@@ -61,7 +59,7 @@ struct Shape2D {
  *
  * Example usage in Lua:
  * @code{.lua}
- * 
+ *
  * local speed = 100
  * function _ready()
  *     print("Entity started!")
@@ -71,15 +69,15 @@ struct Shape2D {
  *     self.transform.position.x = self.transform.position.x + speed * dt
  *     self.transform.position.y = self.transform.position.y + speed * dt
  * end
- * 
+ *
  * function _input(event)
  *    print("Input event received: " .. event.type)
  * end
- * 
+ *
  * function _exit()
  *    print("Entity exiting!")
  * end
- * 
+ *
  * @endcode
  */
 struct Script {
@@ -115,17 +113,22 @@ struct Sprite2D {
 };
 
 
-struct SceneRoot {};
+struct SceneRoot {
+};
 
 
 namespace tags {
-    struct Scene {};
+    struct Scene {
+    };
 
-    struct ActiveScene {};
+    struct ActiveScene {
+    };
 
-    struct Alive {}; // Marks entities that are alive (children of active scene)
+    struct Alive {
+    }; // Marks entities that are alive (children of active scene)
 
-    struct MainCamera {}; // Marks the main camera entity
+    struct MainCamera {
+    }; // Marks the main camera entity
 }; // namespace tags
 
 
@@ -188,27 +191,48 @@ struct Model {
     std::shared_ptr<Assimp::Importer> importer = nullptr;
     const aiScene* scene                       = nullptr;
     glm::mat4 global_inverse_transform         = glm::mat4(1.0f);
-    
+
     bool is_loaded = false;
 
 
     ~Model();
 };
 
+
+enum class ELightMode {
+    LIGHT, // Light only affects geometry
+    SKY_ONLY, // Light only affects sky
+    LIGHT_AND_SKY, // Light affects both (default)
+};
+
+
+struct DirectionalLight {
+    glm::vec3 direction = glm::vec3(-1.0f, -2.5f, -1.0f); // Points from light source
+    glm::vec3 color     = glm::vec3(1.0f, 0.95f, 0.8f); // Warm sun color
+    float intensity     = 1.0f; // Energy/brightness multiplier
+    ELightMode mode     = ELightMode::LIGHT_AND_SKY; // How the light affects the scene
+
+
+    glm::mat4 get_projection(const glm::mat4& camera_view, const glm::mat4& camera_proj) const;
+
+
+};
+
+
 /*!
  * @brief Animation component for skeletal animation playback
  * @ingroup Components
  */
 struct Animation3D {
-    int current_animation = 0;      // Index of the current animation
-    float time = 0.0f;              // Current playback time in seconds
-    float speed = 1.0f;             // Playback speed multiplier
-    bool is_playing = true;            // Is animation playing?
-    bool loop = true;               // Should animation loop?
-    
+    int current_animation = 0; // Index of the current animation
+    float time            = 0.0f; // Current playback time in seconds
+    float speed           = 1.0f; // Playback speed multiplier
+    bool is_playing       = true; // Is animation playing?
+    bool loop             = true; // Should animation loop?
+
     // Computed bone transforms (uploaded to GPU)
     std::vector<glm::mat4> bone_transforms;
-    
+
     // Animation3D() = default;
 };
 
@@ -221,7 +245,7 @@ struct Follow {
 
 /*!
 
-    @brief 2D Camera 
+    @brief 2D Camera
     - Position
     - Zoom
     - Rotation
@@ -256,7 +280,7 @@ public:
 
 /*!
 
-    @brief 3D Camera 
+    @brief 3D Camera
     - Position
     - Zoom
     - Rotation
@@ -335,33 +359,35 @@ inline void serialize_components(flecs::world& ecs) {
 
 
     ecs.component<std::string>()
-        .opaque(flecs::String)
-        .serialize([](const flecs::serializer* s, const std::string* data) {
-            const char* str = data->c_str();
-            return s->value(flecs::String, &str);
-        })
-        .assign_string([](std::string* data, const char* value) { *data = value; });
+       .opaque(flecs::String)
+       .serialize([](const flecs::serializer* s, const std::string* data) {
+           const char* str = data->c_str();
+           return s->value(flecs::String, &str);
+       })
+       .assign_string([](std::string* data, const char* value) {
+           *data = value;
+       });
 
     ecs.component<Transform2D>().member<glm::vec2>("position").member<glm::vec2>("scale").member<float>("rotation");
 
     ecs.component<ShapeType>()
-        .constant("RECTANGLE", ShapeType::RECTANGLE)
-        .constant("TRIANGLE", ShapeType::TRIANGLE)
-        .constant("CIRCLE", ShapeType::CIRCLE)
-        .constant("LINE", ShapeType::LINE)
-        .constant("POLYGON", ShapeType::POLYGON);
+       .constant("RECTANGLE", ShapeType::RECTANGLE)
+       .constant("TRIANGLE", ShapeType::TRIANGLE)
+       .constant("CIRCLE", ShapeType::CIRCLE)
+       .constant("LINE", ShapeType::LINE)
+       .constant("POLYGON", ShapeType::POLYGON);
 
     ecs.component<Shape2D>()
-        .member<ShapeType>("type")
-        .member<glm::vec4>("color")
-        .member<bool>("filled")
-        .member<glm::vec2>("size")
-        .member<float>("radius")
-        .member<glm::vec2>("end");
+       .member<ShapeType>("type")
+       .member<glm::vec4>("color")
+       .member<bool>("filled")
+       .member<glm::vec2>("size")
+       .member<float>("radius")
+       .member<glm::vec2>("end");
 
     ecs.component<Label2D>()
-        .member<std::string>("text")
-        .member<glm::vec4>("color")
-        .member<std::string>("font_name")
-        .member<int>("font_size");
+       .member<std::string>("text")
+       .member<glm::vec4>("color")
+       .member<std::string>("font_name")
+       .member<int>("font_size");
 }

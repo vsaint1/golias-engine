@@ -48,43 +48,34 @@ float calculate_shadow(vec4 frag_pos_light_space, vec3 normal, vec3 light_dir)
 
     if (proj_coords.z > 1.0 || proj_coords.x < 0.0 || proj_coords.x > 1.0 ||
     proj_coords.y < 0.0 || proj_coords.y > 1.0)
-    return 0.0;
+        return 0.0;
 
     float current_depth = proj_coords.z;
     float n_dot_l = max(dot(normal, light_dir), 0.0);
-    if (n_dot_l < 0.01) return 1.0;
+    float bias = max(0.0005 * (1.0 - n_dot_l), 0.00005);
 
-    float bias = 0.0005 + 0.001 * (1.0 - n_dot_l);
     vec2 texel_size = 1.0 / vec2(textureSize(SHADOW_TEXTURE, 0));
+    const float radius = 1.f;
 
-    // Poisson disk sampling pattern for smooth shadows
-    const vec2 samples[16] = vec2[](
-    vec2(-0.94201624, -0.39906216),
-    vec2(0.94558609, -0.76890725),
-    vec2(-0.09418410, -0.92938870),
-    vec2(0.34495938, 0.29387760),
-    vec2(-0.91588581, 0.45771432),
-    vec2(-0.81544232, -0.87912464),
-    vec2(-0.38277543, 0.27676845),
-    vec2(0.97484398, 0.75648379),
-    vec2(0.44323325, -0.97511554),
-    vec2(0.53742981, -0.47373420),
-    vec2(-0.26496911, -0.41893023),
-    vec2(0.79197514, 0.19090188),
-    vec2(-0.24188840, 0.99706507),
-    vec2(0.19984126, 0.78641367),
-    vec2(0.14383161, -0.14100790),
-    vec2(0.27653325, 0.13415599)
+    float randAngle = fract(sin(dot(UV, vec2(12.9898, 78.233))) * 43758.5453);
+    mat2 rot = mat2(cos(randAngle), -sin(randAngle), sin(randAngle), cos(randAngle));
+
+    const vec2 poisson[16] = vec2[](
+    vec2(-0.942, -0.399), vec2(0.945, -0.768), vec2(-0.094, -0.929), vec2(0.344, 0.293),
+    vec2(-0.915, 0.457), vec2(-0.815, -0.879), vec2(-0.382, 0.276), vec2(0.974, 0.756),
+    vec2(0.443, -0.975), vec2(0.537, -0.473), vec2(-0.264, -0.418), vec2(0.791, 0.190),
+    vec2(-0.241, 0.997), vec2(0.199, 0.786), vec2(0.143, -0.141), vec2(0.276, 0.134)
     );
 
     float shadow = 0.0;
     for (int i = 0; i < 16; i++) {
-        vec2 offset = samples[i] * texel_size;
+        vec2 offset = rot * poisson[i] * texel_size * radius;
         float pcf_depth = texture(SHADOW_TEXTURE, proj_coords.xy + offset).r;
         shadow += (current_depth - bias) > pcf_depth ? 1.0 : 0.0;
     }
+
     shadow /= 16.0;
-    return smoothstep(0.0, 1.0, shadow);
+    return shadow;
 }
 
 // ============================================================================
@@ -237,7 +228,7 @@ vec3 calculate_pbr_directional_light(DIRECTIONAL_LIGHT light, vec3 n, vec3 v, ve
 // ============================================================================
 // Debug Visualization Modes
 // ============================================================================
-int DEBUG_MODE = 0 ; // 0 -> Normal Rendering
+int DEBUG_MODE = 0; // 0 -> Normal Rendering
 
 void enable_debug_mode(int mode, vec3 n, vec3 l, vec2 uv, vec3 albedo, float shadow, float n_dot_l, float metallic, float roughness, float ao) {
     switch (mode) {
@@ -362,7 +353,14 @@ void main()
     vec3 k_d = 1.0 - k_s;
     k_d *= 1.0 - metallic;
 
-    vec3 ambient = (k_d * albedo * ao) * 0.03;
+
+    vec3 ambient_sky = vec3(0.5, 0.6, 0.7) * 0.15;
+    vec3 ambient_ground = vec3(0.3, 0.25, 0.2) * 0.05;
+
+    float sky_factor = n.y * 0.5 + 0.5; // Map -1..1 to 0..1
+    vec3 ambient_color = mix(ambient_ground, ambient_sky, sky_factor);
+
+    vec3 ambient = k_d * albedo * ambient_color * mix(1.0, ao, 0.5);
 
     vec3 color = ambient + Lo;
 

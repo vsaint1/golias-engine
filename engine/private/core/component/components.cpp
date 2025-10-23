@@ -31,6 +31,56 @@ Model::~Model() {
     meshes.clear();
 }
 
+// NOTE: this is a very bad implemantation, needs to add CSM and better optimizations
+glm::mat4 DirectionalLight::get_projection(const glm::mat4& camera_view, const glm::mat4& camera_proj) const {
+    glm::vec3 light_dir = glm::normalize(direction);
+
+    glm::mat4 invCam = glm::inverse(camera_proj * camera_view);
+
+    std::vector<glm::vec3> frustum_corners;
+    for (int x = 0; x < 2; ++x)
+        for (int y = 0; y < 2; ++y)
+            for (int z = 0; z < 2; ++z) {
+                glm::vec4 corner = invCam * glm::vec4(
+                                       2.0f * x - 1.0f, // -1 or +1
+                                       2.0f * y - 1.0f, // -1 or +1
+                                       2.0f * z - 1.0f, // -1 or +1
+                                       1.0f
+                                       );
+                corner /= corner.w;
+                frustum_corners.push_back(glm::vec3(corner));
+            }
+
+    glm::vec3 scene_center(0.0f);
+    for (auto& c : frustum_corners)
+        scene_center += c;
+    scene_center /= static_cast<float>(frustum_corners.size());
+
+    glm::vec3 light_position = scene_center - light_dir * 500.0f;
+
+    glm::mat4 lightView = glm::lookAt(light_position, scene_center, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::vec3 min_bounds(FLT_MAX);
+    glm::vec3 max_bounds(-FLT_MAX);
+    for (auto& corner : frustum_corners) {
+        auto ls    = glm::vec3(lightView * glm::vec4(corner, 1.0f));
+        min_bounds = glm::min(min_bounds, ls);
+        max_bounds = glm::max(max_bounds, ls);
+    }
+
+    constexpr float extend = 200.f;
+    min_bounds.z -= extend;
+    max_bounds.z += extend;
+
+    glm::mat4 orthoProj = glm::ortho(
+        min_bounds.x, max_bounds.x,
+        min_bounds.y, max_bounds.y,
+        -max_bounds.z, -min_bounds.z
+        );
+
+    return orthoProj * lightView;
+}
+
 
 void Camera3D::update_vectors() {
     glm::vec3 f;
