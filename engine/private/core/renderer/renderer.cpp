@@ -116,7 +116,7 @@ std::shared_ptr<Texture> Renderer::load_texture(const std::string& name, const s
 
 
 
-std::shared_ptr<Model> Renderer::load_model(const char* path) {
+std::shared_ptr<MeshInstance3D> Renderer::load_model(const char* path) {
 
     std::string path_str = path;
 
@@ -153,7 +153,7 @@ std::shared_ptr<Model> Renderer::load_model(const char* path) {
         return nullptr;
     }
 
-    auto model  = std::make_shared<Model>();
+    auto model  = std::make_shared<MeshInstance3D>();
     model->path = path;
 
     // Store importer and scene to keep animation data alive

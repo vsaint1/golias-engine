@@ -14,87 +14,6 @@ void GLAPIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLen
 }
 
 
-std::shared_ptr<OpenglMesh> generate_cube_mesh() {
-    auto mesh = std::make_shared<OpenglMesh>();
-
-    std::vector<Vertex> vertices = {
-        // Front face
-        {{-0.5f, -0.5f, 0.5f}, {0, 0, 1}, {0, 0}},
-        {{0.5f, -0.5f, 0.5f}, {0, 0, 1}, {1, 0}},
-        {{0.5f, 0.5f, 0.5f}, {0, 0, 1}, {1, 1}},
-        {{-0.5f, 0.5f, 0.5f}, {0, 0, 1}, {0, 1}},
-
-        // Back face
-        {{0.5f, -0.5f, -0.5f}, {0, 0, -1}, {0, 0}},
-        {{-0.5f, -0.5f, -0.5f}, {0, 0, -1}, {1, 0}},
-        {{-0.5f, 0.5f, -0.5f}, {0, 0, -1}, {1, 1}},
-        {{0.5f, 0.5f, -0.5f}, {0, 0, -1}, {0, 1}},
-
-        // Left face
-        {{-0.5f, -0.5f, -0.5f}, {-1, 0, 0}, {0, 0}},
-        {{-0.5f, -0.5f, 0.5f}, {-1, 0, 0}, {1, 0}},
-        {{-0.5f, 0.5f, 0.5f}, {-1, 0, 0}, {1, 1}},
-        {{-0.5f, 0.5f, -0.5f}, {-1, 0, 0}, {0, 1}},
-
-        // Right face
-        {{0.5f, -0.5f, 0.5f}, {1, 0, 0}, {0, 0}},
-        {{0.5f, -0.5f, -0.5f}, {1, 0, 0}, {1, 0}},
-        {{0.5f, 0.5f, -0.5f}, {1, 0, 0}, {1, 1}},
-        {{0.5f, 0.5f, 0.5f}, {1, 0, 0}, {0, 1}},
-
-        // Top face
-        {{-0.5f, 0.5f, 0.5f}, {0, 1, 0}, {0, 0}},
-        {{0.5f, 0.5f, 0.5f}, {0, 1, 0}, {1, 0}},
-        {{0.5f, 0.5f, -0.5f}, {0, 1, 0}, {1, 1}},
-        {{-0.5f, 0.5f, -0.5f}, {0, 1, 0}, {0, 1}},
-
-        // Bottom face
-        {{-0.5f, -0.5f, -0.5f}, {0, -1, 0}, {0, 0}},
-        {{0.5f, -0.5f, -0.5f}, {0, -1, 0}, {1, 0}},
-        {{0.5f, -0.5f, 0.5f}, {0, -1, 0}, {1, 1}},
-        {{-0.5f, -0.5f, 0.5f}, {0, -1, 0}, {0, 1}},
-    };
-
-    std::vector<unsigned int> indices = {
-        0, 1, 2, 0, 2, 3, // Front
-        4, 5, 6, 4, 6, 7, // Back
-        8, 9, 10, 8, 10, 11, // Left
-        12, 13, 14, 12, 14, 15, // Right
-        16, 17, 18, 16, 18, 19, // Top
-        20, 21, 22, 20, 22, 23 // Bottom
-    };
-
-    mesh->vertex_count = 24;
-    mesh->index_count  = 36;
-
-
-    glGenVertexArrays(1, &mesh->vao);
-    glGenBuffers(1, &mesh->vbo);
-    glGenBuffers(1, &mesh->ebo);
-
-    glBindVertexArray(mesh->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-
-    return mesh;
-}
-
-
 std::shared_ptr<OpenglTexture> load_cubemap_atlas(const std::string& atlasPath, CUBEMAP_ORIENTATION orient = CUBEMAP_ORIENTATION::DEFAULT) {
 
     auto cubemap_texture = std::make_shared<OpenglTexture>();
@@ -425,7 +344,6 @@ bool OpenglRenderer::initialize(SDL_Window* window) {
     const auto& viewport = GEngine->get_config().get_viewport();
     // LOG_INFO("Using backend: %s, Viewport: %dx%d", viewport.width, viewport.height);
 
-    cube_mesh = generate_cube_mesh();
 
     int msaa_buffers = 0, msaa_samples = 0;
     SDL_GL_GetAttribute(SDL_GL_MULTISAMPLEBUFFERS, &msaa_buffers);
@@ -534,7 +452,7 @@ std::shared_ptr<Texture> OpenglRenderer::load_texture(const std::string& name, c
 }
 
 
-std::shared_ptr<Model> OpenglRenderer::load_model(const char* path) {
+std::shared_ptr<MeshInstance3D> OpenglRenderer::load_model(const char* path) {
 
     if (_models.contains(path)) {
         return _models[path];
@@ -663,6 +581,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
         }
 
+
     }
 
     std::vector<glm::ivec4> bone_ids;
@@ -678,7 +597,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 
     // Upload vertex data (position, normal, uv)
     glBindBuffer(GL_ARRAY_BUFFER, ogl_mesh->vbo);
-    glBufferData(GL_ARRAY_BUFFER, ogl_mesh->vertices.size() * sizeof(Vertex), ogl_mesh->vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, ogl_mesh->vertices.size() * sizeof(Vertex), ogl_mesh->vertices.data(), GL_DYNAMIC_DRAW);
 
     // Upload index data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ogl_mesh->ebo);
@@ -719,7 +638,7 @@ std::unique_ptr<Mesh> OpenglRenderer::load_mesh(aiMesh* mesh, const aiScene* sce
 }
 
 
-void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
+void OpenglRenderer::draw_model(const Transform3D& t, const MeshInstance3D* model) {
 
 
     if (!model || !default_shader) {
@@ -740,7 +659,7 @@ void OpenglRenderer::draw_model(const Transform3D& t, const Model* model) {
     }
 }
 
-void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) {
+void OpenglRenderer::draw_animated_model(const Transform3D& t, const MeshInstance3D* model, const glm::mat4* bone_transforms, int bone_count) {
     if (!model || !default_shader) {
         return;
     }
@@ -770,9 +689,9 @@ void OpenglRenderer::draw_animated_model(const Transform3D& t, const Model* mode
 void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
     static DirectionalLight sun_light;
-    sun_light.direction = glm::vec3(0.0f, -2.5f, 0.0f);
+    sun_light.direction = glm::vec3(1.f, -2.5f, 1.f);
     sun_light.color = glm::vec3(1.0f, 0.98f, 0.9f);
-    sun_light.intensity = 1.f;
+    sun_light.intensity = 10.f;
 
 
     auto lightProjection = sun_light.get_projection(view,projection);
@@ -814,7 +733,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 
         // Upload instance model matrices
         glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
-        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
 
         // Set up instanced model matrix attributes (location 3-6 for mat4)
         // CRITICAL: Buffer must be bound when setting up attributes
@@ -888,7 +807,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, buffers.instance_buffer);
-        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
 
         glBindVertexArray(ogl_mesh->vao);
 
@@ -909,7 +828,7 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
         mesh->material->bind();
 
         // TODO: refactor this to use FBO
-        glActiveTexture(GL_TEXTURE4);
+        glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, shadowTexID);
         ogl_shader->set_value("SHADOW_TEXTURE", SHADOW_TEXTURE_UNIT);
 
@@ -950,32 +869,6 @@ void OpenglRenderer::flush(const glm::mat4& view, const glm::mat4& projection) {
 #pragma endregion
 }
 
-
-void OpenglRenderer::draw_mesh(const Transform3D& transform, const MeshInstance3D& mesh, const Shader* shader) {
-
-    if (!cube_mesh) {
-        return;
-    }
-
-    Transform3D temp = transform;
-    temp.scale       = mesh.size;
-
-    auto& batch                             = _instanced_batches[cube_mesh.get()];
-    batch.mesh                              = cube_mesh.get();
-    batch.mesh->material->albedo            = mesh.material.albedo;
-    batch.mesh->material->metallic          = mesh.material.metallic;
-    batch.mesh->material->ambient_occlusion = mesh.material.ambient_occlusion;
-    batch.mesh->material->roughness         = mesh.material.roughness;
-
-    batch.mesh->material->albedo_texture = mesh.material.albedo_texture;
-    batch.mesh->material->normal_texture = mesh.material.normal_texture;
-    batch.mesh->material->shader         = default_shader;
-    batch.shader                         = default_shader;
-    batch.models.push_back(temp.get_model_matrix());
-    batch.colors.push_back(mesh.material.albedo);
-    batch.command = EDrawCommand::MESH;
-    batch.mode    = GEngine->get_config().is_debug ? EDrawMode::LINES : EDrawMode::TRIANGLES;
-}
 
 void OpenglRenderer::draw_environment(const glm::mat4& view, const glm::mat4& projection) {
 

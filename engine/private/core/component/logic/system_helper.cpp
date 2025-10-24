@@ -109,7 +109,7 @@ glm::vec3 interpolate_scale(float animTime, const aiNodeAnim* nodeAnim) {
 }
 
 void read_node_hierarchy(float animTime, const aiNode* node, const glm::mat4& parentTransform, const aiAnimation* animation,
-                         const Model& model, std::unordered_map<std::string, glm::mat4>& bone_map) {
+                         const MeshInstance3D& model, std::unordered_map<std::string, glm::mat4>& bone_map) {
 
     std::string nodeName(node->mName.C_Str());
     const aiMatrix4x4& nodeTransformAI = node->mTransformation;

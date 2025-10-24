@@ -49,15 +49,13 @@ public:
 
     ~OpenglRenderer() override;
 
-    void draw_model(const Transform3D& t, const Model* model) override;
+    void draw_model(const Transform3D& t, const MeshInstance3D* model) override;
 
-    void draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count) override;
-
-    void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader) override;
+    void draw_animated_model(const Transform3D& t, const MeshInstance3D* model, const glm::mat4* bone_transforms, int bone_count) override;
 
     void draw_environment(const glm::mat4& view, const glm::mat4& projection) override;
 
-    std::shared_ptr<Model> load_model(const char* path) override;
+    std::shared_ptr<MeshInstance3D> load_model(const char* path) override;
 
 
 private:
@@ -68,7 +66,6 @@ private:
     void setup_cubemap();
 
     OpenglMesh* skybox_mesh               = nullptr;
-    std::shared_ptr<OpenglMesh> cube_mesh = nullptr;
 
     OpenglShader* default_shader = nullptr;
     OpenglShader* skybox_shader  = nullptr;

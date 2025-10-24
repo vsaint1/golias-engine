@@ -98,25 +98,20 @@ public:
         LOG_WARN("flush not implemented for this renderer");
     }
 
-    virtual void draw_model(const Transform3D& t, const Model* model) {
+    virtual void draw_model(const Transform3D& t, const MeshInstance3D* model) {
         LOG_WARN("draw_model not implemented for this renderer");
     }
 
-       virtual void draw_animated_model(const Transform3D& t, const Model* model, const glm::mat4* bone_transforms, int bone_count){
+       virtual void draw_animated_model(const Transform3D& t, const MeshInstance3D* model, const glm::mat4* bone_transforms, int bone_count){
         LOG_WARN("draw_animated_model not implemented for this renderer");
     }
     
-    // TODO: add shader parameter
-    virtual void draw_mesh(const Transform3D& transform, const MeshInstance3D& cube, const Shader* shader = nullptr) {
-        LOG_WARN("draw_cube not implemented for this renderer");
-    }
 
- 
     virtual void draw_environment(const glm::mat4& view, const glm::mat4& projection) {
         LOG_WARN("draw_environment not implemented for this renderer");
     }
 
-    virtual std::shared_ptr<Model> load_model(const char* path);
+    virtual std::shared_ptr<MeshInstance3D> load_model(const char* path);
 
 protected:
     SDL_Window* _window = nullptr;
@@ -130,7 +125,7 @@ protected:
 
 
     // TODO: consider using resource manager for models, textures, fonts
-    std::unordered_map<std::string, std::shared_ptr<Model>> _models;
+    std::unordered_map<std::string, std::shared_ptr<MeshInstance3D>> _models;
 
     std::unordered_map<std::string, std::shared_ptr<Texture>> _textures;
 

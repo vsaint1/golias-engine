@@ -174,16 +174,16 @@ struct PhysicsBody {
  * @brief Represents a 3D mesh instance with size and material properties.
  * @ingroup Components
  */
-struct MeshInstance3D {
+struct MeshInstance3D_Old {
     glm::vec3 size    = glm::vec3(1.f);
     Material material = {};
 };
 
 /*!
- * @brief Represents a 3D model loaded from a file.
+ * @brief Represents a 3D model/primitives/animated meshes
  * @ingroup Components
  */
-struct Model {
+struct MeshInstance3D {
     std::string path;
     std::vector<std::shared_ptr<Mesh>> meshes;
 
@@ -195,7 +195,7 @@ struct Model {
     bool is_loaded = false;
 
 
-    ~Model();
+    ~MeshInstance3D();
 };
 
 
@@ -349,13 +349,13 @@ inline void serialize_components(flecs::world& ecs) {
     ecs.component<Material>().member<glm::vec3>("albedo").member<Metallic>("metallic").member<float>("roughness");
 
 
-    ecs.component<MeshInstance3D>().member<glm::vec3>("size").member<Material>("material");
+    ecs.component<MeshInstance3D_Old>().member<glm::vec3>("size").member<Material>("material");
 
     ecs.component<Transform3D>().member<glm::vec3>("position").member<glm::vec3>("rotation").member<glm::vec3>("scale");
 
     ecs.component<tags::ActiveScene>().add(flecs::Exclusive);
 
-    ecs.component<Model>();
+    ecs.component<MeshInstance3D>();
 
 
     ecs.component<std::string>()

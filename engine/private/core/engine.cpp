@@ -296,7 +296,7 @@ void engine_setup_systems(flecs::world& world) {
 
 #pragma region 3D SYSTEMS
 
-    world.system<Model, Animation3D, Transform3D>("Animation_System_OnUpdate")
+    world.system<MeshInstance3D, Animation3D, Transform3D>("Animation_System_OnUpdate")
         .kind(flecs::OnUpdate)
         .with<tags::ActiveScene>()
         .up()
@@ -314,14 +314,20 @@ void engine_setup_systems(flecs::world& world) {
 
     scene_manager_system(world);
 
-    world.system<Script>("LoadScripts_OnStart").kind(flecs::OnStart).with<tags::ActiveScene>().up().each([&](flecs::entity e, Script& s) {
-        if (s.path.empty()) {
-            LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
-            return;
-        }
+    auto PostOnStart = world.entity("PostOnStart")
+       .add(flecs::Phase)
+       .depends_on(flecs::OnStart);
 
-        setup_scripts_system(e, s);
-    });
+    world.system<Script>("LoadScripts_OnStart")
+        .kind(PostOnStart)  // Use custom phase
+        .with<tags::ActiveScene>().up()
+        .each([&](flecs::entity e, Script& s) {
+            if (s.path.empty()) {
+                LOG_WARN("Script component on entity %s has empty path", e.name().c_str());
+                return;
+            }
+            setup_scripts_system(e, s);
+        });
 
-    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::OnUpdate).with<tags::ActiveScene>().up().each(process_scripts_system);
+    world.system<Script>("ProcessScripts_OnUpdate").kind(flecs::PostUpdate).with<tags::ActiveScene>().up().each(process_scripts_system);
 }

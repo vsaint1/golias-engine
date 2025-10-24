@@ -18,9 +18,9 @@ Script::~Script() {
     }
 }
 
-Model::~Model() {
+MeshInstance3D::~MeshInstance3D() {
     if (is_loaded && scene) {
-        LOG_DEBUG("Releasing model: %s", path.c_str());
+        // LOG_DEBUG("Releasing model: %s", path.c_str());
         if (importer) {
             importer->FreeScene();
         }

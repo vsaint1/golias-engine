@@ -99,7 +99,7 @@ void update_transforms_system(flecs::entity e, Transform2D& t) {
 #pragma endregion
 
 #pragma region 3D SYSTEMS
-void update_animation(Model& model, Animation3D& anim, float deltaTime) {
+void update_animation(MeshInstance3D& model, Animation3D& anim, float deltaTime) {
     if (!model.scene || !model.scene->HasAnimations() || !anim.is_playing) {
         return;
     }
@@ -167,7 +167,7 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
     const auto& window = GEngine->get_config().get_window();
 
     // Render all 3D models in the scene (non-animated)
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, Model& model) {
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, MeshInstance3D& model) {
         
         if (e.has<Animation3D>()) {
             return;
@@ -193,16 +193,14 @@ void render_world_3d_system(flecs::entity e, Camera3D& camera) {
         }
     });
 
-    // Render all MeshInstance3D components
-    GEngine->get_world().each(
-        [&](flecs::entity e, Transform3D& t, const MeshInstance3D& cube) { GEngine->get_renderer()->draw_mesh(t, cube); });
+
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, const Camera3D& cam) {
         GEngine->get_renderer()->flush(cam.get_view(t), cam.get_projection(window.width, window.height));
     });
 }
 
-void animation_system(flecs::entity e, Model& model, Animation3D& anim, Transform3D& transform) {
+void animation_system(flecs::entity e, MeshInstance3D& model, Animation3D& anim, Transform3D& transform) {
 
     if (!model.is_loaded && !model.path.empty()) {
         auto loaded = GEngine->get_renderer()->load_model(model.path.c_str());
@@ -376,19 +374,26 @@ void setup_scripts_system(flecs::entity e, Script& script) {
 
     push_entity_to_lua(script.lua_state, e);
 
-    // Call _ready() if it exists
-    lua_getglobal(script.lua_state, "_ready");
-    if (lua_isfunction(script.lua_state, -1)) {
-        if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
-            const char* err = lua_tostring(script.lua_state, -1);
-            LOG_ERROR("Error in _ready() of %s: %s", script.path.c_str(), err);
-            lua_pop(script.lua_state, 1);
-        } else {
-            script.ready_called = true;
-        }
-    } else {
-        lua_pop(script.lua_state, 1);
-    }
+
+    GEngine->get_world().defer([e, &script]() {
+        // Call _ready() if it exists
+           lua_getglobal(script.lua_state, "_ready");
+           if (lua_isfunction(script.lua_state, -1)) {
+               if (lua_pcall(script.lua_state, 0, 0, 0) != LUA_OK) {
+                   const char* err = lua_tostring(script.lua_state, -1);
+                   LOG_ERROR("Error in _ready() of %s: %s", script.path.c_str(), err);
+                   lua_pop(script.lua_state, 1);
+               } else {
+                   script.ready_called = true;
+               }
+           } else {
+               lua_pop(script.lua_state, 1);
+           }
+
+
+    });
+
+
 }
 
 void process_event_scripts_system(const Script& script, const SDL_Event& event) {
@@ -417,6 +422,7 @@ void process_scripts_system(Script& script) {
     if (!script.ready_called || !script.lua_state) {
         return;
     }
+
 
     // Call _process
     lua_getglobal(script.lua_state, "_process");

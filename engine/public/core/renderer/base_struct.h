@@ -151,12 +151,11 @@ struct Material {
     glm::vec3 albedo                        = glm::vec3(1.f);
     std::shared_ptr<Texture> albedo_texture = nullptr;
 
-    glm::vec3 ambient                       = glm::vec3(0.f); /// KD **DEPRECATED**
-
     Metallic metallic                       = {};
     AmbientOcclusion ambient_occlusion      = {};
     Emission emission                      = {};
 
+    glm::vec3 ambient                       = glm::vec3(0.f); /// KD
     float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
     float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent
     int illumination_mode = 0; // TODO: define illumination modes
