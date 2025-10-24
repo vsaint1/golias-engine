@@ -129,6 +129,12 @@ struct AmbientOcclusion {
     float value = 0.0f; /// **UNUSED**
 };
 
+struct Emission {
+    std::shared_ptr<Texture> texture = nullptr;
+    glm::vec3 emissive = glm::vec3(1.0f);
+    float strength = 0.0f;
+};
+
 class Shader;
 /*!
 
@@ -149,6 +155,7 @@ struct Material {
 
     Metallic metallic                       = {};
     AmbientOcclusion ambient_occlusion      = {};
+    Emission emission                      = {};
 
     float roughness       = 0.0f; /// 0.0 -> mirror | 1.0 -> blurs
     float dissolve        = 1.0f; /// 1.0 -> opaque | 0.0 -> transparent

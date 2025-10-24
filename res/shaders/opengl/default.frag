@@ -10,6 +10,7 @@ uniform sampler2D ALBEDO_TEXTURE;
 uniform sampler2D NORMAL_MAP_TEXTURE;
 uniform sampler2D METALLIC_ROUGHNESS_TEXTURE;
 uniform sampler2D AO_TEXTURE; // AMBIENT OCCLUSION
+uniform sampler2D EMISSION_TEXTURE;
 uniform sampler2D SHADOW_TEXTURE;
 
 uniform vec3 CAMERA_POSITION;
@@ -18,6 +19,8 @@ struct Material {
     vec3 albedo;
     float metallic;
     float roughness;
+    vec3 emissive;
+    float emissive_strength;
 };
 
 struct DIRECTIONAL_LIGHT {
@@ -291,10 +294,7 @@ void main()
         vec3 mr_sample = texture(METALLIC_ROUGHNESS_TEXTURE, UV).rgb;
         metallic = mr_sample.b;
         roughness = mr_sample.g;
-
-        if (!USE_AO_TEXTURE) {
-            ao = mr_sample.r;
-        }
+        ao = mr_sample.r;
     }
 
     // Ambient Occlusion Texture overrides R channel of Metallic-Roughness texture

@@ -50,6 +50,8 @@ void Material::bind() const {
         // shader->set_value("material.ao", ambient_occlusion.value);
         shader->set_value("material.metallic", metallic.value);
         shader->set_value("material.roughness", roughness);
+        // shader->set_value("material.emissive",emission.emissive,1);
+        // shader->set_value("material.emissive_strength",emission.strength);
     }
 
     if (albedo_texture && albedo_texture->is_valid()) {
@@ -101,10 +103,24 @@ void Material::bind() const {
         }
     }
 
+    // if (emission.texture && emission.texture->is_valid()) {
+    //     emission.texture->bind(EMISSIVE_TEXTURE_UNIT);
+    //     if (shader && shader->is_valid()) {
+    //         shader->set_value("EMISSIVE_TEXTURE", EMISSIVE_TEXTURE_UNIT);
+    //         shader->set_value("USE_EMISSIVE_TEXTURE", true);
+    //     }
+    // } else {
+    //     if (shader && shader->is_valid()) {
+    //         shader->set_value("USE_EMISSIVE_TEXTURE", false);
+    //     }
+    // }
+
+
 }
 
 // TODO: implement this function
 void parse_material(aiMesh* ai_mesh, const aiScene* scene, const std::string& base_dir, Mesh& mesh_ref) {
+
 }
 
 
@@ -119,25 +135,27 @@ void parse_meshes(aiMesh* ai_mesh, const aiScene* scene, const std::string& base
     if (scene->mNumMaterials > ai_mesh->mMaterialIndex) {
         aiMaterial* mat = scene->mMaterials[ai_mesh->mMaterialIndex];
 
-        aiColor3D kd(0.0f, 0.0f, 0.0f);
-        mat->Get(AI_MATKEY_COLOR_DIFFUSE, kd);
-        mesh_ref.material->albedo = {kd.r, kd.g, kd.b};
+        aiColor3D base_color(1.0f, 1.0f, 1.0f);
 
-        // **DEPRECATED** this shouldnt be used in PBR
-        // aiColor3D ka(0.0f, 0.0f, 0.0f);
-        // mat->Get(AI_MATKEY_COLOR_AMBIENT, ka);
-        // mesh_ref.material->ambient = {ka.r, ka.g, ka.b};
+        if (mat->Get(AI_MATKEY_BASE_COLOR, base_color) != AI_SUCCESS) {
+            mat->Get(AI_MATKEY_COLOR_DIFFUSE, base_color);
+        }
 
-        // aiColor3D ks(0.0f, 0.0f, 0.0f);
-        // mat->Get(AI_MATKEY_COLOR_SPECULAR, ks);
-        // mesh_ref.material->metallic.specular = {ks.r, ks.g, ks.b};
+        mesh_ref.material->albedo = {base_color.r, base_color.g, base_color.b};
 
-        float metalness = 0.0f;
-        mat->Get(AI_MATKEY_METALLIC_FACTOR, metalness);
-        mesh_ref.material->metallic.value = metalness;
+        float metallic = 0.0f;
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
+        mesh_ref.material->metallic.value = metallic;
 
-        float roughness = 0.0f;
-        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
+        float roughness = 0.5f;
+
+        if (mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) != AI_SUCCESS) {
+            float shininess = 0.0f;
+            if (mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
+                roughness = glm::sqrt(2.0f / (shininess + 2.0f));
+            }
+        }
+
         mesh_ref.material->roughness = roughness;
 
     }
