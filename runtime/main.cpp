@@ -1,108 +1,6 @@
 #include "stdafx.h"
 #include <SDL3/SDL_main.h>
-#include "core/io/file_system.h"
-
-class TextureManager {
-    std::unordered_map<std::string, GLuint> textures;
-
-    static GLuint create_gl_texture(const unsigned char* data, int width, int height, int channels) {
-        GLuint texID = 0;
-        glGenTextures(1, &texID);
-        glBindTexture(GL_TEXTURE_2D, texID);
-
-        GLenum format = GL_RGB;
-        if (channels == 1)
-            format = GL_RED;
-        else if (channels == 3)
-            format = GL_RGB;
-        else if (channels == 4)
-            format = GL_RGBA;
-
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        return texID;
-    }
-
-public:
-    TextureManager() = default;
-
-    ~TextureManager() {
-        cleanup();
-    }
-
-
-    GLuint load_texture_from_file(const std::string& path) {
-
-        if (auto it = textures.find(path); it != textures.end())
-            return it->second;
-
-        int width, height, channels;
-        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-        if (!data) {
-            spdlog::error("Failed to load texture: {}", path);
-            return 0;
-        }
-
-        GLuint texID = create_gl_texture(data, width, height, channels);
-        stbi_image_free(data);
-
-        textures[path] = texID;
-        spdlog::info("Loaded Texture: {}", path);
-        return texID;
-    }
-
-
-    GLuint load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") {
-        std::string key = name.empty() ? "embedded_tex_" + std::to_string(reinterpret_cast<size_t>(buffer)) : name;
-
-        if (auto it = textures.find(key); it != textures.end())
-            return it->second;
-
-        int width, height, channels;
-        unsigned char* data = stbi_load_from_memory(buffer, (int) size, &width, &height, &channels, 0);
-        if (!data) {
-            spdlog::error("Failed to load texture from memory: {}", key);
-            return 0;
-        }
-
-        GLuint texID = create_gl_texture(data, width, height, channels);
-        stbi_image_free(data);
-
-        textures[key] = texID;
-        spdlog::info("Loaded embedded Texture: {}, Path {}",texID, key);
-        return texID;
-    }
-
-
-    GLuint load_texture_from_raw_data(const unsigned char* data, int width, int height, int channels = 4,
-                                  const std::string& name                                        = "") {
-        std::string key = name.empty() ? "raw_" + std::to_string(reinterpret_cast<size_t>(data)) : name;
-
-        if (auto it = textures.find(key); it != textures.end())
-            return it->second;
-
-        GLuint texID  = create_gl_texture(data, width, height, channels);
-        textures[key] = texID;
-        spdlog::info("Loaded embedded Texture: {}, Path {}",texID, key);
-
-        return texID;
-    }
-
-    // -------------------------------------------------------------
-    // Cleanup all OpenGL textures
-    // -------------------------------------------------------------
-    void cleanup() {
-        for (auto& [key, texID] : textures)
-            glDeleteTextures(1, &texID);
-        textures.clear();
-    }
-};
+#include  "core/renderer/opengl/ogl_struct.h"
 
 enum class FramebufferTextureFormat {
     None = 0,
@@ -146,8 +44,6 @@ public:
     virtual uint32_t get_depth_attachment_id() const = 0;
 
     virtual const FramebufferSpecification& get_specification() const = 0;
-
-
 };
 
 
@@ -160,6 +56,7 @@ class OpenGLFramebuffer final : public Framebuffer {
 public:
     OpenGLFramebuffer(const FramebufferSpecification& spec)
         : specification(spec) {
+        spdlog::info("OpenGLFramebuffer::OpenGLFramebuffer - Creating Framebuffer ({}x{})", spec.width, spec.height);
         invalidate();
     }
 
@@ -171,6 +68,7 @@ public:
         if (fbo)
             cleanup();
 
+        spdlog::warn("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})", specification.width, specification.height);
         glGenFramebuffers(1, &fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -255,7 +153,6 @@ public:
     }
 
     void cleanup() {
-
         if (depth_attachment)
             glDeleteTextures(1, &depth_attachment);
 
@@ -264,7 +161,6 @@ public:
 
         if (fbo)
             glDeleteFramebuffers(1, &fbo);
-
     }
 };
 
@@ -428,92 +324,83 @@ struct SpotLight {
     float outerCutOff = 17.5f;
 };
 
+// ============================================================================
+// ABSTRACT RENDERER
+// ============================================================================
 class Renderer {
 public:
+    virtual ~Renderer() = default;
+
+    virtual bool initialize(int width, int height) = 0;
+    virtual void resize(int width, int height) = 0;
+    virtual void cleanup() = 0;
+
+    // Texture loading
+    virtual GLuint load_texture_from_file(const std::string& path) = 0;
+    virtual GLuint load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
+    virtual GLuint load_texture_from_raw_data(const unsigned char* data, int width, int height, int channels = 4,
+                                              const std::string& name = "") = 0;
+
+    // Shadow pass
+    virtual void begin_shadow_pass() = 0;
+    virtual void render_shadow_pass(const Transform& transform, const MeshRenderer& mesh, const glm::mat4& lightSpaceMatrix) = 0;
+    virtual void end_shadow_pass() = 0;
+
+    // Main render pass - REFACTORED to use light classes
+    virtual void begin_render_target() = 0;
+    virtual void render_entity(const Transform& transform,
+                               const MeshRenderer& mesh,
+                               const Material& material,
+                               const Camera& camera,
+                               const glm::mat4& lightSpaceMatrix,
+                               const std::vector<DirectionalLight>& directionalLights,
+                               const std::vector<std::pair<Transform, SpotLight>>& spotLights) = 0;
+    virtual void end_render_target() = 0;
+
+protected:
+    std::unique_ptr<Shader> _default_shader = nullptr;
+    std::unique_ptr<Shader> _shadow_shader = nullptr;
+    std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
+    std::unordered_map<std::string, Uint32> _textures;
 };
 
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-#define SHADER_HEADER "#version 300 es\nprecision highp float;\n\n"
-#else
-#define SHADER_HEADER "#version 330 core\n\n"
-#endif
 
-class OpenGLRenderer {
-    GLuint shaderProgram       = 0;
-    GLuint shadowShaderProgram = 0;
-    int width, height;
-    TextureManager* textureManager = nullptr;
-    std::shared_ptr<Framebuffer> shadowMap;
+class OpenGLRenderer final : public Renderer {
+    int width = 0, height = 0;
+    SDL_GLContext _context = nullptr;
 
-    GLuint compile_shader(GLenum type, const char* source) {
-        GLuint shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, nullptr);
-        glCompileShader(shader);
+    static GLuint create_gl_texture(const unsigned char* data, int w, int h, int channels) {
+        GLuint texID = 0;
+        glGenTextures(1, &texID);
+        glBindTexture(GL_TEXTURE_2D, texID);
 
-        int success;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            char infoLog[512];
-            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-            std::cerr << "Shader compilation failed: " << infoLog << std::endl;
-        }
-        return shader;
-    }
+        GLenum format = GL_RGB;
+        if (channels == 1)
+            format = GL_RED;
+        else if (channels == 3)
+            format = GL_RGB;
+        else if (channels == 4)
+            format = GL_RGBA;
 
-    GLuint create_shader_program(const char* vertSrc, const char* fragSrc) {
-        GLuint vertexShader   = compile_shader(GL_VERTEX_SHADER, vertSrc);
-        GLuint fragmentShader = compile_shader(GL_FRAGMENT_SHADER, fragSrc);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
-        GLuint program = glCreateProgram();
-        glAttachShader(program, vertexShader);
-        glAttachShader(program, fragmentShader);
-        glLinkProgram(program);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        int success;
-        glGetProgramiv(program, GL_LINK_STATUS, &success);
-        if (!success) {
-            char infoLog[512];
-            glGetProgramInfoLog(program, 512, nullptr, infoLog);
-            std::cerr << "Shader linking failed: " << infoLog << std::endl;
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        return program;
+        return texID;
     }
 
 public:
-    void begin_shadow_pass() {
-        shadowMap->bind();
-
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        glUseProgram(shadowShaderProgram);
+    ~OpenGLRenderer() override {
+        OpenGLRenderer::cleanup();
     }
 
-    void render_shadow_pass(const Transform& transform, const MeshRenderer& mesh, const glm::mat4& lightSpaceMatrix) {
-        glm::mat4 model = transform.get_matrix();
-
-        glUniformMatrix4fv(glGetUniformLocation(shadowShaderProgram, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shadowShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-
-        glBindVertexArray(mesh.VAO);
-        glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-    }
-
-    void end_shadow_pass() {
-        shadowMap->unbind();
-        glCullFace(GL_BACK);
-        glViewport(0, 0, width, height);
-    }
-
-    bool initialize(int w, int h, TextureManager* texMgr) {
-        width          = w;
-        height         = h;
-        textureManager = texMgr;
-
+    bool initialize(int w, int h) override {
+        width = w;
+        height = h;
 
         if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
             std::cerr << "Failed to initialize GLAD" << std::endl;
@@ -523,158 +410,257 @@ public:
         glEnable(GL_DEPTH_TEST);
         glViewport(0, 0, width, height);
 
-        auto vertexShaderSource = SHADER_HEADER + load_assets_file("shaders/opengl/default.vert");
-        auto fragmentShaderSource = SHADER_HEADER +load_assets_file("shaders/opengl/default.frag");
-        auto shadowVertexShaderSource = SHADER_HEADER + load_assets_file("shaders/opengl/shadow.vert");
-        auto shadowFragmentShaderSource = SHADER_HEADER + load_assets_file("shaders/opengl/shadow.frag");
-        shaderProgram       = create_shader_program(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
-        shadowShaderProgram = create_shader_program(shadowVertexShaderSource.c_str(), shadowFragmentShaderSource.c_str());
-
+        _default_shader = std::make_unique<OpenglShader>("shaders/opengl/default.vert", "shaders/opengl/default.frag");
+        _shadow_shader = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
 
         FramebufferSpecification spec;
-        spec.width       = 8192;
-        spec.height      = 8192;
+        spec.width = 8192;
+        spec.height = 8192;
         spec.attachments = {
             {FramebufferTextureFormat::DEPTH_COMPONENT}
         };
 
-        shadowMap = std::make_shared<OpenGLFramebuffer>(spec);
+        shadow_map_fbo = std::make_shared<OpenGLFramebuffer>(spec);
 
         return true;
     }
 
+    GLuint load_texture_from_file(const std::string& path) override {
+        if (auto it = _textures.find(path); it != _textures.end())
+            return it->second;
 
-    void begin_render_target() {
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glUseProgram(shaderProgram);
-        glViewport(0, 0, width, height);
+        int w, h, channels;
+        unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 0);
+        if (!data) {
+            spdlog::error("Failed to load texture: {}", path);
+            return 0;
+        }
 
+        GLuint texID = create_gl_texture(data, w, h, channels);
+        stbi_image_free(data);
+
+        _textures[path] = texID;
+        spdlog::info("Loaded Texture: {}", path);
+        return texID;
     }
 
+    GLuint load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") override {
+        std::string key = name.empty() ? "embedded_tex_" + std::to_string(reinterpret_cast<size_t>(buffer)) : name;
 
-    void render_entity(const Transform& transform, const MeshRenderer& mesh,
-                      const Material& material, const Camera& camera,
-                      const glm::mat4& lightSpaceMatrix,
-                      const std::vector<glm::vec3>& dirLightDirs,
-                      const std::vector<glm::vec3>& dirLightColors,
-                      const std::vector<bool>& dirLightCastShadows,
-                      const std::vector<glm::vec3>& spotLightPos,
-                      const std::vector<glm::vec3>& spotLightDirs,
-                      const std::vector<glm::vec3>& spotLightColors,
-                      const std::vector<float>& spotLightCutOffs,
-                      const std::vector<float>& spotLightOuterCutOffs) {
-        glm::mat4 model      = transform.get_matrix();
-        glm::mat4 view       = camera.get_view_matrix();
-        glm::mat4 projection = camera.get_projection_matrix(static_cast<float>(width) / height);
+        if (auto it = _textures.find(key); it != _textures.end())
+            return it->second;
 
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-
-        glUniform3fv(glGetUniformLocation(shaderProgram, "camPos"), 1, glm::value_ptr(camera.position));
-        glUniform3fv(glGetUniformLocation(shaderProgram, "albedo"), 1, glm::value_ptr(material.albedo));
-        glUniform1f(glGetUniformLocation(shaderProgram, "metallic"), material.metallic);
-        glUniform1f(glGetUniformLocation(shaderProgram, "roughness"), material.roughness);
-        glUniform1f(glGetUniformLocation(shaderProgram, "ao"), material.ao);
-        glUniform3fv(glGetUniformLocation(shaderProgram, "emissive"), 1, glm::value_ptr(material.emissive));
-        glUniform1f(glGetUniformLocation(shaderProgram, "emissiveStrength"), material.emissiveStrength);
-
-        glUniform1i(glGetUniformLocation(shaderProgram, "useAlbedoMap"), material.useAlbedoMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "useMetallicMap"), material.useMetallicMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "useRoughnessMap"), material.useRoughnessMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "useNormalMap"), material.useNormalMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "useAOMap"), material.useAOMap);
-        glUniform1i(glGetUniformLocation(shaderProgram, "useEmissiveMap"), material.useEmissiveMap);
-
-
-        if (material.useAlbedoMap && material.albedoMap) {
-            glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.albedoMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "albedoMap"), ALBEDO_TEXTURE_UNIT);
+        int w, h, channels;
+        unsigned char* data = stbi_load_from_memory(buffer, (int)size, &w, &h, &channels, 0);
+        if (!data) {
+            spdlog::error("Failed to load texture from memory: {}", key);
+            return 0;
         }
 
-        if (material.useMetallicMap && material.metallicMap) {
-            glActiveTexture(GL_TEXTURE0 + METALLIC_ROUGHNESS_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.metallicMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "metallicMap"), METALLIC_ROUGHNESS_TEXTURE_UNIT);
-        }
+        GLuint texID = create_gl_texture(data, w, h, channels);
+        stbi_image_free(data);
 
-        if (material.useRoughnessMap && material.roughnessMap) {
-            glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.roughnessMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "roughnessMap"), ROUGHNESS_TEXTURE_UNIT);
-        }
+        _textures[key] = texID;
+        spdlog::info("Loaded embedded Texture: {}, Path {}", texID, key);
+        return texID;
+    }
 
-        if (material.useNormalMap && material.normalMap) {
-            glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.normalMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "normalMap"), NORMAL_MAP_TEXTURE_UNIT);
-        }
+    GLuint load_texture_from_raw_data(const unsigned char* data, int w, int h, int channels = 4, const std::string& name = "") override {
+        std::string key = name.empty() ? "raw_" + std::to_string(reinterpret_cast<size_t>(data)) : name;
 
-        if (material.useAOMap && material.aoMap) {
-            glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.aoMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "aoMap"), AMBIENT_OCCLUSION_TEXTURE_UNIT);
-        }
+        if (auto it = _textures.find(key); it != _textures.end())
+            return it->second;
 
-        if (material.useEmissiveMap && material.emissiveMap) {
-            glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
-            glBindTexture(GL_TEXTURE_2D, material.emissiveMap);
-            glUniform1i(glGetUniformLocation(shaderProgram, "emissiveMap"), EMISSIVE_TEXTURE_UNIT);
-        }
+        GLuint texID = create_gl_texture(data, w, h, channels);
+        _textures[key] = texID;
+        spdlog::info("Loaded raw Texture: {}, Path {}", texID, key);
 
-        // Directional lights
-        glUniform1i(glGetUniformLocation(shaderProgram, "numDirLights"), dirLightDirs.size());
-        if (!dirLightDirs.empty()) {
-            glUniform3fv(glGetUniformLocation(shaderProgram, "dirLightDirections"), dirLightDirs.size(), glm::value_ptr(dirLightDirs[0]));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "dirLightColors"), dirLightColors.size(), glm::value_ptr(dirLightColors[0]));
+        return texID;
+    }
 
-            std::vector<int> shadowsInt(dirLightCastShadows.begin(), dirLightCastShadows.end());
-            glUniform1iv(glGetUniformLocation(shaderProgram, "dirLightCastShadows"), shadowsInt.size(), shadowsInt.data());
-        }
+    void begin_shadow_pass() override {
+        shadow_map_fbo->bind();
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        _shadow_shader->activate();
+    }
 
-        // Spot lights
-        glUniform1i(glGetUniformLocation(shaderProgram, "numSpotLights"), spotLightPos.size());
-        if (!spotLightPos.empty()) {
-            glUniform3fv(glGetUniformLocation(shaderProgram, "spotLightPositions"), spotLightPos.size(), glm::value_ptr(spotLightPos[0]));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "spotLightDirections"), spotLightDirs.size(),
-                         glm::value_ptr(spotLightDirs[0]));
-            glUniform3fv(glGetUniformLocation(shaderProgram, "spotLightColors"), spotLightColors.size(),
-                         glm::value_ptr(spotLightColors[0]));
-            glUniform1fv(glGetUniformLocation(shaderProgram, "spotLightCutOffs"), spotLightCutOffs.size(), spotLightCutOffs.data());
-            glUniform1fv(glGetUniformLocation(shaderProgram, "spotLightOuterCutOffs"), spotLightOuterCutOffs.size(),
-                         spotLightOuterCutOffs.data());
-        }
+    void render_shadow_pass(const Transform& transform, const MeshRenderer& mesh, const glm::mat4& lightSpaceMatrix) override {
+        glm::mat4 model = transform.get_matrix();
 
-        glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, shadowMap->get_depth_attachment_id());
-        glUniform1i(glGetUniformLocation(shaderProgram, "shadowMap"), SHADOW_TEXTURE_UNIT);
+        _shadow_shader->set_value("lightSpaceMatrix", lightSpaceMatrix, 1);
+        _shadow_shader->set_value("model", model, 1);
 
         glBindVertexArray(mesh.VAO);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
-
-    void end_render_target() {
-
+    void end_shadow_pass() override {
+        shadow_map_fbo->unbind();
+        glCullFace(GL_BACK);
+        glViewport(0, 0, width, height);
     }
 
-    void resize(int w, int h) {
-        width  = w;
+    void begin_render_target() override {
+        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        _default_shader->activate();
+        glViewport(0, 0, width, height);
+    }
+
+    void render_entity(const Transform& transform,
+                       const MeshRenderer& mesh,
+                       const Material& material,
+                       const Camera& camera,
+                       const glm::mat4& lightSpaceMatrix,
+                       const std::vector<DirectionalLight>& directionalLights,
+                       const std::vector<std::pair<Transform, SpotLight>>& spotLights) override {
+        glm::mat4 model = transform.get_matrix();
+        glm::mat4 view = camera.get_view_matrix();
+        glm::mat4 projection = camera.get_projection_matrix(static_cast<float>(width) / height);
+
+        _default_shader->set_value("model", model);
+        _default_shader->set_value("view", view);
+        _default_shader->set_value("projection", projection);
+        _default_shader->set_value("lightSpaceMatrix", lightSpaceMatrix);
+
+        // Camera
+        _default_shader->set_value("camPos", camera.position);
+
+        // Material
+        _default_shader->set_value("albedo", material.albedo);
+        _default_shader->set_value("metallic", material.metallic);
+        _default_shader->set_value("roughness", material.roughness);
+        _default_shader->set_value("ao", material.ao);
+        _default_shader->set_value("emissive", material.emissive);
+        _default_shader->set_value("emissiveStrength", material.emissiveStrength);
+
+        // Texture usage flags
+        _default_shader->set_value("useAlbedoMap", material.useAlbedoMap);
+        _default_shader->set_value("useMetallicMap", material.useMetallicMap);
+        _default_shader->set_value("useRoughnessMap", material.useRoughnessMap);
+        _default_shader->set_value("useNormalMap", material.useNormalMap);
+        _default_shader->set_value("useAOMap", material.useAOMap);
+        _default_shader->set_value("useEmissiveMap", material.useEmissiveMap);
+
+        // Texture bindings
+        if (material.useAlbedoMap && material.albedoMap) {
+            glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.albedoMap);
+            _default_shader->set_value("albedoMap", ALBEDO_TEXTURE_UNIT);
+        }
+
+        if (material.useMetallicMap && material.metallicMap) {
+            glActiveTexture(GL_TEXTURE0 + METALLIC_ROUGHNESS_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.metallicMap);
+            _default_shader->set_value("metallicMap", METALLIC_ROUGHNESS_TEXTURE_UNIT);
+        }
+
+        if (material.useRoughnessMap && material.roughnessMap) {
+            glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.roughnessMap);
+            _default_shader->set_value("roughnessMap", ROUGHNESS_TEXTURE_UNIT);
+        }
+
+        if (material.useNormalMap && material.normalMap) {
+            glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.normalMap);
+            _default_shader->set_value("normalMap", NORMAL_MAP_TEXTURE_UNIT);
+        }
+
+        if (material.useAOMap && material.aoMap) {
+            glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.aoMap);
+            _default_shader->set_value("aoMap", AMBIENT_OCCLUSION_TEXTURE_UNIT);
+        }
+
+        if (material.useEmissiveMap && material.emissiveMap) {
+            glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
+            glBindTexture(GL_TEXTURE_2D, material.emissiveMap);
+            _default_shader->set_value("emissiveMap", EMISSIVE_TEXTURE_UNIT);
+        }
+
+        // REFACTORED: Directional lights using DirectionalLight class
+        _default_shader->set_value("numDirLights", static_cast<int>(directionalLights.size()));
+        if (!directionalLights.empty()) {
+            std::vector<glm::vec3> directions;
+            std::vector<glm::vec3> colors;
+            std::vector<int> castShadows;
+
+            for (const auto& light : directionalLights) {
+                directions.push_back(light.direction);
+                colors.push_back(light.color * light.intensity);
+                castShadows.push_back(light.castShadows ? 1 : 0);
+            }
+
+            for (int i = 0; i < static_cast<int>(directionalLights.size()); ++i) {
+                _default_shader->set_value(fmt::format("dirLights[{}].direction", i), directions[i]);
+                _default_shader->set_value(fmt::format("dirLights[{}].color", i), colors[i]);
+                _default_shader->set_value(fmt::format("dirLights[{}].cast_shadows", i), castShadows[i]);
+            }
+
+        }
+
+        // REFACTORED: Spot lights using SpotLight class with Transform
+        _default_shader->set_value("numSpotLights", static_cast<int>(spotLights.size()));
+        if (!spotLights.empty()) {
+            std::vector<glm::vec3> positions;
+            std::vector<glm::vec3> directions;
+            std::vector<glm::vec3> colors;
+            std::vector<float> cutOffs;
+            std::vector<float> outerCutOffs;
+
+            for (const auto& [transform, light] : spotLights) {
+                positions.push_back(transform.position);
+                directions.push_back(light.direction);
+                colors.push_back(light.color * light.intensity);
+                cutOffs.push_back(glm::cos(glm::radians(light.cutOff)));
+                outerCutOffs.push_back(glm::cos(glm::radians(light.outerCutOff)));
+            }
+
+            for (int i = 0; i < static_cast<int>(spotLights.size()); ++i) {
+                _default_shader->set_value(fmt::format("spotLights[{}].position", i), positions[i]);
+                _default_shader->set_value(fmt::format("spotLights[{}].direction", i), directions[i]);
+                _default_shader->set_value(fmt::format("spotLights[{}].color", i), colors[i]);
+                _default_shader->set_value(fmt::format("spotLights[{}].inner_cut_off", i), cutOffs[i]);
+                _default_shader->set_value(fmt::format("spotLights[{}].outer_cut_off", i), outerCutOffs[i]);
+            }
+
+        }
+
+        // Shadow map
+        glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, shadow_map_fbo->get_depth_attachment_id());
+        _default_shader->set_value("shadowMap", SHADOW_TEXTURE_UNIT);
+
+        glBindVertexArray(mesh.VAO);
+        glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    void end_render_target() override {
+    }
+
+    void resize(int w, int h) override {
+        width = w;
         height = h;
         glViewport(0, 0, width, height);
     }
 
-    void cleanup() {
-        if (shaderProgram)
-            glDeleteProgram(shaderProgram);
-        if (shadowShaderProgram)
-            glDeleteProgram(shadowShaderProgram);
+    void cleanup() override {
+        // Clean up textures
+        for (auto& [key, texID] : _textures)
+            glDeleteTextures(1, &texID);
+        _textures.clear();
+
+        _default_shader->destroy();
+        _shadow_shader->destroy();
     }
 };
+
+
+
 
 // ============================================================================
 // MODEL (combines mesh + material)
@@ -688,240 +674,235 @@ struct Model {
 // ============================================================================
 // MESH LOADER (ASSIMP)
 // ============================================================================
-
 class MeshLoader {
-private:
-    static std::string get_directory(const std::string& path) {
-        size_t found = path.find_last_of("/\\");
-        if (found != std::string::npos) {
-            return path.substr(0, found + 1);
-        }
-        return "";
-    }
-
-    static Material load_material(const aiScene* scene, aiMesh* mesh,
-                                 const std::string& directory,
-                                 TextureManager& texMgr) {
-
-        Material material;
-        if (scene->mNumMaterials > mesh->mMaterialIndex) {
-            aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
-
-            // Load diffuse/albedo color
-            aiColor3D color(1.0f, 1.0f, 1.0f);
-            aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-            material.albedo = glm::vec3(color.r, color.g, color.b);
-
-            // Load emissive color
-            aiColor3D emissiveColor(0.0f, 0.0f, 0.0f);
-            if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS) {
-                material.emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
-            }
-
-            // Load emissive strength
-            float emissiveStrength = 1.0f;
-            if (aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissiveStrength) == AI_SUCCESS) {
-                material.emissiveStrength = emissiveStrength;
-            }
-
-            // Load metallic (if available)
-            float metallic = 0.0f;
-            if (aiMat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) {
-                material.metallic = metallic;
-            }
-
-            // Load roughness (if available)
-            float roughness = 0.5f;
-            if (aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
-                material.roughness = roughness;
-            } else {
-                // Try shininess (convert to roughness)
-                float shininess = 0.0f;
-                if (aiMat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
-                    material.roughness = 1.0f - glm::clamp(shininess / 128.0f, 0.0f, 1.0f);
-                }
-            }
-
-            auto load_texture = [&](aiTextureType type, GLuint& texId, bool& useFlag, const char* typeName) {
-                if (aiMat->GetTextureCount(type) > 0) {
-                    aiString texPath;
-                    if (aiMat->GetTexture(type, 0, &texPath) == AI_SUCCESS) {
-                        std::string texStr = texPath.C_Str();
-
-                        // Check for embedded texture (starts with '*')
-                        if (!texStr.empty() && texStr[0] == '*') {
-                            int texIndex = std::atoi(texStr.c_str() + 1);
-                            if (texIndex >= 0 && texIndex < static_cast<int>(scene->mNumTextures)) {
-                                const aiTexture* embeddedTex = scene->mTextures[texIndex];
-                                if (embeddedTex) {
-                                    // Handle compressed embedded textures (e.g., PNG, JPEG)
-                                    if (embeddedTex->mHeight == 0) {
-                                        texId = texMgr.load_texture_from_memory(
-                                            reinterpret_cast<const unsigned char*>(embeddedTex->pcData),
-                                            embeddedTex->mWidth
-                                            );
-                                    }
-                                    // Handle uncompressed embedded textures (raw pixel data)
-                                    else {
-                                        texId = texMgr.load_texture_from_raw_data(
-                                            reinterpret_cast<const unsigned char*>(embeddedTex->pcData),
-                                            embeddedTex->mWidth, embeddedTex->mHeight
-                                            );
-                                    }
-
-                                    if (texId != 0) {
-                                        useFlag = true;
-                                        spdlog::info("  - Loaded embedded {} ({})", typeName, texStr);
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-
-                        // Otherwise, load from file path (external texture)
-                        std::string fullPath = directory + "/" + texStr;
-                        texId                = texMgr.load_texture_from_file(fullPath);
-                        if (texId != 0) {
-                            useFlag = true;
-                            spdlog::info("  - Loaded {}: {}", typeName, fullPath);
-                        }
-                    }
-                }
-            };
-
-            load_texture(aiTextureType_DIFFUSE, material.albedoMap, material.useAlbedoMap, "albedo");
-            load_texture(aiTextureType_METALNESS, material.metallicMap, material.useMetallicMap, "metallic");
-            load_texture(aiTextureType_DIFFUSE_ROUGHNESS, material.roughnessMap, material.useRoughnessMap, "roughness");
-            load_texture(aiTextureType_NORMALS, material.normalMap, material.useNormalMap, "normal");
-            load_texture(aiTextureType_AMBIENT_OCCLUSION, material.aoMap, material.useAOMap, "AO");
-            load_texture(aiTextureType_EMISSIVE, material.emissiveMap, material.useEmissiveMap, "emissive");
-
-            // Alternative texture types (fallbacks)
-            if (!material.useAlbedoMap) {
-                load_texture(aiTextureType_BASE_COLOR, material.albedoMap, material.useAlbedoMap, "base color");
-            }
-            if (!material.useNormalMap) {
-                load_texture(aiTextureType_HEIGHT, material.normalMap, material.useNormalMap, "normal (height)");
-            }
-            if (!material.useEmissiveMap) {
-                load_texture(aiTextureType_EMISSION_COLOR, material.emissiveMap, material.useEmissiveMap, "emission color");
-            }
-        }
-
-        return material;
-    }
-
 public:
+
     static MeshRenderer load_mesh(const std::string& path) {
         Model model = load_model(path, nullptr);
         return model.meshes.empty() ? MeshRenderer() : model.meshes[0];
     }
 
-    static Model load_model(const std::string& path, TextureManager* texMgr = nullptr) {
+    static Model load_model(const std::string& path, Renderer* renderer = nullptr) {
         Model model;
 
-        Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path,
-                                                 aiProcess_Triangulate |
-                                                 aiProcess_FlipUVs |
-                                                 aiProcess_CalcTangentSpace |
-                                                 aiProcess_GenNormals);
+        const char* extension = strrchr(path.c_str(), '.');
 
+        spdlog::info("Loading Model Path: {}, FileFormat: {}", path, extension ? extension + 1 : "UNKNOWN");
+
+        Assimp::Importer importer;
+
+        constexpr unsigned int ASSIMP_FLAGS =
+            aiProcess_Triangulate |
+            aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace |
+            aiProcess_GenNormals;
+
+        const aiScene* scene = importer.ReadFile(path, ASSIMP_FLAGS);
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-            spdlog::error("Failed to load model: {}", path);
+            spdlog::error("Failed to load model: {}, Error: ", path, importer.GetErrorString());
             return model;
         }
 
         std::string directory = get_directory(path);
-        spdlog::info("Loading model: {}", path);
-        spdlog::info("Meshes: {}, Materials: {}", scene->mNumMeshes, scene->mNumMaterials);
+        spdlog::info("  Meshes: {}, Materials: {}, Animations: {}",
+                     scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
 
-        // Load all meshes
-        for (unsigned int m = 0; m < scene->mNumMeshes; m++) {
-            aiMesh* aiMesh = scene->mMeshes[m];
+        for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+            aiMesh* aiMesh = scene->mMeshes[i];
+            spdlog::info("  Parsing Mesh({}) - Name {}", i, aiMesh->mName.C_Str());
 
-            std::vector<float> vertices;
-            std::vector<unsigned int> indices;
-
-            // Process vertices
-            for (unsigned int i = 0; i < aiMesh->mNumVertices; i++) {
-                // Position
-                vertices.push_back(aiMesh->mVertices[i].x);
-                vertices.push_back(aiMesh->mVertices[i].y);
-                vertices.push_back(aiMesh->mVertices[i].z);
-
-                // Normal
-                if (aiMesh->HasNormals()) {
-                    vertices.push_back(aiMesh->mNormals[i].x);
-                    vertices.push_back(aiMesh->mNormals[i].y);
-                    vertices.push_back(aiMesh->mNormals[i].z);
-                } else {
-                    vertices.push_back(0.0f);
-                    vertices.push_back(1.0f);
-                    vertices.push_back(0.0f);
-                }
-
-                // Texture coordinates
-                if (aiMesh->mTextureCoords[0]) {
-                    vertices.push_back(aiMesh->mTextureCoords[0][i].x);
-                    vertices.push_back(aiMesh->mTextureCoords[0][i].y);
-                } else {
-                    vertices.push_back(0.0f);
-                    vertices.push_back(0.0f);
-                }
-            }
-
-            // Process indices
-            for (unsigned int i = 0; i < aiMesh->mNumFaces; i++) {
-                aiFace face = aiMesh->mFaces[i];
-                for (unsigned int j = 0; j < face.mNumIndices; j++) {
-                    indices.push_back(face.mIndices[j]);
-                }
-            }
-
-            // Create OpenGL buffers
-            MeshRenderer mesh;
-            glGenVertexArrays(1, &mesh.VAO);
-            glGenBuffers(1, &mesh.VBO);
-            glGenBuffers(1, &mesh.EBO);
-
-            glBindVertexArray(mesh.VAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-            glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-            // Position
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
-            glEnableVertexAttribArray(0);
-            // Normal
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
-            glEnableVertexAttribArray(1);
-            // TexCoord
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
-            glEnableVertexAttribArray(2);
-
-            glBindVertexArray(0);
-
-            mesh.indexCount = indices.size();
+            MeshRenderer mesh = create_mesh(aiMesh);
             model.meshes.push_back(mesh);
 
-            // Load material if texture manager is provided
-            if (texMgr) {
-                Material mat = load_material(scene, aiMesh, directory, *texMgr);
-                model.materials.push_back(mat);
-                spdlog::info("Mesh {}: {} vertices, {} triangles", m, aiMesh->mNumVertices, indices.size() / 3);
-                spdlog::info("Material - Albedo: ({}, {}, {}), Metallic: {}, Roughness: {}, AmbientOcclusion: {}",
-                             mat.albedo.r, mat.albedo.g, mat.albedo.b,
-                             mat.metallic, mat.roughness, mat.ao);
+            if (renderer) {
+                Material material = load_material(scene, aiMesh, directory, *renderer);
+                model.materials.push_back(material);
+                print_material_info(material, aiMesh->mName.C_Str());
             }
+
+            if (aiMesh->HasBones()) {
+                parse_bones(aiMesh, model);
+            }
+        }
+
+        if (scene->HasAnimations()) {
+            parse_animations(scene, model);
         }
 
         return model;
     }
+
+private:
+
+    static std::string get_directory(const std::string& path) {
+        size_t found = path.find_last_of("/\\");
+        return (found != std::string::npos) ? path.substr(0, found + 1) : "";
+    }
+
+
+    static MeshRenderer create_mesh(aiMesh* aiMesh) {
+        std::vector<float> vertices;
+        std::vector<unsigned int> indices;
+        vertices.reserve(aiMesh->mNumVertices * 8);
+
+        for (unsigned int i = 0; i < aiMesh->mNumVertices; ++i) {
+            // Position
+            vertices.push_back(aiMesh->mVertices[i].x);
+            vertices.push_back(aiMesh->mVertices[i].y);
+            vertices.push_back(aiMesh->mVertices[i].z);
+
+            // Normal
+            if (aiMesh->HasNormals()) {
+                vertices.push_back(aiMesh->mNormals[i].x);
+                vertices.push_back(aiMesh->mNormals[i].y);
+                vertices.push_back(aiMesh->mNormals[i].z);
+            } else {
+                vertices.insert(vertices.end(), { 0.0f, 1.0f, 0.0f });
+            }
+
+            // UV
+            if (aiMesh->mTextureCoords[0]) {
+                vertices.push_back(aiMesh->mTextureCoords[0][i].x);
+                vertices.push_back(aiMesh->mTextureCoords[0][i].y);
+            } else {
+                vertices.insert(vertices.end(), { 0.0f, 0.0f });
+            }
+        }
+
+        for (unsigned int i = 0; i < aiMesh->mNumFaces; ++i) {
+            const aiFace& face = aiMesh->mFaces[i];
+            indices.insert(indices.end(), face.mIndices, face.mIndices + face.mNumIndices);
+        }
+
+        MeshRenderer mesh;
+        mesh.indexCount = indices.size();
+
+        glGenVertexArrays(1, &mesh.VAO);
+        glGenBuffers(1, &mesh.VBO);
+        glGenBuffers(1, &mesh.EBO);
+
+        glBindVertexArray(mesh.VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        // Attributes
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        glBindVertexArray(0);
+
+        spdlog::info("  Mesh created: {} vertices, {} triangles", aiMesh->mNumVertices, indices.size() / 3);
+        return mesh;
+    }
+
+
+    static Material load_material(const aiScene* scene, aiMesh* mesh,
+                                  const std::string& directory, Renderer& renderer) {
+        Material material;
+        if (scene->mNumMaterials <= mesh->mMaterialIndex) return material;
+
+        aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
+        load_colors(aiMat, material);
+        load_textures(aiMat, scene, directory, renderer, material);
+        return material;
+    }
+
+    static void load_colors(aiMaterial* aiMat, Material& mat) {
+        aiColor3D color(1, 1, 1);
+        aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+        mat.albedo = { color.r, color.g, color.b };
+
+        aiColor3D emissive(0, 0, 0);
+        if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
+            mat.emissive = { emissive.r, emissive.g, emissive.b };
+
+        aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, mat.emissiveStrength);
+        aiMat->Get(AI_MATKEY_METALLIC_FACTOR, mat.metallic);
+        aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mat.roughness);
+    }
+
+    static void load_textures(aiMaterial* aiMat, const aiScene* scene,
+                              const std::string& dir, Renderer& renderer, Material& mat) {
+        auto load_tex = [&](aiTextureType type, GLuint& id, bool& flag, const char* name) {
+            if (aiMat->GetTextureCount(type) == 0) return;
+
+            aiString texPath;
+            aiMat->GetTexture(type, 0, &texPath);
+            std::string texStr = texPath.C_Str();
+
+            if (texStr.empty()) return;
+
+            if (texStr[0] == '*') {
+                int texIndex = std::atoi(texStr.c_str() + 1);
+                if (texIndex >= 0 && texIndex < (int)scene->mNumTextures) {
+                    const aiTexture* embedded = scene->mTextures[texIndex];
+                    if (!embedded) return;
+
+                    if (embedded->mHeight == 0) {
+                        id = renderer.load_texture_from_memory(
+                            reinterpret_cast<const unsigned char*>(embedded->pcData),
+                            embedded->mWidth);
+                    } else {
+                        id = renderer.load_texture_from_raw_data(
+                            reinterpret_cast<const unsigned char*>(embedded->pcData),
+                            embedded->mWidth, embedded->mHeight);
+                    }
+
+                    flag = (id != 0);
+                    if (flag) spdlog::info("    Embedded texture loaded: {}", name);
+                    return;
+                }
+            }
+
+            std::string full = dir + "/" + texStr;
+            id = renderer.load_texture_from_file(full);
+            flag = (id != 0);
+            if (flag) spdlog::info("    Texture loaded [{}]: {}", name, full);
+        };
+
+        load_tex(aiTextureType_DIFFUSE, mat.albedoMap, mat.useAlbedoMap, "albedo");
+        load_tex(aiTextureType_NORMALS, mat.normalMap, mat.useNormalMap, "normal");
+        load_tex(aiTextureType_METALNESS, mat.metallicMap, mat.useMetallicMap, "metallic");
+        load_tex(aiTextureType_DIFFUSE_ROUGHNESS, mat.roughnessMap, mat.useRoughnessMap, "roughness");
+        load_tex(aiTextureType_AMBIENT_OCCLUSION, mat.aoMap, mat.useAOMap, "ao");
+        load_tex(aiTextureType_EMISSIVE, mat.emissiveMap, mat.useEmissiveMap, "emissive");
+    }
+
+    static void print_material_info(const Material& mat, const std::string& meshName) {
+        spdlog::info("    Material [{}]: Albedo ({:.2f},{:.2f},{:.2f}) | Metallic {:.2f} | Roughness {:.2f} | AO {:.2f}",
+                     meshName, mat.albedo.r, mat.albedo.g, mat.albedo.b,
+                     mat.metallic, mat.roughness, mat.ao);
+    }
+
+
+    static void parse_bones(aiMesh* mesh, Model& model) {
+        spdlog::info("    Bones: {}", mesh->mNumBones);
+        for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
+            aiBone* bone = mesh->mBones[i];
+            spdlog::info("      - Bone {}: {}", i, bone->mName.C_Str());
+        }
+    }
+
+
+    static void parse_animations(const aiScene* scene, Model& model) {
+        spdlog::info("  → Animations: {}", scene->mNumAnimations);
+        for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
+            const aiAnimation* anim = scene->mAnimations[i];
+            spdlog::info("    Animation {}: {} | Duration: {} | FPS: {}",
+                         i, anim->mName.C_Str(), anim->mDuration, anim->mTicksPerSecond);
+        }
+    }
 };
+
+
+
 
 // ============================================================================
 // ENGINE
@@ -933,8 +914,7 @@ class Engine {
     bool running            = false;
     int width, height;
 
-    OpenGLRenderer renderer;
-    TextureManager textureManager;
+    std::unique_ptr<Renderer> renderer;
     flecs::world ecs;
 
     // Input state
@@ -979,7 +959,8 @@ public:
 
         SDL_GL_SetSwapInterval(0);
 
-        if (!renderer.initialize(width, height, &textureManager)) {
+        renderer = std::make_unique<OpenGLRenderer>();
+        if (!renderer->initialize(width, height)) {
             spdlog::error("Renderer initialization failed: UNKNOWN");
             cleanup();
             return;
@@ -1002,7 +983,7 @@ public:
             case SDL_EVENT_WINDOW_RESIZED:
                 width = event.window.data1;
                 height = event.window.data2;
-                renderer.resize(width, height);
+                renderer->resize(width, height);
                 break;
 
             case SDL_EVENT_KEY_DOWN:
@@ -1092,9 +1073,7 @@ public:
     }
 
     void render() {
-        std::vector<glm::vec3> dirLightDirections;
-        std::vector<glm::vec3> dirLightColors;
-        std::vector<bool> dirLightCastShadows;
+        std::vector<DirectionalLight> directionalLights;
         glm::mat4 lightSpaceMatrix(1.0f);
 
         Camera mainCamera;
@@ -1103,43 +1082,32 @@ public:
         });
 
         ecs.each([&](flecs::entity e, Transform& t, DirectionalLight& light) {
-            dirLightDirections.push_back(light.direction);
-            dirLightColors.push_back(light.color * light.intensity);
-            dirLightCastShadows.push_back(light.castShadows);
+            directionalLights.push_back(light);
 
             if (light.castShadows && lightSpaceMatrix == glm::mat4(1.0f)) {
-                lightSpaceMatrix = light.get_light_space_matrix(mainCamera.get_view_matrix(),mainCamera.get_projection_matrix((float)1280/720));
+                lightSpaceMatrix = light.get_light_space_matrix();
             }
         });
 
-        std::vector<glm::vec3> spotLightPositions;
-        std::vector<glm::vec3> spotLightDirections;
-        std::vector<glm::vec3> spotLightColors;
-        std::vector<float> spotLightCutOffs;
-        std::vector<float> spotLightOuterCutOffs;
-
+        std::vector<std::pair<Transform, SpotLight>> spotLights;
         ecs.each([&](flecs::entity e, Transform& t, SpotLight& light) {
-            spotLightPositions.push_back(t.position);
-            spotLightDirections.push_back(light.direction);
-            spotLightColors.push_back(light.color * light.intensity);
-            spotLightCutOffs.push_back(glm::cos(glm::radians(light.cutOff)));
-            spotLightOuterCutOffs.push_back(glm::cos(glm::radians(light.outerCutOff)));
+            spotLights.push_back({t, light});
         });
 
-        renderer.begin_shadow_pass();
+        // Shadow pass
+        renderer->begin_shadow_pass();
         ecs.each([&](Transform& t, MeshRenderer& mesh, Material& mat) {
-            renderer.render_shadow_pass(t, mesh, lightSpaceMatrix);
+            renderer->render_shadow_pass(t, mesh, lightSpaceMatrix);
         });
-        renderer.end_shadow_pass();
+        renderer->end_shadow_pass();
 
-        renderer.begin_render_target();
+        // Main render pass
+        renderer->begin_render_target();
         ecs.each([&](Transform& t, MeshRenderer& mesh, Material& mat) {
-            renderer.render_entity(t, mesh, mat, mainCamera, lightSpaceMatrix,
-                                  dirLightDirections, dirLightColors, dirLightCastShadows,
-                                  spotLightPositions, spotLightDirections,
-                                  spotLightColors, spotLightCutOffs, spotLightOuterCutOffs);
+            renderer->render_entity(t, mesh, mat, mainCamera, lightSpaceMatrix,
+                                    directionalLights, spotLights);
         });
-        renderer.end_render_target();
+        renderer->end_render_target();
 
         SDL_GL_SwapWindow(window);
     }
@@ -1162,13 +1130,13 @@ public:
         return ecs;
     }
 
-    TextureManager& get_texture_manager() {
-        return textureManager;
+    Renderer* get_renderer() const {
+        return renderer.get();
     }
 
     void cleanup() {
-        renderer.cleanup();
-        textureManager.cleanup();
+        if (renderer)
+            renderer->cleanup();
 
         if (glContext)
             SDL_GL_DestroyContext(glContext);
@@ -1199,8 +1167,9 @@ int main(int argc, char* argv[]) {
 
     Engine engine("depressao gamer", 1280, 720);
 
-    auto& ecs    = engine.get_world();
-    auto& texMgr = engine.get_texture_manager();
+    auto& ecs = engine.get_world();
+
+    auto renderer = engine.get_renderer();
 
     // Create camera
     auto camera = ecs.entity()
@@ -1221,7 +1190,7 @@ int main(int argc, char* argv[]) {
                          .set(SpotLight{glm::vec3(1, -1, -1), glm::vec3(0.3f, 0.3f, 1.0f), 50.0f, 12.5f, 17.5f});
 
 
-    Model carModel = MeshLoader::load_model("res/sprites/obj/Car2.obj", &texMgr);
+    Model carModel = MeshLoader::load_model("res/sprites/obj/Car2.obj", renderer);
     for (size_t i = 0; i < carModel.meshes.size(); i++) {
         ecs.entity(("Car_Mesh_" + std::to_string(i)).c_str())
            .set(Transform{glm::vec3(-10, 0, -5), glm::vec3(0), glm::vec3(1.0f)})
@@ -1230,7 +1199,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    Model damagedHelmet = MeshLoader::load_model("res/sprites/obj/DamagedHelmet.glb", &texMgr);
+    Model damagedHelmet = MeshLoader::load_model("res/sprites/obj/DamagedHelmet.glb", renderer);
     for (size_t i = 0; i < damagedHelmet.meshes.size(); i++) {
         ecs.entity(("Helmet_Mesh_" + std::to_string(i)).c_str())
            .set(Transform{glm::vec3(15, 0, 0), glm::vec3(0), glm::vec3(1.0f)})
@@ -1246,7 +1215,7 @@ int main(int argc, char* argv[]) {
     //         .set(sponza.materials[i]);
     // }
 
-    Model medieval = MeshLoader::load_model("res/sprites/obj/huge_medieval_battle_scene.glb", &texMgr);
+    Model medieval = MeshLoader::load_model("res/sprites/obj/nagonford/Nagonford_Animated.glb",renderer);
     for (size_t i = 0; i < medieval.meshes.size(); i++) {
         ecs.entity(("Sponza_Mesh_" + std::to_string(i)).c_str())
             .set(Transform{glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1.0f)})
