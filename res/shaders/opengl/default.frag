@@ -1,4 +1,3 @@
-
 out vec4 COLOR;
 
 in vec3 FragPos;
@@ -9,20 +8,20 @@ in vec4 FragPosLightSpace;
 uniform vec3 camPos;
 
 struct DirectionalLight {
-  vec3 direction;
-  vec3 color;
-  bool cast_shadows;
+    vec3 direction;
+    vec3 color;
+    bool cast_shadows;
 };
 
 uniform DirectionalLight dirLights[100];
 uniform int numDirLights;
 
 struct SpotLight {
- vec3 position;
- vec3 direction;
- vec3 color;
- float inner_cut_off;
- float outer_cut_off;
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    float inner_cut_off;
+    float outer_cut_off;
 };
 
 uniform SpotLight spotLights[100];
@@ -74,13 +73,17 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
     float bias = max(0.002 * (1.0 - dot(N, L)), 0.0005);
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+
     for (int x = -1; x <= 1; ++x)
-    for (int y = -1; y <= 1; ++y)
     {
-        float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
-        shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
+        }
     }
+
     shadow /= 9.0;
 
     if (projCoords.z > 1.0) shadow = 0.0;
@@ -223,8 +226,8 @@ void main()
         vec3 radiance = dirLights[i].color;
 
         float NDF = distribution_ggx(N, H, finalRoughness);
-        float G   = geometry_smith(N, V, L, finalRoughness);
-        vec3  F   = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
+        float G = geometry_smith(N, V, L, finalRoughness);
+        vec3 F = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
 
         vec3 kS = F;
         vec3 kD = (1.0 - kS) * (1.0 - finalMetallic);
@@ -251,8 +254,8 @@ void main()
         vec3 radiance = spotLights[i].color * attenuation * intensity;
 
         float NDF = distribution_ggx(N, H, finalRoughness);
-        float G   = geometry_smith(N, V, L, finalRoughness);
-        vec3  F   = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
+        float G = geometry_smith(N, V, L, finalRoughness);
+        vec3 F = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
 
         vec3 kS = F;
         vec3 kD = (1.0 - kS) * (1.0 - finalMetallic);

@@ -89,4 +89,3 @@ if (BUILD_RUNTIME)
     add_compile_definitions(BUILD_RUNTIME)
     add_subdirectory(runtime)
 endif ()
-

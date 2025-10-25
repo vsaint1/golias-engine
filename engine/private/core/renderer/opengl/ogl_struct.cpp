@@ -25,7 +25,7 @@ bool validate_gl_shader(GLuint handle, GLenum op, bool is_program = false) {
         glGetProgramiv(handle, op, &success);
         if (!success) {
             glGetProgramInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
-            spdlog::critical("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
+            spdlog::critical("OPENGLSHADER::{}:ERROR: {}", op_str, infoLog);
             return false;
         }
 
@@ -33,7 +33,7 @@ bool validate_gl_shader(GLuint handle, GLenum op, bool is_program = false) {
         glGetShaderiv(handle, op, &success);
         if (!success) {
             glGetShaderInfoLog(handle, sizeof(infoLog), nullptr, infoLog);
-            spdlog::critical("OPENGLSHADER::%s:ERROR: %s", op_str, infoLog);
+            spdlog::critical("OPENGLSHADER::{}:ERROR: {}", op_str, infoLog);
             return false;
         }
     }
@@ -88,7 +88,7 @@ Uint32 OpenglShader::compile_shader(Uint32 type, const char* source) {
 
 
     if (!success) {
-        spdlog::critical("OpenglShader::compile_shader - Shader compilation failed for type {}", type);
+        spdlog::critical("OpenglShader::compile_shader - Shader compilation failed for type {}", type == GL_VERTEX_SHADER ? "VERTEX" : "FRAGMENT");
         glDeleteShader(shader);
         exit(EXIT_FAILURE);
 

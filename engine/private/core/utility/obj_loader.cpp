@@ -1,5 +1,7 @@
 #include  "core/utility/obj_loader.h"
 
+#include "core/io/assimp_io.h"
+
 MeshInstance3D ObjectLoader::load_mesh(const std::string& path) {
     Model model = load_model(path, nullptr);
     return model.meshes.empty() ? MeshInstance3D() : model.meshes[0];
@@ -8,23 +10,35 @@ MeshInstance3D ObjectLoader::load_mesh(const std::string& path) {
 Model ObjectLoader::load_model(const std::string& path, Renderer* renderer) {
     Model model;
 
-    const char* extension = strrchr(path.c_str(), '.');
+    std::string path_str = path;
 
-    spdlog::info("Loading Model Path: {}, FileFormat: {}", path, extension ? extension + 1 : "UNKNOWN");
-
-    Assimp::Importer importer;
-
-    constexpr unsigned int ASSIMP_FLAGS =
-        aiProcess_Triangulate |
-        aiProcess_FlipUVs |
-        aiProcess_CalcTangentSpace |
-        aiProcess_GenNormals;
-
-    const aiScene* scene = importer.ReadFile(path, ASSIMP_FLAGS);
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        spdlog::error("Failed to load model: {}, Error: ", path, importer.GetErrorString());
-        return model;
+    std::size_t pos = path_str.find("//");
+    if (pos != std::string::npos && pos + 2 < path_str.size()) {
+        path_str = path_str.substr(pos + 2);
     }
+
+    std::string base_dir = ASSETS_PATH;
+
+    size_t last_slash = path_str.find_last_of("/\\");
+    if (last_slash != std::string::npos) {
+        base_dir += path_str.substr(0, last_slash + 1);
+    }
+
+    spdlog::info("Loading model: {} (base_dir: {})", path, base_dir);
+
+    auto importer   = std::make_shared<Assimp::Importer>();
+    std::string ext = path_str.substr(path_str.find_last_of('.') + 1);
+
+    auto ioSystem = new SDLIOSystem(base_dir);
+    importer->SetIOHandler(ioSystem);
+
+    constexpr auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
+                                  | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+
+    std::string filename = (last_slash != std::string::npos) ? path_str.substr(last_slash + 1) : path_str;
+
+    const aiScene* scene = importer->ReadFile(filename, ASSIMP_FLAGS);
+
 
     const std::string directory = get_directory(path);
     spdlog::info("  Meshes: {}, Materials: {}, Animations: {}",
@@ -38,7 +52,7 @@ Model ObjectLoader::load_model(const std::string& path, Renderer* renderer) {
         model.meshes.push_back(mesh);
 
         if (renderer) {
-            Material material = load_material(scene, aiMesh, directory, *renderer);
+            Material material = load_material(scene, aiMesh, base_dir, *renderer);
             model.materials.push_back(material);
             spdlog::info("    Material [{}]: Albedo ({:.2f},{:.2f},{:.2f}) | Metallic {:.2f} | Roughness {:.2f} | AO {:.2f}",
                          aiMesh->mName.C_Str(), material.albedo.r, material.albedo.g, material.albedo.b,
@@ -53,6 +67,7 @@ Model ObjectLoader::load_model(const std::string& path, Renderer* renderer) {
     if (scene->HasAnimations()) {
         parse_animations(scene, model);
     }
+
 
     return model;
 }

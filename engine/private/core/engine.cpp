@@ -68,6 +68,11 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     logger->set_level(spdlog::level::debug);
 #endif
 
+    logger->set_level(LOG_LEVEL);
+    logger->flush_on(LOG_LEVEL);
+
+    spdlog::set_default_logger(logger);
+
     if (!_config.load()) {
         spdlog::warn("Using default configuration values");
     }
