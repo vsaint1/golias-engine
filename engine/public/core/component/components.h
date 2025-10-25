@@ -33,6 +33,8 @@ struct MeshInstance3D {
     int indexCount = 0;
 };
 
+class Shader;
+
 struct Material {
     glm::vec3 albedo = glm::vec3(1.0f);
     float metallic   = 0.0f;
@@ -56,6 +58,8 @@ struct Material {
     bool useNormalMap    = false;
     bool useAOMap        = false;
     bool useEmissiveMap  = false;
+
+    void bind(Shader* shader) const;
 };
 /*!
 

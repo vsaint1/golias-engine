@@ -1,8 +1,8 @@
-layout (location = 0) in vec3 aPos;
+layout (location = 0) in vec3 a_position;
 
-uniform mat4 lightSpaceMatrix;
-uniform mat4 model;
+uniform mat4 LIGHT_MATRIX;
+uniform mat4 MODEL;
 
 void main() {
-    gl_Position = lightSpaceMatrix * model * vec4(aPos, 1.0);
+    gl_Position = LIGHT_MATRIX * MODEL * vec4(a_position, 1.0);
 }

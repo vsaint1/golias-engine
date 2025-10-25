@@ -2,7 +2,7 @@
 
 std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
-Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
+Renderer* create_renderer_internal(SDL_Window* window,  EngineConfig& config) {
 
 
     Renderer* renderer = nullptr;
@@ -29,7 +29,7 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
     // TODO: later use viewport
     const auto& viewport = config.get_window();
 
-    if (!renderer || !renderer->initialize(viewport.width, viewport.height)) {
+    if (!renderer || !renderer->initialize(viewport.width, viewport.height, window)) {
         spdlog::error("Renderer initialization failed, shutting down");
 
         delete renderer;

@@ -1,5 +1,7 @@
 #include "core/component/components.h"
 
+#include "core/renderer/base_struct.h"
+
 glm::mat4 Transform3D::get_matrix() const {
     glm::mat4 mat = glm::translate(glm::mat4(1.0f), position);
     mat           = glm::rotate(mat, rotation.x, glm::vec3(1, 0, 0));
@@ -19,6 +21,64 @@ void Camera3D::update_vectors() {
 
     right = glm::normalize(glm::cross(front, world_up));
     up    = glm::normalize(glm::cross(right, front));
+}
+
+
+void Material::bind(Shader* shader) const {
+    shader->set_value("albedo", albedo);
+    shader->set_value("metallic", metallic);
+    shader->set_value("roughness", roughness);
+    shader->set_value("ao", ao);
+    shader->set_value("emissive", emissive);
+    shader->set_value("emissiveStrength", emissiveStrength);
+
+    // Texture usage flags
+    shader->set_value("USE_ALBEDO_MAP", useAlbedoMap);
+    shader->set_value("USE_METALLIC_MAP", useMetallicMap);
+    shader->set_value("USE_ROUGHNESS_MAP", useRoughnessMap);
+    shader->set_value("USE_NORMAL_MAP", useNormalMap);
+    shader->set_value("USE_AO_MAP", useAOMap);
+    shader->set_value("USE_EMISSIVE_MAP", useEmissiveMap);
+
+    // Texture bindings
+    if (useAlbedoMap && albedoMap) {
+        glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, albedoMap);
+        shader->set_value("ALBEDO_MAP", ALBEDO_TEXTURE_UNIT);
+    }
+
+    if (useMetallicMap && metallicMap) {
+        glActiveTexture(GL_TEXTURE0 + METALLIC_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, metallicMap);
+        shader->set_value("METALLIC_MAP", METALLIC_TEXTURE_UNIT);
+    }
+
+    if (useRoughnessMap && roughnessMap) {
+        glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, roughnessMap);
+        shader->set_value("ROUGHNESS_MAP", ROUGHNESS_TEXTURE_UNIT);
+    }
+
+    if (useNormalMap && normalMap) {
+        glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, normalMap);
+        shader->set_value("NORMAL_MAP", NORMAL_MAP_TEXTURE_UNIT);
+    }
+
+    if (useAOMap && aoMap) {
+        glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, aoMap);
+        shader->set_value("AO_MAP", AMBIENT_OCCLUSION_TEXTURE_UNIT);
+    }
+
+    if (useEmissiveMap && emissiveMap) {
+        glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, emissiveMap);
+        shader->set_value("EMISSIVE_MAP", EMISSIVE_TEXTURE_UNIT);
+    }
+
+
+
 }
 
 

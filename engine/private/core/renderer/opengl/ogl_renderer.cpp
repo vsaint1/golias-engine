@@ -29,8 +29,9 @@ OpenGLRenderer::~OpenGLRenderer() {
     OpenGLRenderer::cleanup();
 }
 
-bool OpenGLRenderer::initialize(int w, int h) {
+bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
+    _window = window;
 #if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
 
     /* GLES 3.0 -> GLSL: 300 */
@@ -78,7 +79,7 @@ bool OpenGLRenderer::initialize(int w, int h) {
     height = h;
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+        spdlog::error("Failed to initialize GLAD");
         return false;
     }
 
@@ -89,8 +90,8 @@ bool OpenGLRenderer::initialize(int w, int h) {
     _shadow_shader  = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
 
     FramebufferSpecification spec;
-    spec.width       = 8192;
-    spec.height      = 8192;
+    spec.height      = 2048;
+    spec.width       = 2048;
     spec.attachments = {
         {FramebufferTextureFormat::DEPTH_COMPONENT}
     };
@@ -163,8 +164,8 @@ void OpenGLRenderer::begin_shadow_pass() {
 void OpenGLRenderer::render_shadow_pass(const Transform3D& transform, const MeshInstance3D& mesh, const glm::mat4& light_space_matrix) {
     glm::mat4 model = transform.get_matrix();
 
-    _shadow_shader->set_value("lightSpaceMatrix", light_space_matrix, 1);
-    _shadow_shader->set_value("model", model, 1);
+    _shadow_shader->set_value("LIGHT_MATRIX", light_space_matrix, 1);
+    _shadow_shader->set_value("MODEL", model, 1);
 
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
@@ -184,10 +185,11 @@ void OpenGLRenderer::begin_render_target() {
     glViewport(0, 0, width, height);
 }
 
-void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInstance3D& mesh, const Material& material, const Camera3D& camera,
-    const glm::mat4& light_space_matrix, const std::vector<DirectionalLight>& directional_lights,
-    const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
-    glm::mat4 model      = transform.get_matrix();
+void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInstance3D& mesh, const Material& material,
+                                   const Camera3D& camera,
+                                   const glm::mat4& light_space_matrix, const std::vector<DirectionalLight>& directional_lights,
+                                   const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
+    glm::mat4 model = transform.get_matrix();
 
     // TODO:  PASS camera transform directly
     auto camera_query = GEngine->get_world().query<const Transform3D, const Camera3D>();
@@ -197,66 +199,17 @@ void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInsta
     glm::mat4 view       = camera.get_view(camera_transform);
     glm::mat4 projection = camera.get_projection(width, height);
 
-    _default_shader->set_value("model", model);
-    _default_shader->set_value("view", view);
-    _default_shader->set_value("projection", projection);
-    _default_shader->set_value("lightSpaceMatrix", light_space_matrix);
+    _default_shader->set_value("MODEL", model);
+    _default_shader->set_value("VIEW", view);
+    _default_shader->set_value("PROJECTION", projection);
+    _default_shader->set_value("LIGHT_MATRIX", light_space_matrix);
 
     // Camera
-    _default_shader->set_value("camPos", camera_transform.position);
+    _default_shader->set_value("CAMERA_POSITION_WORLD", camera_transform.position);
 
-    // Material
-    _default_shader->set_value("albedo", material.albedo);
-    _default_shader->set_value("metallic", material.metallic);
-    _default_shader->set_value("roughness", material.roughness);
-    _default_shader->set_value("ao", material.ao);
-    _default_shader->set_value("emissive", material.emissive);
-    _default_shader->set_value("emissiveStrength", material.emissiveStrength);
 
-    // Texture usage flags
-    _default_shader->set_value("useAlbedoMap", material.useAlbedoMap);
-    _default_shader->set_value("useMetallicMap", material.useMetallicMap);
-    _default_shader->set_value("useRoughnessMap", material.useRoughnessMap);
-    _default_shader->set_value("useNormalMap", material.useNormalMap);
-    _default_shader->set_value("useAOMap", material.useAOMap);
-    _default_shader->set_value("useEmissiveMap", material.useEmissiveMap);
+    material.bind(_default_shader.get());
 
-    // Texture bindings
-    if (material.useAlbedoMap && material.albedoMap) {
-        glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.albedoMap);
-        _default_shader->set_value("albedoMap", ALBEDO_TEXTURE_UNIT);
-    }
-
-    if (material.useMetallicMap && material.metallicMap) {
-        glActiveTexture(GL_TEXTURE0 + METALLIC_ROUGHNESS_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.metallicMap);
-        _default_shader->set_value("metallicMap", METALLIC_ROUGHNESS_TEXTURE_UNIT);
-    }
-
-    if (material.useRoughnessMap && material.roughnessMap) {
-        glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.roughnessMap);
-        _default_shader->set_value("roughnessMap", ROUGHNESS_TEXTURE_UNIT);
-    }
-
-    if (material.useNormalMap && material.normalMap) {
-        glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.normalMap);
-        _default_shader->set_value("normalMap", NORMAL_MAP_TEXTURE_UNIT);
-    }
-
-    if (material.useAOMap && material.aoMap) {
-        glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.aoMap);
-        _default_shader->set_value("aoMap", AMBIENT_OCCLUSION_TEXTURE_UNIT);
-    }
-
-    if (material.useEmissiveMap && material.emissiveMap) {
-        glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
-        glBindTexture(GL_TEXTURE_2D, material.emissiveMap);
-        _default_shader->set_value("emissiveMap", EMISSIVE_TEXTURE_UNIT);
-    }
 
     // REFACTORED: Directional lights using DirectionalLight class
     _default_shader->set_value("numDirLights", static_cast<int>(directional_lights.size()));
@@ -279,7 +232,6 @@ void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInsta
 
     }
 
-    // REFACTORED: Spot lights using SpotLight class with Transform
     _default_shader->set_value("numSpotLights", static_cast<int>(spot_lights.size()));
     if (!spot_lights.empty()) {
         std::vector<glm::vec3> positions;
@@ -306,10 +258,9 @@ void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInsta
 
     }
 
-    // Shadow map
     glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT);
     glBindTexture(GL_TEXTURE_2D, shadow_map_fbo->get_depth_attachment_id());
-    _default_shader->set_value("shadowMap", SHADOW_TEXTURE_UNIT);
+    _default_shader->set_value("SHADOW_MAP", SHADOW_TEXTURE_UNIT);
 
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, 0);
@@ -333,8 +284,11 @@ void OpenGLRenderer::cleanup() {
 
     _default_shader->destroy();
     _shadow_shader->destroy();
+
+    SDL_GL_DestroyContext(_context);
+
 }
 
 void OpenGLRenderer::swap_chain() {
-    SDL_GL_SwapWindow(GEngine->get_window());
+    SDL_GL_SwapWindow(_window);
 }

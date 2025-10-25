@@ -8,7 +8,7 @@ class Renderer {
 public:
     virtual ~Renderer() = default;
 
-    virtual bool initialize(int width, int height) = 0;
+    virtual bool initialize(int width, int height, SDL_Window* window) = 0;
     virtual void resize(int width, int height) = 0;
     virtual void cleanup() = 0;
 
@@ -35,8 +35,15 @@ public:
 
 
 protected:
+    SDL_Window *_window = nullptr;
+
     std::unique_ptr<Shader> _default_shader     = nullptr;
     std::unique_ptr<Shader> _shadow_shader      = nullptr;
+
     std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
+
     std::unordered_map<std::string, Uint32> _textures;
+
+    int width              = 0, height = 0;
+
 };

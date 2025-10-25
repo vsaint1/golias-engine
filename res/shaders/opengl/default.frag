@@ -1,11 +1,11 @@
 out vec4 COLOR;
 
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoord;
-in vec4 FragPosLightSpace;
+in vec3 POSITION;
+in vec3 NORMAL;
+in vec2 UV;
+in vec4 LIGHT_SPACE_POSITION;
 
-uniform vec3 camPos;
+uniform vec3 CAMERA_POSITION_WORLD;
 
 struct DirectionalLight {
     vec3 direction;
@@ -36,27 +36,41 @@ uniform vec3 emissive;
 uniform float emissiveStrength;
 uniform float ior; // index of refraction (e.g. glass ~1.5, water ~1.33)
 
+struct Material{
+     vec3 albedo;
+     float metallic;
+     float roughness;
+     float ao;
+     vec3 emissive;
+     float emissiveStrength;
+     float ior; // index of refraction (e.g. glass ~1.5, water ~1.33)
+};
+
+uniform Material material;
+
 // Texture samplers
-uniform sampler2D albedoMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D normalMap;
-uniform sampler2D aoMap;
-uniform sampler2D emissiveMap;
-uniform sampler2D shadowMap;
-uniform samplerCube envMap; // environment cubemap for reflection/refraction
+uniform sampler2D ALBEDO_MAP;
+uniform sampler2D METALLIC_MAP;
+uniform sampler2D ROUGHNESS_MAP;
+uniform sampler2D NORMAL_MAP;
+uniform sampler2D AO_MAP;
+uniform sampler2D EMISSIVE_MAP;
+uniform sampler2D SHADOW_MAP;
+uniform samplerCube ENVIRONMENT_MAP; // environment cubemap for reflection/refraction
 
 // Usage flags
-uniform bool useAlbedoMap;
-uniform bool useMetallicMap;
-uniform bool useRoughnessMap;
-uniform bool useNormalMap;
-uniform bool useAOMap;
-uniform bool useEmissiveMap;
-uniform bool useRefraction;
-uniform bool useReflection;
+uniform bool USE_ALBEDO_MAP;
+uniform bool USE_METALLIC_MAP;
+uniform bool USE_ROUGHNESS_MAP;
+uniform bool USE_NORMAL_MAP;
+uniform bool USE_AO_MAP;
+uniform bool USE_EMISSIVE_MAP;
+uniform bool USE_REFRACTION;
+uniform bool USE_REFLECTION;
 
 const float PI = 3.14159265359;
+
+uniform float TIME;
 
 // ============================================================================
 // Shadow Mapping with PCF (Percentage Closer Filtering)
@@ -68,18 +82,18 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
     vec3 projCoords = frag_pos_light_space.xyz / frag_pos_light_space.w;
     projCoords = projCoords * 0.5 + 0.5;
 
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float closestDepth = texture(SHADOW_MAP, projCoords.xy).r;
     float currentDepth = projCoords.z;
     float bias = max(0.002 * (1.0 - dot(N, L)), 0.0005);
 
     float shadow = 0.0;
-    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
+    vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
 
     for (int x = -1; x <= 1; ++x)
     {
         for (int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            float pcfDepth = texture(SHADOW_MAP, projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
         }
     }
@@ -156,14 +170,14 @@ vec3 fresnel_schlick_roughness(float cosTheta, vec3 F0, float roughness)
 // - http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/
 vec3 calculate_normal_map()
 {
-    vec3 tangentNormal = texture(normalMap, TexCoord).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(NORMAL_MAP, UV).xyz * 2.0 - 1.0;
 
-    vec3 Q1 = dFdx(FragPos);
-    vec3 Q2 = dFdy(FragPos);
-    vec2 st1 = dFdx(TexCoord);
-    vec2 st2 = dFdy(TexCoord);
+    vec3 Q1 = dFdx(POSITION);
+    vec3 Q2 = dFdy(POSITION);
+    vec2 st1 = dFdx(UV);
+    vec2 st2 = dFdy(UV);
 
-    vec3 N = normalize(Normal);
+    vec3 N = normalize(NORMAL);
     vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
     vec3 B = normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
@@ -175,45 +189,45 @@ vec3 calculate_normal_map()
 vec3 sample_reflection(vec3 I, vec3 N)
 {
     vec3 R = reflect(I, N);
-    return texture(envMap, R).rgb;
+    return texture(ENVIRONMENT_MAP, R).rgb;
 }
 
 vec3 sample_refraction(vec3 I, vec3 N, float eta)
 {
     vec3 R = refract(I, N, 1.0 / eta);
-    return texture(envMap, R).rgb;
+    return texture(ENVIRONMENT_MAP, R).rgb;
 }
 
 
 void main()
 {
-    if (texture(albedoMap, TexCoord).a < 0.1)
+    if (texture(ALBEDO_MAP, UV).a < 0.1)
     discard;
 
 
-    vec3 finalAlbedo = useAlbedoMap ? pow(texture(albedoMap, TexCoord).rgb, vec3(2.2)) : albedo;
+    vec3 finalAlbedo = USE_ALBEDO_MAP ? pow(texture(ALBEDO_MAP, UV).rgb, vec3(2.2)) : albedo;
     float finalMetallic = metallic;
     float finalRoughness = roughness;
-    float finalAO = useAOMap ? texture(aoMap, TexCoord).r : ao;
+    float finalAO = USE_AO_MAP ? texture(AO_MAP, UV).r : ao;
 
     // Red = Ambient Occlusion, Green channel = roughness, Blue channel = metallic (glTF 2.0 format)
-    if (useMetallicMap) {
-        vec3 mr = texture(metallicMap, TexCoord).rgb;
+    if (USE_METALLIC_MAP) {
+        vec3 mr = texture(METALLIC_MAP, UV).rgb;
         finalMetallic = mr.b;
         finalRoughness = mr.g;
     }
 
-    if (useRoughnessMap)
-    finalRoughness = texture(roughnessMap, TexCoord).r;
+    if (USE_ROUGHNESS_MAP)
+    finalRoughness = texture(ROUGHNESS_MAP, UV).r;
 
-    vec3 finalEmissive = useEmissiveMap
-    ? texture(emissiveMap, TexCoord).rgb * emissiveStrength
+    vec3 finalEmissive = USE_EMISSIVE_MAP
+    ? texture(EMISSIVE_MAP, UV).rgb * emissiveStrength
     : emissive * emissiveStrength;
 
     // --- Normal & View Direction ---
-    vec3 N = useNormalMap ? calculate_normal_map() : normalize(Normal);
-    vec3 V = normalize(camPos - FragPos);
-    vec3 I = normalize(FragPos - camPos); // incident ray for reflection/refraction
+    vec3 N = USE_NORMAL_MAP ? calculate_normal_map() : normalize(NORMAL);
+    vec3 V = normalize(CAMERA_POSITION_WORLD - POSITION);
+    vec3 I = normalize(POSITION - CAMERA_POSITION_WORLD); // incident ray for reflection/refraction
 
     // --- Base Reflectance ---
     vec3 F0 = mix(vec3(0.04), finalAlbedo, finalMetallic);
@@ -236,15 +250,15 @@ void main()
         vec3 specular = numerator / denom;
 
         float NdotL = max(dot(N, L), 0.0);
-        float shadow = dirLights[i].cast_shadows ? (1.0 - shadow_calculation(FragPosLightSpace, N, L)) : 1.0;
+        float shadow = dirLights[i].cast_shadows ? (1.0 - shadow_calculation(LIGHT_SPACE_POSITION, N, L)) : 1.0;
         Lo += (kD * finalAlbedo / PI + specular) * radiance * NdotL * shadow;
     }
 
 
     for (int i = 0; i < numSpotLights; ++i) {
-        vec3 L = normalize(spotLights[i].position - FragPos);
+        vec3 L = normalize(spotLights[i].position - POSITION);
         vec3 H = normalize(V + L);
-        float dist = length(spotLights[i].position - FragPos);
+        float dist = length(spotLights[i].position - POSITION);
         float attenuation = 1.0 / (dist * dist);
 
         float theta = dot(L, normalize(-spotLights[i].direction));
@@ -268,8 +282,8 @@ void main()
     }
 
     // --- Environment Reflection & Refraction ---
-    vec3 reflection_color = useReflection ? sample_reflection(I, N) : vec3(0.0);
-    vec3 refraction_color = useRefraction ? sample_refraction(I, N, ior) : vec3(0.0);
+    vec3 reflection_color = USE_REFLECTION ? sample_reflection(I, N) : vec3(0.0);
+    vec3 refraction_color = USE_REFRACTION ? sample_refraction(I, N, ior) : vec3(0.0);
     float fresnel_ratio = clamp(pow(1.0 - max(dot(N, V), 0.0), 5.0), 0.0, 1.0);
 
     vec3 env_color = mix(refraction_color, reflection_color, fresnel_ratio);

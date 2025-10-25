@@ -2,7 +2,6 @@
 #include  "ogl_struct.h"
 
 class OpenGLRenderer final : public Renderer {
-    int width              = 0, height = 0;
     SDL_GLContext _context = nullptr;
 
     static GLuint create_gl_texture(const unsigned char* data, int w, int h, int channels);
@@ -10,7 +9,7 @@ class OpenGLRenderer final : public Renderer {
 public:
     ~OpenGLRenderer() override;
 
-    bool initialize(int w, int h) override;
+    bool initialize(int w, int h, SDL_Window* window) override;
 
     Uint32 load_texture_from_file(const std::string& path) override;
 
@@ -42,4 +41,3 @@ public:
 
     void swap_chain() override;
 };
-

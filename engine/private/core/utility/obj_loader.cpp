@@ -40,7 +40,6 @@ Model ObjectLoader::load_model(const std::string& path, Renderer* renderer) {
     const aiScene* scene = importer->ReadFile(filename, ASSIMP_FLAGS);
 
 
-    const std::string directory = get_directory(path);
     spdlog::info("  Meshes: {}, Materials: {}, Animations: {}",
                  scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
 
@@ -214,11 +213,11 @@ void ObjectLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const 
             }
         }
 
-        std::string full = dir + "/" + texStr;
-        id               = renderer.load_texture_from_file(full);
+        std::string tex_dir = dir  + texStr;
+        id               = renderer.load_texture_from_file(tex_dir);
         flag             = (id != 0);
         if (flag)
-            spdlog::info("    Texture loaded [{}]: {}", name, full);
+            spdlog::info("    Texture loaded [{}]: {}", name, tex_dir);
     };
 
     load_tex(aiTextureType_DIFFUSE, mat.albedoMap, mat.useAlbedoMap, "albedo");
