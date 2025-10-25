@@ -57,6 +57,16 @@ OpenglShader::OpenglShader(const std::string& vertex, const std::string& fragmen
     glAttachShader(program, fs);
     glLinkProgram(program);
 
+    glUseProgram(program);
+    glUniform1i(glGetUniformLocation(program, "ALBEDO_MAP"), ALBEDO_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "METALLIC_MAP"), METALLIC_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "ROUGHNESS_MAP"), ROUGHNESS_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "NORMAL_MAP"), NORMAL_MAP_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "AO_MAP"), AMBIENT_OCCLUSION_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "EMISSIVE_MAP"), EMISSIVE_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "SHADOW_MAP"), SHADOW_TEXTURE_UNIT);
+    glUniform1i(glGetUniformLocation(program, "ENVIRONMENT_MAP"), ENVIRONMENT_TEXTURE_UNIT);
+    
     bool success = validate_gl_shader(program, GL_LINK_STATUS, true);
 
     success &= validate_gl_shader(program, GL_VALIDATE_STATUS, true);
