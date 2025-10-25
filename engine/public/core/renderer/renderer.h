@@ -31,6 +31,9 @@ public:
                                const std::vector<std::pair<Transform3D, SpotLight>>& spotLights) = 0;
     virtual void end_render_target() = 0;
 
+    virtual void swap_chain() = 0;
+
+
 protected:
     std::unique_ptr<Shader> _default_shader     = nullptr;
     std::unique_ptr<Shader> _shadow_shader      = nullptr;

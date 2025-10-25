@@ -9,21 +9,55 @@ glm::mat4 Transform3D::get_matrix() const {
     return mat;
 }
 
+
 void Camera3D::update_vectors() {
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front       = glm::normalize(direction);
+    glm::vec3 f;
+    f.x   = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    f.y   = sin(glm::radians(pitch));
+    f.z   = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front = glm::normalize(f);
+
+    right = glm::normalize(glm::cross(front, world_up));
+    up    = glm::normalize(glm::cross(right, front));
 }
 
-glm::mat4 Camera3D::get_view_matrix() const {
-    return glm::lookAt(position, position + front, up);
+
+glm::mat4 Camera3D::get_view(const Transform3D& transform) const {
+    return glm::lookAt(transform.position, transform.position + front, up);
 }
 
-glm::mat4 Camera3D::get_projection_matrix(float aspect) const {
-    return glm::perspective(glm::radians(fov), aspect, nearPlane, farPlane);
+glm::mat4 Camera3D::get_projection(int w, int h) const {
+    return glm::perspective(glm::radians(fov), (float) w / (float) h, 0.1f, view_distance);
 }
+
+void Camera3D::move_forward(Transform3D& transform,float dt) {
+    transform.position += front * speed * dt;
+}
+
+void Camera3D::move_backward(Transform3D& transform,float dt) {
+    transform.position -= front * speed * dt;
+}
+
+void Camera3D::move_left(Transform3D& transform,float dt) {
+    transform.position -= right * speed * dt;
+}
+
+void Camera3D::move_right(Transform3D& transform,float dt) {
+    transform.position += right * speed * dt;
+}
+
+void Camera3D::look_at(float xoffset, float yoffset, float sensitivity) {
+    yaw += xoffset * sensitivity;
+    pitch += yoffset * sensitivity;
+
+    pitch = std::clamp(pitch, -89.0f, 89.0f);
+    update_vectors();
+}
+
+void Camera3D::zoom(float yoffset) {
+    fov = std::clamp(fov - yoffset, 1.0f, 90.0f);
+}
+
 
 glm::mat4 DirectionalLight::get_light_space_matrix(glm::mat4 camera_view, glm::mat4 camera_proj) const {
     glm::vec3 light_dir = glm::normalize(direction);

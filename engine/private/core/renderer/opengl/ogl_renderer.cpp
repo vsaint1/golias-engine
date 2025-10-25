@@ -1,4 +1,5 @@
 #include  "core/renderer/opengl/ogl_renderer.h"
+#include  "core/engine.h"
 
 GLuint OpenGLRenderer::create_gl_texture(const unsigned char* data, int w, int h, int channels) {
     GLuint texID = 0;
@@ -29,6 +30,50 @@ OpenGLRenderer::~OpenGLRenderer() {
 }
 
 bool OpenGLRenderer::initialize(int w, int h) {
+
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
+
+    /* GLES 3.0 -> GLSL: 300 */
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+
+#elif defined(SDL_PLATFORM_WINDOWS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS)
+
+    /* OPENGL 3.3 -> GLSL: 330*/
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+
+
+#endif
+
+    SDL_GLContext glContext = SDL_GL_CreateContext(GEngine->get_window());
+
+    if (!glContext) {
+        spdlog::critical("Failed to create GL context: {}", SDL_GetError());
+        return false;
+    }
+
+
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
+
+    if (!gladLoadGLES2Loader((GLADloadproc) SDL_GL_GetProcAddress)) {
+        spdlog::critical("Failed to initialize GLAD (GLES_FUNCTIONS)");
+        return false;
+    }
+
+#else
+
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        spdlog::critical("Failed to initialize GLAD (GL_FUNCTIONS)");
+        return false;
+    }
+
+#endif
+
     width  = w;
     height = h;
 
@@ -143,8 +188,14 @@ void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInsta
     const glm::mat4& light_space_matrix, const std::vector<DirectionalLight>& directional_lights,
     const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
     glm::mat4 model      = transform.get_matrix();
-    glm::mat4 view       = camera.get_view_matrix();
-    glm::mat4 projection = camera.get_projection_matrix(static_cast<float>(width) / height);
+
+    // TODO:  PASS camera transform directly
+    auto camera_query = GEngine->get_world().query<const Transform3D, const Camera3D>();
+
+    const Transform3D& camera_transform = camera_query.first().get<Transform3D>();
+
+    glm::mat4 view       = camera.get_view(camera_transform);
+    glm::mat4 projection = camera.get_projection(width, height);
 
     _default_shader->set_value("model", model);
     _default_shader->set_value("view", view);
@@ -152,7 +203,7 @@ void OpenGLRenderer::render_entity(const Transform3D& transform, const MeshInsta
     _default_shader->set_value("lightSpaceMatrix", light_space_matrix);
 
     // Camera
-    _default_shader->set_value("camPos", camera.position);
+    _default_shader->set_value("camPos", camera_transform.position);
 
     // Material
     _default_shader->set_value("albedo", material.albedo);
@@ -282,4 +333,8 @@ void OpenGLRenderer::cleanup() {
 
     _default_shader->destroy();
     _shadow_shader->destroy();
+}
+
+void OpenGLRenderer::swap_chain() {
+    SDL_GL_SwapWindow(GEngine->get_window());
 }

@@ -3,10 +3,10 @@
 
 
 
-// ============================================================================
-// COMPONENTS
-// ============================================================================
-
+/*!
+ * @brief Represents material properties for 3D rendering.
+ * @ingroup Components
+ */
 struct Transform3D {
     glm::vec3 position{0.0f};
     glm::vec3 rotation{0.0f};
@@ -14,6 +14,17 @@ struct Transform3D {
 
     glm::mat4 get_matrix() const;
 };
+
+/*!
+ * @brief Represents a physics body for 2D or 3D physics simulations.
+ * Jolt Physics -> BodyID
+ * Box2D -> b2BodyId
+ * @ingroup Components
+ */
+struct PhysicsBody {
+    Uint32 id = 0;
+};
+
 
 struct MeshInstance3D {
     Uint32 VAO     = 0;
@@ -46,27 +57,56 @@ struct Material {
     bool useAOMap        = false;
     bool useEmissiveMap  = false;
 };
+/*!
 
+    @brief 3D Camera
+    - Position
+    - Zoom
+    - Rotation
+    - View matrix
+    - Projection matrix
+
+    @ingroup Components
+    @version  0.0.1
+
+*/
 struct Camera3D {
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 front    = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 up       = glm::vec3(0.0f, 1.0f, 0.0f);
-    float fov          = 45.0f;
-    float nearPlane    = 0.1f;
-    float farPlane     = 1000.0f;
+    float yaw           = -90.0f; // Z
+    float pitch         = 0.0f;
+    float fov           = 45.0f;
+    float speed         = 5.0f;
+    float view_distance = 1000.f;
 
-    // Camera movement
-    float yaw              = -90.0f;
-    float pitch            = 0.0f;
-    float movementSpeed    = 5.0f;
-    float mouseSensitivity = 0.1f;
+    explicit Camera3D() {
+        update_vectors();
+    }
+
+    glm::mat4 get_view(const Transform3D& transform) const;
+
+    glm::mat4 get_projection(int w, int h) const;
+
+    void move_forward(Transform3D& transform, float dt);
+
+    void move_backward(Transform3D& transform, float dt);
+
+    void move_left(Transform3D& transform, float dt);
+
+    void move_right(Transform3D& transform, float dt);
+
+    void look_at(float xoffset, float yoffset, float sensitivity = 0.1f);
+
+    void zoom(float yoffset);
+
+private:
+    glm::vec3 front{0.0f, 0.0f, -1.0f};
+    glm::vec3 up{};
+    glm::vec3 right{};
+    glm::vec3 world_up{0.0f, 1.0f, 0.0f};
 
     void update_vectors();
-
-    glm::mat4 get_view_matrix() const;
-
-    glm::mat4 get_projection_matrix(float aspect) const;
 };
+
+
 
 struct DirectionalLight {
     glm::vec3 direction{0.0f, -1.0f, 0.0f};

@@ -12,11 +12,11 @@ public:
 
     bool initialize(int w, int h) override;
 
-    GLuint load_texture_from_file(const std::string& path) override;
+    Uint32 load_texture_from_file(const std::string& path) override;
 
-    GLuint load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") override;
+    Uint32 load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") override;
 
-    GLuint load_texture_from_raw_data(const unsigned char* data, int w, int h, int channels = 4, const std::string& name = "") override;
+    Uint32 load_texture_from_raw_data(const unsigned char* data, int w, int h, int channels = 4, const std::string& name = "") override;
 
     void begin_shadow_pass() override;
 
@@ -39,5 +39,7 @@ public:
     void resize(int w, int h) override;
 
     void cleanup() override;
+
+    void swap_chain() override;
 };
 
