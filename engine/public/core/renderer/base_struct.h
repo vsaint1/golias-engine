@@ -1,6 +1,53 @@
 #pragma once
 #include "core/io/file_system.h"
 
+
+enum class FramebufferTextureFormat {
+    None = 0,
+    RGBA8,
+    RED_INTEGER,
+    DEPTH24STENCIL8,
+    DEPTH_COMPONENT
+};
+
+struct FramebufferTextureSpecification {
+    FramebufferTextureFormat format = FramebufferTextureFormat::None;
+};
+
+struct FramebufferAttachmentSpecification {
+    std::vector<FramebufferTextureSpecification> attachments;
+    FramebufferAttachmentSpecification() = default;
+
+    FramebufferAttachmentSpecification(const std::initializer_list<FramebufferTextureSpecification> list)
+        : attachments(list) {
+    }
+};
+
+struct FramebufferSpecification {
+    unsigned int width  = 0;
+    unsigned int height = 0;
+    FramebufferAttachmentSpecification attachments;
+    bool swap_chain_target = false;
+};
+
+
+class Framebuffer {
+public:
+    virtual ~Framebuffer() = default;
+
+    virtual void bind() = 0;
+    virtual void unbind() = 0;
+    virtual void invalidate() = 0;
+
+    virtual void resize(unsigned int width, unsigned int height) = 0;
+    virtual uint32_t get_color_attachment_id(size_t index = 0) const = 0;
+    virtual uint32_t get_depth_attachment_id() const = 0;
+
+    virtual const FramebufferSpecification& get_specification() const = 0;
+};
+
+
+
 /*!
 
     @brief Vertex structure

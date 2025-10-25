@@ -1,6 +1,36 @@
 #pragma once
-
+#include "core/renderer/renderer.h"
 #include "core/renderer/base_struct.h"
+
+
+class OpenGLFramebuffer final : public Framebuffer {
+    Uint32 fbo = 0;
+    FramebufferSpecification specification;
+    std::vector<Uint32> color_attachments;
+    uint32_t depth_attachment = 0;
+
+public:
+    explicit OpenGLFramebuffer(const FramebufferSpecification& spec);
+
+    ~OpenGLFramebuffer() override;
+
+    void invalidate() override;
+
+    void bind() override;
+
+    void unbind() override;
+
+    void resize(unsigned int width, unsigned int height) override;
+
+    Uint32 get_color_attachment_id(size_t index = 0) const override;
+
+    Uint32 get_depth_attachment_id() const override;
+
+    const FramebufferSpecification& get_specification() const override;
+
+    void cleanup();
+};
+
 
 
 class OpenglShader final : public Shader {

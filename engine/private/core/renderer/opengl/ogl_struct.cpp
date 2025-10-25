@@ -128,6 +128,114 @@ void OpenglShader::destroy() {
     glDeleteProgram(id);
 }
 
+OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& spec): specification(spec) {
+    spdlog::info("OpenGLFramebuffer::OpenGLFramebuffer - Creating Framebuffer ({}x{})", spec.width, spec.height);
+    invalidate();
+}
+
+OpenGLFramebuffer::~OpenGLFramebuffer() {
+    cleanup();
+}
+
+void OpenGLFramebuffer::invalidate() {
+    if (fbo)
+        cleanup();
+
+    spdlog::warn("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})", specification.width, specification.height);
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    bool hasDepthAttachment = false;
+
+    for (auto& attachment : specification.attachments.attachments) {
+        switch (attachment.format) {
+        case FramebufferTextureFormat::RGBA8: {
+            uint32_t tex;
+            glGenTextures(1, &tex);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, specification.width, specification.height, 0,
+                         GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + color_attachments.size(),
+                                   GL_TEXTURE_2D, tex, 0);
+
+
+            color_attachments.push_back(tex);
+            break;
+        }
+        case FramebufferTextureFormat::DEPTH_COMPONENT:
+        case FramebufferTextureFormat::DEPTH24STENCIL8: {
+            hasDepthAttachment = true;
+            glGenTextures(1, &depth_attachment);
+            glBindTexture(GL_TEXTURE_2D, depth_attachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, specification.width, specification.height,
+                         0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_attachment, 0);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+            break;
+        }
+        default:
+            break;
+        }
+    }
+
+    if (color_attachments.empty()) {
+        glDrawBuffers(0, nullptr);
+        glReadBuffer(GL_NONE);
+    } else {
+        GLenum buffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+        glDrawBuffers((GLsizei) color_attachments.size(), buffers);
+    }
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Framebuffer incomplete!" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OpenGLFramebuffer::bind() {
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, specification.width, specification.height);
+}
+
+void OpenGLFramebuffer::unbind() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OpenGLFramebuffer::resize(unsigned int width, unsigned int height) {
+    specification.width  = width;
+    specification.height = height;
+    invalidate();
+}
+
+Uint32 OpenGLFramebuffer::get_color_attachment_id(size_t index) const {
+    return color_attachments[index];
+}
+
+Uint32 OpenGLFramebuffer::get_depth_attachment_id() const {
+    return depth_attachment;
+}
+
+const FramebufferSpecification& OpenGLFramebuffer::get_specification() const {
+    return specification;
+}
+
+void OpenGLFramebuffer::cleanup() {
+    if (depth_attachment)
+        glDeleteTextures(1, &depth_attachment);
+
+    if (!color_attachments.empty())
+        glDeleteTextures((GLsizei) color_attachments.size(), color_attachments.data());
+
+    if (fbo)
+        glDeleteFramebuffers(1, &fbo);
+}
+
 OpenglShader::~OpenglShader() {
     destroy();
 }
