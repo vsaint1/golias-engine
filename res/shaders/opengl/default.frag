@@ -27,23 +27,15 @@ struct SpotLight {
 uniform SpotLight spotLights[100];
 uniform int numSpotLights;
 
-// Material properties
-uniform vec3 albedo;
-uniform float metallic;
-uniform float roughness;
-uniform float ao;
-uniform vec3 emissive;
-uniform float emissiveStrength;
-uniform float ior; // index of refraction (e.g. glass ~1.5, water ~1.33)
 
 struct Material{
-     vec3 albedo;
-     float metallic;
-     float roughness;
-     float ao;
-     vec3 emissive;
-     float emissiveStrength;
-     float ior; // index of refraction (e.g. glass ~1.5, water ~1.33)
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float ao;
+    vec3 emissive;
+    float emissiveStrength;
+    float ior; // index of refraction (e.g. glass ~1.5, water ~1.33)
 };
 
 uniform Material material;
@@ -163,6 +155,43 @@ vec3 fresnel_schlick_roughness(float cosTheta, vec3 F0, float roughness)
 }
 
 // ============================================================================
+// PBR Light Contribution Calculation
+// ============================================================================
+// Calculates the Cook-Torrance BRDF for a given light direction and radiance.
+// Returns the combined diffuse and specular contribution.
+vec3 calculate_pbr_contribution(
+    vec3 N,              // Surface normal
+    vec3 V,              // View direction
+    vec3 L,              // Light direction
+    vec3 radiance,       // Incoming light radiance
+    vec3 F0,             // Base reflectance
+    vec3 albedo,         // Surface albedo
+    float metallic,      // Metallic factor
+    float roughness      // Roughness factor
+)
+{
+    vec3 H = normalize(V + L);
+
+    // Cook-Torrance BRDF components
+    float NDF = distribution_ggx(N, H, roughness);
+    float G = geometry_smith(N, V, L, roughness);
+    vec3 F = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, roughness);
+
+    // Specular reflection ratio (kS) and diffuse ratio (kD)
+    vec3 kS = F;
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);
+
+    // Cook-Torrance specular term
+    vec3 numerator = NDF * G * F;
+    float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+    vec3 specular = numerator / denom;
+
+    // Combine diffuse and specular with Lambert's cosine law
+    float NdotL = max(dot(N, L), 0.0);
+    return (kD * albedo / PI + specular) * radiance * NdotL;
+}
+
+// ============================================================================
 // Normal Mapping (Tangent Space)
 // ============================================================================
 // References:
@@ -205,10 +234,10 @@ void main()
     discard;
 
 
-    vec3 finalAlbedo = USE_ALBEDO_MAP ? pow(texture(ALBEDO_MAP, UV).rgb, vec3(2.2)) : albedo;
-    float finalMetallic = metallic;
-    float finalRoughness = roughness;
-    float finalAO = USE_AO_MAP ? texture(AO_MAP, UV).r : ao;
+    vec3 finalAlbedo = USE_ALBEDO_MAP ? pow(texture(ALBEDO_MAP, UV).rgb, vec3(2.2)) : material.albedo;
+    float finalMetallic = material.metallic;
+    float finalRoughness = material.roughness;
+    float finalAO = USE_AO_MAP ? texture(AO_MAP, UV).r : material.ao;
 
     // Red = Ambient Occlusion, Green channel = roughness, Blue channel = metallic (glTF 2.0 format)
     if (USE_METALLIC_MAP) {
@@ -221,8 +250,8 @@ void main()
     finalRoughness = texture(ROUGHNESS_MAP, UV).r;
 
     vec3 finalEmissive = USE_EMISSIVE_MAP
-    ? texture(EMISSIVE_MAP, UV).rgb * emissiveStrength
-    : emissive * emissiveStrength;
+    ? texture(EMISSIVE_MAP, UV).rgb * material.emissiveStrength
+    : material.emissive * material.emissiveStrength;
 
     // --- Normal & View Direction ---
     vec3 N = USE_NORMAL_MAP ? calculate_normal_map() : normalize(NORMAL);
@@ -234,56 +263,46 @@ void main()
 
     // --- Lighting ---
     vec3 Lo = vec3(0.0);
+
+    // Directional Lights
     for (int i = 0; i < numDirLights; ++i) {
         vec3 L = normalize(-dirLights[i].direction);
-        vec3 H = normalize(V + L);
         vec3 radiance = dirLights[i].color;
 
-        float NDF = distribution_ggx(N, H, finalRoughness);
-        float G = geometry_smith(N, V, L, finalRoughness);
-        vec3 F = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
+        // Calculate PBR contribution
+        vec3 contribution = calculate_pbr_contribution(
+            N, V, L, radiance, F0, finalAlbedo, finalMetallic, finalRoughness
+        );
 
-        vec3 kS = F;
-        vec3 kD = (1.0 - kS) * (1.0 - finalMetallic);
-        vec3 numerator = NDF * G * F;
-        float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-        vec3 specular = numerator / denom;
-
-        float NdotL = max(dot(N, L), 0.0);
+        // Apply shadows if enabled
         float shadow = dirLights[i].cast_shadows ? (1.0 - shadow_calculation(LIGHT_SPACE_POSITION, N, L)) : 1.0;
-        Lo += (kD * finalAlbedo / PI + specular) * radiance * NdotL * shadow;
+        Lo += contribution * shadow;
     }
 
-
+    // Spot Lights
     for (int i = 0; i < numSpotLights; ++i) {
         vec3 L = normalize(spotLights[i].position - POSITION);
-        vec3 H = normalize(V + L);
         float dist = length(spotLights[i].position - POSITION);
         float attenuation = 1.0 / (dist * dist);
 
+        // Spotlight cone attenuation
         float theta = dot(L, normalize(-spotLights[i].direction));
         float epsilon = spotLights[i].inner_cut_off - spotLights[i].outer_cut_off;
         float intensity = clamp((theta - spotLights[i].outer_cut_off) / epsilon, 0.0, 1.0);
 
         vec3 radiance = spotLights[i].color * attenuation * intensity;
 
-        float NDF = distribution_ggx(N, H, finalRoughness);
-        float G = geometry_smith(N, V, L, finalRoughness);
-        vec3 F = fresnel_schlick_roughness(max(dot(H, V), 0.0), F0, finalRoughness);
+        // Calculate PBR contribution
+        vec3 contribution = calculate_pbr_contribution(
+            N, V, L, radiance, F0, finalAlbedo, finalMetallic, finalRoughness
+        );
 
-        vec3 kS = F;
-        vec3 kD = (1.0 - kS) * (1.0 - finalMetallic);
-        vec3 numerator = NDF * G * F;
-        float denom = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-        vec3 specular = numerator / denom;
-
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * finalAlbedo / PI + specular) * radiance * NdotL;
+        Lo += contribution;
     }
 
     // --- Environment Reflection & Refraction ---
     vec3 reflection_color = USE_REFLECTION ? sample_reflection(I, N) : vec3(0.0);
-    vec3 refraction_color = USE_REFRACTION ? sample_refraction(I, N, ior) : vec3(0.0);
+    vec3 refraction_color = USE_REFRACTION ? sample_refraction(I, N, material.ior) : vec3(0.0);
     float fresnel_ratio = clamp(pow(1.0 - max(dot(N, V), 0.0), 5.0), 0.0, 1.0);
 
     vec3 env_color = mix(refraction_color, reflection_color, fresnel_ratio);

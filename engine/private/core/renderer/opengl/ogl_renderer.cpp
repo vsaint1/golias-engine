@@ -90,8 +90,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     _shadow_shader  = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
 
     FramebufferSpecification spec;
-    spec.height      = 2048;
-    spec.width       = 2048;
+    spec.height      = 8192;
+    spec.width       = 8192;
     spec.attachments = {
         {FramebufferTextureFormat::DEPTH_COMPONENT}
     };

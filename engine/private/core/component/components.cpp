@@ -25,12 +25,12 @@ void Camera3D::update_vectors() {
 
 
 void Material::bind(Shader* shader) const {
-    shader->set_value("albedo", albedo);
-    shader->set_value("metallic", metallic);
-    shader->set_value("roughness", roughness);
-    shader->set_value("ao", ao);
-    shader->set_value("emissive", emissive);
-    shader->set_value("emissiveStrength", emissiveStrength);
+    shader->set_value("material.albedo", albedo);
+    shader->set_value("material.metallic", metallic);
+    shader->set_value("material.roughness", roughness);
+    shader->set_value("material.ao", ao);
+    shader->set_value("material.emissive", emissive);
+    shader->set_value("material.emissiveStrength", emissiveStrength);
 
     // Texture usage flags
     shader->set_value("USE_ALBEDO_MAP", useAlbedoMap);
