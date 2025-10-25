@@ -203,6 +203,15 @@ if (EMSCRIPTEN)
     # endif ()
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(${PROJECT_NAME} ${SOURCES})
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res)
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC dl pthread)
+endif()
 
 # =========================================================
 #  COMMON TARGET SETTINGS

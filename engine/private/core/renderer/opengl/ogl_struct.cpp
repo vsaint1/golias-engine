@@ -137,16 +137,25 @@ OpenGLFramebuffer::~OpenGLFramebuffer() {
     cleanup();
 }
 
+
 void OpenGLFramebuffer::invalidate() {
     if (fbo)
         cleanup();
-
-    spdlog::warn("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})", specification.width, specification.height);
+    
+    // Check for valid dimensions
+    if (specification.width == 0 || specification.height == 0) {
+        spdlog::error("OpenGLFramebuffer::invalidate - Invalid dimensions ({}x{})", 
+                      specification.width, specification.height);
+        return;
+    }
+    
+    spdlog::warn("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})", 
+                 specification.width, specification.height);
+    
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
+    
     bool hasDepthAttachment = false;
-
     for (auto& attachment : specification.attachments.attachments) {
         switch (attachment.format) {
         case FramebufferTextureFormat::RGBA8: {
@@ -159,8 +168,6 @@ void OpenGLFramebuffer::invalidate() {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + color_attachments.size(),
                                    GL_TEXTURE_2D, tex, 0);
-
-
             color_attachments.push_back(tex);
             break;
         }
@@ -169,20 +176,29 @@ void OpenGLFramebuffer::invalidate() {
             hasDepthAttachment = true;
             glGenTextures(1, &depth_attachment);
             glBindTexture(GL_TEXTURE_2D, depth_attachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, specification.width, specification.height,
-                         0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            
+            if (attachment.format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, specification.width, specification.height,
+                             0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depth_attachment, 0);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, specification.width, specification.height,
+                             0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_attachment, 0);
+            }
+            
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_attachment, 0);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             break;
         }
         default:
             break;
         }
     }
-
+    
     if (color_attachments.empty()) {
         glDrawBuffers(0, nullptr);
         glReadBuffer(GL_NONE);
@@ -190,11 +206,12 @@ void OpenGLFramebuffer::invalidate() {
         GLenum buffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
         glDrawBuffers((GLsizei) color_attachments.size(), buffers);
     }
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cerr << "Framebuffer incomplete!" << std::endl;
+    
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        spdlog::critical("OpenGLFramebuffer::invalidate - Framebuffer is incomplete! Status: 0x{:x}", status);
     }
-
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
