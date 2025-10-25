@@ -22,7 +22,7 @@ message(STATUS "Using assets folder: ${ASSETS_FOLDER}")
 # =========================================================
 #  PLATFORM SPECIFIC CONFIGURATION
 # =========================================================
-if (UNIX)
+if (UNIX AND NOT EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing -frtti -fexceptions -fPIC -Wall -pthread")
 endif ()
 
@@ -168,9 +168,7 @@ if (EMSCRIPTEN)
 
     add_executable(${PROJECT_NAME} ${SOURCES} )
 
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-            OUTPUT_NAME "index"
-            SUFFIX ".html")
+
 
     # TODO: handle custom shell file
     # set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
@@ -181,7 +179,12 @@ if (EMSCRIPTEN)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
 
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_WEBGL2=1 -s FETCH=1 -s  FULL_ES3=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        OUTPUT_NAME "index"
+        SUFFIX ".html"
+        COMPILE_FLAGS "-s USE_WEBGL2=1 -s FULL_ES3=1 -s FETCH=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1"
+        LINK_FLAGS    "-s USE_WEBGL2=1 -s FULL_ES3=1 -s FETCH=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res"
+    )
 
 
 endif ()
