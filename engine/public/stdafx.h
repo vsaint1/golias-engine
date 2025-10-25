@@ -55,6 +55,13 @@
 
 #include <tinyxml2.h>
 
+#include <corecrt_math_defines.h>
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 using Json = nlohmann::json;
 
 #if __ANDROID__

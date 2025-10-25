@@ -13,7 +13,6 @@ file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp" "private/*.c")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/renderer/.mm")
 
-# Platform detection and appending
 if(WIN32)
     file(GLOB_RECURSE PLATFORM_SOURCES "engine/private/core/platform/windows/*.cpp" "engine/private/core/platform/windows/*.c")
 

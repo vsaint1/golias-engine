@@ -41,6 +41,7 @@ add_subdirectory(lua)
 add_subdirectory(sol2)
 add_subdirectory(assimp)
 add_subdirectory(flecs)
+add_subdirectory(spdlog)
 
 add_library(vendor INTERFACE)
 
@@ -59,4 +60,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
     sol2
     assimp
     flecs
+    spdlog
 )
