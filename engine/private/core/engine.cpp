@@ -51,19 +51,22 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     const auto LOG_LEVEL = spdlog::level::debug;
 #endif
 
+#if defined(__ANDROID__)
+    auto android_sink = std::make_shared<spdlog::sinks::android_sink_mt>("GoliasEngine");
+    std::vector<spdlog::sink_ptr> sinks{android_sink};
+#else
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-    console_sink->set_level(LOG_LEVEL);
-
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/output.log", true);
-    file_sink->set_level(LOG_LEVEL);
-
+    auto file_sink    = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/output.log", true);
     std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
+#endif
+
     auto logger = std::make_shared<spdlog::logger>("GoliasEngine", sinks.begin(), sinks.end());
 
-    spdlog::set_default_logger(logger);
-    spdlog::set_level(LOG_LEVEL);
-    spdlog::flush_on(LOG_LEVEL);
+#if defined(NDEBUG)
+    logger->set_level(spdlog::level::info);
+#else
+    logger->set_level(spdlog::level::debug);
+#endif
 
     if (!_config.load()) {
         spdlog::warn("Using default configuration values");

@@ -1,10 +1,3 @@
-// -----------------------------------------------------------------------------
-// Enhanced Physically Based Rendering Shader (PBR + Reflections + Refraction)
-// Based on:
-//  - Disney Principled BRDF (Burley, 2012)
-//  - Unreal Engine 4 PBR implementation
-//  - glTF 2.0 Metallic-Roughness workflow
-// -----------------------------------------------------------------------------
 
 out vec4 COLOR;
 
