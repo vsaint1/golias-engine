@@ -339,7 +339,7 @@ public:
     virtual GLuint load_texture_from_file(const std::string& path) = 0;
     virtual GLuint load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
     virtual GLuint load_texture_from_raw_data(const unsigned char* data, int width, int height, int channels = 4,
-                                              const std::string& name = "") = 0;
+                                              const std::string& name                                        = "") = 0;
 
     // Shadow pass
     virtual void begin_shadow_pass() = 0;
@@ -358,15 +358,15 @@ public:
     virtual void end_render_target() = 0;
 
 protected:
-    std::unique_ptr<Shader> _default_shader = nullptr;
-    std::unique_ptr<Shader> _shadow_shader = nullptr;
+    std::unique_ptr<Shader> _default_shader     = nullptr;
+    std::unique_ptr<Shader> _shadow_shader      = nullptr;
     std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
     std::unordered_map<std::string, Uint32> _textures;
 };
 
 
 class OpenGLRenderer final : public Renderer {
-    int width = 0, height = 0;
+    int width              = 0, height = 0;
     SDL_GLContext _context = nullptr;
 
     static GLuint create_gl_texture(const unsigned char* data, int w, int h, int channels) {
@@ -399,7 +399,7 @@ public:
     }
 
     bool initialize(int w, int h) override {
-        width = w;
+        width  = w;
         height = h;
 
         if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
@@ -411,11 +411,11 @@ public:
         glViewport(0, 0, width, height);
 
         _default_shader = std::make_unique<OpenglShader>("shaders/opengl/default.vert", "shaders/opengl/default.frag");
-        _shadow_shader = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
+        _shadow_shader  = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
 
         FramebufferSpecification spec;
-        spec.width = 8192;
-        spec.height = 8192;
+        spec.width       = 8192;
+        spec.height      = 8192;
         spec.attachments = {
             {FramebufferTextureFormat::DEPTH_COMPONENT}
         };
@@ -451,7 +451,7 @@ public:
             return it->second;
 
         int w, h, channels;
-        unsigned char* data = stbi_load_from_memory(buffer, (int)size, &w, &h, &channels, 0);
+        unsigned char* data = stbi_load_from_memory(buffer, (int) size, &w, &h, &channels, 0);
         if (!data) {
             spdlog::error("Failed to load texture from memory: {}", key);
             return 0;
@@ -471,7 +471,7 @@ public:
         if (auto it = _textures.find(key); it != _textures.end())
             return it->second;
 
-        GLuint texID = create_gl_texture(data, w, h, channels);
+        GLuint texID   = create_gl_texture(data, w, h, channels);
         _textures[key] = texID;
         spdlog::info("Loaded raw Texture: {}, Path {}", texID, key);
 
@@ -516,8 +516,8 @@ public:
                        const glm::mat4& lightSpaceMatrix,
                        const std::vector<DirectionalLight>& directionalLights,
                        const std::vector<std::pair<Transform, SpotLight>>& spotLights) override {
-        glm::mat4 model = transform.get_matrix();
-        glm::mat4 view = camera.get_view_matrix();
+        glm::mat4 model      = transform.get_matrix();
+        glm::mat4 view       = camera.get_view_matrix();
         glm::mat4 projection = camera.get_projection_matrix(static_cast<float>(width) / height);
 
         _default_shader->set_value("model", model);
@@ -643,7 +643,7 @@ public:
     }
 
     void resize(int w, int h) override {
-        width = w;
+        width  = w;
         height = h;
         glViewport(0, 0, width, height);
     }
@@ -660,8 +660,6 @@ public:
 };
 
 
-
-
 // ============================================================================
 // MODEL (combines mesh + material)
 // ============================================================================
@@ -671,12 +669,9 @@ struct Model {
     std::vector<Material> materials;
 };
 
-// ============================================================================
-// MESH LOADER (ASSIMP)
-// ============================================================================
-class MeshLoader {
-public:
 
+class ObjectLoader {
+public:
     static MeshRenderer load_mesh(const std::string& path) {
         Model model = load_model(path, nullptr);
         return model.meshes.empty() ? MeshRenderer() : model.meshes[0];
@@ -703,7 +698,7 @@ public:
             return model;
         }
 
-        std::string directory = get_directory(path);
+        const std::string directory = get_directory(path);
         spdlog::info("  Meshes: {}, Materials: {}, Animations: {}",
                      scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
 
@@ -717,7 +712,9 @@ public:
             if (renderer) {
                 Material material = load_material(scene, aiMesh, directory, *renderer);
                 model.materials.push_back(material);
-                print_material_info(material, aiMesh->mName.C_Str());
+                spdlog::info("    Material [{}]: Albedo ({:.2f},{:.2f},{:.2f}) | Metallic {:.2f} | Roughness {:.2f} | AO {:.2f}",
+                             aiMesh->mName.C_Str(), material.albedo.r, material.albedo.g, material.albedo.b,
+                             material.metallic, material.roughness, material.ao);
             }
 
             if (aiMesh->HasBones()) {
@@ -733,7 +730,6 @@ public:
     }
 
 private:
-
     static std::string get_directory(const std::string& path) {
         size_t found = path.find_last_of("/\\");
         return (found != std::string::npos) ? path.substr(0, found + 1) : "";
@@ -741,34 +737,45 @@ private:
 
 
     static MeshRenderer create_mesh(aiMesh* aiMesh) {
-        std::vector<float> vertices;
+        std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
-        vertices.reserve(aiMesh->mNumVertices * 8);
+        vertices.reserve(aiMesh->mNumVertices);
 
         for (unsigned int i = 0; i < aiMesh->mNumVertices; ++i) {
+            Vertex vertex;
+
             // Position
-            vertices.push_back(aiMesh->mVertices[i].x);
-            vertices.push_back(aiMesh->mVertices[i].y);
-            vertices.push_back(aiMesh->mVertices[i].z);
+            vertex.position = {
+                aiMesh->mVertices[i].x,
+                aiMesh->mVertices[i].y,
+                aiMesh->mVertices[i].z
+            };
 
             // Normal
             if (aiMesh->HasNormals()) {
-                vertices.push_back(aiMesh->mNormals[i].x);
-                vertices.push_back(aiMesh->mNormals[i].y);
-                vertices.push_back(aiMesh->mNormals[i].z);
+                vertex.normal = {
+                    aiMesh->mNormals[i].x,
+                    aiMesh->mNormals[i].y,
+                    aiMesh->mNormals[i].z
+                };
             } else {
-                vertices.insert(vertices.end(), { 0.0f, 1.0f, 0.0f });
+                vertex.normal = {0.0f, 0.0f, 0.0f};
             }
 
             // UV
             if (aiMesh->mTextureCoords[0]) {
-                vertices.push_back(aiMesh->mTextureCoords[0][i].x);
-                vertices.push_back(aiMesh->mTextureCoords[0][i].y);
+                vertex.uv = {
+                    aiMesh->mTextureCoords[0][i].x,
+                    aiMesh->mTextureCoords[0][i].y
+                };
             } else {
-                vertices.insert(vertices.end(), { 0.0f, 0.0f });
+                vertex.uv = {0.0f, 0.0f};
             }
+
+            vertices.push_back(vertex);
         }
 
+        // Process indices
         for (unsigned int i = 0; i < aiMesh->mNumFaces; ++i) {
             const aiFace& face = aiMesh->mFaces[i];
             indices.insert(indices.end(), face.mIndices, face.mIndices + face.mNumIndices);
@@ -782,18 +789,21 @@ private:
         glGenBuffers(1, &mesh.EBO);
 
         glBindVertexArray(mesh.VAO);
+
         glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-        // Attributes
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        // Vertex attributes
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, position));
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, normal));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) offsetof(Vertex, uv));
         glEnableVertexAttribArray(2);
 
         glBindVertexArray(0);
@@ -802,11 +812,11 @@ private:
         return mesh;
     }
 
-
     static Material load_material(const aiScene* scene, aiMesh* mesh,
                                   const std::string& directory, Renderer& renderer) {
         Material material;
-        if (scene->mNumMaterials <= mesh->mMaterialIndex) return material;
+        if (scene->mNumMaterials <= mesh->mMaterialIndex)
+            return material;
 
         aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
         load_colors(aiMat, material);
@@ -817,11 +827,11 @@ private:
     static void load_colors(aiMaterial* aiMat, Material& mat) {
         aiColor3D color(1, 1, 1);
         aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        mat.albedo = { color.r, color.g, color.b };
+        mat.albedo = {color.r, color.g, color.b};
 
         aiColor3D emissive(0, 0, 0);
         if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
-            mat.emissive = { emissive.r, emissive.g, emissive.b };
+            mat.emissive = {emissive.r, emissive.g, emissive.b};
 
         aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, mat.emissiveStrength);
         aiMat->Get(AI_MATKEY_METALLIC_FACTOR, mat.metallic);
@@ -831,19 +841,22 @@ private:
     static void load_textures(aiMaterial* aiMat, const aiScene* scene,
                               const std::string& dir, Renderer& renderer, Material& mat) {
         auto load_tex = [&](aiTextureType type, GLuint& id, bool& flag, const char* name) {
-            if (aiMat->GetTextureCount(type) == 0) return;
+            if (aiMat->GetTextureCount(type) == 0)
+                return;
 
             aiString texPath;
             aiMat->GetTexture(type, 0, &texPath);
             std::string texStr = texPath.C_Str();
 
-            if (texStr.empty()) return;
+            if (texStr.empty())
+                return;
 
             if (texStr[0] == '*') {
                 int texIndex = std::atoi(texStr.c_str() + 1);
-                if (texIndex >= 0 && texIndex < (int)scene->mNumTextures) {
+                if (texIndex >= 0 && texIndex < (int) scene->mNumTextures) {
                     const aiTexture* embedded = scene->mTextures[texIndex];
-                    if (!embedded) return;
+                    if (!embedded)
+                        return;
 
                     if (embedded->mHeight == 0) {
                         id = renderer.load_texture_from_memory(
@@ -856,15 +869,17 @@ private:
                     }
 
                     flag = (id != 0);
-                    if (flag) spdlog::info("    Embedded texture loaded: {}", name);
+                    if (flag)
+                        spdlog::info("    Embedded Texture loaded: {}", name);
                     return;
                 }
             }
 
             std::string full = dir + "/" + texStr;
-            id = renderer.load_texture_from_file(full);
-            flag = (id != 0);
-            if (flag) spdlog::info("    Texture loaded [{}]: {}", name, full);
+            id               = renderer.load_texture_from_file(full);
+            flag             = (id != 0);
+            if (flag)
+                spdlog::info("    Texture loaded [{}]: {}", name, full);
         };
 
         load_tex(aiTextureType_DIFFUSE, mat.albedoMap, mat.useAlbedoMap, "albedo");
@@ -874,13 +889,6 @@ private:
         load_tex(aiTextureType_AMBIENT_OCCLUSION, mat.aoMap, mat.useAOMap, "ao");
         load_tex(aiTextureType_EMISSIVE, mat.emissiveMap, mat.useEmissiveMap, "emissive");
     }
-
-    static void print_material_info(const Material& mat, const std::string& meshName) {
-        spdlog::info("    Material [{}]: Albedo ({:.2f},{:.2f},{:.2f}) | Metallic {:.2f} | Roughness {:.2f} | AO {:.2f}",
-                     meshName, mat.albedo.r, mat.albedo.g, mat.albedo.b,
-                     mat.metallic, mat.roughness, mat.ao);
-    }
-
 
     static void parse_bones(aiMesh* mesh, Model& model) {
         spdlog::info("    Bones: {}", mesh->mNumBones);
@@ -895,13 +903,11 @@ private:
         spdlog::info("  → Animations: {}", scene->mNumAnimations);
         for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
             const aiAnimation* anim = scene->mAnimations[i];
-            spdlog::info("    Animation {}: {} | Duration: {} | FPS: {}",
+            spdlog::info("    Animation {}: {} | Duration: {:.2f} | FPS: {}",
                          i, anim->mName.C_Str(), anim->mDuration, anim->mTicksPerSecond);
         }
     }
 };
-
-
 
 
 // ============================================================================
@@ -1190,7 +1196,7 @@ int main(int argc, char* argv[]) {
                          .set(SpotLight{glm::vec3(1, -1, -1), glm::vec3(0.3f, 0.3f, 1.0f), 50.0f, 12.5f, 17.5f});
 
 
-    Model carModel = MeshLoader::load_model("res/sprites/obj/Car2.obj", renderer);
+    Model carModel = ObjectLoader::load_model("res/sprites/obj/Car2.obj", renderer);
     for (size_t i = 0; i < carModel.meshes.size(); i++) {
         ecs.entity(("Car_Mesh_" + std::to_string(i)).c_str())
            .set(Transform{glm::vec3(-10, 0, -5), glm::vec3(0), glm::vec3(1.0f)})
@@ -1199,7 +1205,7 @@ int main(int argc, char* argv[]) {
     }
 
 
-    Model damagedHelmet = MeshLoader::load_model("res/sprites/obj/DamagedHelmet.glb", renderer);
+    Model damagedHelmet = ObjectLoader::load_model("res/sprites/obj/DamagedHelmet.glb", renderer);
     for (size_t i = 0; i < damagedHelmet.meshes.size(); i++) {
         ecs.entity(("Helmet_Mesh_" + std::to_string(i)).c_str())
            .set(Transform{glm::vec3(15, 0, 0), glm::vec3(0), glm::vec3(1.0f)})
@@ -1215,37 +1221,37 @@ int main(int argc, char* argv[]) {
     //         .set(sponza.materials[i]);
     // }
 
-    Model medieval = MeshLoader::load_model("res/sprites/obj/nagonford/Nagonford_Animated.glb",renderer);
+    Model medieval = ObjectLoader::load_model("res/sprites/obj/nagonford/Nagonford_Animated.glb", renderer);
     for (size_t i = 0; i < medieval.meshes.size(); i++) {
         ecs.entity(("Sponza_Mesh_" + std::to_string(i)).c_str())
-            .set(Transform{glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1.0f)})
-            .set(medieval.meshes[i])
-            .set(medieval.materials[i]);
+           .set(Transform{glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(1.0f)})
+           .set(medieval.meshes[i])
+           .set(medieval.materials[i]);
     }
 
-    MeshRenderer cylinderMesh = MeshLoader::load_mesh("res/models/cylinder.obj");
+    MeshRenderer cylinderMesh = ObjectLoader::load_mesh("res/models/cylinder.obj");
     ecs.entity("Cylinder").set(Transform{glm::vec3(0, 0, -10), glm::vec3(0), glm::vec3(1.0f)}).set(cylinderMesh).set(Material{
         .albedo = glm::vec3(0, 0, 1.0f)});
 
-    MeshRenderer torusMesh = MeshLoader::load_mesh("res/models/torus.obj");
+    MeshRenderer torusMesh = ObjectLoader::load_mesh("res/models/torus.obj");
     ecs.entity("Torus").set(Transform{glm::vec3(0, 0, 5), glm::vec3(0), glm::vec3(1.0f)}).set(torusMesh).set(Material{
         .albedo = glm::vec3(0, 1.0f, 1.0), .emissive = glm::vec3(1, 1, 1), .emissiveStrength = 1.0f});
 
-    MeshRenderer coneMesh = MeshLoader::load_mesh("res/models/cone.obj");
+    MeshRenderer coneMesh = ObjectLoader::load_mesh("res/models/cone.obj");
     ecs.entity("Cone").set(Transform{glm::vec3(0, 0, 20), glm::vec3(0), glm::vec3(1.0f)}).set(coneMesh).set(Material{
         .albedo = glm::vec3(0, 1.0f, 1.0)});
 
-    MeshRenderer blenderMonkeyMesh = MeshLoader::load_mesh("res/models/blender_monkey.obj");
+    MeshRenderer blenderMonkeyMesh = ObjectLoader::load_mesh("res/models/blender_monkey.obj");
     ecs.entity("Cone").set(Transform{glm::vec3(0, 0, 10), glm::vec3(0), glm::vec3(1.0f)}).set(blenderMonkeyMesh).set(Material{
         .albedo = glm::vec3(1.0f, 0.0f, 1.0)});
 
-    MeshRenderer cubeMesh = MeshLoader::load_mesh("res/models/cube.obj");
+    MeshRenderer cubeMesh = ObjectLoader::load_mesh("res/models/cube.obj");
     ecs.entity("Red Cube")
        .set(Transform{glm::vec3(3, 0, 0), glm::vec3(0), glm::vec3(1.5f)})
        .set(cubeMesh)
        .set(Material{glm::vec3(0.8f, 0.1f, 0.1f), 0.0f, 0.3f, 1.0f});
 
-    MeshRenderer sphereMesh = MeshLoader::load_mesh("res/models/sphere.obj");
+    MeshRenderer sphereMesh = ObjectLoader::load_mesh("res/models/sphere.obj");
 
     ecs.entity("Sphere")
        .set(Transform{glm::vec3(-3, 0, 0), glm::vec3(0), glm::vec3(1.5f)})
