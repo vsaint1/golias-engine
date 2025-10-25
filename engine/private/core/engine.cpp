@@ -2,15 +2,17 @@
 
 std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
-Renderer* create_renderer_internal(SDL_Window* window,  EngineConfig& config) {
+
+Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
 
     Renderer* renderer = nullptr;
     switch (config.get_renderer_device().backend) {
-    case Backend::GL_COMPATIBILITY: {
-        renderer = new OpenGLRenderer();
-        break;
-    }
+    case Backend::GL_COMPATIBILITY:
+        {
+            renderer = new OpenGLRenderer();
+            break;
+        }
     case Backend::VK_FORWARD:
         spdlog::error("Vulkan backend is not yet supported");
         break;
@@ -20,10 +22,11 @@ Renderer* create_renderer_internal(SDL_Window* window,  EngineConfig& config) {
     case Backend::METAL:
         spdlog::error("Metal backend is not yet supported");
         break;
-    case Backend::AUTO: {
-        spdlog::error("SDL Renderer backend is not yet supported");
-        break;
-    }
+    case Backend::AUTO:
+        {
+            spdlog::error("SDL Renderer backend is not yet supported");
+            break;
+        }
     }
 
     // TODO: later use viewport
@@ -106,8 +109,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
 
     spdlog::info("Initializing {}, Version {}", ENGINE_NAME, ENGINE_VERSION_STR);
 
-    spdlog::info("Project Configuration -> Window: ({}x{}), ApplicationName: {}, Version: {}, Package: {}",
-                 app_win.width, app_win.height,
+    spdlog::info("Project Configuration -> Window: ({}x{}), ApplicationName: {}, Version: {}, Package: {}", app_win.width, app_win.height,
                  app_config.name, app_config.version, app_config.package_name);
 
 #pragma region APP_METADATA
@@ -228,9 +230,7 @@ void engine_draw_loop() {
     glm::mat4 lightSpaceMatrix(1.0f);
 
     Camera3D mainCamera;
-    GEngine->get_world().each([&](const Camera3D& cam) {
-        mainCamera = cam;
-    });
+    GEngine->get_world().each([&](const Camera3D& cam) { mainCamera = cam; });
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& t, DirectionalLight& light) {
         directionalLights.push_back(light);
@@ -241,9 +241,7 @@ void engine_draw_loop() {
     });
 
     std::vector<std::pair<Transform3D, SpotLight>> spotLights;
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, SpotLight& light) {
-        spotLights.push_back({t, light});
-    });
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, SpotLight& light) { spotLights.push_back({t, light}); });
 
     // Shadow pass
     GEngine->get_renderer()->begin_shadow_pass();
@@ -255,14 +253,11 @@ void engine_draw_loop() {
     // Main render pass
     GEngine->get_renderer()->begin_render_target();
     GEngine->get_world().each([&](Transform3D& t, MeshInstance3D& mesh, Material& mat) {
-        GEngine->get_renderer()->render_entity(t, mesh, mat, mainCamera, lightSpaceMatrix,
-                                               directionalLights, spotLights);
+        GEngine->get_renderer()->render_entity(t, mesh, mat, mainCamera, lightSpaceMatrix, directionalLights, spotLights);
     });
     GEngine->get_renderer()->end_render_target();
 
     GEngine->get_renderer()->swap_chain();
-
-
 }
 
 void engine_core_loop() {
@@ -292,14 +287,12 @@ void engine_core_loop() {
             app_win.width  = new_w;
             app_win.height = new_h;
         }
-
     }
 
     // TODO: add script logic and remove this
     const bool* scancodes = SDL_GetKeyboardState(nullptr);
 
     GEngine->get_world().each([&](flecs::entity e, Transform3D& transform, Camera3D& camera) {
-
         float dt = static_cast<float>(GEngine->get_timer().delta);
 
         if (scancodes[SDL_SCANCODE_W]) {
@@ -333,10 +326,9 @@ void engine_core_loop() {
 
         if (scancodes[SDL_SCANCODE_LSHIFT]) {
             camera.speed = 150.0f;
-        }else {
+        } else {
             camera.speed = 50.0f;
         }
-
     });
 
 
@@ -372,5 +364,4 @@ Engine::~Engine() {
 
     TTF_Quit();
     SDL_Quit();
-
 }

@@ -164,30 +164,45 @@ endif ()
 # WASM (Emscripten)
 # -----------------------------
 if (EMSCRIPTEN)
+    add_executable(${PROJECT_NAME} ${SOURCES})
 
+    set(EM_FLAGS
+        "-sUSE_WEBGL2=1"
+        "-sFULL_ES3=1"
+        "-sMIN_WEBGL_VERSION=2"
+        "-sMAX_WEBGL_VERSION=2"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sNO_DISABLE_EXCEPTION_CATCHING=1"
+        "-sDISABLE_EXCEPTION_THROWING=0"
+        "-sDISABLE_EXCEPTION_CATCHING=0"
+        "-sFETCH=1"
+        "-sASYNCIFY"
+        "-sFORCE_FILESYSTEM=1"
+        "-sSTACK_SIZE=10MB"
+        "-sINITIAL_MEMORY=128MB"
+        "--preload-file ${CMAKE_SOURCE_DIR}/res@/res"
+    )
 
-    add_executable(${PROJECT_NAME} ${SOURCES} )
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-c++11-narrowing)
 
-
-
-    # TODO: handle custom shell file
-    # set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
-
-    # if (NOT EXISTS ${SHELL_HTML_FILE})
-    #     message(FATAL_ERROR "Shell file not found: ${SHELL_HTML_FILE}")
-    # endif ()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-narrowing")
+    string(REPLACE ";" " " EM_FLAGS_STR "${EM_FLAGS}")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
         OUTPUT_NAME "index"
         SUFFIX ".html"
-        COMPILE_FLAGS "-s USE_WEBGL2=1 -s FULL_ES3=1 -s FETCH=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1"
-        LINK_FLAGS    "-s USE_WEBGL2=1 -s FULL_ES3=1 -s FETCH=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s ALLOW_MEMORY_GROWTH=1 -s NO_DISABLE_EXCEPTION_CATCHING=1 --preload-file ${CMAKE_SOURCE_DIR}/res@/res"
+        COMPILE_FLAGS "${EM_FLAGS_STR}"
+        LINK_FLAGS "${EM_FLAGS_STR}"  
     )
 
+    # Optional: custom shell (HTML template)
+    # set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
+    # if (EXISTS ${SHELL_HTML_FILE})
+    #     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
+    #         "${EM_FLAGS_STR} --shell-file ${SHELL_HTML_FILE}")
+    # endif ()
+endif()
 
-endif ()
 
 # =========================================================
 #  COMMON TARGET SETTINGS
