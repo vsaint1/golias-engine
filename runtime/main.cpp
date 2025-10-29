@@ -1,5 +1,8 @@
 #include <SDL3/SDL_main.h>
 #include "core/engine.h"
+
+
+
 int main(int argc, char* argv[]) {
 
     if (!GEngine->initialize(1280, 720, "Golias Engine - Window")) {
@@ -73,13 +76,23 @@ int main(int argc, char* argv[]) {
            .add<Camera3D>();
 
     auto dirLight = ecs.entity()
-                       .set(Transform3D{})
-                       .set(DirectionalLight{
-                           glm::vec3(1, -2.5, 1),
-                           glm::vec3(1.0f, 0.95f, 0.8f),
-                           2.0f,
-                           true
-                       });
+      .set(Transform3D{})
+      .set(DirectionalLight{
+          glm::normalize(glm::vec3(1.0f, -2.5f, 1.0f)), // normalized sunlight direction
+          glm::vec3(1.0f, 0.95f, 0.8f),                 // warm sunlight color
+          1.0f,                                         // intensity
+          true                                          // cast shadows
+      });
+
+    auto dirLight2 = ecs.entity()
+        .set(Transform3D{})
+        .set(DirectionalLight{
+            glm::normalize(glm::vec3(-0.3f, -1.0f, 0.2f)), // fill/rim light
+            glm::vec3(0.6f, 0.75f, 1.0f),                  // cool tint for contrast
+            0.8f,                                          // weaker intensity
+            false                                          // no shadow casting
+        });
+
 
     auto spotLight1 = ecs.entity()
                          .set(Transform3D{glm::vec3(5, 5, 5)})
@@ -101,12 +114,17 @@ int main(int argc, char* argv[]) {
                              17.5f
                          });
 
+
     // TODO: create api for lights and camera
     create_model_entity("dmg_helmet", "res://sprites/obj/DamagedHelmet.glb",
-                       glm::vec3(10, 0, -5));
+                       glm::vec3(10, 1, -5));
 
     create_model_entity("nagon", "res://sprites/obj/nagonford/Nagonford_Animated.glb",
                        glm::vec3(0, 0, 0));
+
+
+    // create_model_entity("Sponza", "res://sprites/obj/sponza/Sponza.glb",
+    //                      glm::vec3(0, -2, 0), glm::vec3(0), glm::vec3(0.1f));
 
     create_mesh_entity("Cylinder", "res://models/cylinder.obj",
                       glm::vec3(0, 0, -15), glm::vec3(0), glm::vec3(1.0f),
@@ -128,11 +146,12 @@ int main(int argc, char* argv[]) {
                       glm::vec3(0, -0.5, 0), glm::vec3(0), glm::vec3(10.0f),
                       "ground_gray");
 
+
     std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> dist(-100.0f, 100.0f);
 
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         float x = 30.0f + dist(rng);
         float y = 30.0f + dist(rng);
         float z = 30.0f + dist(rng);
@@ -148,20 +167,21 @@ int main(int argc, char* argv[]) {
         );
     }
 
+
     create_mesh_entity("Red Cube", "res://models/cube.obj",
                       glm::vec3(3, 0, 0), glm::vec3(0), glm::vec3(1.5f),
                       "red_rough");
 
     create_mesh_entity("Metallic Sphere", "res://models/sphere.obj",
-                      glm::vec3(-3, 0, 0), glm::vec3(0), glm::vec3(1.5f),
+                      glm::vec3(-3, 1, 0), glm::vec3(0), glm::vec3(1.5f),
                       "green_shiny");
 
     create_mesh_entity("SmallCube", "res://models/cube.obj",
-                      glm::vec3(-3, 0, 0), glm::vec3(0), glm::vec3(0.5f),
+                      glm::vec3(-3, 5, 10), glm::vec3(0), glm::vec3(0.5f),
                       "blue_metal");
 
     create_mesh_entity("Ground", "res://models/cube.obj",
-                      glm::vec3(0, -2, 0), glm::vec3(0), glm::vec3(1000.0f, 0.1f, 1000.0f),
+                      glm::vec3(0, -5, 0), glm::vec3(0), glm::vec3(1000.0f, 0.1f, 1000.0f),
                       "dark_metal_ground");
 
     GEngine->run();

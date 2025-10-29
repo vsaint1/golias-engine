@@ -28,8 +28,9 @@ uniform SpotLight spotLights[100];
 uniform int numSpotLights;
 
 
-struct Material{
+struct Material {
     vec3 albedo;
+    vec3 specular;
     float metallic;
     float roughness;
     float ao;
@@ -42,6 +43,7 @@ uniform Material material;
 
 // Texture samplers
 uniform sampler2D ALBEDO_MAP;
+uniform sampler2D SPECULAR_MAP;
 uniform sampler2D METALLIC_MAP;
 uniform sampler2D ROUGHNESS_MAP;
 uniform sampler2D NORMAL_MAP;
@@ -52,6 +54,7 @@ uniform samplerCube ENVIRONMENT_MAP; // environment cubemap for reflection/refra
 
 // Usage flags
 uniform bool USE_ALBEDO_MAP;
+uniform bool USE_SPECULAR_MAP;
 uniform bool USE_METALLIC_MAP;
 uniform bool USE_ROUGHNESS_MAP;
 uniform bool USE_NORMAL_MAP;
@@ -71,14 +74,17 @@ uniform float TIME;
 float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
 {
     vec3 projCoords = frag_pos_light_space.xyz / frag_pos_light_space.w;
+
+    // Transform from [-1,1] to [0,1]
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0) return 0.0;
+    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
+    return 0.0;
 
-    float closestDepth = texture(SHADOW_MAP, projCoords.xy).r;
     float currentDepth = projCoords.z;
-    float bias = max(0.005 * (1.0 - dot(N, L)), 0.001);
+    float bias = max(0.0005 * (1.0 - dot(N, L)), 0.0001);
 
+    // PCF sample (3x3 kernel)
     float shadow = 0.0;
     vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
 
@@ -86,12 +92,17 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
     {
         for (int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture(SHADOW_MAP, projCoords.xy + vec2(x, y) * texelSize).r;
+            vec2 offset = vec2(x, y) * texelSize;
+            float pcfDepth = texture(SHADOW_MAP, projCoords.xy + offset).r;
             shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
         }
     }
 
     shadow /= 9.0;
+
+
+    shadow *= smoothstep(0.0, 1.0, projCoords.z);
+
     return shadow;
 }
 
@@ -165,13 +176,13 @@ vec3 fresnel_schlick_roughness(float cosTheta, vec3 F0, float roughness)
 // Calculates the Cook-Torrance BRDF for a given light direction and radiance.
 // Returns the combined diffuse and specular contribution.
 vec3 calculate_pbr_contribution(
-    vec3 N,              // Surface normal
-    vec3 V,              // View direction
-    vec3 L,              // Light direction
-    vec3 radiance,       // Incoming light radiance
-    vec3 F0,             // Base reflectance
-    vec3 albedo,         // Surface albedo
-    float metallic,      // Metallic factor
+    vec3 N, // Surface normal
+    vec3 V, // View direction
+    vec3 L, // Light direction
+    vec3 radiance, // Incoming light radiance
+    vec3 F0, // Base reflectance
+    vec3 albedo, // Surface albedo
+    float metallic, // Metallic factor
     float roughness      // Roughness factor
 )
 {
@@ -293,6 +304,12 @@ void main()
         finalMetallic = mr.b;
     }
 
+//    vec3 finalSpecular = material.specular;
+//    if (USE_SPECULAR_MAP) {
+//        vec3 specSample = texture(SPECULAR_MAP, UV).rgb;
+//        finalSpecular = pow(specSample, vec3(2.2)); // gamma-corrected
+//    }
+
     if (USE_AO_MAP)
     finalAO = texture(AO_MAP, UV).r;
 
@@ -315,8 +332,9 @@ void main()
     vec3 I = normalize(POSITION - CAMERA_POSITION_WORLD); // incident ray for reflection/refraction
 
     // --- Base Reflectance ---
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, finalAlbedo, finalMetallic);
+    vec3 F0 = mix(vec3(0.04), finalAlbedo, finalMetallic);
+//    F0 = mix(F0, finalSpecular, 0.5); // blend specular color for non-metals
+    // TODO: IOR
 
     // --- Lighting ---
     vec3 Lo = vec3(0.0);

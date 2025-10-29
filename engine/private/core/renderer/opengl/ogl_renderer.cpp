@@ -15,6 +15,7 @@ void APIENTRY ogl_validation_layer(
 
     SDL_Log("ValidationLayer Type: 0x%x | Severity: 0x%x | ID: %u | Message: %s", type, severity, id, message);
 
+#if !defined(NDEBUG)
 #if defined(_MSC_VER)
 #define DEBUG_BREAK() __debugbreak()
 #elif defined(__clang__) || defined(__GNUC__)
@@ -25,6 +26,9 @@ void APIENTRY ogl_validation_layer(
 
     if (type == GL_DEBUG_TYPE_ERROR)
         DEBUG_BREAK();
+
+#endif
+
 
 }
 
@@ -302,7 +306,7 @@ void OpenGLRenderer::setup_instance_matrix_attribute(GpuVertexLayout* vao) {
 }
 
 void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight>& directional_lights,
-    const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
+                                  const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
     _default_shader->set_value("numDirLights", static_cast<int>(directional_lights.size()));
     if (!directional_lights.empty()) {
         for (int i = 0; i < static_cast<int>(directional_lights.size()); ++i) {
@@ -383,7 +387,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 #if defined(SDL_PLATFORM_MACOS)
-    SDL_GL_SetAttribute (SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
 
 
@@ -467,8 +471,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     _environment_shader = std::make_unique<OpenglShader>("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
     FramebufferSpecification spec;
-    spec.height      = 4096;
-    spec.width       = 4096;
+    spec.height      = 8192;
+    spec.width       = 8192;
     spec.attachments = {
         {FramebufferTextureFormat::DEPTH_COMPONENT}
     };
@@ -507,7 +511,7 @@ GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
     return texID;
 }
 
-GLuint OpenGLRenderer::load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name) {
+GLuint OpenGLRenderer::load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name) {
     std::string key = name.empty() ? "embedded_tex_" + std::to_string(reinterpret_cast<size_t>(buffer)) : name;
 
     if (auto it = _textures.find(key); it != _textures.end())
@@ -601,7 +605,7 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
                                         const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
 
     int total_instances = 0;
-    int draw_calls = 0;
+    int draw_calls      = 0;
 
     glm::mat4 view       = camera.get_view(camera_transform);
     glm::mat4 projection = camera.get_projection(width, height);
@@ -687,14 +691,14 @@ void OpenGLRenderer::add_to_render_batch(const Transform3D& transform, const Mes
     MeshMaterialKey key{mesh_ref.mesh, mat_ref.material};
     auto& batch = _instanced_batches[key];
 
-    batch.mesh = mesh_ref.mesh;
+    batch.mesh     = mesh_ref.mesh;
     batch.material = mat_ref.material;
     batch.model_matrices.push_back(transform.get_matrix());
 }
 
 void OpenGLRenderer::add_to_shadow_batch(const Transform3D& transform, const MeshRef& mesh_ref) {
     auto& batch = shadow_batches[mesh_ref.mesh];
-    batch.mesh = mesh_ref.mesh;
+    batch.mesh  = mesh_ref.mesh;
     batch.model_matrices.push_back(transform.get_matrix());
 }
 

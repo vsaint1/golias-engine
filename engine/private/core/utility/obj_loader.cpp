@@ -177,13 +177,14 @@ void ObjectLoader::load_colors(aiMaterial* aiMat, Material& mat) {
     aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
     mat.albedo = {color.r, color.g, color.b};
 
-    aiColor3D emissive(0, 0, 0);
-    if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
+    if (aiColor3D emissive(0, 0, 0); aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
         mat.emissive = {emissive.r, emissive.g, emissive.b};
 
     aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, mat.emissive_strength);
     aiMat->Get(AI_MATKEY_METALLIC_FACTOR, mat.metallic);
     aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mat.roughness);
+    aiMat->Get(AI_MATKEY_REFRACTI,mat.ior);
+    aiMat->Get(AI_MATKEY_SPECULAR_FACTOR, mat.specular);
 }
 
 void ObjectLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const std::string& dir, Renderer& renderer, Material& mat) {
@@ -206,13 +207,12 @@ void ObjectLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const 
                     return;
 
                 if (embedded->mHeight == 0) {
-                    id = renderer.load_texture_from_memory(
+                    id = renderer.load_embedded_texture(
                         reinterpret_cast<const unsigned char*>(embedded->pcData),
                         embedded->mWidth);
                 } else {
-                    id = renderer.load_texture_from_raw_data(
-                        reinterpret_cast<const unsigned char*>(embedded->pcData),
-                        embedded->mWidth, embedded->mHeight);
+                   spdlog::error("    Unsupported embedded texture format for texture: {}", name);
+                   return;
                 }
 
                 flag = (id != 0);

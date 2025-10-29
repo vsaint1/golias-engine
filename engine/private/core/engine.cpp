@@ -241,6 +241,9 @@ void engine_draw_loop() {
             const auto width = GEngine->get_config().get_window().width;
             const auto height = GEngine->get_config().get_window().height;
             light_space_matrix = light.get_light_space_matrix();
+        // light_space_matrix = light.get_light_space_matrix(
+        //         main_camera.get_view(camera_transform),
+        //         main_camera.get_projection(width, height));
         }
     });
 
@@ -280,7 +283,6 @@ void engine_core_loop() {
 
     GEngine->get_timer().tick();
 
-    // Reset mouse delta each frame
     mouse_dx = 0.0f;
     mouse_dy = 0.0f;
 
@@ -356,6 +358,9 @@ void engine_core_loop() {
 
     GEngine->get_world().progress(static_cast<float>(GEngine->get_timer().delta));
     engine_draw_loop();
+
+    SDL_Delay(16);
+
 }
 
 

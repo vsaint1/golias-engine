@@ -26,14 +26,17 @@ void Camera3D::update_vectors() {
 
 void Material::bind(Shader* shader) const {
     shader->set_value("material.albedo", albedo);
+    // shader->set_value("material.specular", specular);
     shader->set_value("material.metallic", metallic);
     shader->set_value("material.roughness", roughness);
     shader->set_value("material.ao", ao);
     shader->set_value("material.emissive", emissive);
     shader->set_value("material.emissiveStrength", emissive_strength);
+    // shader->set_value("material.ior", ior);
 
     // Texture usage flags
     shader->set_value("USE_ALBEDO_MAP", use_albedo_map);
+    // shader->set_value("USE_SPECULAR_MAP", use_specular_map);
     shader->set_value("USE_METALLIC_MAP", use_metallic_map);
     shader->set_value("USE_ROUGHNESS_MAP", use_roughness_map);
     shader->set_value("USE_NORMAL_MAP", use_normal_map);
@@ -45,6 +48,12 @@ void Material::bind(Shader* shader) const {
         glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, albedo_map);
         shader->set_value("ALBEDO_MAP", ALBEDO_TEXTURE_UNIT);
+    }
+
+    if (use_specular_map && specular_map) {
+        glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, specular_map);
+        shader->set_value("SPECULAR_MAP", SPECULAR_TEXTURE_UNIT);
     }
 
     if (use_metallic_map && metallic_map) {

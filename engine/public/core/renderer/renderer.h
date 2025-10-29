@@ -47,7 +47,7 @@ public:
         uint32_t stride) = 0;
 
     virtual Uint32 load_texture_from_file(const std::string& path) = 0;
-    virtual Uint32 load_texture_from_memory(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
+    virtual Uint32 load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
     virtual Uint32 load_texture_from_raw_data(const unsigned char* data, int width, int height, int channels = 4,
                                               const std::string& name                                        = "") = 0;
     virtual void begin_frame() = 0;

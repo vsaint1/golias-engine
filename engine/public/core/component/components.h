@@ -40,14 +40,17 @@ class Shader;
 
 struct Material {
     glm::vec3 albedo = glm::vec3(1.0f);
+    glm::vec3 specular = glm::vec3(0.0f);
     float metallic   = 0.0f;
-    float roughness  = 0.5f;
+    float roughness  = 0.2f;
     float ao         = 1.0f; /// Ambient Occlusion
 
     glm::vec3 emissive      = glm::vec3(0.0f);
     float emissive_strength = 1.0f;
+    float ior              = 1.0f; // Index of Refraction
 
     Uint32 albedo_map    = 0;
+    Uint32 specular_map = 0;
     Uint32 metallic_map  = 0;
     Uint32 roughness_map = 0;
     Uint32 normal_map    = 0;
@@ -55,6 +58,7 @@ struct Material {
     Uint32 emissive_map  = 0;
 
     bool use_albedo_map    = false;
+    bool use_specular_map = false;
     bool use_metallic_map  = false;
     bool use_roughness_map = false;
     bool use_normal_map    = false;
@@ -82,7 +86,7 @@ struct Camera3D {
     float pitch         = 0.0f;
     float fov           = 45.0f;
     float speed         = 5.0f;
-    float view_distance = 1000.f;
+    float view_distance = 5000.f;
 
     explicit Camera3D() {
         update_vectors();
@@ -121,9 +125,9 @@ struct DirectionalLight {
     bool castShadows = true;
 
     // Shadow projection
-    float shadowDistance = 50.0f;
+    float shadowDistance = 100.0f;
     float shadowNear     = 1.0f;
-    float shadowFar      = 100.0f;
+    float shadowFar      = 200.0f;
 
     glm::mat4 get_light_space_matrix(glm::mat4 camera_view, glm::mat4 camera_proj) const;
 
