@@ -9,7 +9,7 @@
  *
  *  
  */
-class ObjectLoader {
+class AssimpLoader {
 public:
     static MeshInstance3D load_mesh(const std::string& path);
 

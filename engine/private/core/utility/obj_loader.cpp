@@ -3,12 +3,12 @@
 #include "core/engine.h"
 #include "core/io/assimp_io.h"
 
-MeshInstance3D ObjectLoader::load_mesh(const std::string& path) {
+MeshInstance3D AssimpLoader::load_mesh(const std::string& path) {
     Model model = load_model(path);
     return model.meshes.empty() ? MeshInstance3D() : model.meshes[0];
 }
 
-Model ObjectLoader::load_model(const std::string& path) {
+Model AssimpLoader::load_model(const std::string& path) {
     Model model;
     model.path = path;
 
@@ -83,12 +83,12 @@ Model ObjectLoader::load_model(const std::string& path) {
     return model;
 }
 
-std::string ObjectLoader::get_directory(const std::string& path) {
+std::string AssimpLoader::get_directory(const std::string& path) {
     size_t found = path.find_last_of("/\\");
     return (found != std::string::npos) ? path.substr(0, found + 1) : "";
 }
 
-MeshInstance3D ObjectLoader::create_mesh(aiMesh* aiMesh) {
+MeshInstance3D AssimpLoader::create_mesh(aiMesh* aiMesh) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     vertices.reserve(aiMesh->mNumVertices);
@@ -161,7 +161,7 @@ MeshInstance3D ObjectLoader::create_mesh(aiMesh* aiMesh) {
     return mesh;
 }
 
-Material ObjectLoader::load_material(const aiScene* scene, aiMesh* mesh, const std::string& directory, Renderer& renderer) {
+Material AssimpLoader::load_material(const aiScene* scene, aiMesh* mesh, const std::string& directory, Renderer& renderer) {
     Material material;
     if (scene->mNumMaterials <= mesh->mMaterialIndex)
         return material;
@@ -172,7 +172,7 @@ Material ObjectLoader::load_material(const aiScene* scene, aiMesh* mesh, const s
     return material;
 }
 
-void ObjectLoader::load_colors(aiMaterial* aiMat, Material& mat) {
+void AssimpLoader::load_colors(aiMaterial* aiMat, Material& mat) {
     aiColor3D color(1, 1, 1);
     aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
     mat.albedo = {color.r, color.g, color.b};
@@ -187,7 +187,7 @@ void ObjectLoader::load_colors(aiMaterial* aiMat, Material& mat) {
     aiMat->Get(AI_MATKEY_SPECULAR_FACTOR, mat.specular);
 }
 
-void ObjectLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const std::string& dir, Renderer& renderer, Material& mat) {
+void AssimpLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const std::string& dir, Renderer& renderer, Material& mat) {
     auto load_tex = [&](aiTextureType type, GLuint& id, bool& flag, const char* name) {
         if (aiMat->GetTextureCount(type) == 0)
             return;
@@ -237,7 +237,7 @@ void ObjectLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const 
     load_tex(aiTextureType_EMISSIVE, mat.emissive_map, mat.use_emissive_map, "emissive");
 }
 
-void ObjectLoader::parse_bones(aiMesh* mesh, Model& model) {
+void AssimpLoader::parse_bones(aiMesh* mesh, Model& model) {
     spdlog::info("    Bones: {}", mesh->mNumBones);
     for (unsigned int i = 0; i < mesh->mNumBones; ++i) {
         aiBone* bone = mesh->mBones[i];
@@ -245,7 +245,7 @@ void ObjectLoader::parse_bones(aiMesh* mesh, Model& model) {
     }
 }
 
-void ObjectLoader::parse_animations(const aiScene* scene, Model& model) {
+void AssimpLoader::parse_animations(const aiScene* scene, Model& model) {
     spdlog::info("  Animations Count: {}", scene->mNumAnimations);
     for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
         const aiAnimation* anim = scene->mAnimations[i];

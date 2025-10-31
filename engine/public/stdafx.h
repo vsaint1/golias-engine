@@ -77,6 +77,7 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 
 #include "definitions.h"
 
-#include "nuklear_include.h"
+#include "nuklear.h"
+#include "nuklear_sdl3_ogl3.h"
 
 #include <stb_image.h>
