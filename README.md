@@ -19,13 +19,13 @@ powerful**.
 - [x] **PBR (Physically Based Rendering)** `SIMPLIFIED`
 - [x] **Blinn-Phong Shading Model** 
 - [ ] **Skybox Reflections** IBL (Image Based Lighting)
-- [ ] Frustrum Culling 
+- [ ] Frustum Culling 
 - [x] **Normal mapping** (TBN calculated per fragment)
 - [ ] **3D Physics** (Jolt Physics Engine)
 - [x] **Lighting System** 
   - [x] **Directional Light**
   - [ ] **Point Light**
-  - [ ] **Spotlight** 
+  - [x] **Spotlight** 
 - [x] **Shadow Mapping**
   - [ ] **CSM** (Cascaded Shadow Maps) for Directional Lights 
 - [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)

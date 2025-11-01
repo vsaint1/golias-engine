@@ -50,6 +50,7 @@ public:
     virtual Uint32 load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
     virtual Uint32 load_texture_from_raw_data(const unsigned char* data, int width, int height, int channels = 4,
                                               const std::string& name                                        = "") = 0;
+
     virtual void begin_frame() = 0;
 
     virtual void begin_shadow_pass() = 0;
@@ -71,22 +72,24 @@ public:
     virtual void add_to_render_batch(const Transform3D& transform,
                                      const MeshRef& mesh_ref, const MaterialRef& mat_ref) = 0;
 
-    virtual void add_to_shadow_batch(const Transform3D& transform,const MeshRef& mesh_ref) = 0;
+    virtual void add_to_shadow_batch(const Transform3D& transform, const MeshRef& mesh_ref) = 0;
 
 
     virtual void swap_chain() = 0;
 
+    /// RESOUCES
     std::unordered_map<std::string, Uint32> _textures;
     std::unordered_map<std::string, std::vector<MeshInstance3D>> _meshes;
     std::unordered_map<std::string, std::vector<Material>> _materials;
 
-    void register_material(const char* name, const Material& material) {
-        _materials[name].push_back(material);
-    }
+    std::shared_ptr<Framebuffer> get_shadow_map_fbo() const;
+
+    std::shared_ptr<Framebuffer> get_main_fbo() const;
 
 protected:
     SDL_Window* _window = nullptr;
 
+    /// SHADERS
     std::unique_ptr<Shader> _default_shader     = nullptr;
     std::unique_ptr<Shader> _shadow_shader      = nullptr;
     std::unique_ptr<Shader> _environment_shader = nullptr;
@@ -94,6 +97,7 @@ protected:
     WorldEnvironment* _world_environment = nullptr;
 
     std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
+    std::shared_ptr<Framebuffer> main_fbo       = nullptr;
 
     int width = 0, height = 0;
 
@@ -101,7 +105,7 @@ protected:
 
     std::unordered_map<MeshMaterialKey, RenderBatch, MeshMaterialKeyHash> _instanced_batches;
 
-    std::unordered_map<const MeshInstance3D*, RenderBatch> shadow_batches;
+    std::unordered_map<const MeshInstance3D*, RenderBatch> _shadow_batches;
 
     size_t max_instances = 1000;
 

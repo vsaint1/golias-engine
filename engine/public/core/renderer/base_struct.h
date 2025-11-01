@@ -119,6 +119,8 @@ public:
     virtual void invalidate() = 0;
 
     virtual void resize(unsigned int width, unsigned int height) = 0;
+
+    virtual  Uint32 get_fbo_id() const { return 0; }
     virtual uint32_t get_color_attachment_id(size_t index = 0) const = 0;
     virtual uint32_t get_depth_attachment_id() const = 0;
 
@@ -165,25 +167,25 @@ public:
 
     virtual void activate() const = 0;
 
-    virtual void set_value(const std::string& name, float value) = 0;
+    virtual void set_value(const char* name, float value) = 0;
 
-    virtual void set_value(const std::string& name, int value) = 0;
+    virtual void set_value(const char* name, int value) = 0;
 
-    virtual void set_value(const std::string& name, Uint32 value) = 0;
+    virtual void set_value(const char* name, Uint32 value) = 0;
 
-    virtual void set_value(const std::string& name, glm::mat4 value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, glm::mat4 value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, const int* value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, const int* value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, const float* value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, const float* value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, glm::vec2 value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, glm::vec2 value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, glm::vec3 value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, glm::vec3 value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, glm::vec4 value, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, glm::vec4 value, Uint32 count = 1) =0;
 
-    virtual void set_value(const std::string& name, const glm::mat4* values, Uint32 count = 1) =0;
+    virtual void set_value(const char* name, const glm::mat4* values, Uint32 count = 1) =0;
 
 
     virtual void destroy() = 0;

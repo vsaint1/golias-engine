@@ -1,5 +1,6 @@
 #include  "core/renderer/opengl/ogl_struct.h"
 
+#include "core/io/assimp_io.h"
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
 #define SHADER_HEADER "#version 300 es\nprecision highp float;\n\n"
@@ -264,14 +265,13 @@ void OpenGLFramebuffer::invalidate() {
     if (fbo)
         cleanup();
 
-    // Check for valid dimensions
     if (specification.width == 0 || specification.height == 0) {
         spdlog::error("OpenGLFramebuffer::invalidate - Invalid dimensions ({}x{})",
                       specification.width, specification.height);
         return;
     }
 
-    spdlog::warn("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})",
+    spdlog::info("OpenGLFramebuffer::invalidate - Recreating Framebuffer ({}x{})",
                  specification.width, specification.height);
 
     glGenFramebuffers(1, &fbo);
@@ -288,6 +288,8 @@ void OpenGLFramebuffer::invalidate() {
                          GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + color_attachments.size(),
                                    GL_TEXTURE_2D, tex, 0);
             color_attachments.push_back(tex);
@@ -311,12 +313,12 @@ void OpenGLFramebuffer::invalidate() {
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             break;
         }
         default:
+            spdlog::warn("Unsupported framebuffer attachment format");
             break;
         }
     }
@@ -332,10 +334,29 @@ void OpenGLFramebuffer::invalidate() {
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         spdlog::critical("OpenGLFramebuffer::invalidate - Framebuffer is incomplete! Status: 0x{:x}", status);
+
+        switch (status) {
+            case GL_FRAMEBUFFER_UNDEFINED:
+                spdlog::error("  -> GL_FRAMEBUFFER_UNDEFINED");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+                spdlog::error("  -> GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+                spdlog::error("  -> GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+                break;
+            case GL_FRAMEBUFFER_UNSUPPORTED:
+                spdlog::error("  -> GL_FRAMEBUFFER_UNSUPPORTED");
+                break;
+        }
+    } else {
+        spdlog::info("Framebuffer created successfully ({}x{})", specification.width, specification.height);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+
 
 void OpenGLFramebuffer::bind() {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -352,6 +373,10 @@ void OpenGLFramebuffer::resize(unsigned int width, unsigned int height) {
     invalidate();
 }
 
+Uint32 OpenGLFramebuffer::get_fbo_id() const {
+    return fbo;
+}
+
 Uint32 OpenGLFramebuffer::get_color_attachment_id(size_t index) const {
     return color_attachments[index];
 }
@@ -365,14 +390,22 @@ const FramebufferSpecification& OpenGLFramebuffer::get_specification() const {
 }
 
 void OpenGLFramebuffer::cleanup() {
-    if (depth_attachment)
-        glDeleteTextures(1, &depth_attachment);
-
-    if (!color_attachments.empty())
-        glDeleteTextures((GLsizei) color_attachments.size(), color_attachments.data());
-
-    if (fbo)
+    if (fbo != 0) {
         glDeleteFramebuffers(1, &fbo);
+        fbo = 0;
+    }
+
+    for (auto& tex_id : color_attachments) {
+        if (tex_id != 0) {
+            glDeleteTextures(1, &tex_id);
+        }
+    }
+    color_attachments.clear();
+
+    if (depth_attachment != 0) {
+        glDeleteTextures(1, &depth_attachment);
+        depth_attachment = 0;
+    }
 }
 
 OpenglShader::~OpenglShader() {
@@ -384,38 +417,38 @@ Uint32 OpenglShader::get_id() const {
 }
 
 
-void OpenglShader::set_value(const std::string& name, float value) {
+void OpenglShader::set_value(const char* name, float value) {
     const Uint32 location = get_uniform_location(name);
     glUniform1f(location, value);
 }
 
-void OpenglShader::set_value(const std::string& name, int value) {
+void OpenglShader::set_value(const char* name, int value) {
     const Uint32 location = get_uniform_location(name);
     glUniform1i(location, value);
 }
 
-void OpenglShader::set_value(const std::string& name, Uint32 value) {
+void OpenglShader::set_value(const char* name, Uint32 value) {
     const Uint32 location = get_uniform_location(name);
     glUniform1i(location, value);
 }
 
-void OpenglShader::set_value(const std::string& name, const int* value, Uint32 count) {
+void OpenglShader::set_value(const char* name, const int* value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform1iv(location, count, value);
 }
 
-void OpenglShader::set_value(const std::string& name, const float* value, Uint32 count) {
+void OpenglShader::set_value(const char* name, const float* value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform1fv(location, count, value);
 }
 
 
-void OpenglShader::set_value(const std::string& name, glm::mat4 value, Uint32 count) {
+void OpenglShader::set_value(const char* name, glm::mat4 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(value));
 }
 
-void OpenglShader::set_value(const std::string& name, const glm::mat4* values, Uint32 count) {
+void OpenglShader::set_value(const char* name, const glm::mat4* values, Uint32 count) {
     if (values == nullptr || count == 0) {
         spdlog::warn("OpenglShader::set_value - Invalid matrix array or count is zero");
         return;
@@ -425,17 +458,17 @@ void OpenglShader::set_value(const std::string& name, const glm::mat4* values, U
     glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(*values));
 }
 
-void OpenglShader::set_value(const std::string& name, glm::vec2 value, Uint32 count) {
+void OpenglShader::set_value(const char* name, glm::vec2 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform2fv(location, count, glm::value_ptr(value));
 }
 
-void OpenglShader::set_value(const std::string& name, glm::vec3 value, Uint32 count) {
+void OpenglShader::set_value(const char* name, glm::vec3 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform3fv(location, count, glm::value_ptr(value));
 }
 
-void OpenglShader::set_value(const std::string& name, glm::vec4 value, Uint32 count) {
+void OpenglShader::set_value(const char* name, glm::vec4 value, Uint32 count) {
     const Uint32 location = get_uniform_location(name);
     glUniform4fv(location, count, glm::value_ptr(value));
 }

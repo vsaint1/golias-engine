@@ -15,6 +15,9 @@
 #define SHADOW_TEXTURE_UNIT 7
 #define ENVIRONMENT_TEXTURE_UNIT 8
 
+#define MAX_VERTEX_MEMORY  512 * 1024
+#define MAX_ELEMENT_MEMORY 128 * 1024
+
 /*!
 * @defgroup Components
 * @defgroup Systems

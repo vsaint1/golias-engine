@@ -310,11 +310,11 @@ void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight>& direction
     _default_shader->set_value("numDirLights", static_cast<int>(directional_lights.size()));
     if (!directional_lights.empty()) {
         for (int i = 0; i < static_cast<int>(directional_lights.size()); ++i) {
-            _default_shader->set_value(fmt::format("dirLights[{}].direction", i),
+            _default_shader->set_value(fmt::format("dirLights[{}].direction", i).c_str(),
                                        directional_lights[i].direction);
-            _default_shader->set_value(fmt::format("dirLights[{}].color", i),
+            _default_shader->set_value(fmt::format("dirLights[{}].color", i).c_str(),
                                        directional_lights[i].color * directional_lights[i].intensity);
-            _default_shader->set_value(fmt::format("dirLights[{}].cast_shadows", i),
+            _default_shader->set_value(fmt::format("dirLights[{}].cast_shadows", i).c_str(),
                                        directional_lights[i].castShadows ? 1 : 0);
         }
     }
@@ -323,15 +323,15 @@ void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight>& direction
     if (!spot_lights.empty()) {
         for (int i = 0; i < static_cast<int>(spot_lights.size()); ++i) {
             const auto& [transform, light] = spot_lights[i];
-            _default_shader->set_value(fmt::format("spotLights[{}].position", i),
+            _default_shader->set_value(fmt::format("spotLights[{}].position", i).c_str(),
                                        transform.position);
-            _default_shader->set_value(fmt::format("spotLights[{}].direction", i),
+            _default_shader->set_value(fmt::format("spotLights[{}].direction", i).c_str(),
                                        light.direction);
-            _default_shader->set_value(fmt::format("spotLights[{}].color", i),
+            _default_shader->set_value(fmt::format("spotLights[{}].color", i).c_str(),
                                        light.color * light.intensity);
-            _default_shader->set_value(fmt::format("spotLights[{}].inner_cut_off", i),
+            _default_shader->set_value(fmt::format("spotLights[{}].inner_cut_off", i).c_str(),
                                        glm::cos(glm::radians(light.cutOff)));
-            _default_shader->set_value(fmt::format("spotLights[{}].outer_cut_off", i),
+            _default_shader->set_value(fmt::format("spotLights[{}].outer_cut_off", i).c_str(),
                                        glm::cos(glm::radians(light.outerCutOff)));
         }
     }
@@ -470,14 +470,27 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     _shadow_shader      = std::make_unique<OpenglShader>("shaders/opengl/shadow.vert", "shaders/opengl/shadow.frag");
     _environment_shader = std::make_unique<OpenglShader>("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
-    FramebufferSpecification spec;
-    spec.height      = 8192;
-    spec.width       = 8192;
-    spec.attachments = {
+    FramebufferSpecification depth_spec;
+    depth_spec.height      = 8192;
+    depth_spec.width       = 8192;
+    depth_spec.attachments = {
         {FramebufferTextureFormat::DEPTH_COMPONENT}
     };
 
-    shadow_map_fbo     = std::make_shared<OpenGLFramebuffer>(spec);
+    shadow_map_fbo = std::make_shared<OpenGLFramebuffer>(depth_spec);
+
+    FramebufferSpecification main_spec;
+
+    main_spec.width       = width;
+    main_spec.height      = height;
+    main_spec.attachments = {
+        {FramebufferTextureFormat::RGBA8},
+        {FramebufferTextureFormat::DEPTH24STENCIL8}
+    };
+
+    main_fbo = std::make_shared<OpenGLFramebuffer>(main_spec);
+
+
     _world_environment = create_skybox_from_atlas("res/environment_sky.png", CubemapOrientation::DEFAULT, 1.0f);
     return true;
 }
@@ -550,7 +563,7 @@ void OpenGLRenderer::begin_frame() {
         batch.clear();
     }
 
-    for (auto& [mesh, batch] : shadow_batches) {
+    for (auto& [mesh, batch] : _shadow_batches) {
         batch.clear();
     }
 }
@@ -565,7 +578,7 @@ void OpenGLRenderer::begin_shadow_pass() {
 void OpenGLRenderer::render_shadow_pass(const glm::mat4& light_space_matrix) {
     _shadow_shader->set_value("LIGHT_MATRIX", light_space_matrix, 1);
 
-    for (auto& [mesh_ptr, batch] : shadow_batches) {
+    for (auto& [mesh_ptr, batch] : _shadow_batches) {
         if (batch.model_matrices.empty())
             continue;
 
@@ -581,8 +594,10 @@ void OpenGLRenderer::render_shadow_pass(const glm::mat4& light_space_matrix) {
                                 GL_UNSIGNED_INT,
                                 0,
                                 batch.model_matrices.size());
-        batch.mesh->vertex_layout->unbind();
     }
+
+    glBindVertexArray(0);
+
 }
 
 void OpenGLRenderer::end_shadow_pass() {
@@ -592,6 +607,7 @@ void OpenGLRenderer::end_shadow_pass() {
 }
 
 void OpenGLRenderer::begin_render_target() {
+    main_fbo->bind();
     glClearColor(_world_environment->color.r, _world_environment->color.g, _world_environment->color.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _default_shader->activate();
@@ -646,13 +662,26 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
                                 GL_UNSIGNED_INT,
                                 0,
                                 batch.model_matrices.size());
-        batch.mesh->vertex_layout->unbind();
     }
+    glBindVertexArray(0);
 
     // spdlog::info("Frame: {} draw calls, {} instances", draw_calls, total_instances);
 }
 
 void OpenGLRenderer::end_render_target() {
+
+    // TODO: later add shader full-screen quad
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, main_fbo->get_fbo_id());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    glBlitFramebuffer(
+        0, 0, width, height,
+        0, 0, width, height,
+        GL_COLOR_BUFFER_BIT,
+        GL_LINEAR
+        );
+
+    main_fbo->unbind();
 
 }
 
@@ -697,15 +726,27 @@ void OpenGLRenderer::add_to_render_batch(const Transform3D& transform, const Mes
 }
 
 void OpenGLRenderer::add_to_shadow_batch(const Transform3D& transform, const MeshRef& mesh_ref) {
-    auto& batch = shadow_batches[mesh_ref.mesh];
+    auto& batch = _shadow_batches[mesh_ref.mesh];
     batch.mesh  = mesh_ref.mesh;
     batch.model_matrices.push_back(transform.get_matrix());
 }
 
 void OpenGLRenderer::resize(int w, int h) {
-    width  = w;
+    if (w <= 0 || h <= 0) {
+        spdlog::warn("Invalid resize dimensions: {}x{}", w, h);
+        return;
+    }
+
+    width = w;
     height = h;
+
+    spdlog::info("Resizing renderer to {}x{}", width, height);
+
+    get_main_fbo()->resize(width,height);
+
     glViewport(0, 0, width, height);
+
+    spdlog::debug("Resize complete");
 }
 
 void OpenGLRenderer::cleanup() {
@@ -724,5 +765,6 @@ void OpenGLRenderer::cleanup() {
 }
 
 void OpenGLRenderer::swap_chain() {
+
     SDL_GL_SwapWindow(_window);
 }

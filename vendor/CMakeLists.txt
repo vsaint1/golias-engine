@@ -42,23 +42,24 @@ add_subdirectory(sol2)
 add_subdirectory(assimp)
 add_subdirectory(flecs)
 add_subdirectory(spdlog)
+add_subdirectory(nuklear)
 
 add_library(vendor INTERFACE)
 
 target_include_directories(vendor INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
-    glad
-    stb_image
-    mini_audio
-    SDL3::SDL3
-    SDL3_ttf-static
-    tinyxml
-    glm
-    json
-    lua
-    sol2
-    assimp
-    flecs
-    spdlog
+        stb_image
+        mini_audio
+        SDL3::SDL3
+        SDL3_ttf-static
+        tinyxml
+        glm
+        json
+        lua
+        sol2
+        assimp
+        flecs
+        spdlog
+        nuklear
 )

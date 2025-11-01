@@ -1,4 +1,14 @@
 #pragma once
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
+#include "core/io/assimp_io.h"
 #include "core/renderer/renderer.h"
 #include "core/renderer/base_struct.h"
 
@@ -48,10 +58,6 @@ private:
 };
 
 class OpenGLFramebuffer final : public Framebuffer {
-    Uint32 fbo = 0;
-    FramebufferSpecification specification;
-    std::vector<Uint32> color_attachments;
-    uint32_t depth_attachment = 0;
 
 public:
     explicit OpenGLFramebuffer(const FramebufferSpecification& spec);
@@ -66,6 +72,8 @@ public:
 
     void resize(unsigned int width, unsigned int height) override;
 
+    Uint32 get_fbo_id() const override;
+
     Uint32 get_color_attachment_id(size_t index = 0) const override;
 
     Uint32 get_depth_attachment_id() const override;
@@ -73,6 +81,12 @@ public:
     const FramebufferSpecification& get_specification() const override;
 
     void cleanup();
+
+private:
+    Uint32 fbo = 0;
+    FramebufferSpecification specification;
+    std::vector<Uint32> color_attachments;
+    uint32_t depth_attachment = 0;
 };
 
 
@@ -82,31 +96,31 @@ public:
     ~OpenglShader() override;
 
     template <typename T>
-    T get_value(const std::string& name);
+    T get_value(const char* name);
 
     OpenglShader(const std::string& vertex, const std::string& fragment);
 
     void activate() const override;
 
-    void set_value(const std::string& name, float value) override;
+    void set_value(const char* name, float value) override;
 
-    void set_value(const std::string& name, int value) override;
+    void set_value(const char* name, int value) override;
 
-    void set_value(const std::string& name, Uint32 value) override;
+    void set_value(const char* name, Uint32 value) override;
 
-    void set_value(const std::string& name, glm::mat4 value, Uint32 count) override;
+    void set_value(const char* name, glm::mat4 value, Uint32 count) override;
 
-    void set_value(const std::string& name, const int* value, Uint32 count) override;
+    void set_value(const char* name, const int* value, Uint32 count) override;
 
-    void set_value(const std::string& name, const float* value, Uint32 count) override;
+    void set_value(const char* name, const float* value, Uint32 count) override;
 
-    void set_value(const std::string& name, glm::vec2 value, Uint32 count) override;
+    void set_value(const char* name, glm::vec2 value, Uint32 count) override;
 
-    void set_value(const std::string& name, glm::vec3 value, Uint32 count) override;
+    void set_value(const char* name, glm::vec3 value, Uint32 count) override;
 
-    void set_value(const std::string& name, glm::vec4 value, Uint32 count) override;
+    void set_value(const char* name, glm::vec4 value, Uint32 count) override;
 
-    void set_value(const std::string& name, const glm::mat4* values, Uint32 count) override;
+    void set_value(const char* name, const glm::mat4* values, Uint32 count) override;
 
     void destroy() override;
 
@@ -122,10 +136,11 @@ private:
 
 
 template <typename T>
-inline T OpenglShader::get_value(const std::string& name) {
-    unsigned int location = get_uniform_location(name);
+inline T OpenglShader::get_value(const char* name) {
+    const unsigned int location = get_uniform_location(name);
+
     if (location == -1) {
-        printf("Shader variable not found: %s\n", name.c_str());
+        printf("Shader variable not found: %s\n", name);
         return T();
     }
 

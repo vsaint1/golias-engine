@@ -13,7 +13,7 @@ void create_mesh_entity(
     auto renderer = GEngine->get_renderer();
 
     if (!renderer->_meshes.contains(path)) {
-        MeshInstance3D mesh = ObjectLoader::load_mesh(path);
+        MeshInstance3D mesh = AssimpLoader::load_mesh(path);
         renderer->_meshes[path] = {mesh};
     }
 
@@ -42,7 +42,7 @@ void create_model_entity(
 
 
   if (!renderer->_meshes.contains(path) || !renderer->_materials.contains(path)) {
-        Model model = ObjectLoader::load_model(path);
+        Model model = AssimpLoader::load_model(path);
         renderer->_meshes[path]    = model.meshes;
         renderer->_materials[path] = model.materials;
     }
@@ -64,5 +64,6 @@ void create_model_entity(
 
 
 void create_material(const char* name, const Material& material) {
-    GEngine->get_renderer()->register_material(name,material);
+    GEngine->get_renderer()->_materials[name] = {material};
+    spdlog::info("Material '{}' created and registered.", name);
 }
