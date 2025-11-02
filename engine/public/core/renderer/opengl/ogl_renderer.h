@@ -21,8 +21,6 @@ public:
 
     Uint32 load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name = "") override;
 
-    Uint32 load_texture_from_raw_data(const unsigned char* data, int w, int h, int channels = 4, const std::string& name = "") override;
-
     void begin_frame() override;
 
     void begin_shadow_pass() override;
@@ -55,6 +53,43 @@ public:
 
     void swap_chain() override;
 
+    // ========================================================================
+    // 2D Rendering Implementation
+    // ========================================================================
+    void set_2d_virtual_resolution(int width, int height) override;
+    void begin_frame_2d() override;
+    void end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) override;
+    
+    void draw_rect_2d(const glm::vec2& position, const glm::vec2& size, 
+                     const glm::vec4& color, bool filled = true) override;
+    
+    void draw_texture_2d(Uint32 texture_id, 
+                        const glm::vec2& position, 
+                        const glm::vec2& size,
+                        const Rect2D& src = {0,0,0,0},
+                        FlipMode flip = FlipMode::NONE,
+                        const glm::vec4& color = glm::vec4(1.0f)) override;
+    
+    void draw_line_2d(const glm::vec2& start, const glm::vec2& end, 
+                     const glm::vec4& color, float thickness = 1.0f) override;
+    
+    void draw_circle_2d(const glm::vec2& center, float radius, 
+                       const glm::vec4& color, bool filled = true, 
+                       int segments = 32) override;
+    
+    void draw_circle_outline_2d(const glm::vec2& center, float radius, 
+                               const glm::vec4& color, float thickness = 1.0f, 
+                               int segments = 32) override;
+    
+    void draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, 
+                         const glm::vec4& color, bool filled = true) override;
+    
+    void draw_text_2d(const std::string& text, const glm::vec2& position, 
+                     const glm::vec4& color, float scale = 1.0f) override;
+    
+    bool load_font(const std::string& font_path, int point_size, const std::string& font_name = "") override;
+    
+
 private:
     SDL_GLContext _context = nullptr;
 
@@ -71,4 +106,12 @@ private:
     void setup_lights(const std::vector<DirectionalLight>& directional_lights,
                       const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights);
 
+    void initialize_2d_rendering();
+
+    void render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture,
+                          const DrawCommand2D& first_cmd);
+    
+    // Render text to texture (always white, color applied at render time)
+    GLuint render_text_to_texture(const std::string& text, TTF_Font* font);
 };
+

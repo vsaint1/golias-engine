@@ -142,6 +142,125 @@ struct SpotLight {
     float outerCutOff = 17.5f;
 };
 
+class Transform2D {
+public:
+    glm::vec2 position = glm::vec2(0.0f);
+    glm::vec2 scale = glm::vec2(1.0f);
+    float rotation = 0.0f;
+
+    glm::vec2 origin = glm::vec2(0.0f);
+
+    Transform2D() = default;
+
+    explicit Transform2D(const glm::vec2& pos, const glm::vec2& scl = glm::vec2(1.0f), float rot = 0.0f)
+        : position(pos), scale(scl), rotation(rot) {}
+
+    glm::mat4 get_matrix() const {
+        glm::mat4 matrix(1.0f);
+        matrix = glm::translate(matrix, glm::vec3(-origin, 0.0f));
+
+        matrix = glm::scale(matrix, glm::vec3(scale, 1.0f));
+        matrix = glm::rotate(matrix, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+        matrix = glm::translate(matrix, glm::vec3(position + origin, 0.0f));
+
+        return matrix;
+    }
+
+    void set_rotation_degrees(float degrees) {
+        rotation = glm::radians(degrees);
+    }
+
+    float get_rotation_degrees() const {
+        return glm::degrees(rotation);
+    }
+
+    void move(const glm::vec2& offset) {
+        position += offset;
+    }
+
+    void rotate(float radians) {
+        rotation += radians;
+    }
+
+    void rotate_degrees(float degrees) {
+        rotation += glm::radians(degrees);
+    }
+
+    void scale_by(const glm::vec2& factor) {
+        scale *= factor;
+    }
+
+    void set_origin_center() {
+        origin = glm::vec2(0.0f); // For sprites, you might want to set this based on size
+    }
+
+    void set_origin(const glm::vec2& new_origin) {
+        origin = new_origin;
+    }
+};
+
+
+
+struct Rect2D {
+    float x      = 0.0f;
+    float y      = 0.0f;
+    float width  = 0.0f;
+    float height = 0.0f;
+
+    Rect2D() = default;
+
+    bool is_zero() const {
+        return x == 0.0f && y == 0.0f && width == 0.0f && height == 0.0f;
+    }
+
+    Rect2D(float w, float h) : x(0), y(0), width(w), height(h) {
+    }
+
+    Rect2D(float x_, float y_, float w, float h) : x(x_), y(y_), width(w), height(h) {
+    }
+};
+
+class Camera2D {
+public:
+    glm::vec2 position = glm::vec2(0.0f);
+    float rotation = 0.0f;
+    float zoom = 1.0f;
+    glm::vec2 viewport_size = glm::vec2(1.0f);
+
+    glm::mat4 get_view_matrix() const {
+        glm::mat4 view(1.0f);
+        view = glm::translate(view, glm::vec3(-position, 0.0f));
+        view = glm::rotate(view, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+        view = glm::scale(view, glm::vec3(zoom, zoom, 1.0f));
+        return view;
+    }
+
+    glm::mat4 get_projection_matrix() const {
+     
+        return glm::ortho(0.0f, viewport_size.x, viewport_size.y, 0.0f);
+    }
+
+
+    void move(const glm::vec2& offset) {
+        position += offset;
+    }
+
+    void rotate(float radians) {
+        rotation += radians;
+    }
+
+    void zoom_by(float factor) {
+        zoom *= factor;
+    }
+
+    void set_zoom(float new_zoom) {
+        zoom = new_zoom;
+    }
+
+    void look_at(const glm::vec2& target) {
+        position = target;
+    }
+};
 
 struct Model {
     std::string path;

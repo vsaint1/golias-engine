@@ -283,8 +283,9 @@ WorldEnvironment* OpenGLRenderer::create_skybox_from_atlas(const std::string& at
     _textures[atlas_path] = cubemap;
 
     instance_buffer    = allocate_gpu_buffer(GpuBufferType::STORAGE);
-    size_t buffer_size = max_instances * sizeof(glm::mat4);
+    size_t buffer_size = MAX_INSTANCES * sizeof(glm::mat4);
     instance_buffer->upload(nullptr, buffer_size);
+
 
     return world_environment;
 }
@@ -420,8 +421,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     SDL_GL_SetSwapInterval(0);
 
-    width  = w;
-    height = h;
+    _virtual_width  = w;
+    _virtual_height = h;
 
     GLint num_extensions = 0;
     std::vector<std::string_view> extensions;
@@ -462,7 +463,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     spdlog::info("OpenGL Renderer: {}", gl_renderer);
 
     glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, _virtual_width, _virtual_height);
 
     _default_shader = std::make_unique<OpenglShader>("shaders/opengl/default.vert", "shaders/opengl/default.frag");
     _default_shader->set_value("USE_IBL", false);
@@ -481,8 +482,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     FramebufferSpecification main_spec;
 
-    main_spec.width       = width;
-    main_spec.height      = height;
+    main_spec.width       = 640;
+    main_spec.height      = 480;
     main_spec.attachments = {
         {FramebufferTextureFormat::RGBA8},
         {FramebufferTextureFormat::DEPTH24STENCIL8}
@@ -490,6 +491,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     main_fbo = std::make_shared<OpenGLFramebuffer>(main_spec);
 
+    initialize_2d_rendering();
 
     _world_environment = create_skybox_from_atlas("res/environment_sky.png", CubemapOrientation::DEFAULT, 1.0f);
     return true;
@@ -519,7 +521,8 @@ GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
     GLuint texID = create_gl_texture(data, w, h, channels);
     stbi_image_free(data);
 
-    _textures[path] = texID;
+    _textures[path]            = texID;
+    _texture_info_cache[texID] = {texID, w, h}; // Cache texture dimensions
     spdlog::info("Loaded Texture: {}", path);
     return texID;
 }
@@ -540,21 +543,9 @@ GLuint OpenGLRenderer::load_embedded_texture(const unsigned char* buffer, size_t
     GLuint texID = create_gl_texture(data, w, h, channels);
     stbi_image_free(data);
 
-    _textures[key] = texID;
+    _textures[key]             = texID;
+    _texture_info_cache[texID] = {texID, w, h}; // Cache texture dimensions
     spdlog::info("Loaded embedded Texture: {}, Path {}", texID, key);
-    return texID;
-}
-
-GLuint OpenGLRenderer::load_texture_from_raw_data(const unsigned char* data, int w, int h, int channels, const std::string& name) {
-    std::string key = name.empty() ? "raw_" + std::to_string(reinterpret_cast<size_t>(data)) : name;
-
-    if (auto it = _textures.find(key); it != _textures.end())
-        return it->second;
-
-    GLuint texID   = create_gl_texture(data, w, h, channels);
-    _textures[key] = texID;
-    spdlog::info("Loaded raw Texture: {}, Path {}", texID, key);
-
     return texID;
 }
 
@@ -603,7 +594,7 @@ void OpenGLRenderer::render_shadow_pass(const glm::mat4& light_space_matrix) {
 void OpenGLRenderer::end_shadow_pass() {
     shadow_map_fbo->unbind();
     glCullFace(GL_BACK);
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, _virtual_width, _virtual_height);
 }
 
 void OpenGLRenderer::begin_render_target() {
@@ -611,7 +602,7 @@ void OpenGLRenderer::begin_render_target() {
     glClearColor(_world_environment->color.r, _world_environment->color.g, _world_environment->color.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     _default_shader->activate();
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, _virtual_width, _virtual_height);
 }
 
 void OpenGLRenderer::render_main_target(const Camera3D& camera,
@@ -624,7 +615,7 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
     int draw_calls      = 0;
 
     glm::mat4 view       = camera.get_view(camera_transform);
-    glm::mat4 projection = camera.get_projection(width, height);
+    glm::mat4 projection = camera.get_projection(_virtual_width, _virtual_height);
 
     _default_shader->set_value("VIEW", view);
     _default_shader->set_value("PROJECTION", projection);
@@ -675,8 +666,8 @@ void OpenGLRenderer::end_render_target() {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
     glBlitFramebuffer(
-        0, 0, width, height,
-        0, 0, width, height,
+        0, 0, _virtual_width, _virtual_height,
+        0, 0, _virtual_width, _virtual_height,
         GL_COLOR_BUFFER_BIT,
         GL_LINEAR
         );
@@ -696,7 +687,7 @@ void OpenGLRenderer::render_environment_pass(const Camera3D& camera) {
     const Transform3D& camera_transform = camera_query.first().get<Transform3D>();
 
     glm::mat4 view       = glm::mat4(glm::mat3(camera.get_view(camera_transform)));
-    glm::mat4 projection = camera.get_projection(width, height);
+    glm::mat4 projection = camera.get_projection(_virtual_width, _virtual_height);
 
     _environment_shader->set_value("VIEW", view);
     _environment_shader->set_value("PROJECTION", projection);
@@ -737,14 +728,14 @@ void OpenGLRenderer::resize(int w, int h) {
         return;
     }
 
-    width = w;
-    height = h;
+    _virtual_width  = w;
+    _virtual_height = h;
 
-    spdlog::info("Resizing renderer to {}x{}", width, height);
+    spdlog::info("Resizing renderer to {}x{}", _virtual_width, _virtual_height);
 
-    get_main_fbo()->resize(width,height);
+    get_main_fbo()->resize(_virtual_width, _virtual_height);
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, _virtual_width, _virtual_height);
 
     spdlog::debug("Resize complete");
 }
@@ -755,6 +746,20 @@ void OpenGLRenderer::cleanup() {
         glDeleteTextures(1, &texID);
 
     _textures.clear();
+
+    // Clean up cached text textures
+    for (auto& [key, cached_tex] : _cached_text_textures) {
+        glDeleteTextures(1, &cached_tex.texture_id);
+    }
+    _cached_text_textures.clear();
+
+    // Clean up fonts
+    for (auto& [name, font] : _fonts) {
+        if (font) {
+            TTF_CloseFont(font);
+        }
+    }
+    _fonts.clear();
 
     // TODO: create world enviroment entity
     delete _world_environment;
@@ -767,4 +772,673 @@ void OpenGLRenderer::cleanup() {
 void OpenGLRenderer::swap_chain() {
 
     SDL_GL_SwapWindow(_window);
+}
+
+// ============================================================================
+// 2D Rendering Implementation
+// ============================================================================
+
+void OpenGLRenderer::initialize_2d_rendering() {
+
+    spdlog::info("Initializing 2D rendering system...");
+
+    // Create shader
+    _shader_2d = std::make_unique<OpenglShader>("shaders/opengl/default_2d.vert", "shaders/opengl/default_2d.frag");
+
+    // Create buffers
+    _vertex_buffer_2d = allocate_gpu_buffer(GpuBufferType::VERTEX);
+    _index_buffer_2d  = allocate_gpu_buffer(GpuBufferType::INDEX);
+
+    // Allocate buffer space
+    _vertex_buffer_2d->upload(nullptr, MAX_VERTICES_2D * sizeof(Vertex2D));
+    _index_buffer_2d->upload(nullptr, MAX_INDICES_2D * sizeof(uint32_t));
+
+    std::vector<VertexAttribute> attributes = {
+        {0, 2, DataType::FLOAT, false, offsetof(Vertex2D, position)}, // position
+        {1, 2, DataType::FLOAT, false, offsetof(Vertex2D, tex_coord)}, // tex_coord
+        {2, 4, DataType::FLOAT, false, offsetof(Vertex2D, color)} // color
+    };
+
+    _vertex_layout_2d = create_vertex_layout(
+        _vertex_buffer_2d.get(),
+        _index_buffer_2d.get(),
+        attributes,
+        sizeof(Vertex2D)
+        );
+
+    _batch_vertices_2d.reserve(MAX_VERTICES_2D);
+    _batch_indices_2d.reserve(MAX_INDICES_2D);
+
+
+    spdlog::info("2D rendering system initialized");
+}
+
+// ============================================================================
+// 2D Rendering Implementation
+// ============================================================================
+
+void OpenGLRenderer::set_2d_virtual_resolution(int vwidth, int vheight) {
+    _virtual_width  = vwidth;
+    _virtual_height = vheight;
+
+    // If virtual resolution is set, create/recreate framebuffer
+    if (vwidth > 0 && vheight > 0) {
+        FramebufferSpecification spec;
+        spec.width       = vwidth;
+        spec.height      = vheight;
+        spec.attachments = {
+            {FramebufferTextureFormat::RGBA8},
+            {FramebufferTextureFormat::DEPTH24STENCIL8}
+        };
+
+        _2d_framebuffer = std::make_shared<OpenGLFramebuffer>(spec);
+        spdlog::info("2D virtual resolution set to {}x{}", vwidth, vheight);
+    } else {
+        _2d_framebuffer = nullptr;
+        spdlog::info("2D virtual resolution disabled (native resolution)");
+    }
+}
+
+void OpenGLRenderer::begin_frame_2d() {
+
+    if (_2d_framebuffer) {
+
+    _2d_framebuffer->bind();
+    glViewport(0, 0, _virtual_width, _virtual_height);
+    }
+
+    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    _draw_commands_2d.clear();
+    _batch_vertices_2d.clear();
+    _batch_indices_2d.clear();
+}
+
+void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) {
+    if (_draw_commands_2d.empty()) {
+
+        if (_2d_framebuffer) {
+            _2d_framebuffer->unbind();
+            glViewport(0, 0, _virtual_width, _virtual_height);
+        }
+
+        return;
+    }
+
+    glm::mat4 projection      = camera.get_projection_matrix();
+    glm::mat4 view            = camera.get_view_matrix();
+    glm::mat4 view_projection = projection * view;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+
+
+    glDisable(GL_DEPTH_TEST);
+
+    _shader_2d->activate();
+    _shader_2d->set_value("VIEW_PROJECTION", view_projection);
+
+    // Batch rendering - group commands by mode and texture
+    uint32_t vertex_offset = 0;
+    uint32_t index_offset  = 0;
+
+    spdlog::info("Rendering {} 2D draw commands", _draw_commands_2d.size());
+    int draw_call = 0;
+    for (size_t i = 0; i < _draw_commands_2d.size(); ++i) {
+        const auto& cmd = _draw_commands_2d[i];
+
+        DrawMode2D current_mode  = cmd.mode;
+        GLuint current_texture   = cmd.texture_id;
+        bool current_use_texture = cmd.use_texture;
+
+        _batch_vertices_2d.clear();
+        _batch_indices_2d.clear();
+
+        size_t batch_start = i;
+
+        for (size_t j = i; j < _draw_commands_2d.size(); ++j) {
+            const auto& batch_cmd = _draw_commands_2d[j];
+
+            bool can_batch = (batch_cmd.mode == current_mode &&
+                              batch_cmd.texture_id == current_texture &&
+                              batch_cmd.use_texture == current_use_texture);
+
+            if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
+                batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                can_batch = false;
+            }
+
+            if (!can_batch && j > i) {
+                break;
+            }
+
+            Uint32 base_vertex = _batch_vertices_2d.size();
+
+            _batch_vertices_2d.insert(_batch_vertices_2d.end(),
+                                      batch_cmd.vertices.begin(),
+                                      batch_cmd.vertices.end());
+
+
+            for (auto idx : batch_cmd.indices) {
+                _batch_indices_2d.push_back(idx + base_vertex);
+            }
+
+            i = j;
+
+            if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
+                batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                break;
+            }
+        }
+
+        if (!_batch_vertices_2d.empty()) {
+            render_batched_2d(current_mode, current_texture, current_use_texture,
+                              _draw_commands_2d[batch_start]);
+        }
+
+        draw_call++;
+    }
+
+
+    spdlog::debug("2D Rendering complete: {} draw calls", draw_call);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    if (_2d_framebuffer) {
+        _2d_framebuffer->unbind();
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, _2d_framebuffer->get_fbo_id());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glBlitFramebuffer(
+            0, 0, _virtual_width, _virtual_height, // Source (virtual resolution)
+            0, 0, _virtual_width, _virtual_height, // Destination (window size)
+            GL_COLOR_BUFFER_BIT,
+            GL_NEAREST
+            );
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        glViewport(0, 0, _virtual_width, _virtual_height);
+    }
+}
+
+void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture,
+                                       const DrawCommand2D& first_cmd) {
+    if (_batch_vertices_2d.empty()) {
+        return;
+    }
+
+    // Set draw mode
+    _shader_2d->set_value("DRAW_MODE", static_cast<int>(mode));
+    _shader_2d->set_value("USE_TEXTURE", use_texture);
+
+    if (use_texture && texture_id != 0) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+        _shader_2d->set_value("TEXTURE", 0);
+    }
+
+    if (mode == DrawMode2D::CIRCLE_FILLED || mode == DrawMode2D::CIRCLE_OUTLINE) {
+        _shader_2d->set_value("CIRCLE_CENTER", first_cmd.position);
+        _shader_2d->set_value("CIRCLE_RADIUS", first_cmd.radius);
+
+        if (mode == DrawMode2D::CIRCLE_OUTLINE) {
+            _shader_2d->set_value("CIRCLE_THICKNESS", first_cmd.thickness);
+        }
+    }
+
+    _vertex_buffer_2d->bind();
+    _vertex_buffer_2d->upload(_batch_vertices_2d.data(),
+                              _batch_vertices_2d.size() * sizeof(Vertex2D));
+
+    _index_buffer_2d->bind();
+    _index_buffer_2d->upload(_batch_indices_2d.data(),
+                             _batch_indices_2d.size() * sizeof(uint32_t));
+
+    _vertex_layout_2d->bind();
+    glDrawElements(GL_TRIANGLES, _batch_indices_2d.size(), GL_UNSIGNED_INT, 0);
+
+    _vertex_layout_2d->unbind();
+}
+
+
+void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& size,
+                                  const glm::vec4& color, bool filled) {
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::RECTANGLE;
+    cmd.mode        = filled ? DrawMode2D::FILLED : DrawMode2D::LINE;
+    cmd.color       = color;
+    cmd.use_texture = false;
+    cmd.texture_id  = 0;
+    cmd.position    = position;
+    cmd.size        = size;
+    cmd.filled      = filled;
+    cmd.thickness   = 1.0f;
+
+    if (filled) {
+
+        cmd.vertices = {
+            {{position.x, position.y}, {0.0f, 0.0f}, color},
+            {{position.x + size.x, position.y}, {1.0f, 0.0f}, color},
+            {{position.x + size.x, position.y + size.y}, {1.0f, 1.0f}, color},
+            {{position.x, position.y + size.y}, {0.0f, 1.0f}, color}
+        };
+
+        cmd.indices = {0, 1, 2, 2, 3, 0};
+    } else {
+
+        float thickness = 1.0f;
+        glm::vec2 p1    = position;
+        glm::vec2 p2    = position + glm::vec2(size.x, 0);
+        glm::vec2 p3    = position + size;
+        glm::vec2 p4    = position + glm::vec2(0, size.y);
+
+        // Create 4 thick lines
+        auto create_line = [&](const glm::vec2& start, const glm::vec2& end) {
+            glm::vec2 dir = glm::normalize(end - start);
+            glm::vec2 perp(-dir.y, dir.x);
+            glm::vec2 offset = perp * (thickness * 0.5f);
+
+            uint32_t base = cmd.vertices.size();
+            cmd.vertices.push_back({start - offset, {0, 0}, color});
+            cmd.vertices.push_back({start + offset, {1, 0}, color});
+            cmd.vertices.push_back({end + offset, {1, 1}, color});
+            cmd.vertices.push_back({end - offset, {0, 1}, color});
+
+            cmd.indices.insert(cmd.indices.end(), {
+                                   base, base + 1, base + 2,
+                                   base + 2, base + 3, base});
+        };
+
+        create_line(p1, p2);
+        create_line(p2, p3);
+        create_line(p3, p4);
+        create_line(p4, p1);
+    }
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_texture_2d(Uint32 texture_id,
+                                     const glm::vec2& position,
+                                     const glm::vec2& size,
+                                     const Rect2D& src,
+                                     FlipMode flip,
+                                     const glm::vec4& color) {
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::RECTANGLE;
+    cmd.mode        = DrawMode2D::FILLED;
+    cmd.color       = color;
+    cmd.use_texture = true;
+    cmd.texture_id  = texture_id;
+    cmd.position    = position;
+    cmd.size        = size;
+    cmd.filled      = true;
+
+
+    float u_min = 0.0f, v_min = 0.0f;
+    float u_max = 1.0f, v_max = 1.0f;
+
+    if (!src.is_zero()) {
+        auto it = _texture_info_cache.find(texture_id);
+        if (it != _texture_info_cache.end()) {
+            int tex_width  = it->second.width;
+            int tex_height = it->second.height;
+
+            if (tex_width > 0 && tex_height > 0) {
+                u_min = src.x / tex_width;
+                v_min = src.y / tex_height;
+                u_max = (src.x + src.width) / tex_width;
+                v_max = (src.y + src.height) / tex_height;
+            }
+        }
+    }
+
+    if (flip == FlipMode::HORIZONTAL || flip == FlipMode::BOTH) {
+        std::swap(u_min, u_max);
+    }
+
+    if (flip == FlipMode::VERTICAL || flip == FlipMode::BOTH) {
+        std::swap(v_min, v_max);
+    }
+
+    cmd.vertices = {
+        {{position.x, position.y}, {u_min, v_min}, color},
+        {{position.x + size.x, position.y}, {u_max, v_min}, color},
+        {{position.x + size.x, position.y + size.y}, {u_max, v_max}, color},
+        {{position.x, position.y + size.y}, {u_min, v_max}, color}
+    };
+
+    cmd.indices = {0, 1, 2, 2, 3, 0};
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_line_2d(const glm::vec2& start, const glm::vec2& end,
+                                  const glm::vec4& color, float thickness) {
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::LINE;
+    cmd.mode        = DrawMode2D::LINE;
+    cmd.color       = color;
+    cmd.use_texture = false;
+    cmd.texture_id  = 0;
+    cmd.thickness   = thickness;
+
+    glm::vec2 dir = glm::normalize(end - start);
+    glm::vec2 perp(-dir.y, dir.x);
+    glm::vec2 offset = perp * (thickness * 0.5f);
+
+    cmd.vertices = {
+        {start - offset, {0, 0}, color},
+        {start + offset, {1, 0}, color},
+        {end + offset, {1, 1}, color},
+        {end - offset, {0, 1}, color}
+    };
+
+    cmd.indices = {0, 1, 2, 2, 3, 0};
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_circle_2d(const glm::vec2& center, float radius,
+                                    const glm::vec4& color, bool filled, int segments) {
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::CIRCLE;
+    cmd.mode        = filled ? DrawMode2D::CIRCLE_FILLED : DrawMode2D::CIRCLE_OUTLINE;
+    cmd.color       = color;
+    cmd.use_texture = false;
+    cmd.texture_id  = 0;
+    cmd.position    = center;
+    cmd.radius      = radius;
+    cmd.segments    = segments;
+    cmd.filled      = filled;
+    cmd.thickness   = 1.0f;
+
+    glm::vec2 min = center - glm::vec2(radius);
+    glm::vec2 max = center + glm::vec2(radius);
+
+    cmd.vertices = {
+        {{min.x, min.y}, {0, 0}, color},
+        {{max.x, min.y}, {1, 0}, color},
+        {{max.x, max.y}, {1, 1}, color},
+        {{min.x, max.y}, {0, 1}, color}
+    };
+
+    cmd.indices = {0, 1, 2, 2, 3, 0};
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_circle_outline_2d(const glm::vec2& center, float radius,
+                                            const glm::vec4& color, float thickness, int segments) {
+
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::CIRCLE;
+    cmd.mode        = DrawMode2D::CIRCLE_OUTLINE;
+    cmd.color       = color;
+    cmd.use_texture = false;
+    cmd.texture_id  = 0;
+    cmd.position    = center;
+    cmd.radius      = radius;
+    cmd.thickness   = thickness;
+    cmd.segments    = segments;
+    cmd.filled      = false;
+
+    float outer_radius = radius + thickness * 0.5f;
+    glm::vec2 min      = center - glm::vec2(outer_radius);
+    glm::vec2 max      = center + glm::vec2(outer_radius);
+
+    cmd.vertices = {
+        {{min.x, min.y}, {0, 0}, color},
+        {{max.x, min.y}, {1, 0}, color},
+        {{max.x, max.y}, {1, 1}, color},
+        {{min.x, max.y}, {0, 1}, color}
+    };
+
+    cmd.indices = {0, 1, 2, 2, 3, 0};
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3,
+                                      const glm::vec4& color, bool filled) {
+    DrawCommand2D cmd;
+    cmd.type        = DrawType2D::TRIANGLE;
+    cmd.mode        = filled ? DrawMode2D::FILLED : DrawMode2D::LINE;
+    cmd.color       = color;
+    cmd.use_texture = false;
+    cmd.texture_id  = 0;
+    cmd.filled      = filled;
+
+    if (filled) {
+        cmd.vertices = {
+            {p1, {0, 0}, color},
+            {p2, {1, 0}, color},
+            {p3, {0.5f, 1}, color}
+        };
+
+        cmd.indices = {0, 1, 2};
+    } else {
+        constexpr float THICKNESS = 1.0f;
+
+        auto create_line = [&](const glm::vec2& start, const glm::vec2& end) {
+            glm::vec2 dir = glm::normalize(end - start);
+            glm::vec2 perp(-dir.y, dir.x);
+            glm::vec2 offset = perp * (THICKNESS * 0.5f);
+
+            uint32_t base = cmd.vertices.size();
+            cmd.vertices.push_back({start - offset, {0, 0}, color});
+            cmd.vertices.push_back({start + offset, {1, 0}, color});
+            cmd.vertices.push_back({end + offset, {1, 1}, color});
+            cmd.vertices.push_back({end - offset, {0, 1}, color});
+
+            cmd.indices.insert(cmd.indices.end(), {
+                                   base, base + 1, base + 2,
+                                   base + 2, base + 3, base
+                               });
+        };
+
+        create_line(p1, p2);
+        create_line(p2, p3);
+        create_line(p3, p1);
+    }
+
+    _draw_commands_2d.push_back(cmd);
+}
+
+void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& position,
+                                  const glm::vec4& color, float scale) {
+    if (text.empty()) {
+        return;
+    }
+
+    if (!_default_font) {
+        spdlog::warn("No default font loaded for text rendering");
+        return;
+    }
+
+    std::vector<TextMesh> meshes;
+    
+    
+    size_t i = 0;
+    while (i < text.length()) {
+        unsigned char c = text[i];
+        int char_len = 1;
+        bool is_emoji = false;
+        
+        if ((c & 0x80) == 0) {
+            char_len = 1; // ASCII
+        } else if ((c & 0xE0) == 0xC0) {
+            char_len = 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            char_len = 3;
+            is_emoji = true;
+        } else if ((c & 0xF8) == 0xF0) {
+            char_len = 4;
+            is_emoji = true;
+        }
+        
+        TTF_Font* char_font = is_emoji && _emoji_font ? _emoji_font : _default_font;
+
+        if (!meshes.empty() && meshes.back().font == char_font) {
+            meshes.back().text += text.substr(i, char_len);
+        } else {
+            meshes.push_back({text.substr(i, char_len), char_font, i});
+        }
+        
+        i += char_len;
+    }
+    
+    float x_offset = 0.0f;
+
+    for (const auto& mesh : meshes) {
+        Uint32 run_texture = render_text_to_texture(mesh.text, mesh.font);
+        if (run_texture == 0) {
+            continue;
+        }
+
+        std::string cache_key = std::to_string(reinterpret_cast<uintptr_t>(mesh.font)) + "_" + mesh.text;
+        auto it = _cached_text_textures.find(cache_key);
+        if (it == _cached_text_textures.end()) {
+            continue;
+        }
+        
+        int run_width = it->second.width;
+        int run_height = it->second.height;
+        
+       
+        DrawCommand2D cmd;
+        cmd.type = DrawType2D::TEXT;
+        cmd.mode = DrawMode2D::TEXT;
+        cmd.color = color;
+        cmd.use_texture = true;
+        cmd.texture_id = run_texture;
+        
+        glm::vec2 run_pos = position + glm::vec2(x_offset, 0.0f);
+        glm::vec2 run_size = glm::vec2(run_width * scale, run_height * scale);
+        
+        cmd.position = run_pos;
+        cmd.size = run_size;
+        
+        cmd.vertices = {
+            {{run_pos.x, run_pos.y}, {0.0f, 0.0f}, color},
+            {{run_pos.x + run_size.x, run_pos.y}, {1.0f, 0.0f}, color},
+            {{run_pos.x + run_size.x, run_pos.y + run_size.y}, {1.0f, 1.0f}, color},
+            {{run_pos.x, run_pos.y + run_size.y}, {0.0f, 1.0f}, color}
+        };
+        
+        cmd.indices = {0, 1, 2, 2, 3, 0};
+        
+        _draw_commands_2d.push_back(cmd);
+        
+        x_offset += run_width * scale;
+    }
+}
+
+Uint32 OpenGLRenderer::render_text_to_texture(const std::string& text, TTF_Font* font) {
+
+    const std::string cache_key = std::to_string(reinterpret_cast<uintptr_t>(font)) + "_" + text;
+
+    auto it = _cached_text_textures.find(cache_key);
+
+    if (it != _cached_text_textures.end()) {
+        return it->second.texture_id;
+    }
+
+
+    constexpr SDL_Color white_color = {255, 255, 255, 255};
+
+    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), text.length(), white_color);
+
+    if (!surface) {
+        spdlog::error("Failed to render text '{}': {}", text, SDL_GetError());
+        return 0;
+    }
+
+    SDL_Surface* rgba_surface = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_DestroySurface(surface);
+
+    if (!rgba_surface) {
+        spdlog::error("Failed to convert text surface to RGBA: {}", SDL_GetError());
+        return 0;
+    }
+
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, rgba_surface->w, rgba_surface->h, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, rgba_surface->pixels);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // // Generate mipmaps for better quality at different scales
+    // glGenerateMipmap(GL_TEXTURE_2D);
+
+    // GLfloat max_anisotropy = 0.0f;
+    // glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy);
+    // if (max_anisotropy > 1.0f) {
+    //     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(max_anisotropy, 4.0f));
+    // }
+    //
+
+    int width  = rgba_surface->w;
+    int height = rgba_surface->h;
+
+    SDL_DestroySurface(rgba_surface);
+
+    _cached_text_textures[cache_key] = {texture_id, width, height};
+
+    return texture_id;
+}
+
+bool OpenGLRenderer::load_font(const std::string& font_path, int point_size, const std::string& font_name) {
+    std::string name = font_name.empty() ? font_path : font_name;
+
+    if (_fonts.contains(name)) {
+        spdlog::warn("Font '{}' already loaded", name);
+        return true;
+    }
+
+    TTF_Font* font = TTF_OpenFont(font_path.c_str(), point_size);
+
+    if (!font) {
+        spdlog::error("Failed to load font '{}': {}", font_path, SDL_GetError());
+        return false;
+    }
+
+    TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
+
+    TTF_SetFontKerning(font, true);
+
+    TTF_SetFontStyle(font, TTF_STYLE_NORMAL);
+
+    TTF_SetFontDirection(font, TTF_DIRECTION_LTR);
+
+    _fonts[name] = font;
+
+    if (name.find("emoji") != std::string::npos || name.find("Emoji") != std::string::npos ||
+        name.find("Twemoji") != std::string::npos || name.find("twemoji") != std::string::npos) {
+        _emoji_font = font;
+        spdlog::info("Loaded emoji font: '{}' ({}pt) as '{}'", font_path, point_size, name);
+    } else {
+        if (!_default_font) {
+            _default_font = font;
+        }
+        spdlog::info("Loaded text font: '{}' ({}pt) as '{}'", font_path, point_size, name);
+    }
+
+    return true;
 }

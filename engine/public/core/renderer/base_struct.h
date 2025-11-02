@@ -213,3 +213,99 @@ struct WorldEnvironment {
 
 // Forward declaration
 class Renderer;
+class MeshInstance3D;
+class Material;
+
+struct RenderBatch {
+    const MeshInstance3D* mesh;
+    const Material* material;
+    std::vector<glm::mat4> model_matrices;
+
+    void clear() {
+        model_matrices.clear();
+    }
+};
+
+struct MeshMaterialKey {
+    const MeshInstance3D* mesh;
+    const Material* material;
+
+    bool operator==(const MeshMaterialKey& other) const {
+        return mesh == other.mesh && material == other.material;
+    }
+};
+
+struct MeshMaterialKeyHash {
+    std::size_t operator()(const MeshMaterialKey& key) const {
+        std::size_t h1 = std::hash<const void*>{}(key.mesh);
+        std::size_t h2 = std::hash<const void*>{}(key.material);
+        return h1 ^ (h2 << 1);
+    }
+};
+
+constexpr Uint32 MAX_VERTICES_2D = 65536;
+constexpr Uint32 MAX_INDICES_2D  = MAX_VERTICES_2D * 3;
+
+// ============================================================================
+// 2D Rendering Structures
+// ============================================================================
+enum class FlipMode {
+    NONE = 0,
+    HORIZONTAL = 1,
+    VERTICAL = 2,
+    BOTH = 3
+};
+
+struct Vertex2D {
+    glm::vec2 position;
+    glm::vec2 tex_coord;
+    glm::vec4 color;
+};
+
+enum class DrawMode2D {
+    FILLED = 0, /// Filled shapes (triangles, rects)
+    LINE = 1, /// Lines
+    TEXT = 2, /// Text rendering
+    CIRCLE_FILLED = 3, /// Filled circles
+    CIRCLE_OUTLINE = 4 /// Circle outlines
+};
+
+enum class DrawType2D {
+    RECTANGLE,
+    CIRCLE,
+    LINE,
+    TRIANGLE,
+    TEXT
+};
+
+struct DrawCommand2D {
+    DrawType2D type;
+    DrawMode2D mode;
+
+    std::vector<Vertex2D> vertices;
+    std::vector<uint32_t> indices;
+
+    glm::vec4 color;
+    Uint32 texture_id;
+    bool use_texture;
+
+    // Shape-specific parameters
+    glm::vec2 position;
+    glm::vec2 size; // for rectangles
+    float radius; // for circles
+    float thickness; // for lines and circle outlines
+    int segments; // for circles
+    bool filled;
+
+    // Text-specific
+    std::string text;
+    float text_scale;
+};
+
+
+struct TextMesh {
+    std::string text;
+    TTF_Font* font;
+    size_t start_pos;
+};
+
