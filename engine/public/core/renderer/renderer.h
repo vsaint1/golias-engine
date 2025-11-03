@@ -54,7 +54,6 @@ public:
     // ========================================================================
     // 2D Rendering API
     // ========================================================================
-    virtual void set_2d_virtual_resolution(int width, int height) = 0;
 
     virtual void begin_frame_2d() = 0;
     virtual void end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) = 0;
@@ -128,6 +127,11 @@ protected:
     std::shared_ptr<Framebuffer> main_fbo       = nullptr;
 
     int _virtual_width = 0, _virtual_height = 0;
+
+    // Render resolution (separate from window size for scaling)
+    int _render_width = 0, _render_height = 0;
+    std::shared_ptr<Framebuffer> render_resolution_fbo = nullptr;
+    std::unique_ptr<Shader> _post_process_shader = nullptr;
 
     std::shared_ptr<GpuBuffer> instance_buffer;
 

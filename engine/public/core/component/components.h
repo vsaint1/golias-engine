@@ -236,7 +236,11 @@ public:
     }
 
     glm::mat4 get_projection_matrix() const {
-     
+       
+        if (viewport_size.x <= 0.0f || viewport_size.y <= 0.0f) {
+            return glm::mat4(1.0f);
+        }
+
         return glm::ortho(0.0f, viewport_size.x, viewport_size.y, 0.0f);
     }
 

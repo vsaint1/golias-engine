@@ -96,7 +96,18 @@ glm::mat4 Camera3D::get_view(const Transform3D& transform) const {
 }
 
 glm::mat4 Camera3D::get_projection(int w, int h) const {
-    return glm::perspective(glm::radians(fov), (float) w / (float) h, 0.1f, view_distance);
+    
+    if (w <= 0 || h <= 0) {
+        return glm::mat4(1.0f);
+    }
+    
+    float aspect = (float)w / (float)h;
+    
+    if (aspect <= 0.0f || std::isinf(aspect) || std::isnan(aspect)) {
+        return glm::mat4(1.0f);
+    }
+    
+    return glm::perspective(glm::radians(fov), aspect, 0.1f, view_distance);
 }
 
 void Camera3D::move_forward(Transform3D& transform,float dt) {

@@ -598,11 +598,23 @@ void OpenGLRenderer::end_shadow_pass() {
 }
 
 void OpenGLRenderer::begin_render_target() {
-    main_fbo->bind();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, _virtual_width, _virtual_height);
+
     glClearColor(_world_environment->color.r, _world_environment->color.g, _world_environment->color.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
     _default_shader->activate();
-    glViewport(0, 0, _virtual_width, _virtual_height);
 }
 
 void OpenGLRenderer::render_main_target(const Camera3D& camera,
@@ -632,6 +644,7 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
     glBindTexture(GL_TEXTURE_CUBE_MAP, _world_environment->texture);
     _default_shader->set_value("ENVIRONMENT_MAP", ENVIRONMENT_TEXTURE_UNIT);
 
+
     for (auto& [key, batch] : _instanced_batches) {
         if (batch.model_matrices.empty())
             continue;
@@ -656,25 +669,14 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
     }
     glBindVertexArray(0);
 
-    // spdlog::info("Frame: {} draw calls, {} instances", draw_calls, total_instances);
 }
 
 void OpenGLRenderer::end_render_target() {
-
-    // TODO: later add shader full-screen quad
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, main_fbo->get_fbo_id());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-    glBlitFramebuffer(
-        0, 0, _virtual_width, _virtual_height,
-        0, 0, _virtual_width, _virtual_height,
-        GL_COLOR_BUFFER_BIT,
-        GL_LINEAR
-        );
-
-    main_fbo->unbind();
-
+    // Don't blit yet - keep the framebuffer bound so 2D can render on top
+    // The blit will happen after 2D rendering is complete
+    // This allows compositing 2D on top of 3D
 }
+
 
 void OpenGLRenderer::begin_environment_pass() {
     glDepthFunc(GL_LEQUAL);
@@ -731,13 +733,13 @@ void OpenGLRenderer::resize(int w, int h) {
     _virtual_width  = w;
     _virtual_height = h;
 
-    spdlog::info("Resizing renderer to {}x{}", _virtual_width, _virtual_height);
 
     get_main_fbo()->resize(_virtual_width, _virtual_height);
 
     glViewport(0, 0, _virtual_width, _virtual_height);
 
-    spdlog::debug("Resize complete");
+    spdlog::info("Resizing renderer to {}x{}", _virtual_width, _virtual_height);
+
 }
 
 void OpenGLRenderer::cleanup() {
@@ -813,42 +815,9 @@ void OpenGLRenderer::initialize_2d_rendering() {
     spdlog::info("2D rendering system initialized");
 }
 
-// ============================================================================
-// 2D Rendering Implementation
-// ============================================================================
 
-void OpenGLRenderer::set_2d_virtual_resolution(int vwidth, int vheight) {
-    _virtual_width  = vwidth;
-    _virtual_height = vheight;
-
-    // If virtual resolution is set, create/recreate framebuffer
-    if (vwidth > 0 && vheight > 0) {
-        FramebufferSpecification spec;
-        spec.width       = vwidth;
-        spec.height      = vheight;
-        spec.attachments = {
-            {FramebufferTextureFormat::RGBA8},
-            {FramebufferTextureFormat::DEPTH24STENCIL8}
-        };
-
-        _2d_framebuffer = std::make_shared<OpenGLFramebuffer>(spec);
-        spdlog::info("2D virtual resolution set to {}x{}", vwidth, vheight);
-    } else {
-        _2d_framebuffer = nullptr;
-        spdlog::info("2D virtual resolution disabled (native resolution)");
-    }
-}
 
 void OpenGLRenderer::begin_frame_2d() {
-
-    if (_2d_framebuffer) {
-
-    _2d_framebuffer->bind();
-    glViewport(0, 0, _virtual_width, _virtual_height);
-    }
-
-    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     _draw_commands_2d.clear();
     _batch_vertices_2d.clear();
@@ -856,116 +825,101 @@ void OpenGLRenderer::begin_frame_2d() {
 }
 
 void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) {
-    if (_draw_commands_2d.empty()) {
 
-        if (_2d_framebuffer) {
-            _2d_framebuffer->unbind();
-            glViewport(0, 0, _virtual_width, _virtual_height);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    if (!_draw_commands_2d.empty()) {
+        glm::mat4 projection      = camera.get_projection_matrix();
+        glm::mat4 view            = camera.get_view_matrix();
+        glm::mat4 view_projection = projection * view;
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendEquation(GL_FUNC_ADD);
+
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        _shader_2d->activate();
+        _shader_2d->set_value("VIEW_PROJECTION", view_projection);
+
+        uint32_t vertex_offset = 0;
+        uint32_t index_offset  = 0;
+
+        int draw_call = 0;
+        for (size_t i = 0; i < _draw_commands_2d.size(); ++i) {
+            const auto& cmd = _draw_commands_2d[i];
+
+            DrawMode2D current_mode  = cmd.mode;
+            GLuint current_texture   = cmd.texture_id;
+            bool current_use_texture = cmd.use_texture;
+
+            _batch_vertices_2d.clear();
+            _batch_indices_2d.clear();
+
+            size_t batch_start = i;
+
+            for (size_t j = i; j < _draw_commands_2d.size(); ++j) {
+                const auto& batch_cmd = _draw_commands_2d[j];
+
+                bool can_batch = (batch_cmd.mode == current_mode &&
+                                  batch_cmd.texture_id == current_texture &&
+                                  batch_cmd.use_texture == current_use_texture);
+
+                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
+                    batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                    can_batch = false;
+                }
+
+                if (!can_batch && j > i) {
+                    break;
+                }
+
+                Uint32 base_vertex = _batch_vertices_2d.size();
+
+                _batch_vertices_2d.insert(_batch_vertices_2d.end(),
+                                          batch_cmd.vertices.begin(),
+                                          batch_cmd.vertices.end());
+
+
+                for (auto idx : batch_cmd.indices) {
+                    _batch_indices_2d.push_back(idx + base_vertex);
+                }
+
+                i = j;
+
+                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
+                    batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                    break;
+                }
+            }
+
+            if (!_batch_vertices_2d.empty()) {
+                render_batched_2d(current_mode, current_texture, current_use_texture,
+                                  _draw_commands_2d[batch_start]);
+            }
+
+            draw_call++;
         }
 
-        return;
+        // spdlog::debug("2D Rendering complete: {} draw calls", draw_call);
+        glBindVertexArray(0);
+        glUseProgram(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    glm::mat4 projection      = camera.get_projection_matrix();
-    glm::mat4 view            = camera.get_view_matrix();
-    glm::mat4 view_projection = projection * view;
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_ADD);
-
-
-    glDisable(GL_DEPTH_TEST);
-
-    _shader_2d->activate();
-    _shader_2d->set_value("VIEW_PROJECTION", view_projection);
-
-    // Batch rendering - group commands by mode and texture
-    uint32_t vertex_offset = 0;
-    uint32_t index_offset  = 0;
-
-    spdlog::info("Rendering {} 2D draw commands", _draw_commands_2d.size());
-    int draw_call = 0;
-    for (size_t i = 0; i < _draw_commands_2d.size(); ++i) {
-        const auto& cmd = _draw_commands_2d[i];
-
-        DrawMode2D current_mode  = cmd.mode;
-        GLuint current_texture   = cmd.texture_id;
-        bool current_use_texture = cmd.use_texture;
-
-        _batch_vertices_2d.clear();
-        _batch_indices_2d.clear();
-
-        size_t batch_start = i;
-
-        for (size_t j = i; j < _draw_commands_2d.size(); ++j) {
-            const auto& batch_cmd = _draw_commands_2d[j];
-
-            bool can_batch = (batch_cmd.mode == current_mode &&
-                              batch_cmd.texture_id == current_texture &&
-                              batch_cmd.use_texture == current_use_texture);
-
-            if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
-                batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
-                can_batch = false;
-            }
-
-            if (!can_batch && j > i) {
-                break;
-            }
-
-            Uint32 base_vertex = _batch_vertices_2d.size();
-
-            _batch_vertices_2d.insert(_batch_vertices_2d.end(),
-                                      batch_cmd.vertices.begin(),
-                                      batch_cmd.vertices.end());
-
-
-            for (auto idx : batch_cmd.indices) {
-                _batch_indices_2d.push_back(idx + base_vertex);
-            }
-
-            i = j;
-
-            if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
-                batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
-                break;
-            }
-        }
-
-        if (!_batch_vertices_2d.empty()) {
-            render_batched_2d(current_mode, current_texture, current_use_texture,
-                              _draw_commands_2d[batch_start]);
-        }
-
-        draw_call++;
-    }
-
-
-    spdlog::debug("2D Rendering complete: {} draw calls", draw_call);
-    glBindVertexArray(0);
-    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, _virtual_width, _virtual_height);
 
-    if (_2d_framebuffer) {
-        _2d_framebuffer->unbind();
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, _2d_framebuffer->get_fbo_id());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-        glBlitFramebuffer(
-            0, 0, _virtual_width, _virtual_height, // Source (virtual resolution)
-            0, 0, _virtual_width, _virtual_height, // Destination (window size)
-            GL_COLOR_BUFFER_BIT,
-            GL_NEAREST
-            );
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-        glViewport(0, 0, _virtual_width, _virtual_height);
-    }
 }
+
+
 
 void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture,
                                        const DrawCommand2D& first_cmd) {

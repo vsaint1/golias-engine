@@ -56,7 +56,6 @@ public:
     // ========================================================================
     // 2D Rendering Implementation
     // ========================================================================
-    void set_2d_virtual_resolution(int width, int height) override;
     void begin_frame_2d() override;
     void end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) override;
     
