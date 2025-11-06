@@ -15,7 +15,7 @@ public:
         const GpuBuffer* vertex_buffer,
         const GpuBuffer* index_buffer,
         const std::vector<VertexAttribute>& attributes,
-        uint32_t stride) override;
+        Uint32 stride) override;
 
     Uint32 load_texture_from_file(const std::string& path) override;
 
@@ -34,8 +34,8 @@ public:
     void render_main_target(const Camera3D& camera,
                             const Transform3D& camera_transform,
                          const glm::mat4& light_space_matrix,
-                         const std::vector<DirectionalLight>& directional_lights,
-                         const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) override;
+                         const std::vector<DirectionalLight3D>& directional_lights,
+                         const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) override;
 
     void end_render_target() override;
 
@@ -47,7 +47,8 @@ public:
 
     void add_to_shadow_batch(const Transform3D& transform, const MeshRef& mesh_ref) override;
 
-    void resize(int w, int h) override;
+
+    void set_render_resolution(int width, int height) override;
 
     void cleanup() override;
 
@@ -102,8 +103,8 @@ private:
     void setup_instance_matrix_attribute(GpuVertexLayout* vao);
 
 
-    void setup_lights(const std::vector<DirectionalLight>& directional_lights,
-                      const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights);
+    void setup_lights(const std::vector<DirectionalLight3D>& directional_lights,
+                      const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights);
 
     void initialize_2d_rendering();
 

@@ -306,8 +306,8 @@ void OpenGLRenderer::setup_instance_matrix_attribute(GpuVertexLayout* vao) {
     vao->unbind();
 }
 
-void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight>& directional_lights,
-                                  const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
+void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight3D>& directional_lights,
+                                  const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) {
     _default_shader->set_value("numDirLights", static_cast<int>(directional_lights.size()));
     if (!directional_lights.empty()) {
         for (int i = 0; i < static_cast<int>(directional_lights.size()); ++i) {
@@ -421,8 +421,9 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     SDL_GL_SetSwapInterval(0);
 
-    _virtual_width  = w;
-    _virtual_height = h;
+   auto& viewport = GEngine->get_config().get_viewport();
+    _virtual_width  = viewport.width;
+    _virtual_height = viewport.height;
 
     GLint num_extensions = 0;
     std::vector<std::string_view> extensions;
@@ -482,8 +483,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     FramebufferSpecification main_spec;
 
-    main_spec.width       = 640;
-    main_spec.height      = 480;
+    main_spec.width       = _virtual_width;
+    main_spec.height      = _virtual_height;
     main_spec.attachments = {
         {FramebufferTextureFormat::RGBA8},
         {FramebufferTextureFormat::DEPTH24STENCIL8}
@@ -502,7 +503,7 @@ std::shared_ptr<GpuBuffer> OpenGLRenderer::allocate_gpu_buffer(GpuBufferType typ
 }
 
 std::shared_ptr<GpuVertexLayout> OpenGLRenderer::create_vertex_layout(const GpuBuffer* vertex_buffer, const GpuBuffer* index_buffer,
-                                                                      const std::vector<VertexAttribute>& attributes, uint32_t stride) {
+                                                                      const std::vector<VertexAttribute>& attributes, Uint32 stride) {
 
     return std::make_unique<OpenglGpuVertexLayout>(vertex_buffer, index_buffer, attributes, stride);
 }
@@ -598,9 +599,12 @@ void OpenGLRenderer::end_shadow_pass() {
 }
 
 void OpenGLRenderer::begin_render_target() {
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, _virtual_width, _virtual_height);
+    main_fbo->bind();
+    
+    int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
+    int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
+    
+    glViewport(0, 0, render_w, render_h);
 
     glClearColor(_world_environment->color.r, _world_environment->color.g, _world_environment->color.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -609,10 +613,17 @@ void OpenGLRenderer::begin_render_target() {
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ZERO);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
     glDisable(GL_SCISSOR_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    
+    // TODO: Reset other states as needed
+
+    glActiveTexture(GL_TEXTURE0);
 
     _default_shader->activate();
 }
@@ -620,14 +631,17 @@ void OpenGLRenderer::begin_render_target() {
 void OpenGLRenderer::render_main_target(const Camera3D& camera,
                                         const Transform3D& camera_transform,
                                         const glm::mat4& light_space_matrix,
-                                        const std::vector<DirectionalLight>& directional_lights,
-                                        const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) {
+                                        const std::vector<DirectionalLight3D>& directional_lights,
+                                        const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) {
 
     int total_instances = 0;
     int draw_calls      = 0;
 
+    int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
+    int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
+
     glm::mat4 view       = camera.get_view(camera_transform);
-    glm::mat4 projection = camera.get_projection(_virtual_width, _virtual_height);
+    glm::mat4 projection = camera.get_projection(render_w, render_h);
 
     _default_shader->set_value("VIEW", view);
     _default_shader->set_value("PROJECTION", projection);
@@ -724,32 +738,30 @@ void OpenGLRenderer::add_to_shadow_batch(const Transform3D& transform, const Mes
     batch.model_matrices.push_back(transform.get_matrix());
 }
 
-void OpenGLRenderer::resize(int w, int h) {
-    if (w <= 0 || h <= 0) {
-        spdlog::warn("Invalid resize dimensions: {}x{}", w, h);
+
+void OpenGLRenderer::set_render_resolution(int width, int height) {
+    if (width <= 0 || height <= 0) {
+        spdlog::warn("Invalid render resolution: {}x{}", width, height);
         return;
     }
 
-    _virtual_width  = w;
-    _virtual_height = h;
+    _render_width  = width;
+    _render_height = height;
 
 
-    get_main_fbo()->resize(_virtual_width, _virtual_height);
+    main_fbo->resize(width, height);
 
-    glViewport(0, 0, _virtual_width, _virtual_height);
-
-    spdlog::info("Resizing renderer to {}x{}", _virtual_width, _virtual_height);
-
+    spdlog::debug("Set render resolution to {}x{} (Framebuffer resized, will scale to {}x{} on blit)",
+                 _render_width, _render_height, _virtual_width, _virtual_height);
 }
 
 void OpenGLRenderer::cleanup() {
-    // Clean up textures
+
     for (auto& [key, texID] : _textures)
         glDeleteTextures(1, &texID);
 
     _textures.clear();
 
-    // Clean up cached text textures
     for (auto& [key, cached_tex] : _cached_text_textures) {
         glDeleteTextures(1, &cached_tex.texture_id);
     }
@@ -772,7 +784,22 @@ void OpenGLRenderer::cleanup() {
 }
 
 void OpenGLRenderer::swap_chain() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, main_fbo->get_fbo_id());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    
+    int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
+    int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
 
+    auto window_size = GEngine->get_config().get_window();
+
+    glBlitFramebuffer(
+        0, 0, render_w, render_h,                       // source (main_fbo at render resolution)
+        0, 0, window_size.width, window_size.height,            // destination (screen at window resolution)
+        GL_COLOR_BUFFER_BIT,                            // copy color buffer
+        GL_NEAREST                                      // nearest neighbor
+    );
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     SDL_GL_SwapWindow(_window);
 }
 
@@ -784,14 +811,11 @@ void OpenGLRenderer::initialize_2d_rendering() {
 
     spdlog::info("Initializing 2D rendering system...");
 
-    // Create shader
     _shader_2d = std::make_unique<OpenglShader>("shaders/opengl/default_2d.vert", "shaders/opengl/default_2d.frag");
 
-    // Create buffers
     _vertex_buffer_2d = allocate_gpu_buffer(GpuBufferType::VERTEX);
     _index_buffer_2d  = allocate_gpu_buffer(GpuBufferType::INDEX);
 
-    // Allocate buffer space
     _vertex_buffer_2d->upload(nullptr, MAX_VERTICES_2D * sizeof(Vertex2D));
     _index_buffer_2d->upload(nullptr, MAX_INDICES_2D * sizeof(uint32_t));
 
@@ -826,7 +850,8 @@ void OpenGLRenderer::begin_frame_2d() {
 
 void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) {
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Render to main_fbo (on top of 3D)
+    main_fbo->bind();
 
     if (!_draw_commands_2d.empty()) {
         glm::mat4 projection      = camera.get_projection_matrix();
@@ -838,7 +863,9 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
         glBlendEquation(GL_FUNC_ADD);
 
         glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
+        glDisable(GL_SCISSOR_TEST);
 
         _shader_2d->activate();
         _shader_2d->set_value("VIEW_PROJECTION", view_projection);
@@ -903,19 +930,31 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
         }
 
         // spdlog::debug("2D Rendering complete: {} draw calls", draw_call);
-        glBindVertexArray(0);
-        glUseProgram(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
     }
     
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    // Clear all texture bindings to prevent state leakage to 3D rendering
+    for (int i = 0; i < 16; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    }
+    glActiveTexture(GL_TEXTURE0);
+    
+    // Restore 3D rendering state
     glDisable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ZERO); // Reset to default
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glDisable(GL_SCISSOR_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, _virtual_width, _virtual_height);
 
 }
 
@@ -935,6 +974,10 @@ void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture_id);
         _shader_2d->set_value("TEXTURE", 0);
+    } else {
+        // Ensure texture is not bound if not using it
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if (mode == DrawMode2D::CIRCLE_FILLED || mode == DrawMode2D::CIRCLE_OUTLINE) {
@@ -956,7 +999,6 @@ void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool 
 
     _vertex_layout_2d->bind();
     glDrawElements(GL_TRIANGLES, _batch_indices_2d.size(), GL_UNSIGNED_INT, 0);
-
     _vertex_layout_2d->unbind();
 }
 
