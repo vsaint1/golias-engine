@@ -139,7 +139,7 @@ void Camera3D::zoom(float yoffset) {
 }
 
 
-glm::mat4 DirectionalLight::get_light_space_matrix(glm::mat4 camera_view, glm::mat4 camera_proj) const {
+glm::mat4 DirectionalLight3D::get_light_space_matrix(glm::mat4 camera_view, glm::mat4 camera_proj) const {
     glm::vec3 light_dir = glm::normalize(direction);
 
     glm::mat4 invCam = glm::inverse(camera_proj * camera_view);
@@ -188,11 +188,59 @@ glm::mat4 DirectionalLight::get_light_space_matrix(glm::mat4 camera_view, glm::m
     return orthoProj * lightView;
 }
 
-glm::mat4 DirectionalLight::get_light_space_matrix() const {
+glm::mat4 DirectionalLight3D::get_light_space_matrix() const {
     glm::mat4 lightProjection = glm::ortho(-shadowDistance, shadowDistance,
                                            -shadowDistance, shadowDistance,
                                            shadowNear, shadowFar);
     glm::vec3 lightPos  = -direction * (shadowDistance * 0.5f);
     glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     return lightProjection * lightView;
+}
+
+glm::mat4 Transform2D::get_matrix() const {
+    glm::mat4 matrix(1.0f);
+    matrix = glm::translate(matrix, glm::vec3(-origin, 0.0f));
+
+    matrix = glm::scale(matrix, glm::vec3(scale, 1.0f));
+    matrix = glm::rotate(matrix, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+    matrix = glm::translate(matrix, glm::vec3(position + origin, 0.0f));
+
+    return matrix;
+}
+
+glm::mat4 Camera2D::get_view_matrix() const {
+    glm::mat4 view(1.0f);
+    view = glm::translate(view, glm::vec3(-position, 0.0f));
+    view = glm::rotate(view, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+    view = glm::scale(view, glm::vec3(zoom, zoom, 1.0f));
+    return view;
+}
+
+glm::mat4 Camera2D::get_projection_matrix() const {
+
+    if (viewport_size.x <= 0.0f || viewport_size.y <= 0.0f) {
+        return glm::mat4(1.0f);
+    }
+
+    return glm::ortho(0.0f, viewport_size.x, viewport_size.y, 0.0f);
+}
+
+void Camera2D::move(const glm::vec2& offset) {
+    position += offset;
+}
+
+void Camera2D::rotate(float radians) {
+    rotation += radians;
+}
+
+void Camera2D::zoom_by(float factor) {
+    zoom *= factor;
+}
+
+void Camera2D::set_zoom(float new_zoom) {
+    zoom = new_zoom;
+}
+
+void Camera2D::look_at(const glm::vec2& target) {
+    position = target;
 }

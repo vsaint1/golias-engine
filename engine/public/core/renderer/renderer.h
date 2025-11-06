@@ -9,7 +9,7 @@ public:
     virtual ~Renderer() = default;
 
     virtual bool initialize(int width, int height, SDL_Window* window) = 0;
-    virtual void resize(int width, int height) = 0;
+
     virtual void cleanup() = 0;
 
     virtual std::shared_ptr<GpuBuffer> allocate_gpu_buffer(GpuBufferType type) = 0;
@@ -18,11 +18,13 @@ public:
         const GpuBuffer* vertex_buffer,
         const GpuBuffer* index_buffer,
         const std::vector<VertexAttribute>& attributes,
-        uint32_t stride) = 0;
+        Uint32 stride) = 0;
 
     virtual Uint32 load_texture_from_file(const std::string& path) = 0;
 
     virtual Uint32 load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name = "") = 0;
+
+    virtual void set_render_resolution(int width, int height) = 0;
 
     virtual void begin_frame() = 0;
 
@@ -34,8 +36,8 @@ public:
     virtual void render_main_target(const Camera3D& camera,
                                     const Transform3D& camera_transform,
                                     const glm::mat4& light_space_matrix,
-                                    const std::vector<DirectionalLight>& directional_lights,
-                                    const std::vector<std::pair<Transform3D, SpotLight>>& spot_lights) = 0;
+                                    const std::vector<DirectionalLight3D>& directional_lights,
+                                    const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) = 0;
     virtual void end_render_target() = 0;
 
     virtual void begin_environment_pass() =0;
@@ -111,6 +113,9 @@ public:
 
     std::shared_ptr<Framebuffer> get_main_fbo() const;
 
+    int get_virtual_width() const { return _virtual_width; }
+    int get_virtual_height() const { return _virtual_height; }
+
 protected:
     SDL_Window* _window = nullptr;
 
@@ -126,12 +131,11 @@ protected:
     std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
     std::shared_ptr<Framebuffer> main_fbo       = nullptr;
 
+    // Render dimensions (FBO and rendering target size)
     int _virtual_width = 0, _virtual_height = 0;
 
-    // Render resolution (separate from window size for scaling)
+    // Render resolution (for retro game scaling - if != virtual size, scale on blit)
     int _render_width = 0, _render_height = 0;
-    std::shared_ptr<Framebuffer> render_resolution_fbo = nullptr;
-    std::unique_ptr<Shader> _post_process_shader = nullptr;
 
     std::shared_ptr<GpuBuffer> instance_buffer;
 

@@ -18,7 +18,7 @@ class Engine {
 public:
     bool initialize(int window_w, int window_h, const char* title = "Golias Engine - Window", Uint32 window_flags = SDL_WINDOW_RESIZABLE);
 
-    void run();
+    void run() const;
 
     Timer& get_timer();
 

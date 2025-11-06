@@ -21,6 +21,7 @@
 /*!
 * @defgroup Components
 * @defgroup Systems
+* @defgroup Core
 * @defgroup Tags
 * @defgroup FileSystem
 * @defgroup Configuration
