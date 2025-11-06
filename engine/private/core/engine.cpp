@@ -5,6 +5,7 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 
 nk_context* nk_ctx = nullptr;
 
+// TODO: remove all example/test functions (just hack here for testing purposes)
 
 void example_2d_rendering() {
     auto* renderer = GEngine->get_renderer();
