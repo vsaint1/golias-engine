@@ -266,6 +266,11 @@ bool Window::load(const tinyxml2::XMLElement* root) {
     return true;
 }
 
+void Window::resize(int w, int h) {
+    width = w;
+    height = h;
+}
+
 // -----------------------------------------------------------------------------
 // EngineConfig
 // -----------------------------------------------------------------------------

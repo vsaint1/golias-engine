@@ -172,6 +172,8 @@ struct Window {
     float dpi_scale = 1.0f;
 
     bool load(const tinyxml2::XMLElement* root);
+
+    void resize(int w,int h);
 };
 
 /*!
