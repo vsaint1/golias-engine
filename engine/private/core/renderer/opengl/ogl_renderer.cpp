@@ -498,6 +498,11 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     return true;
 }
 
+std::shared_ptr<GpuImage> OpenGLRenderer::create_texture_2d(const std::string& path, const TextureDesc& desc) {
+    // return std::make_shared<OpenglGpuImage>(path, desc);
+    return nullptr;
+}
+
 std::shared_ptr<GpuBuffer> OpenGLRenderer::allocate_gpu_buffer(GpuBufferType type) {
     return std::make_shared<OpenglGpuBuffer>(type);
 }
@@ -680,8 +685,11 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
                                 GL_UNSIGNED_INT,
                                 0,
                                 batch.model_matrices.size());
+
+        batch.mesh->vertex_layout->unbind();
     }
-    glBindVertexArray(0);
+
+    glBindVertexArray(0); // just for safety
 
 }
 
@@ -937,12 +945,7 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    // Clear all texture bindings to prevent state leakage to 3D rendering
-    for (int i = 0; i < 16; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    }
+
     glActiveTexture(GL_TEXTURE0);
     
     // Restore 3D rendering state

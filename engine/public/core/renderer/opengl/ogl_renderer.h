@@ -9,6 +9,8 @@ public:
 
     bool initialize(int w, int h, SDL_Window* window) override;
 
+    std::shared_ptr<GpuImage> create_texture_2d(const std::string& path, const TextureDesc& desc) override;
+
     std::shared_ptr<GpuBuffer> allocate_gpu_buffer(GpuBufferType type) override;
 
     std::shared_ptr<GpuVertexLayout> create_vertex_layout(
