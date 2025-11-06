@@ -1,7 +1,5 @@
-#include <SDL3/SDL_main.h>
 #include "core/engine.h"
-
-
+#include <SDL3/SDL_main.h>
 
 int main(int argc, char* argv[]) {
 
@@ -58,9 +56,9 @@ int main(int argc, char* argv[]) {
         .roughness = 0.7f
     });
 
-    create_material("dark_metal_ground", Material{
+    create_material("dark_ground", Material{
         .albedo = glm::vec3(0.1f, 0.1f, 0.1f),
-        .metallic = 0.9f,
+        .metallic = 0.1f,
         .roughness = 0.9f
     });
 
@@ -77,7 +75,7 @@ int main(int argc, char* argv[]) {
 
     auto dirLight = ecs.entity()
       .set(Transform3D{})
-      .set(DirectionalLight{
+      .set(DirectionalLight3D{
           glm::normalize(glm::vec3(1.0f, -2.5f, 1.0f)), // normalized sunlight direction
           glm::vec3(1.0f, 0.95f, 0.8f),                 // warm sunlight color
           1.0f,                                         // intensity
@@ -86,7 +84,7 @@ int main(int argc, char* argv[]) {
 
     auto dirLight2 = ecs.entity()
         .set(Transform3D{})
-        .set(DirectionalLight{
+        .set(DirectionalLight3D{
             glm::normalize(glm::vec3(-0.3f, -1.0f, 0.2f)), // fill/rim light
             glm::vec3(0.6f, 0.75f, 1.0f),                  // cool tint for contrast
             0.8f,                                          // weaker intensity
@@ -96,7 +94,7 @@ int main(int argc, char* argv[]) {
 
     auto spotLight1 = ecs.entity()
                          .set(Transform3D{glm::vec3(5, 5, 5)})
-                         .set(SpotLight{
+                         .set(SpotLight3D{
                              glm::vec3(-1, -1, -1),
                              glm::vec3(1.0f, 0.3f, 0.3f),
                              30.0f,
@@ -106,7 +104,7 @@ int main(int argc, char* argv[]) {
 
     auto spotLight2 = ecs.entity()
                          .set(Transform3D{glm::vec3(-5, 5, 5)})
-                         .set(SpotLight{
+                         .set(SpotLight3D{
                              glm::vec3(1, -1, -1),
                              glm::vec3(0.3f, 0.3f, 1.0f),
                              50.0f,
@@ -116,11 +114,12 @@ int main(int argc, char* argv[]) {
 
 
     // TODO: create api for lights and camera
-    create_model_entity("dmg_helmet", "res://sprites/obj/DamagedHelmet.glb",
+    create_model_entity("dmg_helmet", "res://sprites/obj/DamagedHelmet.glb",BlendMode::OPAQUE,
                        glm::vec3(10, 1, -5));
 
-    create_model_entity("nagon", "res://sprites/obj/nagonford/Nagonford_Animated.glb",
+    create_model_entity("nagon", "res://sprites/obj/nagonford/Nagonford_Animated.glb",BlendMode::OPAQUE,
                        glm::vec3(0, 0, 0));
+
 
 
     // create_model_entity("Sponza", "res://sprites/obj/sponza/Sponza.glb",
@@ -148,23 +147,27 @@ int main(int argc, char* argv[]) {
 
 
     std::mt19937 rng(std::random_device{}());
-    std::uniform_real_distribution<float> dist(-100.0f, 100.0f);
+    std::uniform_real_distribution<float> dist(-30.0f, 30.0f);
 
+    // Create a 3x3x3 cube of windows with transparency
+    float spacing = 4.0f;  // Space between windows
+    float start_offset = -(spacing * 2.0f) / 2.0f;  // Center the cube
 
-    for (int i = 0; i < 1000; ++i) {
-        float x = 30.0f + dist(rng);
-        float y = 30.0f + dist(rng);
-        float z = 30.0f + dist(rng);
+    int window_index = 0;
+    for (int x = 0; x < 3; ++x) {
+        for (int y = 0; y < 3; ++y) {
+            for (int z = 0; z < 3; ++z) {
+                float pos_x = start_offset + (x * spacing);
+                float pos_y = 1.0f + start_offset + (y * spacing);
+                float pos_z = start_offset + (z * spacing);
 
-        std::string name = "Cube_" + std::to_string(i);
-        create_mesh_entity(
-            name.c_str(),
-            "res://models/cube.obj",
-            glm::vec3(x, y, z),
-            glm::vec3(0.0f),
-            glm::vec3(1.0f),
-            "blue_metal"
-        );
+                std::string name = "window_" + std::to_string(window_index);
+                window_index++;
+
+                create_model_entity(name.c_str(), "res://sprites/obj/window/glassWindow.obj", BlendMode::TRANSPARENT,
+                                    glm::vec3(pos_x, pos_y, pos_z), glm::vec3(0), glm::vec3(1.0f));
+            }
+        }
     }
 
 
@@ -182,7 +185,7 @@ int main(int argc, char* argv[]) {
 
     create_mesh_entity("Ground", "res://models/cube.obj",
                       glm::vec3(0, -5, 0), glm::vec3(0), glm::vec3(1000.0f, 0.1f, 1000.0f),
-                      "dark_metal_ground");
+                      "dark_ground");
 
     GEngine->run();
 
