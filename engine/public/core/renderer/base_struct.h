@@ -18,6 +18,18 @@ enum class TextureFormat {
     SRGB8, SRGB8_ALPHA8
 };
 
+enum MaterialFeature {
+    HAS_ALBEDO_MAP   = 1 << 0,
+    HAS_SPECULAR_MAP = 1 << 1,
+    HAS_METALLIC_MAP = 1 << 2,
+    HAS_ROUGHNESS_MAP= 1 << 3,
+    HAS_NORMAL_MAP   = 1 << 4,
+    HAS_AO_MAP       = 1 << 5,
+    HAS_EMISSIVE_MAP = 1 << 6,
+    HAS_IBL          = 1 << 7
+};
+
+
 /**
  * @brief Texture filtering modes.
  *

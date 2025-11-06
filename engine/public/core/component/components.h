@@ -1,6 +1,26 @@
 #pragma once
-#include "stdafx.h"
 #include "core/renderer/base_struct.h"
+#include "stdafx.h"
+
+// win sh1t
+#ifdef OPAQUE
+    #undef OPAQUE
+#endif
+#ifdef TRANSPARENT
+    #undef TRANSPARENT
+#endif
+
+/**
+ * @brief Blending modes for materials
+ */
+enum class BlendMode {
+    OPAQUE, // No blending, fully opaque (default)
+    TRANSPARENT, // Alpha blending: src_alpha, 1 - src_alpha
+    ADDITIVE, // Additive blending: src_alpha, 1
+    MULTIPLY, // Multiplicative blending: dst_color, 0
+    SCREEN, // Screen blending: 1, 1 - src_color
+    OVERLAY // Overlay blending
+};
 
 /*!
  * @brief Represents the world transformation matrix for a 3D object.
@@ -16,7 +36,6 @@ struct WorldTransform {
  */
 class Transform3D {
 public:
-
     glm::vec3 position{0.0f};
     glm::vec3 rotation{0.0f};
     glm::vec3 scale{1.0f};
@@ -30,7 +49,6 @@ public:
 */
 class Transform2D {
 public:
-
     glm::vec2 position = glm::vec2(0.0f);
     glm::vec2 scale    = glm::vec2(1.0f);
     float rotation     = 0.0f;
@@ -44,7 +62,6 @@ public:
     }
 
     glm::mat3 get_matrix() const;
-
 };
 
 /*!
@@ -88,6 +105,8 @@ struct Material {
     float emissive_strength = 1.0f;
     float ior               = 1.0f; // Index of Refraction
 
+    BlendMode blend_mode = BlendMode::OPAQUE;
+
     Uint32 albedo_map    = 0;
     Uint32 specular_map  = 0;
     Uint32 metallic_map  = 0;
@@ -105,6 +124,33 @@ struct Material {
     bool use_emissive_map  = false;
 
     void bind(Shader* shader) const;
+
+    void update_feature_flags() {
+        has_features = 0;
+        if (use_albedo_map) {
+            has_features |= HAS_ALBEDO_MAP;
+        }
+        if (use_specular_map) {
+            has_features |= HAS_SPECULAR_MAP;
+        }
+        if (use_metallic_map) {
+            has_features |= HAS_METALLIC_MAP;
+        }
+        if (use_roughness_map) {
+            has_features |= HAS_ROUGHNESS_MAP;
+        }
+        if (use_normal_map) {
+            has_features |= HAS_NORMAL_MAP;
+        }
+        if (use_ao_map) {
+            has_features |= HAS_AO_MAP;
+        }
+        if (use_emissive_map) {
+            has_features |= HAS_EMISSIVE_MAP;
+        }
+    }
+
+    int has_features = 0;
 };
 
 /*!
@@ -190,7 +236,6 @@ struct SpotLight3D {
 };
 
 
-
 /*!
  * @brief Represents the world environment settings for 3D rendering.
  * @ingroup Components
@@ -204,7 +249,6 @@ struct WorldEnvironment {
     std::shared_ptr<GpuVertexLayout> vertex_layout = nullptr;
 
     float brightness = 1.0f;
-
 };
 
 

@@ -1,4 +1,5 @@
 #pragma once
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include "definitions.h"
 #include <SDL3_ttf/SDL_ttf.h>

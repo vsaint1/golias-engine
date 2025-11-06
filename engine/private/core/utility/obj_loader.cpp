@@ -220,6 +220,8 @@ void AssimpLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const 
     load_tex(aiTextureType_DIFFUSE_ROUGHNESS, mat.roughness_map, mat.use_roughness_map, "roughness");
     load_tex(aiTextureType_AMBIENT_OCCLUSION, mat.ao_map, mat.use_ao_map, "ao");
     load_tex(aiTextureType_EMISSIVE, mat.emissive_map, mat.use_emissive_map, "emissive");
+
+    mat.update_feature_flags();
 }
 
 void AssimpLoader::parse_bones(aiMesh* mesh, Model& model) {

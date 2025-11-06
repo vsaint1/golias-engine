@@ -52,15 +52,18 @@ uniform sampler2D EMISSIVE_MAP;
 uniform sampler2D SHADOW_MAP;
 uniform samplerCube ENVIRONMENT_MAP; // environment cubemap for reflection/refraction/IBL
 
-// Usage flags
-uniform bool USE_ALBEDO_MAP;
-uniform bool USE_SPECULAR_MAP;
-uniform bool USE_METALLIC_MAP;
-uniform bool USE_ROUGHNESS_MAP;
-uniform bool USE_NORMAL_MAP;
-uniform bool USE_AO_MAP;
-uniform bool USE_EMISSIVE_MAP;
-uniform bool USE_IBL;
+uniform int has_features;
+
+#define HAS_ALBEDO_MAP    (1 << 0)
+#define HAS_SPECULAR_MAP  (1 << 1)
+#define HAS_METALLIC_MAP  (1 << 2)
+#define HAS_ROUGHNESS_MAP (1 << 3)
+#define HAS_NORMAL_MAP    (1 << 4)
+#define HAS_AO_MAP        (1 << 5)
+#define HAS_EMISSIVE_MAP  (1 << 6)
+#define HAS_IBL           (1 << 7)
+
+#define HAS(flag) ((has_features & flag) != 0)
 
 const float PI = 3.14159265359;
 
@@ -291,13 +294,13 @@ void main()
     if (albedoSample.a < 0.1)
     discard;
 
-    vec3 finalAlbedo = USE_ALBEDO_MAP ? pow(albedoSample.rgb, vec3(2.2)) : material.albedo;
+    vec3 finalAlbedo = HAS(HAS_ALBEDO_MAP) ? pow(albedoSample.rgb, vec3(2.2)) : material.albedo;
     float finalMetallic = material.metallic;
     float finalRoughness = material.roughness;
     float finalAO = material.ao;
 
     // Red = Ambient Occlusion, Green channel = roughness, Blue channel = metallic (glTF 2.0 format)
-    if (USE_METALLIC_MAP) {
+    if (HAS(HAS_METALLIC_MAP)) {
         vec3 mr = texture(METALLIC_MAP, UV).rgb;
         finalAO = mr.r;
         finalRoughness = mr.g;
@@ -310,10 +313,10 @@ void main()
 //        finalSpecular = pow(specSample, vec3(2.2)); // gamma-corrected
 //    }
 
-    if (USE_AO_MAP)
+    if (HAS(HAS_AO_MAP))
     finalAO = texture(AO_MAP, UV).r;
 
-    if (USE_ROUGHNESS_MAP)
+    if (HAS(HAS_ROUGHNESS_MAP))
     finalRoughness = texture(ROUGHNESS_MAP, UV).r;
 
     finalMetallic = clamp(finalMetallic, 0.0, 1.0);
@@ -321,13 +324,13 @@ void main()
     finalAO = clamp(finalAO, 0.0, 1.0);
 
     vec3 finalEmissive = material.emissive * material.emissiveStrength;
-    if (USE_EMISSIVE_MAP) {
+    if (HAS(HAS_EMISSIVE_MAP)) {
         vec3 emissiveSample = texture(EMISSIVE_MAP, UV).rgb;
         finalEmissive = pow(emissiveSample, vec3(2.2)) * material.emissiveStrength;
     }
 
     // --- Normal & View Direction ---
-    vec3 N = USE_NORMAL_MAP ? calculate_normal_map() : normalize(NORMAL);
+    vec3 N = HAS(HAS_NORMAL_MAP) ? calculate_normal_map() : normalize(NORMAL);
     vec3 V = normalize(CAMERA_POSITION_WORLD - POSITION);
     vec3 I = normalize(POSITION - CAMERA_POSITION_WORLD); // incident ray for reflection/refraction
 
@@ -382,12 +385,12 @@ void main()
     vec3 ibl_contribution = vec3(0.0);
     vec3 env_color = vec3(0.0);
 
-    if (USE_IBL) {
+    if (HAS(HAS_IBL)) {
         ibl_contribution = calculate_ibl(N, V, F0, finalAlbedo, finalMetallic, finalRoughness, finalAO);
     }
 
     // --- Ambient Light & Emission ---
-    vec3 ambient = USE_IBL ? vec3(0.0) : vec3(0.03) * finalAlbedo * finalAO;
+    vec3 ambient = HAS(HAS_IBL) ? vec3(0.0) : vec3(0.03) * finalAlbedo * finalAO;
     vec3 color = ambient + Lo + ibl_contribution + env_color + finalEmissive;
 
     // ========================================================================
@@ -403,5 +406,7 @@ void main()
     // ========================================================================
     color = pow(color, vec3(1.0 / 2.2));
 
-    COLOR = vec4(color, 1.0);
+    const float ALPHA = albedoSample.a;
+    
+    COLOR = vec4(color, ALPHA);
 }

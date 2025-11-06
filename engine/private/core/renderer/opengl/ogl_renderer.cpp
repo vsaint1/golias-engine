@@ -558,9 +558,6 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera, const Transform3
                                         const std::vector<DirectionalLight3D>& directional_lights,
                                         const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) {
 
-    int total_instances = 0;
-    int draw_calls      = 0;
-
     int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
     int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
 
@@ -582,9 +579,29 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera, const Transform3
     glBindTexture(GL_TEXTURE_CUBE_MAP, _world_environment->texture);
     _default_shader->set_value("ENVIRONMENT_MAP", ENVIRONMENT_TEXTURE_UNIT);
 
+    render_opaque_pass();
+
+    render_transparent_pass();
+}
+
+void OpenGLRenderer::render_opaque_pass() {
+    int draw_calls      = 0;
+    int total_instances = 0;
+
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     for (auto& [key, batch] : _instanced_batches) {
-        if (batch.model_matrices.empty()) {
+        if (batch.model_matrices.empty() || !batch.material) {
+            continue;
+        }
+
+        if (batch.material->blend_mode != BlendMode::OPAQUE) {
             continue;
         }
 
@@ -600,11 +617,79 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera, const Transform3
 
         batch.mesh->vertex_layout->bind();
         glDrawElementsInstanced(GL_TRIANGLES, batch.mesh->index_count, GL_UNSIGNED_INT, 0, batch.model_matrices.size());
-
         batch.mesh->vertex_layout->unbind();
     }
 
-    glBindVertexArray(0); // just for safety
+    // spdlog::debug("Opaque pass: {} draw calls, {} instances", draw_calls, total_instances);
+}
+
+void OpenGLRenderer::render_transparent_pass() {
+    int draw_calls      = 0;
+    int total_instances = 0;
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+
+    for (auto& [key, batch] : _instanced_batches) {
+        if (batch.model_matrices.empty() || !batch.material) {
+            continue;
+        }
+
+
+        if (batch.material->blend_mode == BlendMode::OPAQUE) {
+            continue;
+        }
+
+        switch (batch.material->blend_mode) {
+        case BlendMode::TRANSPARENT:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+        case BlendMode::ADDITIVE:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+        case BlendMode::MULTIPLY:
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+        case BlendMode::SCREEN:
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+        case BlendMode::OVERLAY: // Simple approximation
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendEquation(GL_FUNC_ADD);
+            break;
+        default:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        }
+
+        draw_calls++;
+        total_instances += batch.model_matrices.size();
+
+        instance_buffer->bind();
+        instance_buffer->upload(batch.model_matrices.data(), batch.model_matrices.size() * sizeof(glm::mat4));
+
+        batch.material->bind(_default_shader.get());
+
+        setup_instance_matrix_attribute(batch.mesh->vertex_layout.get());
+
+        batch.mesh->vertex_layout->bind();
+        glDrawElementsInstanced(GL_TRIANGLES, batch.mesh->index_count, GL_UNSIGNED_INT, 0, batch.model_matrices.size());
+        batch.mesh->vertex_layout->unbind();
+    }
+
+
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+
+    // spdlog::debug("Transparent pass: {} draw calls, {} instances", draw_calls, total_instances);
 }
 
 void OpenGLRenderer::end_render_target() {

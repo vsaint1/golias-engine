@@ -108,6 +108,10 @@ private:
     void setup_lights(const std::vector<DirectionalLight3D>& directional_lights,
                       const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights);
 
+    // Rendering passes for material blending
+    void render_opaque_pass();
+    void render_transparent_pass();
+
     void initialize_2d_rendering();
 
     void render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture,
