@@ -182,7 +182,8 @@ IndentCaseBlocks: true
 # IndentCaseLabels: false
 # IndentExternBlock: AfterExternBlock
 # IndentGotoLabels: true
-# IndentPPDirectives: None
+IndentPPDirectives: BeforeHash
+PPIndentWidth:   4
 # IndentRequiresClause: true
 # IndentWidth:     2
 IndentWidth:     4

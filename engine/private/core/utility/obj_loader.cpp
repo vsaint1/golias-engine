@@ -1,4 +1,4 @@
-#include  "core/utility/obj_loader.h"
+#include "core/utility/obj_loader.h"
 
 #include "core/engine.h"
 #include "core/io/assimp_io.h"
@@ -35,15 +35,14 @@ Model AssimpLoader::load_model(const std::string& path) {
     importer->SetIOHandler(ioSystem);
 
     constexpr auto ASSIMP_FLAGS = aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
-                                  | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+                                | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
     std::string filename = (last_slash != std::string::npos) ? path_str.substr(last_slash + 1) : path_str;
 
     const aiScene* scene = importer->ReadFile(filename, ASSIMP_FLAGS);
 
 
-    spdlog::info("  Meshes: {}, Materials: {}, Animations: {}",
-                 scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
+    spdlog::info("  Meshes: {}, Materials: {}, Animations: {}", scene->mNumMeshes, scene->mNumMaterials, scene->mNumAnimations);
 
     const auto renderer = GEngine->get_renderer();
 
@@ -61,12 +60,11 @@ Model AssimpLoader::load_model(const std::string& path) {
         model.meshes.push_back(mesh);
 
 
-
         Material material = load_material(scene, aiMesh, base_dir, *renderer);
         model.materials.push_back(material);
         spdlog::info("    Material [{}]: Albedo ({:.2f},{:.2f},{:.2f}) | Metallic {:.2f} | Roughness {:.2f} | AO {:.2f}",
-                     aiMesh->mName.C_Str(), material.albedo.r, material.albedo.g, material.albedo.b,
-                     material.metallic, material.roughness, material.ao);
+                     aiMesh->mName.C_Str(), material.albedo.r, material.albedo.g, material.albedo.b, material.metallic, material.roughness,
+                     material.ao);
 
         if (aiMesh->HasBones()) {
             parse_bones(aiMesh, model);
@@ -77,7 +75,7 @@ Model AssimpLoader::load_model(const std::string& path) {
         parse_animations(scene, model);
     }
 
-    renderer->_meshes[path] = model.meshes;
+    renderer->_meshes[path]    = model.meshes;
     renderer->_materials[path] = model.materials;
 
     return model;
@@ -97,29 +95,18 @@ MeshInstance3D AssimpLoader::create_mesh(aiMesh* aiMesh) {
         Vertex vertex;
 
         // Position
-        vertex.position = {
-            aiMesh->mVertices[i].x,
-            aiMesh->mVertices[i].y,
-            aiMesh->mVertices[i].z
-        };
+        vertex.position = {aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z};
 
         // Normal
         if (aiMesh->HasNormals()) {
-            vertex.normal = {
-                aiMesh->mNormals[i].x,
-                aiMesh->mNormals[i].y,
-                aiMesh->mNormals[i].z
-            };
+            vertex.normal = {aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z};
         } else {
             vertex.normal = {0.0f, 0.0f, 0.0f};
         }
 
         // UV
         if (aiMesh->mTextureCoords[0]) {
-            vertex.uv = {
-                aiMesh->mTextureCoords[0][i].x,
-                aiMesh->mTextureCoords[0][i].y
-            };
+            vertex.uv = {aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y};
         } else {
             vertex.uv = {0.0f, 0.0f};
         }
@@ -136,7 +123,7 @@ MeshInstance3D AssimpLoader::create_mesh(aiMesh* aiMesh) {
     MeshInstance3D mesh;
     mesh.index_count = indices.size();
 
-    const auto renderer      = GEngine->get_renderer();
+    const auto renderer = GEngine->get_renderer();
 
     mesh.vertex_buffer = renderer->allocate_gpu_buffer(GpuBufferType::VERTEX);
     mesh.vertex_buffer->upload(vertices.data(), vertices.size() * sizeof(Vertex));
@@ -144,18 +131,11 @@ MeshInstance3D AssimpLoader::create_mesh(aiMesh* aiMesh) {
     mesh.index_buffer = renderer->allocate_gpu_buffer(GpuBufferType::INDEX);
     mesh.index_buffer->upload(indices.data(), indices.size() * sizeof(unsigned int));
 
-    std::vector<VertexAttribute> attributes = {
-        {0, 3, DataType::FLOAT, false, offsetof(Vertex, position)},
-        {1, 3, DataType::FLOAT, false, offsetof(Vertex, normal)},
-        {2, 2, DataType::FLOAT, false, offsetof(Vertex, uv)}
-    };
+    std::vector<VertexAttribute> attributes = {{0, 3, DataType::FLOAT, false, offsetof(Vertex, position)},
+                                               {1, 3, DataType::FLOAT, false, offsetof(Vertex, normal)},
+                                               {2, 2, DataType::FLOAT, false, offsetof(Vertex, uv)}};
 
-    mesh.vertex_layout = renderer->create_vertex_layout(
-        mesh.vertex_buffer.get(),
-        mesh.index_buffer.get(),
-        attributes,
-        sizeof(Vertex)
-    );
+    mesh.vertex_layout = renderer->create_vertex_layout(mesh.vertex_buffer.get(), mesh.index_buffer.get(), attributes, sizeof(Vertex));
 
     spdlog::info("  Mesh created: {} vertices, {} triangles", aiMesh->mNumVertices, indices.size() / 3);
     return mesh;
@@ -163,8 +143,9 @@ MeshInstance3D AssimpLoader::create_mesh(aiMesh* aiMesh) {
 
 Material AssimpLoader::load_material(const aiScene* scene, aiMesh* mesh, const std::string& directory, Renderer& renderer) {
     Material material;
-    if (scene->mNumMaterials <= mesh->mMaterialIndex)
+    if (scene->mNumMaterials <= mesh->mMaterialIndex) {
         return material;
+    }
 
     aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
     load_colors(aiMat, material);
@@ -177,47 +158,50 @@ void AssimpLoader::load_colors(aiMaterial* aiMat, Material& mat) {
     aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
     mat.albedo = {color.r, color.g, color.b};
 
-    if (aiColor3D emissive(0, 0, 0); aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
+    if (aiColor3D emissive(0, 0, 0); aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS) {
         mat.emissive = {emissive.r, emissive.g, emissive.b};
+    }
 
     aiMat->Get(AI_MATKEY_EMISSIVE_INTENSITY, mat.emissive_strength);
     aiMat->Get(AI_MATKEY_METALLIC_FACTOR, mat.metallic);
     aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mat.roughness);
-    aiMat->Get(AI_MATKEY_REFRACTI,mat.ior);
+    aiMat->Get(AI_MATKEY_REFRACTI, mat.ior);
     aiMat->Get(AI_MATKEY_SPECULAR_FACTOR, mat.specular);
 }
 
 void AssimpLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const std::string& dir, Renderer& renderer, Material& mat) {
     auto load_tex = [&](aiTextureType type, GLuint& id, bool& flag, const char* name) {
-        if (aiMat->GetTextureCount(type) == 0)
+        if (aiMat->GetTextureCount(type) == 0) {
             return;
+        }
 
         aiString texPath;
         aiMat->GetTexture(type, 0, &texPath);
         std::string texStr = texPath.C_Str();
 
-        if (texStr.empty())
+        if (texStr.empty()) {
             return;
+        }
 
         if (texStr[0] == '*') {
             int texIndex = std::atoi(texStr.c_str() + 1);
             if (texIndex >= 0 && texIndex < (int) scene->mNumTextures) {
                 const aiTexture* embedded = scene->mTextures[texIndex];
-                if (!embedded)
+                if (!embedded) {
                     return;
+                }
 
                 if (embedded->mHeight == 0) {
-                    id = renderer.load_embedded_texture(
-                        reinterpret_cast<const unsigned char*>(embedded->pcData),
-                        embedded->mWidth);
+                    id = renderer.load_embedded_texture(reinterpret_cast<const unsigned char*>(embedded->pcData), embedded->mWidth);
                 } else {
-                   spdlog::error("    Unsupported embedded texture format for texture: {}", name);
-                   return;
+                    spdlog::error("    Unsupported embedded texture format for texture: {}", name);
+                    return;
                 }
 
                 flag = (id != 0);
-                if (flag)
+                if (flag) {
                     spdlog::info("    Embedded Texture loaded: {}", name);
+                }
                 return;
             }
         }
@@ -225,8 +209,9 @@ void AssimpLoader::load_textures(aiMaterial* aiMat, const aiScene* scene, const 
         std::string tex_dir = dir + texStr;
         id                  = renderer.load_texture_from_file(tex_dir);
         flag                = (id != 0);
-        if (flag)
+        if (flag) {
             spdlog::info("    Texture loaded [{}]: {}", name, tex_dir);
+        }
     };
 
     load_tex(aiTextureType_DIFFUSE, mat.albedo_map, mat.use_albedo_map, "albedo");
@@ -249,7 +234,6 @@ void AssimpLoader::parse_animations(const aiScene* scene, Model& model) {
     spdlog::info("  Animations Count: {}", scene->mNumAnimations);
     for (unsigned int i = 0; i < scene->mNumAnimations; ++i) {
         const aiAnimation* anim = scene->mAnimations[i];
-        spdlog::info("    Animation {}: {} | Duration: {:.2f} | FPS: {}",
-                     i, anim->mName.C_Str(), anim->mDuration, anim->mTicksPerSecond);
+        spdlog::info("    Animation {}: {} | Duration: {:.2f} | FPS: {}", i, anim->mName.C_Str(), anim->mDuration, anim->mTicksPerSecond);
     }
 }

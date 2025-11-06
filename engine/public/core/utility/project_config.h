@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/io/file_system.h"
+#include "core/renderer/base_struct.h"
 
 
 /**
@@ -74,16 +75,6 @@ enum class AspectRatio {
     @ingroup Configuration
 */
 enum class ViewportMode { VIEWPORT, CANVAS };
-
-/**
- * @brief Texture filtering modes.
- *
- * Determines how texture pixels are sampled when scaled or transformed.
- */
-enum class TextureFiltering {
-    LINEAR, ///< Smooth filtering.
-    NEAREST ///< Pixelated filtering.
-};
 
 /*!
  * @brief Viewport configuration settings.

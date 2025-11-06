@@ -2,12 +2,21 @@
 #include "stdafx.h"
 #include "core/renderer/base_struct.h"
 
+/*!
+ * @brief Represents the world transformation matrix for a 3D object.
+ * @ingroup Components
+ */
+struct WorldTransform {
+    glm::mat4 matrix = glm::mat4(1.0f);
+};
 
 /*!
  * @brief Represents material properties for 3D rendering.
  * @ingroup Components
  */
-struct Transform3D {
+class Transform3D {
+public:
+
     glm::vec3 position{0.0f};
     glm::vec3 rotation{0.0f};
     glm::vec3 scale{1.0f};
@@ -21,6 +30,7 @@ struct Transform3D {
 */
 class Transform2D {
 public:
+
     glm::vec2 position = glm::vec2(0.0f);
     glm::vec2 scale    = glm::vec2(1.0f);
     float rotation     = 0.0f;
@@ -33,7 +43,7 @@ public:
         : position(pos), scale(scl), rotation(rot) {
     }
 
-    glm::mat4 get_matrix() const;
+    glm::mat3 get_matrix() const;
 
 };
 

@@ -5,6 +5,7 @@ int Timer::get_fps() const {
     if (delta > 0) {
         return static_cast<int>(1.0 / delta);
     }
+
     return 0;
 }
 

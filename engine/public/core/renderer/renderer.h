@@ -1,9 +1,12 @@
 #pragma once
-#include  "core/component/components.h"
 #include "base_struct.h"
+#include "core/component/components.h"
 
 constexpr int MAX_INSTANCES = 1000;
-
+/*!
+ * @brief Abstract Renderer class defining the rendering API.
+ * @ingroup Core
+ */
 class Renderer {
 public:
     virtual ~Renderer() = default;
@@ -12,13 +15,12 @@ public:
 
     virtual void cleanup() = 0;
 
+    virtual std::shared_ptr<GpuImage> create_texture_2d(const std::string& path, const TextureDesc& desc) = 0;
+
     virtual std::shared_ptr<GpuBuffer> allocate_gpu_buffer(GpuBufferType type) = 0;
 
-    virtual std::shared_ptr<GpuVertexLayout> create_vertex_layout(
-        const GpuBuffer* vertex_buffer,
-        const GpuBuffer* index_buffer,
-        const std::vector<VertexAttribute>& attributes,
-        Uint32 stride) = 0;
+    virtual std::shared_ptr<GpuVertexLayout> create_vertex_layout(const GpuBuffer* vertex_buffer, const GpuBuffer* index_buffer,
+                                                                  const std::vector<VertexAttribute>& attributes, Uint32 stride) = 0;
 
     virtual Uint32 load_texture_from_file(const std::string& path) = 0;
 
@@ -28,24 +30,21 @@ public:
 
     virtual void begin_frame() = 0;
 
-    virtual void begin_shadow_pass() = 0;
+    virtual void begin_shadow_pass()                                     = 0;
     virtual void render_shadow_pass(const glm::mat4& light_space_matrix) = 0;
-    virtual void end_shadow_pass() = 0;
+    virtual void end_shadow_pass()                                       = 0;
 
-    virtual void begin_render_target() = 0;
-    virtual void render_main_target(const Camera3D& camera,
-                                    const Transform3D& camera_transform,
-                                    const glm::mat4& light_space_matrix,
+    virtual void begin_render_target()                                                                   = 0;
+    virtual void render_main_target(const Camera3D& camera, const Transform3D& camera_transform, const glm::mat4& light_space_matrix,
                                     const std::vector<DirectionalLight3D>& directional_lights,
                                     const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) = 0;
-    virtual void end_render_target() = 0;
+    virtual void end_render_target()                                                                     = 0;
 
-    virtual void begin_environment_pass() =0;
-    virtual void render_environment_pass(const Camera3D& camera) =0;
-    virtual void end_environment_pass() =0;
+    virtual void begin_environment_pass()                        = 0;
+    virtual void render_environment_pass(const Camera3D& camera) = 0;
+    virtual void end_environment_pass()                          = 0;
 
-    virtual void add_to_render_batch(const Transform3D& transform,
-                                     const MeshRef& mesh_ref, const MaterialRef& mat_ref) = 0;
+    virtual void add_to_render_batch(const Transform3D& transform, const MeshRef& mesh_ref, const MaterialRef& mat_ref) = 0;
 
     virtual void add_to_shadow_batch(const Transform3D& transform, const MeshRef& mesh_ref) = 0;
 
@@ -56,40 +55,28 @@ public:
     // ========================================================================
     // 2D Rendering API
     // ========================================================================
-
-    virtual void begin_frame_2d() = 0;
+    virtual void begin_frame_2d()                                                          = 0;
     virtual void end_frame_2d(const Camera2D& camera, const Transform2D& camera_transform) = 0;
 
-    virtual void draw_rect_2d(const glm::vec2& position, const glm::vec2& size,
-                              const glm::vec4& color, bool filled = true) = 0;
+    virtual void draw_rect_2d(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color, bool filled = true) = 0;
 
-    virtual void draw_texture_2d(Uint32 texture_id,
-                                 const glm::vec2& position,
-                                 const glm::vec2& size,
-                                 const Rect2D& src     = {0, 0, 0, 0},
-                                 FlipMode flip         = FlipMode::NONE,
-                                 const glm::vec4& tint = glm::vec4(1.0f)) = 0;
+    virtual void draw_texture_2d(Uint32 texture_id, const glm::vec2& position, const glm::vec2& size, const Rect2D& src = {0, 0, 0, 0},
+                                 FlipMode flip = FlipMode::NONE, const glm::vec4& tint = glm::vec4(1.0f)) = 0;
 
-    virtual void draw_line_2d(const glm::vec2& start, const glm::vec2& end,
-                              const glm::vec4& color, float thickness = 1.0f) = 0;
+    virtual void draw_line_2d(const glm::vec2& start, const glm::vec2& end, const glm::vec4& color, float thickness = 1.0f) = 0;
 
-    virtual void draw_circle_2d(const glm::vec2& center, float radius,
-                                const glm::vec4& color, bool filled = true,
-                                int segments                        = 32) = 0;
+    virtual void draw_circle_2d(const glm::vec2& center, float radius, const glm::vec4& color, bool filled = true, int segments = 32) = 0;
 
-    virtual void draw_circle_outline_2d(const glm::vec2& center, float radius,
-                                        const glm::vec4& color, float thickness = 1.0f,
-                                        int segments                            = 32) = 0;
+    virtual void draw_circle_outline_2d(const glm::vec2& center, float radius, const glm::vec4& color, float thickness = 1.0f,
+                                        int segments = 32) = 0;
 
-    virtual void draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3,
-                                  const glm::vec4& color, bool filled = true) = 0;
+    virtual void draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, const glm::vec4& color,
+                                  bool filled = true) = 0;
 
-    virtual void draw_text_2d(const std::string& text, const glm::vec2& position,
-                              const glm::vec4& color, float scale = 1.0f) = 0;
+    virtual void draw_text_2d(const std::string& text, const glm::vec2& position, const glm::vec4& color, float scale = 1.0f) = 0;
 
     template <typename... Args>
-    void draw_text_2d_fmt(const glm::vec2& position, const glm::vec4& color, float scale,
-                          std::format_string<Args...> fmt, Args&&... args) {
+    void draw_text_2d_fmt(const glm::vec2& position, const glm::vec4& color, float scale, std::format_string<Args...> fmt, Args&&... args) {
         draw_text_2d(std::format(fmt, std::forward<Args>(args)...), position, color, scale);
     }
 
@@ -113,8 +100,13 @@ public:
 
     std::shared_ptr<Framebuffer> get_main_fbo() const;
 
-    int get_virtual_width() const { return _virtual_width; }
-    int get_virtual_height() const { return _virtual_height; }
+    int get_virtual_width() const {
+        return _virtual_width;
+    }
+
+    int get_virtual_height() const {
+        return _virtual_height;
+    }
 
 protected:
     SDL_Window* _window = nullptr;
@@ -170,6 +162,4 @@ protected:
     std::unordered_map<std::string, CachedTextTexture> _cached_text_textures;
 
     std::shared_ptr<Framebuffer> _2d_framebuffer = nullptr;
-
-
 };

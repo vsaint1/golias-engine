@@ -1,35 +1,19 @@
-#include  "core/renderer/opengl/ogl_renderer.h"
-#include  "core/engine.h"
+#include "core/renderer/opengl/ogl_renderer.h"
 
-void APIENTRY ogl_validation_layer(
-    GLenum source,
-    GLenum type,
-    GLuint id,
-    GLenum severity,
-    GLsizei length,
-    const GLchar* message,
-    const void* userParam) {
+#include "core/engine.h"
 
-    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+void APIENTRY ogl_validation_layer(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message,
+                                   const void* userParam) {
+
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         return;
+    }
 
     SDL_Log("ValidationLayer Type: 0x%x | Severity: 0x%x | ID: %u | Message: %s", type, severity, id, message);
 
-#if !defined(NDEBUG)
-#if defined(_MSC_VER)
-#define DEBUG_BREAK() __debugbreak()
-#elif defined(__clang__) || defined(__GNUC__)
-#define DEBUG_BREAK() __builtin_trap()
-#else
-#define DEBUG_BREAK() std::abort()
-#endif
-
-    if (type == GL_DEBUG_TYPE_ERROR)
-        DEBUG_BREAK();
-
-#endif
-
-
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        GOLIAS_ASSERT_BREAK();
+    }
 }
 
 
@@ -53,7 +37,7 @@ GLuint load_cubemap_from_atlas(const std::string& atlas_path, CubemapOrientation
     }
 
     // Detect layout
-    int face_w                                                               = 0, face_h = 0;
+    int face_w = 0, face_h = 0;
     enum Layout { HORIZONTAL, VERTICAL, L_3x2, L_4x3_CROSS, UNKNOWN } layout = UNKNOWN;
 
     if (W % 6 == 0 && W / 6 == H) {
@@ -141,8 +125,7 @@ GLuint load_cubemap_from_atlas(const std::string& atlas_path, CubemapOrientation
     for (int i = 0; i < 6; ++i) {
         const auto& r = face_rects[i];
         if (r.x < 0 || r.y < 0 || r.x + r.w > W || r.y + r.h > H) {
-            spdlog::error("Face rect {} out of bounds: x={} y={} w={} h={} (atlas: {}x{})",
-                          i, r.x, r.y, r.w, r.h, W, H);
+            spdlog::error("Face rect {} out of bounds: x={} y={} w={} h={} (atlas: {}x{})", i, r.x, r.y, r.w, r.h, W, H);
             stbi_image_free(pixels);
             return 0;
         }
@@ -170,8 +153,7 @@ GLuint load_cubemap_from_atlas(const std::string& atlas_path, CubemapOrientation
         }
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA,
-                     r.w, r.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, face_data.data());
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, r.w, r.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, face_data.data());
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -183,72 +165,33 @@ GLuint load_cubemap_from_atlas(const std::string& atlas_path, CubemapOrientation
 
     stbi_image_free(pixels);
 
-    spdlog::info("Loaded cubemap atlas {} ({}x{}) Layout {} Face {}x{} Texture ID: {}",
-                 atlas_path, W, H, static_cast<int>(layout), face_w, face_h, texture_id);
+    spdlog::info("Loaded cubemap atlas {} ({}x{}) Layout {} Face {}x{} Texture ID: {}", atlas_path, W, H, static_cast<int>(layout), face_w,
+                 face_h, texture_id);
 
     return texture_id;
 }
 
 
-WorldEnvironment* OpenGLRenderer::create_skybox_from_atlas(const std::string& atlas_path,
-                                                           CubemapOrientation orient,
-                                                           float brightness) {
+WorldEnvironment* OpenGLRenderer::create_skybox_from_atlas(const std::string& atlas_path, CubemapOrientation orient, float brightness) {
 
     WorldEnvironment* world_environment = new WorldEnvironment();
 
     constexpr float skybox_vertices[] = {
         // positions
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
 
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
 
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
 
-        -1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f
-    };
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
-    const std::vector<unsigned int> indices = {
-        0, 1, 2, 2, 3, 0,
-        4, 5, 6, 6, 7, 4,
-        8, 9, 10, 10, 11, 8,
-        12, 13, 14, 14, 15, 12,
-        16, 17, 18, 18, 19, 16,
-        20, 21, 22, 22, 23, 20
-    };
+    const std::vector<unsigned int> indices = {0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,  8,  9,  10, 10, 11, 8,
+                                               12, 13, 14, 14, 15, 12, 16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20};
 
     world_environment->vertex_buffer = this->allocate_gpu_buffer(GpuBufferType::VERTEX);
     world_environment->vertex_buffer->upload(skybox_vertices, sizeof(skybox_vertices));
@@ -256,16 +199,10 @@ WorldEnvironment* OpenGLRenderer::create_skybox_from_atlas(const std::string& at
     world_environment->index_buffer = this->allocate_gpu_buffer(GpuBufferType::INDEX);
     world_environment->index_buffer->upload(indices.data(), indices.size());
 
-    std::vector<VertexAttribute> attributes = {
-        {0, 3, DataType::FLOAT, false, 0}
-    };
+    std::vector<VertexAttribute> attributes = {{0, 3, DataType::FLOAT, false, 0}};
 
-    world_environment->vertex_layout = this->create_vertex_layout(
-        world_environment->vertex_buffer.get(),
-        world_environment->index_buffer.get(),
-        attributes,
-        3 * sizeof(float)
-        );
+    world_environment->vertex_layout = this->create_vertex_layout(world_environment->vertex_buffer.get(),
+                                                                  world_environment->index_buffer.get(), attributes, 3 * sizeof(float));
 
 
     spdlog::info("Skybox geometry initialized");
@@ -297,9 +234,7 @@ void OpenGLRenderer::setup_instance_matrix_attribute(GpuVertexLayout* vao) {
     for (int i = 0; i < 4; i++) {
         GLuint location = 3 + i;
         glEnableVertexAttribArray(location);
-        glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE,
-                              sizeof(glm::mat4),
-                              (void*) (i * sizeof(glm::vec4)));
+        glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*) (i * sizeof(glm::vec4)));
         glVertexAttribDivisor(location, 1);
     }
 
@@ -311,12 +246,10 @@ void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight3D>& directi
     _default_shader->set_value("numDirLights", static_cast<int>(directional_lights.size()));
     if (!directional_lights.empty()) {
         for (int i = 0; i < static_cast<int>(directional_lights.size()); ++i) {
-            _default_shader->set_value(fmt::format("dirLights[{}].direction", i).c_str(),
-                                       directional_lights[i].direction);
+            _default_shader->set_value(fmt::format("dirLights[{}].direction", i).c_str(), directional_lights[i].direction);
             _default_shader->set_value(fmt::format("dirLights[{}].color", i).c_str(),
                                        directional_lights[i].color * directional_lights[i].intensity);
-            _default_shader->set_value(fmt::format("dirLights[{}].cast_shadows", i).c_str(),
-                                       directional_lights[i].castShadows ? 1 : 0);
+            _default_shader->set_value(fmt::format("dirLights[{}].cast_shadows", i).c_str(), directional_lights[i].castShadows ? 1 : 0);
         }
     }
 
@@ -324,16 +257,11 @@ void OpenGLRenderer::setup_lights(const std::vector<DirectionalLight3D>& directi
     if (!spot_lights.empty()) {
         for (int i = 0; i < static_cast<int>(spot_lights.size()); ++i) {
             const auto& [transform, light] = spot_lights[i];
-            _default_shader->set_value(fmt::format("spotLights[{}].position", i).c_str(),
-                                       transform.position);
-            _default_shader->set_value(fmt::format("spotLights[{}].direction", i).c_str(),
-                                       light.direction);
-            _default_shader->set_value(fmt::format("spotLights[{}].color", i).c_str(),
-                                       light.color * light.intensity);
-            _default_shader->set_value(fmt::format("spotLights[{}].inner_cut_off", i).c_str(),
-                                       glm::cos(glm::radians(light.cutOff)));
-            _default_shader->set_value(fmt::format("spotLights[{}].outer_cut_off", i).c_str(),
-                                       glm::cos(glm::radians(light.outerCutOff)));
+            _default_shader->set_value(fmt::format("spotLights[{}].position", i).c_str(), transform.position);
+            _default_shader->set_value(fmt::format("spotLights[{}].direction", i).c_str(), light.direction);
+            _default_shader->set_value(fmt::format("spotLights[{}].color", i).c_str(), light.color * light.intensity);
+            _default_shader->set_value(fmt::format("spotLights[{}].inner_cut_off", i).c_str(), glm::cos(glm::radians(light.cutOff)));
+            _default_shader->set_value(fmt::format("spotLights[{}].outer_cut_off", i).c_str(), glm::cos(glm::radians(light.outerCutOff)));
         }
     }
 }
@@ -344,12 +272,13 @@ GLuint OpenGLRenderer::create_gl_texture(const unsigned char* data, int w, int h
     glBindTexture(GL_TEXTURE_2D, texID);
 
     GLenum format = GL_RGB;
-    if (channels == 1)
+    if (channels == 1) {
         format = GL_RED;
-    else if (channels == 3)
+    } else if (channels == 3) {
         format = GL_RGB;
-    else if (channels == 4)
+    } else if (channels == 4) {
         format = GL_RGBA;
+    }
 
     glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -387,9 +316,9 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-#if defined(SDL_PLATFORM_MACOS)
+    #if defined(SDL_PLATFORM_MACOS)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-#endif
+    #endif
 
 
 #endif
@@ -421,7 +350,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     SDL_GL_SetSwapInterval(0);
 
-   auto& viewport = GEngine->get_config().get_viewport();
+    auto& viewport  = GEngine->get_config().get_viewport();
     _virtual_width  = viewport.width;
     _virtual_height = viewport.height;
 
@@ -475,9 +404,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     FramebufferSpecification depth_spec;
     depth_spec.height      = 8192;
     depth_spec.width       = 8192;
-    depth_spec.attachments = {
-        {FramebufferTextureFormat::DEPTH_COMPONENT}
-    };
+    depth_spec.attachments = {{FramebufferTextureFormat::DEPTH_COMPONENT}};
 
     shadow_map_fbo = std::make_shared<OpenGLFramebuffer>(depth_spec);
 
@@ -485,10 +412,7 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     main_spec.width       = _virtual_width;
     main_spec.height      = _virtual_height;
-    main_spec.attachments = {
-        {FramebufferTextureFormat::RGBA8},
-        {FramebufferTextureFormat::DEPTH24STENCIL8}
-    };
+    main_spec.attachments = {{FramebufferTextureFormat::RGBA8}, {FramebufferTextureFormat::DEPTH24STENCIL8}};
 
     main_fbo = std::make_shared<OpenGLFramebuffer>(main_spec);
 
@@ -514,8 +438,9 @@ std::shared_ptr<GpuVertexLayout> OpenGLRenderer::create_vertex_layout(const GpuB
 }
 
 GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
-    if (auto it = _textures.find(path); it != _textures.end())
+    if (auto it = _textures.find(path); it != _textures.end()) {
         return it->second;
+    }
 
     int w, h, channels;
     unsigned char* data = stbi_load(path.c_str(), &w, &h, &channels, 0);
@@ -536,8 +461,9 @@ GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
 GLuint OpenGLRenderer::load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name) {
     std::string key = name.empty() ? "embedded_tex_" + std::to_string(reinterpret_cast<size_t>(buffer)) : name;
 
-    if (auto it = _textures.find(key); it != _textures.end())
+    if (auto it = _textures.find(key); it != _textures.end()) {
         return it->second;
+    }
 
     int w, h, channels;
     unsigned char* data = stbi_load_from_memory(buffer, (int) size, &w, &h, &channels, 0);
@@ -576,25 +502,20 @@ void OpenGLRenderer::render_shadow_pass(const glm::mat4& light_space_matrix) {
     _shadow_shader->set_value("LIGHT_MATRIX", light_space_matrix, 1);
 
     for (auto& [mesh_ptr, batch] : _shadow_batches) {
-        if (batch.model_matrices.empty())
+        if (batch.model_matrices.empty()) {
             continue;
+        }
 
         instance_buffer->bind();
-        instance_buffer->upload(batch.model_matrices.data(),
-                                batch.model_matrices.size() * sizeof(glm::mat4));
+        instance_buffer->upload(batch.model_matrices.data(), batch.model_matrices.size() * sizeof(glm::mat4));
 
         setup_instance_matrix_attribute(batch.mesh->vertex_layout.get());
 
         batch.mesh->vertex_layout->bind();
-        glDrawElementsInstanced(GL_TRIANGLES,
-                                batch.mesh->index_count,
-                                GL_UNSIGNED_INT,
-                                0,
-                                batch.model_matrices.size());
+        glDrawElementsInstanced(GL_TRIANGLES, batch.mesh->index_count, GL_UNSIGNED_INT, 0, batch.model_matrices.size());
     }
 
     glBindVertexArray(0);
-
 }
 
 void OpenGLRenderer::end_shadow_pass() {
@@ -605,10 +526,10 @@ void OpenGLRenderer::end_shadow_pass() {
 
 void OpenGLRenderer::begin_render_target() {
     main_fbo->bind();
-    
+
     int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
     int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
-    
+
     glViewport(0, 0, render_w, render_h);
 
     glClearColor(_world_environment->color.r, _world_environment->color.g, _world_environment->color.b, 1.0f);
@@ -625,7 +546,7 @@ void OpenGLRenderer::begin_render_target() {
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glBindVertexArray(0);
     glUseProgram(0);
-    
+
     // TODO: Reset other states as needed
 
     glActiveTexture(GL_TEXTURE0);
@@ -633,9 +554,7 @@ void OpenGLRenderer::begin_render_target() {
     _default_shader->activate();
 }
 
-void OpenGLRenderer::render_main_target(const Camera3D& camera,
-                                        const Transform3D& camera_transform,
-                                        const glm::mat4& light_space_matrix,
+void OpenGLRenderer::render_main_target(const Camera3D& camera, const Transform3D& camera_transform, const glm::mat4& light_space_matrix,
                                         const std::vector<DirectionalLight3D>& directional_lights,
                                         const std::vector<std::pair<Transform3D, SpotLight3D>>& spot_lights) {
 
@@ -665,32 +584,27 @@ void OpenGLRenderer::render_main_target(const Camera3D& camera,
 
 
     for (auto& [key, batch] : _instanced_batches) {
-        if (batch.model_matrices.empty())
+        if (batch.model_matrices.empty()) {
             continue;
+        }
 
         draw_calls++;
         total_instances += batch.model_matrices.size();
 
         instance_buffer->bind();
-        instance_buffer->upload(batch.model_matrices.data(),
-                                batch.model_matrices.size() * sizeof(glm::mat4));
+        instance_buffer->upload(batch.model_matrices.data(), batch.model_matrices.size() * sizeof(glm::mat4));
 
         batch.material->bind(_default_shader.get());
 
         setup_instance_matrix_attribute(batch.mesh->vertex_layout.get());
 
         batch.mesh->vertex_layout->bind();
-        glDrawElementsInstanced(GL_TRIANGLES,
-                                batch.mesh->index_count,
-                                GL_UNSIGNED_INT,
-                                0,
-                                batch.model_matrices.size());
+        glDrawElementsInstanced(GL_TRIANGLES, batch.mesh->index_count, GL_UNSIGNED_INT, 0, batch.model_matrices.size());
 
         batch.mesh->vertex_layout->unbind();
     }
 
     glBindVertexArray(0); // just for safety
-
 }
 
 void OpenGLRenderer::end_render_target() {
@@ -703,7 +617,6 @@ void OpenGLRenderer::end_render_target() {
 void OpenGLRenderer::begin_environment_pass() {
     glDepthFunc(GL_LEQUAL);
     _environment_shader->activate();
-
 }
 
 void OpenGLRenderer::render_environment_pass(const Camera3D& camera) {
@@ -724,7 +637,6 @@ void OpenGLRenderer::render_environment_pass(const Camera3D& camera) {
     _world_environment->vertex_layout->bind();
     glDrawArrays(GL_TRIANGLES, 0, 36);
     _world_environment->vertex_layout->unbind();
-
 }
 
 void OpenGLRenderer::end_environment_pass() {
@@ -759,14 +671,15 @@ void OpenGLRenderer::set_render_resolution(int width, int height) {
 
     main_fbo->resize(width, height);
 
-    spdlog::debug("Set render resolution to {}x{} (Framebuffer resized, will scale to {}x{} on blit)",
-                 _render_width, _render_height, _virtual_width, _virtual_height);
+    spdlog::debug("Set render resolution to {}x{} (Framebuffer resized, will scale to {}x{} on blit)", _render_width, _render_height,
+                  _virtual_width, _virtual_height);
 }
 
 void OpenGLRenderer::cleanup() {
 
-    for (auto& [key, texID] : _textures)
+    for (auto& [key, texID] : _textures) {
         glDeleteTextures(1, &texID);
+    }
 
     _textures.clear();
 
@@ -788,25 +701,23 @@ void OpenGLRenderer::cleanup() {
     _world_environment = nullptr;
 
     SDL_GL_DestroyContext(_context);
-
 }
 
 void OpenGLRenderer::swap_chain() {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, main_fbo->get_fbo_id());
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    
+
     int render_w = (_render_width > 0 && _render_height > 0) ? _render_width : _virtual_width;
     int render_h = (_render_width > 0 && _render_height > 0) ? _render_height : _virtual_height;
 
     auto window_size = GEngine->get_config().get_window();
 
-    glBlitFramebuffer(
-        0, 0, render_w, render_h,                       // source (main_fbo at render resolution)
-        0, 0, window_size.width, window_size.height,            // destination (screen at window resolution)
-        GL_COLOR_BUFFER_BIT,                            // copy color buffer
-        GL_NEAREST                                      // nearest neighbor
+    glBlitFramebuffer(0, 0, render_w, render_h, // source (main_fbo at render resolution)
+                      0, 0, window_size.width, window_size.height, // destination (screen at window resolution)
+                      GL_COLOR_BUFFER_BIT, // copy color buffer
+                      GL_NEAREST // nearest neighbor
     );
-    
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     SDL_GL_SwapWindow(_window);
 }
@@ -833,12 +744,7 @@ void OpenGLRenderer::initialize_2d_rendering() {
         {2, 4, DataType::FLOAT, false, offsetof(Vertex2D, color)} // color
     };
 
-    _vertex_layout_2d = create_vertex_layout(
-        _vertex_buffer_2d.get(),
-        _index_buffer_2d.get(),
-        attributes,
-        sizeof(Vertex2D)
-        );
+    _vertex_layout_2d = create_vertex_layout(_vertex_buffer_2d.get(), _index_buffer_2d.get(), attributes, sizeof(Vertex2D));
 
     _batch_vertices_2d.reserve(MAX_VERTICES_2D);
     _batch_indices_2d.reserve(MAX_INDICES_2D);
@@ -846,7 +752,6 @@ void OpenGLRenderer::initialize_2d_rendering() {
 
     spdlog::info("2D rendering system initialized");
 }
-
 
 
 void OpenGLRenderer::begin_frame_2d() {
@@ -897,12 +802,10 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
             for (size_t j = i; j < _draw_commands_2d.size(); ++j) {
                 const auto& batch_cmd = _draw_commands_2d[j];
 
-                bool can_batch = (batch_cmd.mode == current_mode &&
-                                  batch_cmd.texture_id == current_texture &&
-                                  batch_cmd.use_texture == current_use_texture);
+                bool can_batch = (batch_cmd.mode == current_mode && batch_cmd.texture_id == current_texture
+                                  && batch_cmd.use_texture == current_use_texture);
 
-                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
-                    batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED || batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
                     can_batch = false;
                 }
 
@@ -912,9 +815,7 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
 
                 Uint32 base_vertex = _batch_vertices_2d.size();
 
-                _batch_vertices_2d.insert(_batch_vertices_2d.end(),
-                                          batch_cmd.vertices.begin(),
-                                          batch_cmd.vertices.end());
+                _batch_vertices_2d.insert(_batch_vertices_2d.end(), batch_cmd.vertices.begin(), batch_cmd.vertices.end());
 
 
                 for (auto idx : batch_cmd.indices) {
@@ -923,15 +824,13 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
 
                 i = j;
 
-                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED ||
-                    batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
+                if (batch_cmd.mode == DrawMode2D::CIRCLE_FILLED || batch_cmd.mode == DrawMode2D::CIRCLE_OUTLINE) {
                     break;
                 }
             }
 
             if (!_batch_vertices_2d.empty()) {
-                render_batched_2d(current_mode, current_texture, current_use_texture,
-                                  _draw_commands_2d[batch_start]);
+                render_batched_2d(current_mode, current_texture, current_use_texture, _draw_commands_2d[batch_start]);
             }
 
             draw_call++;
@@ -939,15 +838,15 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
 
         // spdlog::debug("2D Rendering complete: {} draw calls", draw_call);
     }
-    
+
     glBindVertexArray(0);
     glUseProgram(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
+
 
     glActiveTexture(GL_TEXTURE0);
-    
+
     // Restore 3D rendering state
     glDisable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ZERO); // Reset to default
@@ -958,13 +857,10 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
     glCullFace(GL_BACK);
     glDisable(GL_SCISSOR_TEST);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
 }
 
 
-
-void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture,
-                                       const DrawCommand2D& first_cmd) {
+void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool use_texture, const DrawCommand2D& first_cmd) {
     if (_batch_vertices_2d.empty()) {
         return;
     }
@@ -993,12 +889,10 @@ void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool 
     }
 
     _vertex_buffer_2d->bind();
-    _vertex_buffer_2d->upload(_batch_vertices_2d.data(),
-                              _batch_vertices_2d.size() * sizeof(Vertex2D));
+    _vertex_buffer_2d->upload(_batch_vertices_2d.data(), _batch_vertices_2d.size() * sizeof(Vertex2D));
 
     _index_buffer_2d->bind();
-    _index_buffer_2d->upload(_batch_indices_2d.data(),
-                             _batch_indices_2d.size() * sizeof(uint32_t));
+    _index_buffer_2d->upload(_batch_indices_2d.data(), _batch_indices_2d.size() * sizeof(uint32_t));
 
     _vertex_layout_2d->bind();
     glDrawElements(GL_TRIANGLES, _batch_indices_2d.size(), GL_UNSIGNED_INT, 0);
@@ -1006,8 +900,7 @@ void OpenGLRenderer::render_batched_2d(DrawMode2D mode, GLuint texture_id, bool 
 }
 
 
-void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& size,
-                                  const glm::vec4& color, bool filled) {
+void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color, bool filled) {
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::RECTANGLE;
     cmd.mode        = filled ? DrawMode2D::FILLED : DrawMode2D::LINE;
@@ -1021,12 +914,10 @@ void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& si
 
     if (filled) {
 
-        cmd.vertices = {
-            {{position.x, position.y}, {0.0f, 0.0f}, color},
-            {{position.x + size.x, position.y}, {1.0f, 0.0f}, color},
-            {{position.x + size.x, position.y + size.y}, {1.0f, 1.0f}, color},
-            {{position.x, position.y + size.y}, {0.0f, 1.0f}, color}
-        };
+        cmd.vertices = {{{position.x, position.y}, {0.0f, 0.0f}, color},
+                        {{position.x + size.x, position.y}, {1.0f, 0.0f}, color},
+                        {{position.x + size.x, position.y + size.y}, {1.0f, 1.0f}, color},
+                        {{position.x, position.y + size.y}, {0.0f, 1.0f}, color}};
 
         cmd.indices = {0, 1, 2, 2, 3, 0};
     } else {
@@ -1049,9 +940,7 @@ void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& si
             cmd.vertices.push_back({end + offset, {1, 1}, color});
             cmd.vertices.push_back({end - offset, {0, 1}, color});
 
-            cmd.indices.insert(cmd.indices.end(), {
-                                   base, base + 1, base + 2,
-                                   base + 2, base + 3, base});
+            cmd.indices.insert(cmd.indices.end(), {base, base + 1, base + 2, base + 2, base + 3, base});
         };
 
         create_line(p1, p2);
@@ -1063,11 +952,7 @@ void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& si
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_texture_2d(Uint32 texture_id,
-                                     const glm::vec2& position,
-                                     const glm::vec2& size,
-                                     const Rect2D& src,
-                                     FlipMode flip,
+void OpenGLRenderer::draw_texture_2d(Uint32 texture_id, const glm::vec2& position, const glm::vec2& size, const Rect2D& src, FlipMode flip,
                                      const glm::vec4& color) {
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::RECTANGLE;
@@ -1106,20 +991,17 @@ void OpenGLRenderer::draw_texture_2d(Uint32 texture_id,
         std::swap(v_min, v_max);
     }
 
-    cmd.vertices = {
-        {{position.x, position.y}, {u_min, v_min}, color},
-        {{position.x + size.x, position.y}, {u_max, v_min}, color},
-        {{position.x + size.x, position.y + size.y}, {u_max, v_max}, color},
-        {{position.x, position.y + size.y}, {u_min, v_max}, color}
-    };
+    cmd.vertices = {{{position.x, position.y}, {u_min, v_min}, color},
+                    {{position.x + size.x, position.y}, {u_max, v_min}, color},
+                    {{position.x + size.x, position.y + size.y}, {u_max, v_max}, color},
+                    {{position.x, position.y + size.y}, {u_min, v_max}, color}};
 
     cmd.indices = {0, 1, 2, 2, 3, 0};
 
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_line_2d(const glm::vec2& start, const glm::vec2& end,
-                                  const glm::vec4& color, float thickness) {
+void OpenGLRenderer::draw_line_2d(const glm::vec2& start, const glm::vec2& end, const glm::vec4& color, float thickness) {
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::LINE;
     cmd.mode        = DrawMode2D::LINE;
@@ -1133,19 +1015,14 @@ void OpenGLRenderer::draw_line_2d(const glm::vec2& start, const glm::vec2& end,
     glm::vec2 offset = perp * (thickness * 0.5f);
 
     cmd.vertices = {
-        {start - offset, {0, 0}, color},
-        {start + offset, {1, 0}, color},
-        {end + offset, {1, 1}, color},
-        {end - offset, {0, 1}, color}
-    };
+        {start - offset, {0, 0}, color}, {start + offset, {1, 0}, color}, {end + offset, {1, 1}, color}, {end - offset, {0, 1}, color}};
 
     cmd.indices = {0, 1, 2, 2, 3, 0};
 
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_circle_2d(const glm::vec2& center, float radius,
-                                    const glm::vec4& color, bool filled, int segments) {
+void OpenGLRenderer::draw_circle_2d(const glm::vec2& center, float radius, const glm::vec4& color, bool filled, int segments) {
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::CIRCLE;
     cmd.mode        = filled ? DrawMode2D::CIRCLE_FILLED : DrawMode2D::CIRCLE_OUTLINE;
@@ -1162,19 +1039,14 @@ void OpenGLRenderer::draw_circle_2d(const glm::vec2& center, float radius,
     glm::vec2 max = center + glm::vec2(radius);
 
     cmd.vertices = {
-        {{min.x, min.y}, {0, 0}, color},
-        {{max.x, min.y}, {1, 0}, color},
-        {{max.x, max.y}, {1, 1}, color},
-        {{min.x, max.y}, {0, 1}, color}
-    };
+        {{min.x, min.y}, {0, 0}, color}, {{max.x, min.y}, {1, 0}, color}, {{max.x, max.y}, {1, 1}, color}, {{min.x, max.y}, {0, 1}, color}};
 
     cmd.indices = {0, 1, 2, 2, 3, 0};
 
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_circle_outline_2d(const glm::vec2& center, float radius,
-                                            const glm::vec4& color, float thickness, int segments) {
+void OpenGLRenderer::draw_circle_outline_2d(const glm::vec2& center, float radius, const glm::vec4& color, float thickness, int segments) {
 
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::CIRCLE;
@@ -1193,19 +1065,14 @@ void OpenGLRenderer::draw_circle_outline_2d(const glm::vec2& center, float radiu
     glm::vec2 max      = center + glm::vec2(outer_radius);
 
     cmd.vertices = {
-        {{min.x, min.y}, {0, 0}, color},
-        {{max.x, min.y}, {1, 0}, color},
-        {{max.x, max.y}, {1, 1}, color},
-        {{min.x, max.y}, {0, 1}, color}
-    };
+        {{min.x, min.y}, {0, 0}, color}, {{max.x, min.y}, {1, 0}, color}, {{max.x, max.y}, {1, 1}, color}, {{min.x, max.y}, {0, 1}, color}};
 
     cmd.indices = {0, 1, 2, 2, 3, 0};
 
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3,
-                                      const glm::vec4& color, bool filled) {
+void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3, const glm::vec4& color, bool filled) {
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::TRIANGLE;
     cmd.mode        = filled ? DrawMode2D::FILLED : DrawMode2D::LINE;
@@ -1215,11 +1082,7 @@ void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, 
     cmd.filled      = filled;
 
     if (filled) {
-        cmd.vertices = {
-            {p1, {0, 0}, color},
-            {p2, {1, 0}, color},
-            {p3, {0.5f, 1}, color}
-        };
+        cmd.vertices = {{p1, {0, 0}, color}, {p2, {1, 0}, color}, {p3, {0.5f, 1}, color}};
 
         cmd.indices = {0, 1, 2};
     } else {
@@ -1236,10 +1099,7 @@ void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, 
             cmd.vertices.push_back({end + offset, {1, 1}, color});
             cmd.vertices.push_back({end - offset, {0, 1}, color});
 
-            cmd.indices.insert(cmd.indices.end(), {
-                                   base, base + 1, base + 2,
-                                   base + 2, base + 3, base
-                               });
+            cmd.indices.insert(cmd.indices.end(), {base, base + 1, base + 2, base + 2, base + 3, base});
         };
 
         create_line(p1, p2);
@@ -1250,8 +1110,7 @@ void OpenGLRenderer::draw_triangle_2d(const glm::vec2& p1, const glm::vec2& p2, 
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& position,
-                                  const glm::vec4& color, float scale) {
+void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& position, const glm::vec4& color, float scale) {
     if (text.empty()) {
         return;
     }
@@ -1262,14 +1121,14 @@ void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& posi
     }
 
     std::vector<TextMesh> meshes;
-    
-    
+
+
     size_t i = 0;
     while (i < text.length()) {
         unsigned char c = text[i];
-        int char_len = 1;
-        bool is_emoji = false;
-        
+        int char_len    = 1;
+        bool is_emoji   = false;
+
         if ((c & 0x80) == 0) {
             char_len = 1; // ASCII
         } else if ((c & 0xE0) == 0xC0) {
@@ -1281,7 +1140,7 @@ void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& posi
             char_len = 4;
             is_emoji = true;
         }
-        
+
         TTF_Font* char_font = is_emoji && _emoji_font ? _emoji_font : _default_font;
 
         if (!meshes.empty() && meshes.back().font == char_font) {
@@ -1289,10 +1148,10 @@ void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& posi
         } else {
             meshes.push_back({text.substr(i, char_len), char_font, i});
         }
-        
+
         i += char_len;
     }
-    
+
     float x_offset = 0.0f;
 
     for (const auto& mesh : meshes) {
@@ -1302,39 +1161,37 @@ void OpenGLRenderer::draw_text_2d(const std::string& text, const glm::vec2& posi
         }
 
         std::string cache_key = std::to_string(reinterpret_cast<uintptr_t>(mesh.font)) + "_" + mesh.text;
-        auto it = _cached_text_textures.find(cache_key);
+        auto it               = _cached_text_textures.find(cache_key);
         if (it == _cached_text_textures.end()) {
             continue;
         }
-        
-        int run_width = it->second.width;
+
+        int run_width  = it->second.width;
         int run_height = it->second.height;
-        
-       
+
+
         DrawCommand2D cmd;
-        cmd.type = DrawType2D::TEXT;
-        cmd.mode = DrawMode2D::TEXT;
-        cmd.color = color;
+        cmd.type        = DrawType2D::TEXT;
+        cmd.mode        = DrawMode2D::TEXT;
+        cmd.color       = color;
         cmd.use_texture = true;
-        cmd.texture_id = run_texture;
-        
-        glm::vec2 run_pos = position + glm::vec2(x_offset, 0.0f);
+        cmd.texture_id  = run_texture;
+
+        glm::vec2 run_pos  = position + glm::vec2(x_offset, 0.0f);
         glm::vec2 run_size = glm::vec2(run_width * scale, run_height * scale);
-        
+
         cmd.position = run_pos;
-        cmd.size = run_size;
-        
-        cmd.vertices = {
-            {{run_pos.x, run_pos.y}, {0.0f, 0.0f}, color},
-            {{run_pos.x + run_size.x, run_pos.y}, {1.0f, 0.0f}, color},
-            {{run_pos.x + run_size.x, run_pos.y + run_size.y}, {1.0f, 1.0f}, color},
-            {{run_pos.x, run_pos.y + run_size.y}, {0.0f, 1.0f}, color}
-        };
-        
+        cmd.size     = run_size;
+
+        cmd.vertices = {{{run_pos.x, run_pos.y}, {0.0f, 0.0f}, color},
+                        {{run_pos.x + run_size.x, run_pos.y}, {1.0f, 0.0f}, color},
+                        {{run_pos.x + run_size.x, run_pos.y + run_size.y}, {1.0f, 1.0f}, color},
+                        {{run_pos.x, run_pos.y + run_size.y}, {0.0f, 1.0f}, color}};
+
         cmd.indices = {0, 1, 2, 2, 3, 0};
-        
+
         _draw_commands_2d.push_back(cmd);
-        
+
         x_offset += run_width * scale;
     }
 }
@@ -1375,8 +1232,7 @@ Uint32 OpenGLRenderer::render_text_to_texture(const std::string& text, TTF_Font*
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, rgba_surface->w, rgba_surface->h, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, rgba_surface->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, rgba_surface->w, rgba_surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba_surface->pixels);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1428,8 +1284,8 @@ bool OpenGLRenderer::load_font(const std::string& font_path, int point_size, con
 
     _fonts[name] = font;
 
-    if (name.find("emoji") != std::string::npos || name.find("Emoji") != std::string::npos ||
-        name.find("Twemoji") != std::string::npos || name.find("twemoji") != std::string::npos) {
+    if (name.find("emoji") != std::string::npos || name.find("Emoji") != std::string::npos || name.find("Twemoji") != std::string::npos
+        || name.find("twemoji") != std::string::npos) {
         _emoji_font = font;
         spdlog::info("Loaded emoji font: '{}' ({}pt) as '{}'", font_path, point_size, name);
     } else {

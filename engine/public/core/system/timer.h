@@ -23,6 +23,6 @@ public:
     void tick();
 
 private:
-    Uint64 now;
-    Uint64 last;
+    Uint64 now = 0;
+    Uint64 last = 0;
 };

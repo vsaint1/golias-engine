@@ -197,7 +197,7 @@ glm::mat4 DirectionalLight3D::get_light_space_matrix() const {
     return lightProjection * lightView;
 }
 
-glm::mat4 Transform2D::get_matrix() const {
+glm::mat3 Transform2D::get_matrix() const {
     glm::mat4 matrix(1.0f);
     matrix = glm::translate(matrix, glm::vec3(-origin, 0.0f));
 
