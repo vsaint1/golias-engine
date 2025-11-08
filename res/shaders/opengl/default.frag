@@ -406,7 +406,7 @@ void main()
     // ========================================================================
     color = pow(color, vec3(1.0 / 2.2));
 
-    const float ALPHA = albedoSample.a;
+    float ALPHA = albedoSample.a;
     
     COLOR = vec4(color, ALPHA);
 }
