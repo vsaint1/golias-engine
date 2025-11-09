@@ -51,7 +51,7 @@ void example_2d_rendering() {
 
     renderer->draw_text_2d(
         "Hello russian, мир! 🎮",
-        glm::vec2(margin_x + vwidth * 0.08f, margin_y + vheight * 0.08f),
+        glm::vec2(margin_x + vwidth * 0.08f, margin_y + vheight * 0.15f),
         glm::vec4(1, 1, 1, 1),
         1.0f
         );

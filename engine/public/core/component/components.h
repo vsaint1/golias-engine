@@ -153,6 +153,11 @@ struct Material {
     int has_features = 0;
 };
 
+struct Tag {
+    std::string_view name = "";
+};
+
+
 /*!
 
     @brief 3D Camera

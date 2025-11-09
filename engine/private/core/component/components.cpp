@@ -38,42 +38,63 @@ void Material::bind(Shader* shader) const {
         glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, albedo_map);
         shader->set_value("ALBEDO_MAP", ALBEDO_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + ALBEDO_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_SPECULAR_MAP) && specular_map) {
         glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, specular_map);
         shader->set_value("SPECULAR_MAP", SPECULAR_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + SPECULAR_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_METALLIC_MAP) && metallic_map) {
         glActiveTexture(GL_TEXTURE0 + METALLIC_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, metallic_map);
         shader->set_value("METALLIC_MAP", METALLIC_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + METALLIC_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_ROUGHNESS_MAP) && roughness_map) {
         glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, roughness_map);
         shader->set_value("ROUGHNESS_MAP", ROUGHNESS_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + ROUGHNESS_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_NORMAL_MAP) && normal_map) {
         glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, normal_map);
         shader->set_value("NORMAL_MAP", NORMAL_MAP_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + NORMAL_MAP_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_AO_MAP) && ao_map) {
         glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, ao_map);
         shader->set_value("AO_MAP", AMBIENT_OCCLUSION_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + AMBIENT_OCCLUSION_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     if ((has_features & HAS_EMISSIVE_MAP) && emissive_map) {
         glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
         glBindTexture(GL_TEXTURE_2D, emissive_map);
         shader->set_value("EMISSIVE_MAP", EMISSIVE_TEXTURE_UNIT);
+    } else {
+        glActiveTexture(GL_TEXTURE0 + EMISSIVE_TEXTURE_UNIT);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 
