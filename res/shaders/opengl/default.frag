@@ -1,5 +1,7 @@
 out vec4 COLOR;
 
+#define MAX_LIGHTS 50
+
 in vec3 POSITION;
 in vec3 NORMAL;
 in vec2 UV;
@@ -13,7 +15,7 @@ struct DirectionalLight {
     bool cast_shadows;
 };
 
-uniform DirectionalLight dirLights[100];
+uniform DirectionalLight dirLights[MAX_LIGHTS];
 uniform int numDirLights;
 
 struct SpotLight {
@@ -24,7 +26,7 @@ struct SpotLight {
     float outer_cut_off;
 };
 
-uniform SpotLight spotLights[100];
+uniform SpotLight spotLights[MAX_LIGHTS];
 uniform int numSpotLights;
 
 

@@ -402,8 +402,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     _environment_shader = std::make_unique<OpenglShader>("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
     FramebufferSpecification depth_spec;
-    depth_spec.height      = 8192;
-    depth_spec.width       = 8192;
+    depth_spec.height      = 2048;
+    depth_spec.width       = 2048;
     depth_spec.attachments = {{FramebufferTextureFormat::DEPTH_COMPONENT}};
 
     shadow_map_fbo = std::make_shared<OpenGLFramebuffer>(depth_spec);
@@ -522,6 +522,10 @@ void OpenGLRenderer::end_shadow_pass() {
     shadow_map_fbo->unbind();
     glCullFace(GL_BACK);
     glViewport(0, 0, _virtual_width, _virtual_height);
+
+    glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
 }
 
 void OpenGLRenderer::begin_render_target() {
@@ -925,16 +929,10 @@ void OpenGLRenderer::end_frame_2d(const Camera2D& camera, const Transform2D& cam
     }
 
     glBindVertexArray(0);
-    glUseProgram(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
     glActiveTexture(GL_TEXTURE0);
 
-    // Restore 3D rendering state
     glDisable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ZERO); // Reset to default
+    glBlendFunc(GL_ONE, GL_ZERO);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
