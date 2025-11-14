@@ -172,9 +172,9 @@ GLuint load_cubemap_from_atlas(const std::string& atlas_path, CubemapOrientation
 }
 
 
-WorldEnvironment* OpenGLRenderer::create_skybox_from_atlas(const std::string& atlas_path, CubemapOrientation orient, float brightness) {
+WorldEnvironment3D* OpenGLRenderer::create_skybox_from_atlas(const std::string& atlas_path, CubemapOrientation orient, float brightness) {
 
-    WorldEnvironment* world_environment = new WorldEnvironment();
+    WorldEnvironment3D* world_environment = new WorldEnvironment3D();
 
     constexpr float skybox_vertices[] = {
         // positions
@@ -402,8 +402,8 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     _environment_shader = std::make_unique<OpenglShader>("shaders/opengl/skybox.vert", "shaders/opengl/skybox.frag");
 
     FramebufferSpecification depth_spec;
-    depth_spec.height      = 2048;
-    depth_spec.width       = 2048;
+    depth_spec.height      = 8192;
+    depth_spec.width       = 8192;
     depth_spec.attachments = {{FramebufferTextureFormat::DEPTH_COMPONENT}};
 
     shadow_map_fbo = std::make_shared<OpenGLFramebuffer>(depth_spec);

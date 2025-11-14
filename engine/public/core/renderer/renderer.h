@@ -118,7 +118,7 @@ protected:
     std::unique_ptr<Shader> _shadow_shader      = nullptr;
     std::unique_ptr<Shader> _environment_shader = nullptr;
 
-    WorldEnvironment* _world_environment = nullptr;
+    WorldEnvironment3D* _world_environment = nullptr;
 
     std::shared_ptr<Framebuffer> shadow_map_fbo = nullptr;
     std::shared_ptr<Framebuffer> main_fbo       = nullptr;

@@ -97,7 +97,7 @@ private:
 
     GLuint create_gl_texture(const unsigned char* data, int w, int h, int channels);
 
-    WorldEnvironment* create_skybox_from_atlas(const std::string& atlas_path,
+    WorldEnvironment3D* create_skybox_from_atlas(const std::string& atlas_path,
                                                CubemapOrientation orient = CubemapOrientation::DEFAULT,
                                                float brightness          = 1.0f);
 
