@@ -83,8 +83,8 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
     // Transform from [-1,1] to [0,1]
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
-    return 0.0;
+    if (projCoords.z > 1.0)
+        return 0.0;
 
     float currentDepth = projCoords.z;
     float bias = max(0.0005 * (1.0 - dot(N, L)), 0.0001);
