@@ -47,8 +47,7 @@ public:
     @brief 2D Transform component for position, scale, and rotation.
     @ingroup Components
 */
-class Transform2D {
-public:
+struct Transform2D {
     glm::vec2 position = glm::vec2(0.0f);
     glm::vec2 scale    = glm::vec2(1.0f);
     float rotation     = 0.0f;
@@ -217,14 +216,14 @@ struct DirectionalLight3D {
     float intensity     = 1.0f;
     bool castShadows    = true;
 
+    float shadowOrthoSize = 150.0f;
+    float shadowNear      = 0.1f;    // Near plane
+    float shadowFar       = 5000.0f;  // Far plane
 
-    float shadowDistance = 200.0f;
-    float shadowNear     = 1.0f;
-    float shadowFar      = 500.0f;
 
     glm::mat4 get_light_space_matrix(glm::mat4 camera_view, glm::mat4 camera_proj) const;
 
-    glm::mat4 get_light_space_matrix() const;
+    glm::mat4 get_light_space_matrix(const glm::vec3& camera_position) const;
 };
 
 
@@ -245,7 +244,7 @@ struct SpotLight3D {
  * @brief Represents the world environment settings for 3D rendering.
  * @ingroup Components
  */
-struct WorldEnvironment {
+struct WorldEnvironment3D {
     Uint32 texture = 0;
 
     glm::vec3 color                                = glm::vec3(0.2, 0.3, 0.3);
@@ -284,6 +283,28 @@ public:
 };
 
 /*!
+ * @brief Represents a native script component C++ class instance.
+ * @ingroup Components
+ */
+struct NativeScript {
+    void* instance = nullptr;
+};
+
+/*!
+ * @brief Represents a Lua script component.
+ * @ingroup Components
+ */
+struct LuaScript {
+    std::string script_path;
+    sol::state_view lua_state;
+};
+
+struct SpriteRenderer2D {
+    Uint32 texture_id = -1; // TODO: later shared_ptr<Texture2D>
+    glm::vec4 color   = glm::vec4(1.0f);
+};
+
+/*!
  * @brief Represents a 3D model composed of multiple meshes and materials.
  * @ingroup Components
  */
@@ -307,4 +328,133 @@ struct MeshRef {
  */
 struct MaterialRef {
     const Material* material;
+};
+
+/*!
+ * @brief Tags namespace for engine components
+ * @ingroup Tags
+ */
+namespace tags {
+    struct Scene {};
+    struct ActiveScene {};
+    struct MainCamera {};
+}
+
+/*!
+ * @brief 2D Sprite component for rendering textures
+ * @ingroup Components
+ */
+struct Sprite2D {
+    std::string texture_name;
+    glm::vec4 color = glm::vec4(1.0f);
+    glm::vec2 size = glm::vec2(0.0f); // 0 = use texture size
+};
+
+/*!
+ * @brief 2D Text Label component
+ * @ingroup Components
+ */
+struct Label2D {
+    std::string text;
+    glm::vec4 color = glm::vec4(1.0f);
+    float scale = 1.0f;
+    std::string font = "default";
+};
+
+/*!
+ * @brief Shape renderer for 2D primitives
+ * @ingroup Components
+ */
+enum class ShapeType { LINE, CIRCLE, RECTANGLE, CAPSULE, TRIANGLE };
+
+struct Shape2D {
+    ShapeType type = ShapeType::RECTANGLE;
+    glm::vec4 color = glm::vec4(1.0f);
+    bool filled = true;
+    glm::vec2 size = glm::vec2(1.0f);
+    float radius = 10.0f; /// for circles
+    float thickness = 1.0f; /// for outlines
+};
+
+/*!
+ * @brief Follow component for camera following
+ * @ingroup Components
+ */
+struct Follow {
+    flecs::entity target;
+    glm::vec3 offset = glm::vec3(0.0f);
+    float smoothing = 0.1f;
+};
+
+
+
+struct SceneTag {};
+
+
+/*!
+ * @brief  Represents a game object in the ECS world.
+ * @ingroup Core
+ */
+class GameObject {
+public:
+
+    GameObject() = default;
+
+    explicit GameObject(const flecs::world& world) : _id(world.entity()) {
+    }
+
+    explicit GameObject(const flecs::entity entity) : _id(entity) {
+    }
+
+    Uint32 get_id() const;
+
+    bool is_valid() const;
+
+    const char* get_name() const;
+
+    void set_name(const char* name);
+
+    bool compare_tag(const char* tag) const;
+
+    template <typename T, typename... Args>
+    T& add_component(Args&&... args) {
+        if constexpr (sizeof...(Args) == 0) {
+            return _id.ensure<T>();
+        } else if constexpr (sizeof...(Args) == 1 && (std::is_same_v<std::decay_t<Args>, T> && ...)) {
+            _id.set<T>(std::forward<Args>(args)...);
+            return _id.ensure<T>();
+        } else {
+            _id.set<T>(T(std::forward<Args>(args)...));
+            return _id.ensure<T>();
+        }
+    }
+
+    template <typename T>
+    void add_component() {
+        _id.add<T>();
+    }
+
+    template <typename T>
+    void remove_component() {
+        _id.remove<T>();
+    }
+
+    template <typename T>
+    T* get_component() {
+        return const_cast<T*>(_id.try_get<T>());
+    }
+
+    void free() const;
+
+
+    flecs::entity& entity();
+
+    const flecs::entity& entity() const;
+
+
+    operator flecs::entity() const;
+
+private:
+    flecs::entity _id;
+
 };

@@ -191,11 +191,29 @@ glm::mat4 DirectionalLight3D::get_light_space_matrix(glm::mat4 camera_view, glm:
     return orthoProj * lightView;
 }
 
-glm::mat4 DirectionalLight3D::get_light_space_matrix() const {
-    glm::mat4 lightProjection = glm::ortho(-shadowDistance, shadowDistance, -shadowDistance, shadowDistance, shadowNear, shadowFar);
-    glm::vec3 lightPos        = -direction * (shadowDistance * 0.5f);
-    glm::mat4 lightView       = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    return lightProjection * lightView;
+glm::mat4 DirectionalLight3D::get_light_space_matrix(const glm::vec3& camera_position) const {
+    glm::vec3 light_dir = glm::normalize(direction);
+
+    glm::vec3 light_pos = camera_position - light_dir * ((shadowFar - shadowNear) * 0.5f);
+
+    glm::vec3 up;
+    if (glm::abs(light_dir.y) > 0.999f) {
+
+        up = glm::vec3(0.0f, 0.0f, 1.0f);
+    } else {
+
+        up = glm::vec3(0.0f, 1.0f, 0.0f);
+    }
+
+    glm::mat4 lightView = glm::lookAt(light_pos, camera_position, up);
+
+    glm::mat4 lightProj = glm::ortho(
+        -shadowOrthoSize, shadowOrthoSize,   // left, right
+        -shadowOrthoSize, shadowOrthoSize,   // bottom, top
+        shadowNear, shadowFar                // near, far
+    );
+
+    return lightProj * lightView;
 }
 
 glm::mat3 Transform2D::get_matrix() const {
@@ -244,4 +262,38 @@ void Camera2D::set_zoom(float new_zoom) {
 
 void Camera2D::look_at(const glm::vec2& target) {
     position = target;
+}
+
+
+Uint32 GameObject::get_id() const {
+    return static_cast<Uint32>(_id.id());
+}
+
+bool GameObject::is_valid() const {
+    return _id.is_valid() && _id.is_alive();
+}
+
+const char* GameObject::get_name() const {
+    return _id.name().c_str();
+}
+
+void GameObject::set_name(const char* name) {
+    _id.set_name(name);
+}
+
+bool GameObject::compare_tag(const char* tag) const {
+    return _id.has<Tag>() && _id.name() == tag;
+}
+
+void GameObject::free() const {
+    _id.destruct();
+}
+flecs::entity& GameObject::entity() {
+    return _id;
+}
+const flecs::entity& GameObject::entity() const {
+    return _id;
+}
+GameObject::operator flecs::entity() const {
+    return _id;
 }

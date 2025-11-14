@@ -10,17 +10,22 @@ void generate_unique_name(flecs::entity& e, const char* default_name, const char
     }
 }
 
-flecs::entity create_camera3d_entity(const char* name, const glm::vec3& position, const glm::vec3& rotation, std::string_view tag,
+GameObject create_camera_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& rotation,
                                      float fov, float near_plane, float far_plane) {
+
+
     const auto& world = GEngine->get_world();
 
-    flecs::entity e = world.entity().add<Camera3D>().set<Transform3D>({position, rotation}).set<Tag>({tag});
+    flecs::entity e = world.entity().add<Camera3D>().set<Transform3D>({position, rotation});
 
     generate_unique_name(e, "Camera3D", name);
-    return e;
+
+    const GameObject go(e);
+
+    return go;
 }
 
-flecs::entity create_directional_light_3d_entity(const char* name, const glm::vec3& direction, const glm::vec3& color, float intensity,
+GameObject create_directional_light_3d_entity(const char* name, const glm::vec3& direction, const glm::vec3& color, float intensity,
                                                  bool cast_shadows, float shadow_distance, float shadow_near, float shadow_far) {
     const auto& world = GEngine->get_world();
 
@@ -28,22 +33,27 @@ flecs::entity create_directional_light_3d_entity(const char* name, const glm::ve
         {glm::normalize(direction), glm::vec3(color), intensity, cast_shadows, shadow_distance, shadow_near, shadow_far});
 
     generate_unique_name(e, "DirectionalLight3D", name);
-    return e;
+
+    const GameObject go(e);
+
+    return go;
 }
 
-flecs::entity create_spot_light_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
+GameObject create_spot_light_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
                                           float inner_cutoff, float outer_cutoff, float intensity) {
     const auto& world = GEngine->get_world();
 
-    flecs::entity e = world.entity()
+    flecs::entity entity = world.entity()
                           .set<Transform3D>({position})
                           .set<SpotLight3D>({glm::vec3(direction), glm::vec3(color), intensity, inner_cutoff, outer_cutoff});
 
-    generate_unique_name(e, "SpotLight3D", name);
-    return e;
+    generate_unique_name(entity, "SpotLight3D", name);
+
+    const GameObject go(entity);
+    return go;
 }
 
-flecs::entity create_mesh_3d_entity(const char* name, const char* path, const glm::vec3& position, const glm::vec3& rotation,
+GameObject create_mesh_3d_entity(const char* name, const char* path, const glm::vec3& position, const glm::vec3& rotation,
                                     const glm::vec3& scale, const char* material_tag) {
 
     const auto renderer = GEngine->get_renderer();
@@ -55,24 +65,26 @@ flecs::entity create_mesh_3d_entity(const char* name, const char* path, const gl
 
     if (!renderer->_materials.contains(material_tag)) {
         spdlog::error("Material '{}' not registered!", material_tag);
-        return flecs::entity();
+        return GameObject{};
     }
 
-   auto entity =  GEngine->get_world()
-        .entity()
-        .set(Transform3D{position, rotation, scale})
-        .set(MeshRef{&renderer->_meshes[path][0]})
-        .set(MaterialRef{&renderer->_materials[material_tag][0]});
+    auto entity = GEngine->get_world()
+                      .entity()
+                      .set(Transform3D{position, rotation, scale})
+                      .set(MeshRef{&renderer->_meshes[path][0]})
+                      .set(MaterialRef{&renderer->_materials[material_tag][0]});
 
     generate_unique_name(entity, "MeshInstance3D", name);
 
     spdlog::info("MeshInstance3D entity '{}' created with material '{}'.", name, material_tag);
 
-    return entity;
+    const GameObject go(entity);
+
+    return go;
 }
 
 
-flecs::entity create_model_3d_entity(const char* name, const char* path, BlendMode blend_mode, const glm::vec3& position,
+GameObject create_model_3d_entity(const char* name, const char* path, BlendMode blend_mode, const glm::vec3& position,
                                      const glm::vec3& rotation, const glm::vec3& scale) {
 
     auto renderer = GEngine->get_renderer();
@@ -99,8 +111,9 @@ flecs::entity create_model_3d_entity(const char* name, const char* path, BlendMo
     }
 
     spdlog::info("MeshInstance3D entity '{}' created with {} mesh parts.", name, meshes.size());
+    const GameObject go(entity);
 
-    return entity;
+    return go;
 }
 
 

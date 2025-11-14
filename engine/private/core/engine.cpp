@@ -1,4 +1,5 @@
 #include "core/engine.h"
+
 #include "core/renderer/opengl/ogl_renderer.h"
 
 std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
@@ -28,103 +29,50 @@ void example_2d_rendering() {
     float margin_x = vwidth * 0.05f;
     float margin_y = vheight * 0.05f;
 
-    renderer->draw_rect_2d(
-        glm::vec2(margin_x, margin_y),
-        glm::vec2(vwidth * 0.15f, vheight * 0.2f),
-        glm::vec4(1, 0, 0, 1), // red color
-        true
-        );
+    renderer->draw_rect_2d(glm::vec2(margin_x, margin_y), glm::vec2(vwidth * 0.15f, vheight * 0.2f), glm::vec4(1, 0, 0, 1), // red color
+                           true);
 
-    renderer->draw_text_2d(
-        "Hello World!",
-        glm::vec2(margin_x + vwidth * 0.2f, margin_y),
-        glm::vec4(1, 0, 0, 1),
-        1.0f
-        );
+    renderer->draw_text_2d("Hello World!", glm::vec2(margin_x + vwidth * 0.2f, margin_y), glm::vec4(1, 0, 0, 1), 1.0f);
 
-    renderer->draw_text_2d(
-        "Olá mundo",
-        glm::vec2(margin_x, margin_y + vheight * 0.25f),
-        glm::vec4(1, 1, 1, 1),
-        1.0f
-        );
+    renderer->draw_text_2d("Olá mundo", glm::vec2(margin_x, margin_y + vheight * 0.25f), glm::vec4(1, 1, 1, 1), 1.0f);
 
-    renderer->draw_text_2d(
-        "Hello russian, мир! 🎮",
-        glm::vec2(margin_x + vwidth * 0.08f, margin_y + vheight * 0.15f),
-        glm::vec4(1, 1, 1, 1),
-        1.0f
-        );
+    renderer->draw_text_2d("Hello russian, мир! 🎮", glm::vec2(margin_x + vwidth * 0.08f, margin_y + vheight * 0.15f),
+                           glm::vec4(1, 1, 1, 1), 1.0f);
 
-    renderer->draw_text_2d(
-        "😀🎮🚀💎✨",
-        glm::vec2(margin_x, margin_y + vheight * 0.06f),
-        glm::vec4(1, 1, 1, 1),
-        1.0f
-        );
+    renderer->draw_text_2d("😀🎮🚀💎✨", glm::vec2(margin_x, margin_y + vheight * 0.06f), glm::vec4(1, 1, 1, 1), 1.0f);
 
     static int frame_count = 0;
     frame_count++;
-    renderer->draw_text_2d_fmt(
-        glm::vec2(vwidth * 0.5f, margin_y),
-        glm::vec4(0, 0, 1, 1),
-        1.0f,
-        "Frame: {} | FPS: {:.1f}",
-        frame_count,
-        1.0 / GEngine->get_timer().delta
-        );
+    renderer->draw_text_2d_fmt(glm::vec2(vwidth * 0.5f, margin_y), glm::vec4(0, 0, 1, 1), 1.0f, "Frame: {} | FPS: {:.1f}", frame_count,
+                               1.0 / GEngine->get_timer().delta);
 
     // Draw outlined rectangle (right-center area)
-    renderer->draw_rect_2d(
-        glm::vec2(vwidth * 0.65f, vheight * 0.3f),
-        glm::vec2(vwidth * 0.25f, vheight * 0.2f),
-        glm::vec4(0, 1, 0, 1), // green color
-        false
-        );
+    renderer->draw_rect_2d(glm::vec2(vwidth * 0.65f, vheight * 0.3f), glm::vec2(vwidth * 0.25f, vheight * 0.2f),
+                           glm::vec4(0, 1, 0, 1), // green color
+                           false);
 
     // Draw a line (left side, diagonal)
-    renderer->draw_line_2d(
-        glm::vec2(margin_x, vheight * 0.5f),
-        glm::vec2(vwidth * 0.35f, vheight * 0.65f),
-        glm::vec4(0, 0, 1, 1), // blue color
-        3.0f
-        );
+    renderer->draw_line_2d(glm::vec2(margin_x, vheight * 0.5f), glm::vec2(vwidth * 0.35f, vheight * 0.65f),
+                           glm::vec4(0, 0, 1, 1), // blue color
+                           3.0f);
 
     // Draw a filled circle (center-left)
-    renderer->draw_circle_2d(
-        glm::vec2(vwidth * 0.25f, vheight * 0.5f),
-        vheight * 0.1f,
-        glm::vec4(1, 1, 0, 1), // yellow color
-        true,
-        32
-        );
+    renderer->draw_circle_2d(glm::vec2(vwidth * 0.25f, vheight * 0.5f), vheight * 0.1f, glm::vec4(1, 1, 0, 1), // yellow color
+                             true, 32);
 
     // Draw a circle outline (center-right)
-    renderer->draw_circle_outline_2d(
-        glm::vec2(vwidth * 0.65f, vheight * 0.5f),
-        vheight * 0.1f,
-        glm::vec4(1, 0, 1, 1), // magenta color
-        5.0f,
-        32
-        );
+    renderer->draw_circle_outline_2d(glm::vec2(vwidth * 0.65f, vheight * 0.5f), vheight * 0.1f, glm::vec4(1, 0, 1, 1), // magenta color
+                                     5.0f, 32);
 
     // Draw a filled triangle (bottom-left)
-    renderer->draw_triangle_2d(
-        glm::vec2(margin_x, vheight * 0.85f),
-        glm::vec2(margin_x + vwidth * 0.1f, vheight * 0.85f),
-        glm::vec2(margin_x + vwidth * 0.05f, vheight * 0.7f),
-        glm::vec4(0, 1, 1, 1), // cyan color
-        true
-        );
+    renderer->draw_triangle_2d(glm::vec2(margin_x, vheight * 0.85f), glm::vec2(margin_x + vwidth * 0.1f, vheight * 0.85f),
+                               glm::vec2(margin_x + vwidth * 0.05f, vheight * 0.7f), glm::vec4(0, 1, 1, 1), // cyan color
+                               true);
 
     // Draw an outlined triangle (bottom-center)
-    renderer->draw_triangle_2d(
-        glm::vec2(margin_x + vwidth * 0.15f, vheight * 0.85f),
-        glm::vec2(margin_x + vwidth * 0.25f, vheight * 0.85f),
-        glm::vec2(margin_x + vwidth * 0.2f, vheight * 0.7f),
-        glm::vec4(1, 0.5, 0, 1), // orange color
-        false
-        );
+    renderer->draw_triangle_2d(glm::vec2(margin_x + vwidth * 0.15f, vheight * 0.85f), glm::vec2(margin_x + vwidth * 0.25f, vheight * 0.85f),
+                               glm::vec2(margin_x + vwidth * 0.2f, vheight * 0.7f), glm::vec4(1, 0.5, 0, 1), // orange color
+                               false);
 
     // Draw gradient triangles (bottom area)
     // int triangle_count = static_cast<int>(vwidth / 30.0f);
@@ -143,11 +91,7 @@ void example_2d_rendering() {
 
     // Draw texture (bottom-right)
     Uint32 gd_tex = renderer->load_texture_from_file("res/icon.png");
-    renderer->draw_texture_2d(
-        gd_tex,
-        glm::vec2(vwidth * 0.75f, vheight * 0.7f),
-        glm::vec2(vwidth * 0.1f, vheight * 0.15f)
-        );
+    renderer->draw_texture_2d(gd_tex, glm::vec2(vwidth * 0.75f, vheight * 0.7f), glm::vec2(vwidth * 0.1f, vheight * 0.15f));
 
     renderer->end_frame_2d(camera, camera_transform);
 }
@@ -157,10 +101,11 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
     Renderer* renderer = nullptr;
     switch (config.get_renderer_device().backend) {
-    case Backend::GL_COMPATIBILITY: {
-        renderer = new OpenGLRenderer();
-        break;
-    }
+    case Backend::GL_COMPATIBILITY:
+        {
+            renderer = new OpenGLRenderer();
+            break;
+        }
     case Backend::VK_FORWARD:
         spdlog::error("Vulkan backend is not yet supported");
         break;
@@ -170,10 +115,11 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
     case Backend::METAL:
         spdlog::error("Metal backend is not yet supported");
         break;
-    case Backend::AUTO: {
-        spdlog::error("SDL Renderer backend is not yet supported");
-        break;
-    }
+    case Backend::AUTO:
+        {
+            spdlog::error("SDL Renderer backend is not yet supported");
+            break;
+        }
     }
 
     // TODO: later use viewport
@@ -193,6 +139,33 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
     return renderer;
 }
 
+void register_components(flecs::world& world) {
+    // 2D Components
+    world.component<Transform2D>();
+    world.component<Camera2D>();
+    world.component<Sprite2D>();
+    world.component<Label2D>();
+    world.component<Shape2D>();
+    world.component<Follow>();
+    world.component<SpriteRenderer2D>();
+
+    // 3D Components
+    world.component<Transform3D>();
+    world.component<Camera3D>();
+    world.component<DirectionalLight3D>();
+    world.component<SpotLight3D>();
+    world.component<MeshInstance3D>();
+    world.component<WorldEnvironment3D>();
+
+    world.component<Tag>();
+    world.component<NativeScript>();
+    world.component<LuaScript>();
+    world.component<WorldTransform>();
+
+    world.component<tags::Scene>();
+    world.component<tags::ActiveScene>();
+    world.component<tags::MainCamera>();
+}
 
 bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 window_flags) {
 
@@ -354,6 +327,7 @@ bool Engine::initialize(int window_w, int window_h, const char* title, Uint32 wi
     // font = nk_font_atlas_add_default(atlas,14,0);
     nk_sdl_font_stash_end();
 
+    register_components(_world);
 
     SDL_ShowWindow(_window); // now shown after renderer  setup
 
@@ -390,7 +364,11 @@ void engine_draw_loop() {
 
     Camera3D main_camera;
     Transform3D camera_transform;
-    GEngine->get_world().each([&](const Camera3D& cam, const Transform3D& transform) {
+    GEngine->get_world().each([&](flecs::entity e, const Camera3D& cam, const Transform3D& transform) {
+        if (!e.has<tags::MainCamera>()) {
+            return;
+        }
+
         main_camera      = cam;
         camera_transform = transform;
     });
@@ -399,9 +377,12 @@ void engine_draw_loop() {
         directionalLights.push_back(light);
 
         if (light.castShadows && light_space_matrix == glm::mat4(1.0f)) {
-            const auto width   = GEngine->get_config().get_window().width;
-            const auto height  = GEngine->get_config().get_window().height;
-            light_space_matrix = light.get_light_space_matrix();
+
+            light_space_matrix = light.get_light_space_matrix(camera_transform.position);
+
+            // Alternative: Frustum-fitted shadow map
+            // const auto width   = GEngine->get_config().get_window().width;
+            // const auto height  = GEngine->get_config().get_window().height;
             // light_space_matrix = light.get_light_space_matrix(
             //         main_camera.get_view(camera_transform),
             //         main_camera.get_projection(width, height));
@@ -409,9 +390,7 @@ void engine_draw_loop() {
     });
 
     std::vector<std::pair<Transform3D, SpotLight3D>> spotLights;
-    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, SpotLight3D& light) {
-        spotLights.emplace_back(t, light);
-    });
+    GEngine->get_world().each([&](flecs::entity e, Transform3D& t, SpotLight3D& light) { spotLights.emplace_back(t, light); });
 
 
     const auto renderer = GEngine->get_renderer();
@@ -419,9 +398,7 @@ void engine_draw_loop() {
     renderer->begin_frame();
     auto query = GEngine->get_world().query<const Transform3D, const MeshRef, const MaterialRef>();
 
-    query.each([&](const Transform3D& transform,
-                   const MeshRef& mesh,
-                   const MaterialRef& material) {
+    query.each([&](const Transform3D& transform, const MeshRef& mesh, const MaterialRef& material) {
         renderer->add_to_render_batch(transform, mesh, material);
         renderer->add_to_shadow_batch(transform, mesh);
     });
@@ -439,7 +416,6 @@ void engine_draw_loop() {
     nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
 
     GEngine->get_renderer()->swap_chain();
-
 }
 
 
@@ -458,9 +434,7 @@ void draw_editor_ui() {
     float window_height   = bounds.h;
 
     // Top Menu Bar
-    if (nk_begin(nk_ctx, "MenuBar",
-                 nk_rect(0, 0, window_width, menu_height),
-                 NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND)) {
+    if (nk_begin(nk_ctx, "MenuBar", nk_rect(0, 0, window_width, menu_height), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND)) {
 
         nk_menubar_begin(nk_ctx);
         nk_layout_row_begin(nk_ctx, NK_STATIC, 25, 8);
@@ -630,8 +604,7 @@ void draw_editor_ui() {
     float viewport_height = content_y - menu_height - viewport_controls_height;
 
     // Scene Hierarchy (Left Panel)
-    if (nk_begin(nk_ctx, "Scene",
-                 nk_rect(0, menu_height, scene_width, viewport_height + viewport_controls_height),
+    if (nk_begin(nk_ctx, "Scene", nk_rect(0, menu_height, scene_width, viewport_height + viewport_controls_height),
                  NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
 
         nk_layout_row_dynamic(nk_ctx, 25, 2);
@@ -678,8 +651,7 @@ void draw_editor_ui() {
     float viewport_x     = scene_width;
     float viewport_width = window_width - scene_width - properties_width;
 
-    if (nk_begin(nk_ctx, "Viewport",
-                 nk_rect(viewport_x, menu_height, viewport_width, viewport_controls_height),
+    if (nk_begin(nk_ctx, "Viewport", nk_rect(viewport_x, menu_height, viewport_width, viewport_controls_height),
                  NK_WINDOW_BORDER | NK_WINDOW_NO_SCROLLBAR)) {
 
         nk_layout_row_begin(nk_ctx, NK_STATIC, 30, 6);
@@ -724,8 +696,7 @@ void draw_editor_ui() {
     nk_end(nk_ctx);
 
     // Viewport Render Area
-    if (nk_begin(nk_ctx, "ViewportRender",
-                 nk_rect(viewport_x, menu_height + viewport_controls_height, viewport_width, viewport_height),
+    if (nk_begin(nk_ctx, "ViewportRender", nk_rect(viewport_x, menu_height + viewport_controls_height, viewport_width, viewport_height),
                  NK_WINDOW_BORDER)) {
 
         nk_layout_row_dynamic(nk_ctx, viewport_height - 40, 1);
@@ -743,8 +714,6 @@ void draw_editor_ui() {
             struct nk_rect src_region = nk_rect(0, viewport_image.h, viewport_image.w, -viewport_image.h);
             nk_draw_image(nk_window_get_canvas(nk_ctx), bounds, &depth_img, {255, 255, 255, 255});
         }
-
-
     }
     nk_end(nk_ctx);
 
@@ -820,9 +789,7 @@ void draw_editor_ui() {
     nk_end(nk_ctx);
 
     // Content Browser (Bottom Panel)
-    if (nk_begin(nk_ctx, "Content",
-                 nk_rect(0, content_y, window_width, content_height),
-                 NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
+    if (nk_begin(nk_ctx, "Content", nk_rect(0, content_y, window_width, content_height), NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
 
         nk_layout_row_begin(nk_ctx, NK_STATIC, 25, 4);
         nk_layout_row_push(nk_ctx, 80);
@@ -849,10 +816,8 @@ void draw_editor_ui() {
         // Asset grid view
         nk_layout_row_begin(nk_ctx, NK_STATIC, 80, 10);
 
-        const char* assets[] = {
-            "Cube.fbx", "Sphere.obj", "Material.mat", "Texture.png",
-            "Player.lua", "Enemy.lua", "Scene.gscn", "Entity.gscn"
-        };
+        const char* assets[] = {"Cube.fbx",   "Sphere.obj", "Material.mat", "Texture.png",
+                                "Player.lua", "Enemy.lua",  "Scene.gscn",   "Entity.gscn"};
 
         for (int i = 0; i < 8; i++) {
             nk_layout_row_push(nk_ctx, 80);
@@ -867,11 +832,8 @@ void draw_editor_ui() {
                 nk_fill_rect(canvas, nk_rect(bounds.x + 10, bounds.y + 10, 50, 40), 1.0f, nk_rgb(80, 80, 85));
 
                 // Asset name
-                nk_draw_text(canvas, nk_rect(bounds.x, bounds.y + 62, 70, 15),
-                             assets[i], strlen(assets[i]),
-                             nk_ctx->style.font,
-                             nk_rgb(60, 60, 65),
-                             nk_rgb(200, 200, 200));
+                nk_draw_text(canvas, nk_rect(bounds.x, bounds.y + 62, 70, 15), assets[i], strlen(assets[i]), nk_ctx->style.font,
+                             nk_rgb(60, 60, 65), nk_rgb(200, 200, 200));
             }
         }
 
@@ -882,9 +844,7 @@ void draw_editor_ui() {
 
 void draw_debug_ui() {
 
-    if (nk_begin(nk_ctx, "Debug",
-                 nk_rect(10, 10, 400, 600),
-                 NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+    if (nk_begin(nk_ctx, "Debug", nk_rect(10, 10, 400, 600), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
         nk_layout_row_dynamic(nk_ctx, 25, 1);
         nk_label(nk_ctx, "System Monitor", NK_TEXT_CENTERED);
 
@@ -910,8 +870,7 @@ void draw_debug_ui() {
             nk_layout_row_dynamic(nk_ctx, 20, 2);
             nk_labelf(nk_ctx, NK_TEXT_LEFT, "%.2f MB / %.2f MB", gpu_mem_used, gpu_mem_total);
 
-            nk_labelf(nk_ctx, NK_TEXT_LEFT, "%.1f%%",
-                      (gpu_mem_total > 0.0f) ? (gpu_mem_used / gpu_mem_total * 100.0f) : 0.0f);
+            nk_labelf(nk_ctx, NK_TEXT_LEFT, "%.1f%%", (gpu_mem_total > 0.0f) ? (gpu_mem_used / gpu_mem_total * 100.0f) : 0.0f);
 
             // Progress bar for VRAM
             nk_layout_row_dynamic(nk_ctx, 20, 1);
@@ -979,12 +938,10 @@ void draw_debug_ui() {
                 struct nk_color color;
             };
 
-            static ProfilingData profile_data[] = {
-                {"Update", 0.0f, nk_rgb(75, 150, 255)},
-                {"Render", 0.0f, nk_rgb(255, 150, 75)},
-                {"Physics", 0.0f, nk_rgb(150, 255, 75)},
-                {"Animations", 0.0f, nk_rgb(255, 75, 150)}
-            };
+            static ProfilingData profile_data[] = {{"Update", 0.0f, nk_rgb(75, 150, 255)},
+                                                   {"Render", 0.0f, nk_rgb(255, 150, 75)},
+                                                   {"Physics", 0.0f, nk_rgb(150, 255, 75)},
+                                                   {"Animations", 0.0f, nk_rgb(255, 75, 150)}};
 
             nk_layout_row_dynamic(nk_ctx, 2, 1);
             nk_spacing(nk_ctx, 1);
@@ -995,9 +952,7 @@ void draw_debug_ui() {
                 nk_command_buffer* canvas = nk_window_get_canvas(nk_ctx);
                 struct nk_rect bounds;
                 if (nk_widget(&bounds, nk_ctx) != NK_WIDGET_INVALID) {
-                    nk_fill_rect(canvas,
-                                 nk_rect(bounds.x, bounds.y + 4, 10, 10),
-                                 2.0f, data.color);
+                    nk_fill_rect(canvas, nk_rect(bounds.x, bounds.y + 4, 10, 10), 2.0f, data.color);
                 }
 
                 nk_labelf(nk_ctx, NK_TEXT_RIGHT, "%.2f ms", data.time_ms);
@@ -1010,8 +965,7 @@ void draw_debug_ui() {
 
 
     if (show_render_targets) {
-        if (nk_begin(nk_ctx, "Render Targets",
-                     nk_rect(830, 10, 400, 600),
+        if (nk_begin(nk_ctx, "Render Targets", nk_rect(830, 10, 400, 600),
                      NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE)) {
             nk_layout_row_dynamic(nk_ctx, 25, 1);
             nk_label(nk_ctx, "Frame Buffer Outputs", NK_TEXT_CENTERED);
@@ -1031,7 +985,6 @@ void draw_debug_ui() {
             nk_end(nk_ctx);
         }
     }
-
 }
 
 
@@ -1081,14 +1034,15 @@ void engine_core_loop() {
             }
             break;
 
-        case SDL_EVENT_WINDOW_RESIZED: {
+        case SDL_EVENT_WINDOW_RESIZED:
+            {
 
-            spdlog::debug("Window resized to {}x{}", ev.window.data1, ev.window.data2);
-            GEngine->get_config().get_window().resize(ev.window.data1, ev.window.data2);
+                spdlog::debug("Window resized to {}x{}", ev.window.data1, ev.window.data2);
+                GEngine->get_config().get_window().resize(ev.window.data1, ev.window.data2);
 
 
-            break;
-        }
+                break;
+            }
 
         default:
             break;
@@ -1104,18 +1058,24 @@ void engine_core_loop() {
     GEngine->get_world().each([&](flecs::entity e, Transform3D& transform, Camera3D& camera) {
         float dt = static_cast<float>(GEngine->get_timer().delta);
 
-        if (scancodes[SDL_SCANCODE_W])
+        if (scancodes[SDL_SCANCODE_W]) {
             camera.move_forward(transform, dt);
-        if (scancodes[SDL_SCANCODE_S])
+        }
+        if (scancodes[SDL_SCANCODE_S]) {
             camera.move_backward(transform, dt);
-        if (scancodes[SDL_SCANCODE_A])
+        }
+        if (scancodes[SDL_SCANCODE_A]) {
             camera.move_left(transform, dt);
-        if (scancodes[SDL_SCANCODE_D])
+        }
+        if (scancodes[SDL_SCANCODE_D]) {
             camera.move_right(transform, dt);
-        if (scancodes[SDL_SCANCODE_SPACE])
+        }
+        if (scancodes[SDL_SCANCODE_SPACE]) {
             transform.position.y += camera.speed * dt;
-        if (scancodes[SDL_SCANCODE_LCTRL])
+        }
+        if (scancodes[SDL_SCANCODE_LCTRL]) {
             transform.position.y -= camera.speed * dt;
+        }
 
         camera.speed = scancodes[SDL_SCANCODE_LSHIFT] ? 150.0f : 50.0f;
 
@@ -1123,7 +1083,6 @@ void engine_core_loop() {
             constexpr float sensitivity = 0.1f;
             camera.look_at(mouse_dx, -mouse_dy, sensitivity);
         }
-
     });
 
 
@@ -1135,7 +1094,6 @@ void engine_core_loop() {
     engine_draw_loop();
 
     SDL_Delay(16); // Simple frame cap to ~60 FPS
-
 }
 
 
