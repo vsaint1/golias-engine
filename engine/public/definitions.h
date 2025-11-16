@@ -26,6 +26,8 @@
     #else
         #define GOLIAS_ASSERT_BREAK() std::abort()
     #endif
+#else
+    #define GOLIAS_ASSERT_BREAK() ((void)0)
 #endif
 
 /*!
