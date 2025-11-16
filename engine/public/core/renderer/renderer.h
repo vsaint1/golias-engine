@@ -1,6 +1,6 @@
 #pragma once
 #include "base_struct.h"
-#include "core/component/components.h"
+#include "core/component/game_object.h"
 
 constexpr int MAX_INSTANCES = 1000;
 /*!
