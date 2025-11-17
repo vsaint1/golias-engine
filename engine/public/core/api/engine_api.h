@@ -77,6 +77,90 @@ GameObject create_model_3d_entity(const char* name, const char* path, BlendMode 
 
 GameObject create_camera_2d_entity(const char* name, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, float zoom = 1.0f);
 
+/*!
+ * @brief Creates a 2D rectangle entity
+ * @param name The name of the entity
+ * @param position Position in 2D space
+ * @param size Size of the rectangle
+ * @param color Color of the rectangle
+ * @param filled Whether the rectangle is filled or outlined
+ * @return The created GameObject
+ */
+GameObject create_rectangle_2d_entity(const char* name, const glm::vec2& position = glm::vec2(0),
+                                     const glm::vec2& size = glm::vec2(100, 100),
+                                     const glm::vec4& color = glm::vec4(1.0f), bool filled = true);
+
+/*!
+ * @brief Creates a 2D circle entity
+ * @param name The name of the entity
+ * @param position Position in 2D space
+ * @param radius Radius of the circle
+ * @param color Color of the circle
+ * @param filled Whether the circle is filled or outlined
+ * @param thickness Thickness of the outline (only used when filled = false)
+ * @param segments Number of segments for circle smoothness
+ * @return The created GameObject
+ */
+GameObject create_circle_2d_entity(const char* name, const glm::vec2& position = glm::vec2(0),
+                                  float radius = 50.0f, const glm::vec4& color = glm::vec4(1.0f),
+                                  bool filled = true, float thickness = 1.0f, int segments = 32);
+
+/*!
+ * @brief Creates a 2D line entity
+ * @param name The name of the entity
+ * @param start Start position of the line
+ * @param end End position of the line
+ * @param color Color of the line
+ * @param thickness Thickness of the line
+ * @return The created GameObject
+ */
+GameObject create_line_2d_entity(const char* name, const glm::vec2& start = glm::vec2(0),
+                                const glm::vec2& end = glm::vec2(100, 100),
+                                const glm::vec4& color = glm::vec4(1.0f), float thickness = 1.0f);
+
+/*!
+ * @brief Creates a 2D triangle entity
+ * @param name The name of the entity
+ * @param p1 First point of the triangle
+ * @param p2 Second point of the triangle
+ * @param p3 Third point of the triangle
+ * @param color Color of the triangle
+ * @param filled Whether the triangle is filled
+ * @return The created GameObject
+ */
+GameObject create_triangle_2d_entity(const char* name, const glm::vec2& p1 = glm::vec2(0, 0),
+                                    const glm::vec2& p2 = glm::vec2(100, 0),
+                                    const glm::vec2& p3 = glm::vec2(50, 100),
+                                    const glm::vec4& color = glm::vec4(1.0f), bool filled = true);
+
+/*!
+ * @brief Creates a 2D text label entity
+ * @param name The name of the entity
+ * @param text The text to display
+ * @param position Position in 2D space
+ * @param color Color of the text
+ * @param scale Scale of the text
+ * @return The created GameObject
+ */
+GameObject create_label_2d_entity(const char* name, const std::string& text = "Text",
+                                 const glm::vec2& position = glm::vec2(0),
+                                 const glm::vec4& color = glm::vec4(1.0f), float scale = 1.0f);
+
+/*!
+ * @brief Creates a 2D sprite entity
+ * @param name The name of the entity
+ * @param texture_path Path to the texture file
+ * @param position Position in 2D space
+ * @param size Size of the sprite (0 = use texture size)
+ * @param color Tint color
+ * @return The created GameObject
+ */
+GameObject create_sprite_2d_entity(const char* name, const std::string& texture_path,
+                                  const glm::vec2& position = glm::vec2(0),
+                                  const glm::vec2& size = glm::vec2(0),
+                                  const glm::vec4& color = glm::vec4(1.0f));
+
+
 
 /*!
  * @brief  Creates a material with the given name and properties.

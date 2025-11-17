@@ -217,7 +217,7 @@ WorldEnvironment3D* OpenGLRenderer::create_skybox_from_atlas(const std::string& 
     world_environment->texture = cubemap;
     spdlog::info("Skybox created from atlas successfully");
 
-    _textures[atlas_path] = cubemap;
+    // TODO: Refactor skybox to use GpuImage abstraction
 
     instance_buffer    = allocate_gpu_buffer(GpuBufferType::STORAGE);
     size_t buffer_size = MAX_INSTANCES * sizeof(glm::mat4);
@@ -422,8 +422,23 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
     return true;
 }
 
-std::shared_ptr<GpuImage> OpenGLRenderer::create_texture_2d(const std::string& path, const TextureDesc& desc) {
-    // return std::make_shared<OpenglGpuImage>(path, desc);
+std::shared_ptr<GpuTexture> OpenGLRenderer::create_gpu_texture(const std::string& path, const TextureDesc& desc) {
+    // Check if already cached
+    if (auto it = _textures.find(path); it != _textures.end()) {
+        spdlog::debug("Texture '{}' found in cache", path);
+        return it->second;
+    }
+
+    auto image = std::make_shared<OpenglGpuTexture>(desc);
+
+    // Load from file using the GpuImage abstraction
+    if (image->load_from_file(path, desc)) {
+        _textures[path] = image;
+        spdlog::info("Created and cached GpuImage: {}", path);
+        return image;
+    }
+
+    spdlog::error("Failed to create GpuImage from: {}", path);
     return nullptr;
 }
 
@@ -439,7 +454,7 @@ std::shared_ptr<GpuVertexLayout> OpenGLRenderer::create_vertex_layout(const GpuB
 
 GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
     if (auto it = _textures.find(path); it != _textures.end()) {
-        return it->second;
+        return it->second->get_id();
     }
 
     int w, h, channels;
@@ -449,20 +464,34 @@ GLuint OpenGLRenderer::load_texture_from_file(const std::string& path) {
         return 0;
     }
 
-    GLuint texID = create_gl_texture(data, w, h, channels);
+    TextureDesc desc;
+    desc.width = w;
+    desc.height = h;
+    desc.format = channels == 4 ? TextureFormat::RGBA8 : channels == 3 ? TextureFormat::RGB8 : TextureFormat::R8;
+    desc.generate_mipmaps = true;
+    desc.min_filter = TextureFiltering::LINEAR_MIPMAP_LINEAR;
+    desc.mag_filter = TextureFiltering::LINEAR;
+
+    auto gpu_tex = std::make_shared<OpenglGpuTexture>(desc);
+    if (!gpu_tex->create(data, desc)) {
+        spdlog::error("Failed to create GpuImage for: {}", path);
+        stbi_image_free(data);
+        return 0;
+    }
+
     stbi_image_free(data);
 
-    _textures[path]            = texID;
-    _texture_info_cache[texID] = {texID, w, h}; // Cache texture dimensions
-    spdlog::info("Loaded Texture: {}", path);
-    return texID;
+    _textures[path] = gpu_tex;
+    spdlog::info("Loaded and cached texture: {} (ID: {})", path, gpu_tex->get_id());
+
+    return gpu_tex->get_id();
 }
 
 GLuint OpenGLRenderer::load_embedded_texture(const unsigned char* buffer, size_t size, const std::string& name) {
     std::string key = name.empty() ? "embedded_tex_" + std::to_string(reinterpret_cast<size_t>(buffer)) : name;
 
     if (auto it = _textures.find(key); it != _textures.end()) {
-        return it->second;
+        return it->second->get_id();
     }
 
     int w, h, channels;
@@ -472,13 +501,30 @@ GLuint OpenGLRenderer::load_embedded_texture(const unsigned char* buffer, size_t
         return 0;
     }
 
-    GLuint texID = create_gl_texture(data, w, h, channels);
+    // Create texture descriptor
+    TextureDesc desc;
+    desc.width = w;
+    desc.height = h;
+    desc.format = channels == 4 ? TextureFormat::RGBA8 : channels == 3 ? TextureFormat::RGB8 : TextureFormat::R8;
+    desc.generate_mipmaps = true;
+    desc.min_filter = TextureFiltering::LINEAR_MIPMAP_LINEAR;
+    desc.mag_filter = TextureFiltering::LINEAR;
+
+    // Create GpuImage
+    auto image = std::make_shared<OpenglGpuTexture>(desc);
+    if (!image->create(data, desc)) {
+        spdlog::error("Failed to create GpuImage for embedded texture: {}", key);
+        stbi_image_free(data);
+        return 0;
+    }
+
     stbi_image_free(data);
 
-    _textures[key]             = texID;
-    _texture_info_cache[texID] = {texID, w, h}; // Cache texture dimensions
-    spdlog::info("Loaded embedded Texture: {}, Path {}", texID, key);
-    return texID;
+    // Cache it
+    _textures[key] = image;
+    spdlog::info("Loaded embedded texture: {} (ID: {})", key, image->get_id());
+
+    return image->get_id();
 }
 
 void OpenGLRenderer::begin_frame() {
@@ -766,10 +812,6 @@ void OpenGLRenderer::set_render_resolution(int width, int height) {
 
 void OpenGLRenderer::cleanup() {
 
-    for (auto& [key, texID] : _textures) {
-        glDeleteTextures(1, &texID);
-    }
-
     _textures.clear();
 
     for (auto& [key, cached_tex] : _cached_text_textures) {
@@ -816,8 +858,6 @@ void OpenGLRenderer::swap_chain() {
 // ============================================================================
 
 void OpenGLRenderer::initialize_2d_rendering() {
-
-    spdlog::info("Initializing 2D rendering system...");
 
     _shader_2d = std::make_unique<OpenglShader>("shaders/opengl/default_2d.vert", "shaders/opengl/default_2d.frag");
 
@@ -1035,34 +1075,35 @@ void OpenGLRenderer::draw_rect_2d(const glm::vec2& position, const glm::vec2& si
     _draw_commands_2d.push_back(cmd);
 }
 
-void OpenGLRenderer::draw_texture_2d(Uint32 texture_id, const glm::vec2& position, const glm::vec2& size, const Rect2D& src, FlipMode flip,
-                                     const glm::vec4& color) {
+void OpenGLRenderer::draw_texture_2d(const std::shared_ptr<GpuTexture>& texture, const glm::vec2& position, const glm::vec2& size, const Rect2D& src,
+                                     FlipMode flip, const glm::vec4& color) {
+    if (!texture) {
+        spdlog::warn("draw_texture_2d called with null texture");
+        return;
+    }
+
     DrawCommand2D cmd;
     cmd.type        = DrawType2D::RECTANGLE;
     cmd.mode        = DrawMode2D::FILLED;
     cmd.color       = color;
     cmd.use_texture = true;
-    cmd.texture_id  = texture_id;
+    cmd.texture_id  = texture->get_id();
     cmd.position    = position;
     cmd.size        = size;
     cmd.filled      = true;
-
 
     float u_min = 0.0f, v_min = 0.0f;
     float u_max = 1.0f, v_max = 1.0f;
 
     if (!src.is_zero()) {
-        auto it = _texture_info_cache.find(texture_id);
-        if (it != _texture_info_cache.end()) {
-            int tex_width  = it->second.width;
-            int tex_height = it->second.height;
+        int tex_width = texture->get_width();
+        int tex_height = texture->get_height();
 
-            if (tex_width > 0 && tex_height > 0) {
-                u_min = src.x / tex_width;
-                v_min = src.y / tex_height;
-                u_max = (src.x + src.width) / tex_width;
-                v_max = (src.y + src.height) / tex_height;
-            }
+        if (tex_width > 0 && tex_height > 0) {
+            u_min = static_cast<float>(src.x) / static_cast<float>(tex_width);
+            v_min = static_cast<float>(src.y) / static_cast<float>(tex_height);
+            u_max = static_cast<float>(src.x + src.width) / static_cast<float>(tex_width);
+            v_max = static_cast<float>(src.y + src.height) / static_cast<float>(tex_height);
         }
     }
 

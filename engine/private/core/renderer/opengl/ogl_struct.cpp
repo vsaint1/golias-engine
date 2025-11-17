@@ -251,6 +251,162 @@ GpuBufferType OpenglGpuBuffer::type() const {
     return _buffer_type;
 }
 
+OpenglGpuTexture::OpenglGpuTexture(const TextureDesc& desc) : GpuTexture(desc) {
+    glGenTextures(1, &_texture_id);
+    _id = _texture_id;
+    spdlog::debug("OpenGLImage::OpenGLImage - Created texture ID: {}", _texture_id);
+}
+
+OpenglGpuTexture::~OpenglGpuTexture() {
+    destroy();
+}
+
+bool OpenglGpuTexture::create(const void* p_data, const TextureDesc& desc) {
+    if (_texture_id == 0) {
+        glGenTextures(1, &_texture_id);
+        _id = _texture_id;
+    }
+
+    bind(0);
+
+    GLenum internal_format = to_gl_internal_format(desc.format);
+    GLenum format = to_gl_format(desc.format);
+    GLenum data_type = GL_UNSIGNED_BYTE;
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, to_gl_filter(desc.min_filter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, to_gl_filter(desc.mag_filter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, to_gl_wrap(desc.wrap_s));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, to_gl_wrap(desc.wrap_t));
+
+    if (desc.anisotropy > 1.0f) {
+        float max_aniso = 0.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_aniso);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glm::min(desc.anisotropy, max_aniso));
+    }
+
+    if (desc.wrap_s == TextureWrap::CLAMP_TO_BORDER || desc.wrap_t == TextureWrap::CLAMP_TO_BORDER) {
+        float border_color[] = { desc.border_color.r, desc.border_color.g, desc.border_color.b, desc.border_color.a };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, format, data_type, p_data);
+
+    if (desc.generate_mipmaps) {
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        GLint mip_levels;
+        glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &mip_levels);
+        _mip_levels = mip_levels;
+    } else {
+        _mip_levels = 1;
+    }
+
+    _width = desc.width;
+    _height = desc.height;
+    _format = desc.format;
+    _tex_desc = desc;
+
+    unbind();
+
+    spdlog::info("OpenGLImage::create - Texture created (ID: {}, Size: {}x{}, Format: {})",
+                 _texture_id, _width, _height, static_cast<int>(desc.format));
+
+    return true;
+}
+
+void OpenglGpuTexture::bind(Uint32 slot) const {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, _texture_id);
+}
+
+void OpenglGpuTexture::unbind() {
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenglGpuTexture::destroy() {
+    if (_texture_id != 0) {
+        glDeleteTextures(1, &_texture_id);
+        _texture_id = 0;
+        _id = 0;
+    }
+}
+
+GLenum OpenglGpuTexture::to_gl_format(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::R8:
+        case TextureFormat::R16F:
+        case TextureFormat::R32F:
+            return GL_RED;
+        case TextureFormat::RG8:
+        case TextureFormat::RG16F:
+        case TextureFormat::RG32F:
+            return GL_RG;
+        case TextureFormat::RGB8:
+        case TextureFormat::RGB16F:
+        case TextureFormat::RGB32F:
+        case TextureFormat::SRGB8:
+            return GL_RGB;
+        case TextureFormat::RGBA8:
+        case TextureFormat::RGBA16F:
+        case TextureFormat::RGBA32F:
+        case TextureFormat::SRGB8_ALPHA8:
+            return GL_RGBA;
+        case TextureFormat::DEPTH24:
+        case TextureFormat::DEPTH32F:
+            return GL_DEPTH_COMPONENT;
+        case TextureFormat::DEPTH24_STENCIL8:
+            return GL_DEPTH_STENCIL;
+        default:
+            return GL_RGBA;
+    }
+}
+
+GLenum OpenglGpuTexture::to_gl_internal_format(TextureFormat format) {
+    switch (format) {
+        case TextureFormat::R8: return GL_R8;
+        case TextureFormat::RG8: return GL_RG8;
+        case TextureFormat::RGB8: return GL_RGB8;
+        case TextureFormat::RGBA8: return GL_RGBA8;
+        case TextureFormat::R16F: return GL_R16F;
+        case TextureFormat::RG16F: return GL_RG16F;
+        case TextureFormat::RGB16F: return GL_RGB16F;
+        case TextureFormat::RGBA16F: return GL_RGBA16F;
+        case TextureFormat::R32F: return GL_R32F;
+        case TextureFormat::RG32F: return GL_RG32F;
+        case TextureFormat::RGB32F: return GL_RGB32F;
+        case TextureFormat::RGBA32F: return GL_RGBA32F;
+        case TextureFormat::DEPTH24: return GL_DEPTH_COMPONENT24;
+        case TextureFormat::DEPTH32F: return GL_DEPTH_COMPONENT32F;
+        case TextureFormat::DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
+        case TextureFormat::SRGB8: return GL_SRGB8;
+        case TextureFormat::SRGB8_ALPHA8: return GL_SRGB8_ALPHA8;
+        default: return GL_RGBA8;
+    }
+}
+
+GLenum OpenglGpuTexture::to_gl_filter(TextureFiltering filter) {
+    switch (filter) {
+        case TextureFiltering::NEAREST: return GL_NEAREST;
+        case TextureFiltering::LINEAR: return GL_LINEAR;
+        case TextureFiltering::NEAREST_MIPMAP_NEAREST: return GL_NEAREST_MIPMAP_NEAREST;
+        case TextureFiltering::LINEAR_MIPMAP_NEAREST: return GL_LINEAR_MIPMAP_NEAREST;
+        case TextureFiltering::NEAREST_MIPMAP_LINEAR: return GL_NEAREST_MIPMAP_LINEAR;
+        case TextureFiltering::LINEAR_MIPMAP_LINEAR: return GL_LINEAR_MIPMAP_LINEAR;
+        default: return GL_LINEAR;
+    }
+}
+
+GLenum OpenglGpuTexture::to_gl_wrap(TextureWrap wrap) {
+    switch (wrap) {
+        case TextureWrap::REPEAT: return GL_REPEAT;
+        case TextureWrap::MIRRORED_REPEAT: return GL_MIRRORED_REPEAT;
+        case TextureWrap::CLAMP_TO_EDGE: return GL_CLAMP_TO_EDGE;
+        case TextureWrap::CLAMP_TO_BORDER: return GL_CLAMP_TO_BORDER;
+        default: return GL_REPEAT;
+    }
+}
+
+
 OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& spec) : specification(spec) {
     spdlog::info("OpenGLFramebuffer::OpenGLFramebuffer - Creating Framebuffer ({}x{})", spec.width, spec.height);
     invalidate();

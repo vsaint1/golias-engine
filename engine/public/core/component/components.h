@@ -377,6 +377,49 @@ struct Shape2D {
 };
 
 /*!
+ * @brief Rectangle 2D component
+ * @ingroup Components
+ */
+struct Rectangle2D {
+    glm::vec2 size = glm::vec2(100.0f, 100.0f);
+    glm::vec4 color = glm::vec4(1.0f);
+    bool filled = true;
+};
+
+/*!
+ * @brief Circle 2D component
+ * @ingroup Components
+ */
+struct Circle2D {
+    float radius = 50.0f;
+    glm::vec4 color = glm::vec4(1.0f);
+    bool filled = true;
+    float thickness = 1.0f; // Only used when filled = false
+    int segments = 32;
+};
+
+/*!
+ * @brief Line 2D component
+ * @ingroup Components
+ */
+struct Line2D {
+    glm::vec2 end_point = glm::vec2(100.0f, 100.0f); // Relative to entity position
+    glm::vec4 color = glm::vec4(1.0f);
+    float thickness = 1.0f;
+};
+
+/*!
+ * @brief Triangle 2D component
+ * @ingroup Components
+ */
+struct Triangle2D {
+    glm::vec2 point2 = glm::vec2(100.0f, 0.0f);  // Relative to entity position
+    glm::vec2 point3 = glm::vec2(50.0f, 100.0f); // Relative to entity position
+    glm::vec4 color = glm::vec4(1.0f);
+    bool filled = true;
+};
+
+/*!
  * @brief Follow component for camera following
  * @ingroup Components
  */

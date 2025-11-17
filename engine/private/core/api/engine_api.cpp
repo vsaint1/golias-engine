@@ -139,6 +139,79 @@ GameObject create_camera_2d_entity(const char* name, const glm::vec2& position, 
     return go;
 }
 
+GameObject create_rectangle_2d_entity(const char* name, const glm::vec2& position, const glm::vec2& size, const glm::vec4& color,
+                                     bool filled) {
+    const auto& world = GEngine->get_world();
+
+    flecs::entity e = world.entity().set(Transform2D{position}).set(Rectangle2D{size, color, filled});
+
+    generate_unique_name(e, "Rectangle2D", name);
+
+    return GameObject(e);
+}
+
+GameObject create_circle_2d_entity(const char* name, const glm::vec2& position, float radius, const glm::vec4& color, bool filled,
+                                  float thickness, int segments) {
+    const auto& world = GEngine->get_world();
+
+    flecs::entity e = world.entity().set(Transform2D{position}).set(Circle2D{radius, color, filled, thickness, segments});
+
+    generate_unique_name(e, "Circle2D", name);
+
+
+    return GameObject(e);
+}
+
+GameObject create_line_2d_entity(const char* name, const glm::vec2& start, const glm::vec2& end, const glm::vec4& color,
+                                float thickness) {
+    const auto& world = GEngine->get_world();
+
+    glm::vec2 relative_end = end - start;
+    flecs::entity e        = world.entity().set(Transform2D{start}).set(Line2D{relative_end, color, thickness});
+
+    generate_unique_name(e, "Line2D", name);
+
+    return GameObject(e);
+}
+
+GameObject create_triangle_2d_entity(const char* name, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3,
+                                    const glm::vec4& color, bool filled) {
+    const auto& world = GEngine->get_world();
+
+    glm::vec2 relative_p2 = p2 - p1;
+    glm::vec2 relative_p3 = p3 - p1;
+    flecs::entity e       = world.entity().set(Transform2D{p1}).set(Triangle2D{relative_p2, relative_p3, color, filled});
+
+    generate_unique_name(e, "Triangle2D", name);
+
+    return GameObject(e);
+}
+
+GameObject create_label_2d_entity(const char* name, const std::string& text, const glm::vec2& position, const glm::vec4& color,
+                                 float scale) {
+    const auto& world = GEngine->get_world();
+
+    flecs::entity e = world.entity().set(Transform2D{position}).set(Label2D{text, color, scale, "default"});
+
+    generate_unique_name(e, "Label2D", name);
+
+    return GameObject(e);
+}
+
+GameObject create_sprite_2d_entity(const char* name, const std::string& texture_path, const glm::vec2& position, const glm::vec2& size,
+                                  const glm::vec4& color) {
+    const auto& world = GEngine->get_world();
+
+    flecs::entity e = world.entity().set(Transform2D{position}).set(Sprite2D{texture_path, color, size});
+
+    generate_unique_name(e, "Sprite2D", name);
+
+    spdlog::info("Sprite2D entity '{}' created with texture '{}'.", name, texture_path);
+
+    return GameObject(e);
+}
+
+
 
 void create_material(const char* name, Material material) {
     material.update_feature_flags();

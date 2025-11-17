@@ -2,14 +2,12 @@
 #include  "ogl_struct.h"
 
 class OpenGLRenderer final : public Renderer {
-
-
 public:
     ~OpenGLRenderer() override;
 
     bool initialize(int w, int h, SDL_Window* window) override;
 
-    std::shared_ptr<GpuImage> create_texture_2d(const std::string& path, const TextureDesc& desc) override;
+    std::shared_ptr<GpuTexture> create_gpu_texture(const std::string& path, const TextureDesc& desc) override;
 
     std::shared_ptr<GpuBuffer> allocate_gpu_buffer(GpuBufferType type) override;
 
@@ -65,8 +63,8 @@ public:
     void draw_rect_2d(const glm::vec2& position, const glm::vec2& size, 
                      const glm::vec4& color, bool filled = true) override;
     
-    void draw_texture_2d(Uint32 texture_id, 
-                        const glm::vec2& position, 
+    void draw_texture_2d(const std::shared_ptr<GpuTexture>& texture,
+                        const glm::vec2& position,
                         const glm::vec2& size,
                         const Rect2D& src = {0,0,0,0},
                         FlipMode flip = FlipMode::NONE,

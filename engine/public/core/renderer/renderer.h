@@ -15,7 +15,7 @@ public:
 
     virtual void cleanup() = 0;
 
-    virtual std::shared_ptr<GpuImage> create_texture_2d(const std::string& path, const TextureDesc& desc) = 0;
+    virtual std::shared_ptr<GpuTexture> create_gpu_texture(const std::string& path, const TextureDesc& desc) = 0;
 
     virtual std::shared_ptr<GpuBuffer> allocate_gpu_buffer(GpuBufferType type) = 0;
 
@@ -60,8 +60,9 @@ public:
 
     virtual void draw_rect_2d(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color, bool filled = true) = 0;
 
-    virtual void draw_texture_2d(Uint32 texture_id, const glm::vec2& position, const glm::vec2& size, const Rect2D& src = {0, 0, 0, 0},
-                                 FlipMode flip = FlipMode::NONE, const glm::vec4& tint = glm::vec4(1.0f)) = 0;
+    virtual void draw_texture_2d(const std::shared_ptr<GpuTexture>& texture, const glm::vec2& position, const glm::vec2& size,
+                                 const Rect2D& src = {0, 0, 0, 0}, FlipMode flip = FlipMode::NONE,
+                                 const glm::vec4& tint = glm::vec4(1.0f)) = 0;
 
     virtual void draw_line_2d(const glm::vec2& start, const glm::vec2& end, const glm::vec4& color, float thickness = 1.0f) = 0;
 
@@ -84,15 +85,8 @@ public:
     virtual bool load_font(const std::string& font_path, int point_size, const std::string& font_name = "") = 0;
 
 
-    /// RESOUCES
-    struct TextureInfo {
-        Uint32 id;
-        int width;
-        int height;
-    };
-
-    std::unordered_map<std::string, Uint32> _textures;
-    std::unordered_map<Uint32, TextureInfo> _texture_info_cache; // texture_id -> dimensions
+    /// RESOURCES
+    std::unordered_map<std::string, std::shared_ptr<GpuTexture>> _textures;
     std::unordered_map<std::string, std::vector<MeshInstance3D>> _meshes;
     std::unordered_map<std::string, std::vector<Material>> _materials;
 

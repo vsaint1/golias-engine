@@ -1,30 +1,30 @@
 #include "core/renderer/base_struct.h"
 
-TextureDesc GpuImage::get_desc() const {
+TextureDesc GpuTexture::get_desc() const {
     return _tex_desc;
 }
 
-TextureFormat GpuImage::get_format() const {
+TextureFormat GpuTexture::get_format() const {
     return _format;
 }
 
-Uint32 GpuImage::get_width() const {
+Uint32 GpuTexture::get_width() const {
     return _width;
 }
 
-Uint32 GpuImage::get_height() const {
+Uint32 GpuTexture::get_height() const {
     return _height;
 }
 
-Uint32 GpuImage::get_mip_levels() const {
+Uint32 GpuTexture::get_mip_levels() const {
     return _mip_levels;
 }
 
-Uint32 GpuImage::get_id() const {
+Uint32 GpuTexture::get_id() const {
     return _id;
 }
 
-bool GpuImage::load_from_file(const std::string& path, const TextureDesc& desc) {
+bool GpuTexture::load_from_file(const std::string& path, const TextureDesc& desc) {
     int w, h, channels;
     stbi_set_flip_vertically_on_load(true);
 
@@ -83,6 +83,6 @@ bool GpuImage::load_from_file(const std::string& path, const TextureDesc& desc) 
     return success;
 }
 
-bool GpuImage::load_from_memory(const void* data, size_t size, const TextureDesc& desc) {
+bool GpuTexture::load_from_memory(const void* data, size_t size, const TextureDesc& desc) {
     return false;
 }

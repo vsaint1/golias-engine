@@ -57,6 +57,29 @@ private:
 
 };
 
+class OpenglGpuTexture final : public GpuTexture {
+public:
+    OpenglGpuTexture(const TextureDesc& desc);
+
+    ~OpenglGpuTexture() override;
+
+    bool create(const void* p_data, const TextureDesc& desc) override;
+
+    void bind(Uint32 slot = 0) const override;
+
+    void unbind() override;
+
+    void destroy() override;
+
+private:
+    GLuint _texture_id = 0;
+
+    static GLenum to_gl_format(TextureFormat format);
+    static GLenum to_gl_internal_format(TextureFormat format);
+    static GLenum to_gl_filter(TextureFiltering filter);
+    static GLenum to_gl_wrap(TextureWrap wrap);
+};
+
 class OpenGLFramebuffer final : public Framebuffer {
 
 public:

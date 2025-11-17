@@ -1,9 +1,11 @@
 #include "core/engine.h"
 #include <SDL3/SDL_main.h>
 
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
 int main(int argc, char* argv[]) {
 
-    if (!GEngine->initialize(1280, 720, "Golias Engine - Window")) {
+    if (!GEngine->initialize(WINDOW_WIDTH, WINDOW_HEIGHT, "Golias Engine - Window")) {
         spdlog::error("Engine initialization failed, exiting");
         return -1;
     }
@@ -39,6 +41,105 @@ int main(int argc, char* argv[]) {
 
     auto cam2d = create_camera_2d_entity(nullptr, glm::vec2(0, 0), 0.0f, 1.0f);
 
+    // =============================================================================
+    // 2D Test Entities (ECS-based)
+    // =============================================================================
+
+
+    float margin_x = WINDOW_WIDTH * 0.05f;
+    float margin_y = WINDOW_HEIGHT * 0.05f;
+
+    // Red filled rectangle (top-left)
+    create_rectangle_2d_entity("RedRect",
+                              glm::vec2(margin_x, margin_y),
+                              glm::vec2(WINDOW_WIDTH * 0.15f, WINDOW_HEIGHT * 0.2f),
+                              glm::vec4(1, 0, 0, 1),
+                              true);
+
+    // Text labels
+    auto text = create_label_2d_entity("HelloWorld",
+                          "Hello World!",
+                          glm::vec2(margin_x + WINDOW_WIDTH * 0.2f, margin_y),
+                          glm::vec4(1, 0, 0, 1),
+                          1.0f);
+
+
+    create_label_2d_entity("OlaMundo",
+                          "Olá mundo",
+                          glm::vec2(margin_x, margin_y + WINDOW_HEIGHT * 0.25f),
+                          glm::vec4(1, 1, 1, 1),
+                          1.0f);
+
+    create_label_2d_entity("RussianEmoji",
+                          "Hello russian, мир! 🎮",
+                          glm::vec2(margin_x + WINDOW_WIDTH * 0.08f, margin_y + WINDOW_HEIGHT * 0.15f),
+                          glm::vec4(1, 1, 1, 1),
+                          1.0f);
+
+    create_label_2d_entity("Emojis",
+                          "😀🎮🚀💎✨",
+                          glm::vec2(margin_x, margin_y + WINDOW_HEIGHT * 0.06f),
+                          glm::vec4(1, 1, 1, 1),
+                          1.0f);
+
+    // Green outlined rectangle (right-center)
+    create_rectangle_2d_entity("GreenRectOutline",
+                              glm::vec2(WINDOW_WIDTH * 0.65f, WINDOW_HEIGHT * 0.3f),
+                              glm::vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT * 0.2f),
+                              glm::vec4(0, 1, 0, 1),
+                              false);
+
+    // Blue diagonal line
+    create_line_2d_entity("BlueLine",
+                         glm::vec2(margin_x, WINDOW_HEIGHT * 0.5f),
+                         glm::vec2(WINDOW_WIDTH * 0.35f, WINDOW_HEIGHT * 0.65f),
+                         glm::vec4(0, 0, 1, 1),
+                         3.0f);
+
+    // Yellow filled circle (center-left)
+    create_circle_2d_entity("YellowCircle",
+                           glm::vec2(WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT * 0.5f),
+                           WINDOW_HEIGHT * 0.1f,
+                           glm::vec4(1, 1, 0, 1),
+                           true,   // filled
+                           1.0f,   // thickness (not used when filled)
+                           32);
+
+    // Magenta circle outline (center-right)
+    create_circle_2d_entity("MagentaCircleOutline",
+                           glm::vec2(WINDOW_WIDTH * 0.65f, WINDOW_HEIGHT * 0.5f),
+                           WINDOW_WIDTH * 0.1f,
+                           glm::vec4(1, 0, 1, 1),
+                           false,  // not filled (outline)
+                           5.0f,   // thickness
+                           32);
+
+    // Cyan filled triangle (bottom-left)
+    create_triangle_2d_entity("CyanTriangle",
+                             glm::vec2(margin_x, WINDOW_HEIGHT * 0.85f),
+                             glm::vec2(margin_x + WINDOW_WIDTH * 0.1f, WINDOW_HEIGHT * 0.85f),
+                             glm::vec2(margin_x + WINDOW_WIDTH * 0.05f, WINDOW_HEIGHT * 0.7f),
+                             glm::vec4(0, 1, 1, 1),
+                             true);
+
+    // Orange outlined triangle (bottom-center)
+    create_triangle_2d_entity("OrangeTriangleOutline",
+                             glm::vec2(margin_x + WINDOW_WIDTH * 0.15f, WINDOW_HEIGHT * 0.85f),
+                             glm::vec2(margin_x + WINDOW_WIDTH * 0.25f, WINDOW_HEIGHT * 0.85f),
+                             glm::vec2(margin_x + WINDOW_WIDTH * 0.2f, WINDOW_HEIGHT * 0.7f),
+                             glm::vec4(1, 0.5, 0, 1),
+                             false);
+
+    // Sprite (bottom-right)
+    create_sprite_2d_entity("IconSprite",
+                           "res/icon.png",
+                           glm::vec2(WINDOW_WIDTH * 0.75f, WINDOW_HEIGHT * 0.7f),
+                           glm::vec2(WINDOW_WIDTH * 0.1f, WINDOW_HEIGHT * 0.15f),
+                           glm::vec4(1.0f));
+
+    // =============================================================================
+    // 3D Test Entities
+    // =============================================================================
 
     auto sunlight = create_directional_light_3d_entity("SunLight", glm::vec3(1.0f, -2.5f, 1.0f), // direction
                                                        glm::vec3(1.0f, 0.95f, 0.8f), // warm sunlight color

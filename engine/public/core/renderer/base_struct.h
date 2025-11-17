@@ -84,16 +84,16 @@ struct TextureDesc {
     @version  0.0.1
 
 */
-class GpuImage {
+class GpuTexture {
 public:
 
-    explicit GpuImage(const TextureDesc& desc) : _width(desc.width),
+    explicit GpuTexture(const TextureDesc& desc) : _width(desc.width),
                                                   _height(desc.height),
                                                   _format(desc.format),
                                                   _tex_desc(desc) {
     }
 
-    virtual ~GpuImage() = default;
+    virtual ~GpuTexture() = default;
 
     virtual bool create(const void* p_data, const TextureDesc& desc) = 0;
 
