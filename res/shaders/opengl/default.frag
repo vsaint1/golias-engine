@@ -83,11 +83,12 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
     // Transform from [-1,1] to [0,1]
     projCoords = projCoords * 0.5 + 0.5;
 
-    if (projCoords.z > 1.0)
-        return 0.0;
+    if (projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0 || projCoords.z > 1.0)
+    return 0.0;
 
     float currentDepth = projCoords.z;
-    float bias = max(0.0005 * (1.0 - dot(N, L)), 0.0001);
+
+    float bias = max(0.001 * (1.0 - dot(N, L)), 0.0005);
 
     // PCF sample (3x3 kernel)
     float shadow = 0.0;
@@ -309,11 +310,11 @@ void main()
         finalMetallic = mr.b;
     }
 
-//    vec3 finalSpecular = material.specular;
-//    if (USE_SPECULAR_MAP) {
-//        vec3 specSample = texture(SPECULAR_MAP, UV).rgb;
-//        finalSpecular = pow(specSample, vec3(2.2)); // gamma-corrected
-//    }
+    //    vec3 finalSpecular = material.specular;
+    //    if (USE_SPECULAR_MAP) {
+    //        vec3 specSample = texture(SPECULAR_MAP, UV).rgb;
+    //        finalSpecular = pow(specSample, vec3(2.2)); // gamma-corrected
+    //    }
 
     if (HAS(HAS_AO_MAP))
     finalAO = texture(AO_MAP, UV).r;
@@ -338,7 +339,7 @@ void main()
 
     // --- Base Reflectance ---
     vec3 F0 = mix(vec3(0.04), finalAlbedo, finalMetallic);
-//    F0 = mix(F0, finalSpecular, 0.5); // blend specular color for non-metals
+    //    F0 = mix(F0, finalSpecular, 0.5); // blend specular color for non-metals
     // TODO: IOR
 
     // --- Lighting ---
@@ -409,6 +410,6 @@ void main()
     color = pow(color, vec3(1.0 / 2.2));
 
     float ALPHA = albedoSample.a;
-    
+
     COLOR = vec4(color, ALPHA);
 }
