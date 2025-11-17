@@ -33,16 +33,17 @@ int main(int argc, char* argv[]) {
 
     create_material("random_default", Material{.albedo = glm::vec3(0.5f, 0.5f, 0.5f), .metallic = 0.2f, .roughness = 0.8f});
 
-   auto cam3d= create_camera_3d_entity(nullptr, glm::vec3(0, 2, 20),
-                           glm::vec3(-0.4f, 0, 0));
+    auto cam3d = create_camera_3d_entity(nullptr, glm::vec3(0, 2, 20), glm::vec3(-0.4f, 0, 0));
 
     cam3d.add_component<tags::MainCamera>();
 
+    auto cam2d = create_camera_2d_entity(nullptr, glm::vec2(0, 0), 0.0f, 1.0f);
 
-   auto sunlight =  create_directional_light_3d_entity("SunLight",glm::vec3(1.0f, -2.5f, 1.0f), // direction
-                                       glm::vec3(1.0f, 0.95f, 0.8f), // warm sunlight color
-                                       1.0f, // intensity
-                                       true); // shadow far
+
+    auto sunlight = create_directional_light_3d_entity("SunLight", glm::vec3(1.0f, -2.5f, 1.0f), // direction
+                                                       glm::vec3(1.0f, 0.95f, 0.8f), // warm sunlight color
+                                                       1.0f, // intensity
+                                                       true); // shadow far
 
 
     // create_directional_light_3d_entity(glm::vec3(-0.3f, -1.0f, 0.2f), // direction
@@ -79,8 +80,8 @@ int main(int argc, char* argv[]) {
     create_model_3d_entity("nagon", "res://sprites/obj/nagonford/Nagonford_Animated.glb", BlendMode::OPAQUE, glm::vec3(0, 0, 0));
 
 
-    create_model_3d_entity("Sponza", "res://sprites/obj/sponza/Sponza.glb", BlendMode::OPAQUE, glm::vec3(0, -2, 0), glm::vec3(0),
-                        glm::vec3(0.1f));
+    // create_model_3d_entity("Sponza", "res://sprites/obj/sponza/Sponza.glb", BlendMode::OPAQUE, glm::vec3(0, -2, 0), glm::vec3(0),
+    //                     glm::vec3(0.1f));
 
     create_mesh_3d_entity("Cylinder", "res://models/cylinder.obj", glm::vec3(0, 0, -15), glm::vec3(0), glm::vec3(1.0f), "green_metal");
 
@@ -116,7 +117,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-
 
 
     create_mesh_3d_entity("Red Cube", "res://models/cube.obj", glm::vec3(3, 0, 0), glm::vec3(0), glm::vec3(1.5f), "red_rough");

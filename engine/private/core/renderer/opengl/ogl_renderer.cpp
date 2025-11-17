@@ -350,9 +350,9 @@ bool OpenGLRenderer::initialize(int w, int h, SDL_Window* window) {
 
     SDL_GL_SetSwapInterval(0);
 
-    auto& viewport  = GEngine->get_config().get_viewport();
-    _virtual_width  = viewport.width;
-    _virtual_height = viewport.height;
+    const auto& viewport  = GEngine->get_config().get_viewport();
+    _virtual_width  = viewport.width == 0 ? w : viewport.width;
+    _virtual_height = viewport.height == 0 ? h : viewport.height;
 
     GLint num_extensions = 0;
     std::vector<std::string_view> extensions;

@@ -44,7 +44,7 @@ GameObject create_spot_light_3d_entity(const char* name, const glm::vec3& positi
  * @return The created GameObject representing the 3D camera entity.
  */
 GameObject create_camera_3d_entity(const char* name, const glm::vec3& position = glm::vec3(0), const glm::vec3& rotation = glm::vec3(0),
-                                  float fov = 45.0f, float near_plane = 0.1f, float far_plane = 5000.0f);
+                                   float fov = 45.0f, float near_plane = 0.1f, float far_plane = 5000.0f);
 
 /*!
  * @brief  Creates a 3D mesh entity from the specified file path with given properties.
@@ -73,6 +73,10 @@ GameObject create_mesh_3d_entity(const char* name, const char* path, const glm::
 GameObject create_model_3d_entity(const char* name, const char* path, BlendMode blend_mode = BlendMode::OPAQUE,
                                   const glm::vec3& position = glm::vec3(0), const glm::vec3& rotation = glm::vec3(0),
                                   const glm::vec3& scale = glm::vec3(1.0f));
+
+
+GameObject create_camera_2d_entity(const char* name, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, float zoom = 1.0f);
+
 
 /*!
  * @brief  Creates a material with the given name and properties.

@@ -265,7 +265,7 @@ public:
     glm::vec2 position      = glm::vec2(0.0f);
     float rotation          = 0.0f;
     float zoom              = 1.0f;
-    glm::vec2 viewport_size = glm::vec2(1.0f);
+    glm::vec2 viewport_size = glm::vec2(1.0f); /// 1.0 = use window size
 
     glm::mat4 get_view_matrix() const;
 

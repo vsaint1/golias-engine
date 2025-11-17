@@ -1,5 +1,6 @@
 #include "core/engine.h"
 
+#include "core/component/comp_system.h"
 #include "core/renderer/opengl/ogl_renderer.h"
 
 std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
@@ -7,94 +8,6 @@ std::unique_ptr<Engine> GEngine = std::make_unique<Engine>();
 nk_context* nk_ctx = nullptr;
 
 // TODO: remove all example/test functions (just hack here for testing purposes)
-
-void example_2d_rendering() {
-    auto* renderer = GEngine->get_renderer();
-
-    static Camera2D camera;
-
-    // Get virtual render resolution
-    float vwidth  = static_cast<float>(renderer->get_virtual_width());
-    float vheight = static_cast<float>(renderer->get_virtual_height());
-
-    // Setup camera to match virtual resolution
-    camera.viewport_size = glm::vec2(vwidth, vheight);
-    camera.position      = glm::vec2(0, 0);
-    camera.zoom          = 1.0f;
-
-    static Transform2D camera_transform;
-
-    renderer->begin_frame_2d();
-
-    float margin_x = vwidth * 0.05f;
-    float margin_y = vheight * 0.05f;
-
-    renderer->draw_rect_2d(glm::vec2(margin_x, margin_y), glm::vec2(vwidth * 0.15f, vheight * 0.2f), glm::vec4(1, 0, 0, 1), // red color
-                           true);
-
-    renderer->draw_text_2d("Hello World!", glm::vec2(margin_x + vwidth * 0.2f, margin_y), glm::vec4(1, 0, 0, 1), 1.0f);
-
-    renderer->draw_text_2d("Olá mundo", glm::vec2(margin_x, margin_y + vheight * 0.25f), glm::vec4(1, 1, 1, 1), 1.0f);
-
-    renderer->draw_text_2d("Hello russian, мир! 🎮", glm::vec2(margin_x + vwidth * 0.08f, margin_y + vheight * 0.15f),
-                           glm::vec4(1, 1, 1, 1), 1.0f);
-
-    renderer->draw_text_2d("😀🎮🚀💎✨", glm::vec2(margin_x, margin_y + vheight * 0.06f), glm::vec4(1, 1, 1, 1), 1.0f);
-
-    static int frame_count = 0;
-    frame_count++;
-    renderer->draw_text_2d_fmt(glm::vec2(vwidth * 0.5f, margin_y), glm::vec4(0, 0, 1, 1), 1.0f, "Frame: {} | FPS: {:.1f}", frame_count,
-                               1.0 / GEngine->get_timer().delta);
-
-    // Draw outlined rectangle (right-center area)
-    renderer->draw_rect_2d(glm::vec2(vwidth * 0.65f, vheight * 0.3f), glm::vec2(vwidth * 0.25f, vheight * 0.2f),
-                           glm::vec4(0, 1, 0, 1), // green color
-                           false);
-
-    // Draw a line (left side, diagonal)
-    renderer->draw_line_2d(glm::vec2(margin_x, vheight * 0.5f), glm::vec2(vwidth * 0.35f, vheight * 0.65f),
-                           glm::vec4(0, 0, 1, 1), // blue color
-                           3.0f);
-
-    // Draw a filled circle (center-left)
-    renderer->draw_circle_2d(glm::vec2(vwidth * 0.25f, vheight * 0.5f), vheight * 0.1f, glm::vec4(1, 1, 0, 1), // yellow color
-                             true, 32);
-
-    // Draw a circle outline (center-right)
-    renderer->draw_circle_outline_2d(glm::vec2(vwidth * 0.65f, vheight * 0.5f), vheight * 0.1f, glm::vec4(1, 0, 1, 1), // magenta color
-                                     5.0f, 32);
-
-    // Draw a filled triangle (bottom-left)
-    renderer->draw_triangle_2d(glm::vec2(margin_x, vheight * 0.85f), glm::vec2(margin_x + vwidth * 0.1f, vheight * 0.85f),
-                               glm::vec2(margin_x + vwidth * 0.05f, vheight * 0.7f), glm::vec4(0, 1, 1, 1), // cyan color
-                               true);
-
-    // Draw an outlined triangle (bottom-center)
-    renderer->draw_triangle_2d(glm::vec2(margin_x + vwidth * 0.15f, vheight * 0.85f), glm::vec2(margin_x + vwidth * 0.25f, vheight * 0.85f),
-                               glm::vec2(margin_x + vwidth * 0.2f, vheight * 0.7f), glm::vec4(1, 0.5, 0, 1), // orange color
-                               false);
-
-    // Draw gradient triangles (bottom area)
-    // int triangle_count = static_cast<int>(vwidth / 30.0f);
-    // for (int i = 0; i < triangle_count && i < 100; ++i) {
-    //     float x_pos = margin_x + vwidth * 0.3f + i * (vwidth * 0.3f) / triangle_count;
-    //     float triangle_size = vwidth * 0.02f;
-    //
-    //     renderer->draw_triangle_2d(
-    //         glm::vec2(x_pos, vheight * 0.85f),
-    //         glm::vec2(x_pos + triangle_size, vheight * 0.85f),
-    //         glm::vec2(x_pos + triangle_size * 0.5f, vheight * 0.75f),
-    //         glm::vec4(0.1f * i / 10.0f, 0.2f * i / 10.0f, 0.3f * i / 10.0f, 1),
-    //         true
-    //     );
-    // }
-
-    // Draw texture (bottom-right)
-    Uint32 gd_tex = renderer->load_texture_from_file("res/icon.png");
-    renderer->draw_texture_2d(gd_tex, glm::vec2(vwidth * 0.75f, vheight * 0.7f), glm::vec2(vwidth * 0.1f, vheight * 0.15f));
-
-    renderer->end_frame_2d(camera, camera_transform);
-}
 
 Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
@@ -122,10 +35,9 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
         }
     }
 
-    // TODO: later use viewport
-    const auto& viewport = config.get_window();
+    const auto& win_size = config.get_window();
 
-    if (!renderer || !renderer->initialize(viewport.width, viewport.height, window)) {
+    if (!renderer || !renderer->initialize(win_size.width, win_size.height, window)) {
         spdlog::error("Renderer initialization failed, shutting down");
 
         delete renderer;
@@ -135,7 +47,7 @@ Renderer* create_renderer_internal(SDL_Window* window, EngineConfig& config) {
 
     renderer->load_font("res/fonts/Default.ttf", 24, "default");
     renderer->load_font("res/fonts/Twemoji.ttf", 24, "emoji");
-    renderer->set_render_resolution(1280, 720);
+
     return renderer;
 }
 
@@ -157,6 +69,7 @@ void register_components(flecs::world& world) {
     world.component<MeshInstance3D>();
     world.component<WorldEnvironment3D>();
 
+    // Common Components
     world.component<Tag>();
     world.component<NativeScript>();
     world.component<LuaScript>();
@@ -359,6 +272,7 @@ flecs::world& Engine::get_world() {
 
 
 void engine_draw_loop() {
+#pragma region 3D_RENDERING_LOOP
     std::vector<DirectionalLight3D> directionalLights;
     glm::mat4 light_space_matrix(1.0f);
 
@@ -403,6 +317,9 @@ void engine_draw_loop() {
         renderer->add_to_shadow_batch(transform, mesh);
     });
 
+    // renderer->begin_environment_pass();
+    // renderer->end_environment_pass();
+
     renderer->begin_shadow_pass();
     renderer->render_shadow_pass(light_space_matrix);
     renderer->end_shadow_pass();
@@ -410,11 +327,15 @@ void engine_draw_loop() {
     renderer->begin_render_target();
     renderer->render_main_target(main_camera, camera_transform, light_space_matrix, directionalLights, spotLights);
     renderer->end_render_target();
+#pragma endregion
 
-    example_2d_rendering();
+#pragma region 2D_RENDERING_LOOP
+render_world_2d_system();
+#pragma endregion
 
+#pragma region UI_RENDERING_LOOP
     nk_sdl_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_MEMORY, MAX_ELEMENT_MEMORY);
-
+#pragma endregion
     GEngine->get_renderer()->swap_chain();
 }
 

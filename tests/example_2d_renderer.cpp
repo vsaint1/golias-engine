@@ -3,7 +3,7 @@
 
 #include "core/engine.h"
 
-void example_2d_rendering() {
+void render_loop_2d() {
     auto* renderer = GEngine->get_renderer();
     
     // Set virtual resolution (e.g., 320x180 for retro look)

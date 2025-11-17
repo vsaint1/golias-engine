@@ -10,8 +10,8 @@ void generate_unique_name(flecs::entity& e, const char* default_name, const char
     }
 }
 
-GameObject create_camera_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& rotation,
-                                     float fov, float near_plane, float far_plane) {
+GameObject create_camera_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& rotation, float fov, float near_plane,
+                                   float far_plane) {
 
 
     const auto& world = GEngine->get_world();
@@ -26,7 +26,7 @@ GameObject create_camera_3d_entity(const char* name, const glm::vec3& position, 
 }
 
 GameObject create_directional_light_3d_entity(const char* name, const glm::vec3& direction, const glm::vec3& color, float intensity,
-                                                 bool cast_shadows, float shadow_distance, float shadow_near, float shadow_far) {
+                                              bool cast_shadows, float shadow_distance, float shadow_near, float shadow_far) {
     const auto& world = GEngine->get_world();
 
     flecs::entity e = world.entity().set<Transform3D>({}).set<DirectionalLight3D>(
@@ -40,12 +40,12 @@ GameObject create_directional_light_3d_entity(const char* name, const glm::vec3&
 }
 
 GameObject create_spot_light_3d_entity(const char* name, const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
-                                          float inner_cutoff, float outer_cutoff, float intensity) {
+                                       float inner_cutoff, float outer_cutoff, float intensity) {
     const auto& world = GEngine->get_world();
 
     flecs::entity entity = world.entity()
-                          .set<Transform3D>({position})
-                          .set<SpotLight3D>({glm::vec3(direction), glm::vec3(color), intensity, inner_cutoff, outer_cutoff});
+                               .set<Transform3D>({position})
+                               .set<SpotLight3D>({glm::vec3(direction), glm::vec3(color), intensity, inner_cutoff, outer_cutoff});
 
     generate_unique_name(entity, "SpotLight3D", name);
 
@@ -54,7 +54,7 @@ GameObject create_spot_light_3d_entity(const char* name, const glm::vec3& positi
 }
 
 GameObject create_mesh_3d_entity(const char* name, const char* path, const glm::vec3& position, const glm::vec3& rotation,
-                                    const glm::vec3& scale, const char* material_tag) {
+                                 const glm::vec3& scale, const char* material_tag) {
 
     const auto renderer = GEngine->get_renderer();
 
@@ -85,13 +85,19 @@ GameObject create_mesh_3d_entity(const char* name, const char* path, const glm::
 
 
 GameObject create_model_3d_entity(const char* name, const char* path, BlendMode blend_mode, const glm::vec3& position,
-                                     const glm::vec3& rotation, const glm::vec3& scale) {
+                                  const glm::vec3& rotation, const glm::vec3& scale) {
 
     auto renderer = GEngine->get_renderer();
 
 
     if (!renderer->_meshes.contains(path) || !renderer->_materials.contains(path)) {
-        Model model                = AssimpLoader::load_model(path);
+        Model model = AssimpLoader::load_model(path);
+
+        if (model.meshes.empty() || model.materials.empty()) {
+            spdlog::error("Failed to load model from path: {}", path);
+            return GameObject{};
+        }
+
         renderer->_meshes[path]    = model.meshes;
         renderer->_materials[path] = model.materials;
     }
@@ -112,6 +118,23 @@ GameObject create_model_3d_entity(const char* name, const char* path, BlendMode 
 
     spdlog::info("MeshInstance3D entity '{}' created with {} mesh parts.", name, meshes.size());
     const GameObject go(entity);
+
+    return go;
+}
+
+
+GameObject create_camera_2d_entity(const char* name, const glm::vec2& position, float rotation, float zoom) {
+
+    const auto& world = GEngine->get_world();
+
+    Camera2D camera;
+    camera.zoom = zoom;
+
+    flecs::entity e = world.entity().set(camera).set(Transform2D{position, glm::vec2(1.0f), rotation});
+
+    generate_unique_name(e, "Camera2D", name);
+
+    const GameObject go(e);
 
     return go;
 }
