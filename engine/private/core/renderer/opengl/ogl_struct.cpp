@@ -254,7 +254,7 @@ GpuBufferType OpenglGpuBuffer::type() const {
 OpenglGpuTexture::OpenglGpuTexture(const TextureDesc& desc) : GpuTexture(desc) {
     glGenTextures(1, &_texture_id);
     _id = _texture_id;
-    spdlog::debug("OpenGLImage::OpenGLImage - Created texture ID: {}", _texture_id);
+    spdlog::debug("OpenglGpuTexture::OpenglGpuTexture - Created texture ID: {}", _texture_id);
 }
 
 OpenglGpuTexture::~OpenglGpuTexture() {
@@ -308,7 +308,7 @@ bool OpenglGpuTexture::create(const void* p_data, const TextureDesc& desc) {
 
     unbind();
 
-    spdlog::info("OpenGLImage::create - Texture created (ID: {}, Size: {}x{}, Format: {})",
+    spdlog::info("OpenglGpuTexture::create - Texture created (ID: {}, Size: {}x{}, Format: {})",
                  _texture_id, _width, _height, static_cast<int>(desc.format));
 
     return true;

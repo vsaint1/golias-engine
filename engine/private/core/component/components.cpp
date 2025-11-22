@@ -31,6 +31,7 @@ void Material::bind(Shader* shader) const {
     shader->set_value("material.ao", ao);
     shader->set_value("material.emissive", emissive);
     shader->set_value("material.emissiveStrength", emissive_strength);
+    shader->set_value("material.ior", ior);
 
     shader->set_value("has_features", has_features);
 
