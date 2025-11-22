@@ -107,7 +107,8 @@ GameObject create_model_3d_entity(const char* name, const char* path, BlendMode 
 
     for (auto& material : materials) {
         material.blend_mode = blend_mode;
-        spdlog::debug("Material blend mode set to: {}", static_cast<int>(blend_mode));
+        material.update_feature_flags(); // Update flags after changing blend_mode
+        spdlog::debug("Material blend mode set to: {}, IBL enabled: {}", static_cast<int>(blend_mode), material.use_ibl);
     }
 
     auto entity = GEngine->get_world().entity(name);

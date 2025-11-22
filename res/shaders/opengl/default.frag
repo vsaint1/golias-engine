@@ -125,8 +125,9 @@ float shadow_calculation(vec4 frag_pos_light_space, vec3 N, vec3 L)
 // - "Real Shading in Unreal Engine 4" by Brian Karis (Epic Games)
 
 // ============================================================================
-// NDF: Trowbridge-Reitz GGX Distribution
+// NDF: Trowbridge-Reitz GGX Distribution (Improved)
 // ============================================================================
+// Better energy conservation and numerical stability
 float distribution_ggx(vec3 N, vec3 H, float roughness)
 {
     float a = roughness * roughness;
@@ -134,10 +135,11 @@ float distribution_ggx(vec3 N, vec3 H, float roughness)
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH * NdotH;
 
-    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    float nom = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return a2 / max(denom, 0.0000001);
+    return nom / max(denom, 0.0001);
 }
 
 // ============================================================================
@@ -149,10 +151,10 @@ float geometry_schlick_ggx(float NdotV, float roughness)
 {
     float r = (roughness + 1.0);
     float k = (r * r) / 8.0;
-    return NdotV / (NdotV * (1.0 - k) + k + 0.0000001);
+    return NdotV / (NdotV * (1.0 - k) + k + 0.0001);
 }
 
-// -----------------------------------------------------------------------------
+// Smith Joint Masking-Shadowing Function (uncorrelated)
 float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
@@ -162,9 +164,24 @@ float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-// -----------------------------------------------------------------------------
+// Height-Correlated Smith G (more accurate, recommended)
+float geometry_smith_correlated(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0001);
+    float NdotL = max(dot(N, L), 0.0001);
+
+    float a = roughness * roughness;
+    float a2 = a * a;
+
+    float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - a2) + a2);
+    float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - a2) + a2);
+
+    return 0.5 / max(GGXV + GGXL, 0.0001);
+}
+
+// ============================================================================
 // Fresnel - Schlick approximation
-// -----------------------------------------------------------------------------
+// ============================================================================
 vec3 fresnel_schlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
@@ -176,11 +193,21 @@ vec3 fresnel_schlick_roughness(float cosTheta, vec3 F0, float roughness)
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+// Diffuse Fresnel (Disney/Burley diffuse)
+// Provides energy conservation for the diffuse term
+float diffuse_fresnel(float NdotL, float NdotV, float LdotH, float roughness)
+{
+    float FD90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
+    float FdV = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotV, 5.0);
+    float FdL = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotL, 5.0);
+    return FdV * FdL;
+}
+
 // ============================================================================
-// PBR Light Contribution Calculation
+// PBR Light Contribution Calculation (Improved)
 // ============================================================================
 // Calculates the Cook-Torrance BRDF for a given light direction and radiance.
-// Returns the combined diffuse and specular contribution.
+// Returns the combined diffuse and specular contribution with better energy conservation.
 vec3 calculate_pbr_contribution(
     vec3 N, // Surface normal
     vec3 V, // View direction
@@ -194,23 +221,33 @@ vec3 calculate_pbr_contribution(
 {
     vec3 H = normalize(V + L);
 
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
+    float NdotV = max(dot(N, V), 0.0001);
+    float NdotL = max(dot(N, L), 0.0001);
+    float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
+    float LdotH = max(dot(L, H), 0.0);
 
-    float NDF = distribution_ggx(N, H, roughness);
-    float G = geometry_smith(N, V, L, roughness);
+    // Cook-Torrance specular BRDF
+    float D = distribution_ggx(N, H, roughness);
+    float G = geometry_smith_correlated(N, V, L, roughness); // Use improved correlated version
     vec3 F = fresnel_schlick(HdotV, F0);
 
+    // Specular contribution
+    vec3 numerator = D * G * F;
+    float denominator = 4.0 * NdotV * NdotL;
+    vec3 specular = numerator / max(denominator, 0.0001);
+
+    // Energy conservation: kS is specular, kD is diffuse
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;
+    kD *= 1.0 - metallic; // Metals have no diffuse
 
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * NdotV * NdotL + 0.0001;
-    vec3 specular = numerator / denominator;
+    // Improved diffuse with Disney/Burley model
+    float diffuse_fresnel_factor = diffuse_fresnel(NdotL, NdotV, LdotH, roughness);
+    vec3 diffuse = (kD * albedo / PI) * diffuse_fresnel_factor;
 
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+    // Combine diffuse and specular
+    return (diffuse + specular) * radiance * NdotL;
 }
 
 // ============================================================================
@@ -237,16 +274,61 @@ vec3 calculate_normal_map()
 }
 
 
-vec3 sample_reflection(vec3 I, vec3 N)
+// ============================================================================
+// Environment Reflections and Refractions
+// ============================================================================
+// For highly reflective or refractive materials (glass, water, mirrors)
+
+vec3 sample_reflection(vec3 I, vec3 N, float roughness)
 {
     vec3 R = reflect(I, N);
-    return texture(ENVIRONMENT_MAP, R).rgb;
+    // Use roughness to determine blur level
+    float lod = roughness * 8.0;
+    return textureLod(ENVIRONMENT_MAP, R, lod).rgb;
 }
 
-vec3 sample_refraction(vec3 I, vec3 N, float eta)
+vec3 sample_refraction(vec3 I, vec3 N, float eta, float roughness)
 {
-    vec3 R = refract(I, N, 1.0 / eta);
-    return texture(ENVIRONMENT_MAP, R).rgb;
+    vec3 R = refract(I, N, eta);
+    // Slightly blur refracted environment based on roughness
+    float lod = roughness * 4.0;
+
+    // Handle total internal reflection
+    if (dot(R, R) < 0.001) {
+        R = reflect(I, N);
+    }
+
+    return textureLod(ENVIRONMENT_MAP, R, lod).rgb;
+}
+
+// Calculate Fresnel effect for dielectric materials (glass, water)
+// Returns the ratio of reflection vs refraction
+float fresnel_dielectric(vec3 I, vec3 N, float ior)
+{
+    float cosi = clamp(dot(I, N), -1.0, 1.0);
+    float etai = 1.0;
+    float etat = ior;
+
+    if (cosi > 0.0) {
+        float temp = etai;
+        etai = etat;
+        etat = temp;
+    }
+
+    float sint = etai / etat * sqrt(max(0.0, 1.0 - cosi * cosi));
+
+    if (sint >= 1.0) {
+        return 1.0; // Total internal reflection
+    }
+
+    float cost = sqrt(max(0.0, 1.0 - sint * sint));
+    cosi = abs(cosi);
+
+    // Fresnel equations for s and p polarized light
+    float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+    float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+
+    return (Rs * Rs + Rp * Rp) / 2.0;
 }
 
 // ============================================================================
@@ -276,16 +358,22 @@ vec3 calculate_ibl(
     vec3 kS = F;
     vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
+    // Diffuse IBL (irradiance)
     const float DIFFUSE_MIP = 5.0;
     vec3 irradiance = textureLod(ENVIRONMENT_MAP, N, DIFFUSE_MIP).rgb;
     vec3 diffuse = kD * irradiance * albedo;
 
-    const float MAX_REFLECTION_LOD = 7.0;
+    // Specular IBL (prefiltered environment) - IMPROVED for sharper reflections
+    const float MAX_REFLECTION_LOD = 6.0; // Reduced for sharper reflections
     float lod = roughness * MAX_REFLECTION_LOD;
     vec3 prefilteredColor = textureLod(ENVIRONMENT_MAP, R, lod).rgb;
 
+    // Better environmental BRDF approximation
     vec2 envBRDF = vec2(1.0 - roughness, 1.0 - roughness);
-    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+    // Boost specular for metals
+    float metallic_boost = mix(1.0, 2.0, metallic); // Metals get 2x stronger reflections
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y) * metallic_boost;
 
     return (diffuse + specular) * ao;
 }
@@ -386,23 +474,97 @@ void main()
 
     // --- Image-Based Lighting (IBL) ---
     vec3 ibl_contribution = vec3(0.0);
-    vec3 env_color = vec3(0.0);
+    vec3 env_reflection = vec3(0.0);
+    vec3 env_refraction = vec3(0.0);
 
     if (HAS(HAS_IBL)) {
-        ibl_contribution = calculate_ibl(N, V, F0, finalAlbedo, finalMetallic, finalRoughness, finalAO);
+        // Standard IBL for opaque materials
+        ibl_contribution = calculate_ibl(N, V, F0, finalAlbedo, finalMetallic, finalRoughness, finalAO) * 0.5; // Increased from 0.3
+
+        // Enhanced reflections for metallic materials (SIGNIFICANTLY BOOSTED)
+        if (finalMetallic > 0.5) {
+            vec3 R = reflect(I, N);
+            float lod = finalRoughness * 8.0;
+            vec3 metallic_reflection = textureLod(ENVIRONMENT_MAP, R, lod).rgb;
+
+            float NdotV = max(dot(N, V), 0.0);
+            vec3 F = fresnel_schlick_roughness(NdotV, F0, finalRoughness);
+
+            // MUCH stronger metallic reflections for chrome/mirror effect
+            float metallic_strength = mix(1.5, 3.0, finalMetallic); // More metallic = stronger reflection
+            float roughness_factor = 1.0 - finalRoughness * 0.3; // Less penalty for roughness
+
+            env_reflection = metallic_reflection * F * roughness_factor * metallic_strength;
+            ibl_contribution += env_reflection * finalMetallic;
+        }
+
+        // Refraction for transparent materials (when alpha < 1.0 and IOR > 1.0)
+        if (albedoSample.a < 0.99 && material.ior > 1.0) {
+            float eta = 1.0 / material.ior;
+
+            // Calculate Fresnel for dielectric
+            float fresnelAmount = fresnel_dielectric(I, N, material.ior);
+
+            // Sample both reflection and refraction
+            vec3 refl = sample_reflection(I, N, finalRoughness);
+            vec3 refr = sample_refraction(I, N, eta, finalRoughness);
+
+            // Blend based on Fresnel and roughness
+            env_refraction = mix(refr, refl, fresnelAmount);
+
+            // Apply to transparent parts
+            float transparency = 1.0 - albedoSample.a;
+            ibl_contribution = mix(ibl_contribution, env_refraction * 0.8, transparency * 0.8);
+        }
     }
 
     // --- Ambient Light & Emission ---
-    vec3 ambient = HAS(HAS_IBL) ? vec3(0.0) : vec3(0.03) * finalAlbedo * finalAO;
-    vec3 color = ambient + Lo + ibl_contribution + env_color + finalEmissive;
+    // When IBL is disabled, use improved hemisphere ambient
+    vec3 ambient = vec3(0.0);
+    if (!HAS(HAS_IBL)) {
+        // Hemisphere ambient lighting approximation
+        // Sky color (top) and ground color (bottom)
+        vec3 sky_color = vec3(0.05, 0.05, 0.08); // Slightly blue
+        vec3 ground_color = vec3(0.02, 0.02, 0.02); // Dark ground
+
+        // Blend based on normal direction (up = sky, down = ground)
+        float sky_factor = N.y * 0.5 + 0.5; // Remap -1..1 to 0..1
+        vec3 ambient_color = mix(ground_color, sky_color, sky_factor);
+
+        // Apply Fresnel for ambient (more realistic)
+        float NdotV = max(dot(N, V), 0.0);
+        vec3 F_ambient = fresnel_schlick_roughness(NdotV, F0, finalRoughness);
+        vec3 kD_ambient = (vec3(1.0) - F_ambient) * (1.0 - finalMetallic);
+
+        ambient = ambient_color * finalAlbedo * kD_ambient * finalAO;
+    }
+
+    vec3 color = ambient + Lo + ibl_contribution + finalEmissive;
 
     // ========================================================================
-    // Tone Mapping (ACES Filmic)
+    // Exposure Control
+    // ========================================================================
+    // Automatic exposure based on scene brightness
+    float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    float auto_exposure = 1.0 / (1.0 + luma * 0.5); // Adaptive
+    float manual_exposure = 0.8; // Manual control
+    float exposure = mix(manual_exposure, auto_exposure, 0.3); // Blend
+    color *= exposure;
+
+    // ========================================================================
+    // Tone Mapping (Improved ACES)
     // ========================================================================
     // ACES tone mapping provides better color preservation than Reinhard.
     // Reference: Stephen Hill, "Aces Filmic Tone Mapping Curve"
     // https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
-    color = color * (2.51 * color + 0.03) / (color * (2.43 * color + 0.59) + 0.14);
+
+    // Improved ACES with better midtones
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    color = clamp((color * (a * color + b)) / (color * (c * color + d) + e), 0.0, 1.0);
 
     // ========================================================================
     // Gamma Correction (Linear to sRGB)

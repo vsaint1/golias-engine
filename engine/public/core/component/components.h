@@ -105,6 +105,7 @@ struct Material {
     float ior               = 1.0f; // Index of Refraction
 
     BlendMode blend_mode = BlendMode::OPAQUE;
+    bool use_ibl         = true;
 
     Uint32 albedo_map    = 0;
     Uint32 specular_map  = 0;
@@ -146,6 +147,9 @@ struct Material {
         }
         if (use_emissive_map) {
             has_features |= HAS_EMISSIVE_MAP;
+        }
+        if (use_ibl) {
+            has_features |= HAS_IBL;
         }
     }
 

@@ -173,9 +173,6 @@ void render_world_3d_system() {
         calculate_light_system(camera_transform.position, main_camera_view, main_camera_proj, directionalLights);
 
 
-    // renderer->begin_environment_pass();
-    // renderer->end_environment_pass();
-
     renderer->begin_shadow_pass();
     renderer->render_shadow_pass(light_space_matrix);
     renderer->end_shadow_pass();
@@ -183,4 +180,8 @@ void render_world_3d_system() {
     renderer->begin_render_target();
     renderer->render_main_target(main_camera, camera_transform, light_space_matrix, directionalLights, spotLights);
     renderer->end_render_target();
+
+    renderer->begin_environment_pass();
+    renderer->render_environment_pass(main_camera);
+    renderer->end_environment_pass();
 }
