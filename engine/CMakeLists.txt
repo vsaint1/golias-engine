@@ -6,10 +6,8 @@ set(CMAKE_C_STANDARD 99)
 
 add_definitions(-DENGINE_VERSION="${ENGINE_VERSION}")
 
-# Base sources
 file(GLOB_RECURSE ENGINE_SOURCES "private/*.cpp" "private/*.c")
 
-# Exclude all platform-specific and .mm files initially
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/platform/.*")
 list(FILTER ENGINE_SOURCES EXCLUDE REGEX "engine/private/core/renderer/.mm")
 
