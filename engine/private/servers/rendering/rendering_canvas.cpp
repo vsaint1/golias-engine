@@ -8,19 +8,19 @@ namespace shaders {
 #version 300 es
 precision highp float;
 
-layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec4 aColor;
-layout(location = 2) in vec2 aTexCoord;
+layout(location = 0) in vec3 VERTEX;
+layout(location = 1) in vec4 COLOR;
+layout(location = 2) in vec2 UV;
 
-uniform mat4 uViewProjection;
+uniform mat4 VIEW_PROJECTION_MATRIX;
 
 out vec4 vColor;
 out vec2 vTexCoord;
 
 void main() {
-    vColor = aColor;
-    vTexCoord = aTexCoord;
-    gl_Position = uViewProjection * vec4(aPosition, 1.0);
+    vColor = COLOR;
+    vTexCoord = UV;
+    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 }
 )";
 
@@ -31,19 +31,18 @@ precision highp float;
 in vec4 vColor;
 in vec2 vTexCoord;
 
-out vec4 fragColor;
+out vec4 ALBEDO;
 
-uniform sampler2D uTexture;
-uniform int uUseTexture;
+uniform sampler2D TEXTURE;
 
 void main() {
-    vec4 texColor = texture(uTexture, vTexCoord);
+    vec4 texColor = texture(TEXTURE, vTexCoord);
 
     if (texColor.a < 0.01) {
         discard;
     }
 
-    fragColor = texColor * vColor;
+    ALBEDO = texColor * vColor;
 }
 )";
 } // namespace shaders
@@ -212,7 +211,7 @@ void RenderingCanvas::flush() {
     rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
 
     glm::mat4 vp = projection * view;
-    rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
+    rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
 
     int tex_unit = 0;
@@ -697,15 +696,15 @@ void RenderingCanvas::draw_custom(golias::RID custom_shader, float x, float y, f
     rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
 
     glm::mat4 vp = projection * view;
-    rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
+    rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
     float time_value = SDL_GetTicks() / 1000.0f;
-    rd->push_constant("uTime", &time_value, sizeof(float));
+    rd->push_constant("TIME", &time_value, sizeof(float));
 
     if (texture != golias::INVALID_RID) {
         rd->bind_texture(0, texture, default_sampler);
         int tex_unit = 0;
-        rd->push_constant("uTexture", &tex_unit, sizeof(int));
+        rd->push_constant("TEXTURE", &tex_unit, sizeof(int));
     } else {
         rd->bind_texture(0, white_texture, default_sampler);
     }
@@ -812,7 +811,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
 
         glm::mat4 vp = projection * view;
-        rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
+        rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
         float time_value = SDL_GetTicks() / 1000.0f;
         rd->push_constant("uTime", &time_value, sizeof(float));
