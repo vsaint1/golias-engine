@@ -19,9 +19,10 @@ cmake-build-debug
 
 jniLibs/
 
-res/sounds
-res/sprites
-res/shaders/test
+#res/sounds
+#res/sprites
+#res/shaders/test
+res/test
 
 res/scripts/test.lua
 res/scripts/test_2d.lua
