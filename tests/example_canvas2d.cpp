@@ -1,10 +1,9 @@
-#include "../engine/public/servers/rendering/rendering_canvas.h"
+#include "servers/rendering/rendering_canvas.h"
 #include "stdafx.h"
 #include <SDL3/SDL_main.h>
 
 
 namespace golias {
-
 
 
     class Camera2D {
@@ -54,10 +53,6 @@ namespace golias {
             position.y = y - viewport_height / (2.0f * zoom);
         }
     };
-
-
-
-
 
 
 } // namespace golias
@@ -118,31 +113,31 @@ int main(int argc, char* argv[]) {
     rd.initialize();
 
 
-    golias::RenderingCanvas renderer(&rd);
+    RenderingCanvas renderer(&rd);
     renderer.initialize(1280, 720);
     renderer.set_viewport_size(1280, 720);
-    renderer.set_scale_mode(golias::ScaleMode::KEEP);
+    renderer.set_scale_mode(ScaleMode::KEEP);
 
-    golias::RID my_texture  = renderer.load_texture_from_file("res/icon.png");
-    golias::RID my_texture2 = renderer.load_texture_from_file("res/monsters.png");
+    RID my_texture  = renderer.load_texture_from_file("res/icon.png");
+    RID my_texture2 = renderer.load_texture_from_file("res/test/sprites/monsters.png");
 
-    golias::TextureDescription pixel_art_desc;
-    pixel_art_desc.min_filter = golias::TextureFilter::NEAREST;
-    pixel_art_desc.mag_filter = golias::TextureFilter::NEAREST;
-    pixel_art_desc.wrap_u     = golias::TextureWrap::CLAMP_TO_EDGE;
-    pixel_art_desc.wrap_v     = golias::TextureWrap::CLAMP_TO_EDGE;
-    golias::RID pixel_texture = renderer.load_texture_from_file("res/monsters.png", pixel_art_desc);
+    TextureDescription pixel_art_desc;
+    pixel_art_desc.min_filter = TextureFilter::NEAREST;
+    pixel_art_desc.mag_filter = TextureFilter::NEAREST;
+    pixel_art_desc.wrap_u     = TextureWrap::CLAMP_TO_EDGE;
+    pixel_art_desc.wrap_v     = TextureWrap::CLAMP_TO_EDGE;
+    RID pixel_texture         = renderer.load_texture_from_file("res/test/sprites/monsters.png", pixel_art_desc);
 
-    golias::TextureDescription smooth_desc;
-    smooth_desc.min_filter     = golias::TextureFilter::LINEAR;
-    smooth_desc.mag_filter     = golias::TextureFilter::LINEAR;
-    smooth_desc.wrap_u         = golias::TextureWrap::REPEAT;
-    smooth_desc.wrap_v         = golias::TextureWrap::REPEAT;
-    golias::RID smooth_texture = renderer.load_texture_from_file("res/icon.png", smooth_desc);
+    TextureDescription smooth_desc;
+    smooth_desc.min_filter = TextureFilter::LINEAR;
+    smooth_desc.mag_filter = TextureFilter::LINEAR;
+    smooth_desc.wrap_u     = TextureWrap::REPEAT;
+    smooth_desc.wrap_v     = TextureWrap::REPEAT;
+    RID smooth_texture     = renderer.load_texture_from_file("res/icon.png", smooth_desc);
 
-    golias::RID wavy_shader    = renderer.create_shader_from_file("res/shaders/wave.glsl");
-    golias::RID rainbow_shader = renderer.create_shader_from_file("res/shaders/rainbow.glsl");
-    golias::RID retro_shader   = renderer.create_shader_from_file("res/shaders/retro.glsl");
+    RID wavy_shader    = renderer.create_shader_from_file("res/test/shaders/wave.glsl");
+    RID rainbow_shader = renderer.create_shader_from_file("res/test/shaders/rainbow.glsl");
+    RID retro_shader   = renderer.create_shader_from_file("res/test/shaders/retro.glsl");
 
     golias::Camera2D camera(0.0f, 0.0f, 1.0f);
     bool use_camera = false; // Toggle with C key
@@ -151,8 +146,8 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
     float time = 0.0f;
 
-    TTF_Font* mine = renderer.load_font_from_file("res/fonts/Minecraft.ttf", 24.0f);
-    TTF_Font* font = renderer.load_font_from_file( "res/fonts/Default.ttf", 24.0f);
+    TTF_Font* mine = renderer.load_font_from_file("res/test/fonts/Minecraft.ttf", 24.0f);
+    TTF_Font* font = renderer.load_font_from_file("res/test/fonts/Default.ttf", 24.0f);
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -168,13 +163,13 @@ int main(int argc, char* argv[]) {
 
             if (event.type == SDL_EVENT_KEY_DOWN) {
                 if (event.key.key == SDLK_1) {
-                    renderer.set_scale_mode(golias::ScaleMode::NONE);
+                    renderer.set_scale_mode(ScaleMode::NONE);
                     printf("Scale Mode: NONE (no scaling, centered)\n");
                 } else if (event.key.key == SDLK_2) {
-                    renderer.set_scale_mode(golias::ScaleMode::KEEP);
+                    renderer.set_scale_mode(ScaleMode::KEEP);
                     printf("Scale Mode: KEEP (aspect ratio preserved)\n");
                 } else if (event.key.key == SDLK_3) {
-                    renderer.set_scale_mode(golias::ScaleMode::EXPAND);
+                    renderer.set_scale_mode(ScaleMode::EXPAND);
                     printf("Scale Mode: EXPAND (fill window, may stretch)\n");
                 } else if (event.key.key == SDLK_C) {
                     use_camera = !use_camera;
@@ -223,7 +218,7 @@ int main(int argc, char* argv[]) {
 
         time += 0.016f;
 
-        renderer.begin(golias::Color(0.1f, 0.1f, 0.15f, 1.0f));
+        renderer.begin(Color(0.1f, 0.1f, 0.15f, 1.0f));
 
 
         if (use_camera) {
@@ -232,66 +227,66 @@ int main(int argc, char* argv[]) {
             renderer.reset_camera();
         }
 
-        renderer.draw_rect(50, 50, 150, 100, golias::Color::RED);
+        renderer.draw_rect(50, 50, 150, 100, Color::RED);
 
-        renderer.draw_circle(400, 150, 60, golias::Color::GREEN);
+        renderer.draw_circle(400, 150, 60, Color::GREEN);
 
-        renderer.draw_triangle(550, 50, 650, 50, 600, 150, golias::Color::BLUE);
+        renderer.draw_triangle(550, 50, 650, 50, 600, 150, Color::BLUE);
 
-        renderer.draw_line(50, 250, 200, 250, golias::Color::YELLOW, 3.0f);
-        renderer.draw_line(50, 280, 200, 320, golias::Color::CYAN, 2.0f);
+        renderer.draw_line(50, 250, 200, 250, Color::YELLOW, 3.0f);
+        renderer.draw_line(50, 280, 200, 320, Color::CYAN, 2.0f);
 
-        renderer.draw_rect_outlined(250, 250, 120, 80, golias::Color::MAGENTA, 2.0f);
-        renderer.draw_circle(450, 300, 50, golias::Color::YELLOW);
+        renderer.draw_rect_outlined(250, 250, 120, 80, Color::MAGENTA, 2.0f);
+        renderer.draw_circle(450, 300, 50, Color::YELLOW);
 
         float rotation = time * 2.0f;
-        renderer.draw_rect(550, 250, 100, 100, golias::Color::CYAN, rotation);
+        renderer.draw_rect(550, 250, 100, 100, Color::CYAN, rotation);
 
         renderer.draw_texture(my_texture2, 50, 400, 150, 150);
 
-        renderer.draw_texture(my_texture, 250, 400, 120, 120, golias::Color::WHITE, time * 3.0f);
+        renderer.draw_texture(my_texture, 250, 400, 120, 120, Color::WHITE, time * 3.0f);
 
         renderer.draw_texture(my_texture, 50, 50, 100, 100);
 
         renderer.draw_texture(pixel_texture, 900, 50, 128, 128);
-        renderer.draw_text(font, 900, 15, golias::Color::WHITE, "NEAREST Filter");
+        renderer.draw_text(font, 900, 15, Color::WHITE, "NEAREST Filter");
 
 
-        if (wavy_shader != golias::INVALID_RID) {
-            renderer.draw_custom(wavy_shader, 200, 50, 100, 100, my_texture, golias::Color::WHITE);
+        if (wavy_shader != INVALID_RID) {
+            renderer.draw_custom(wavy_shader, 200, 50, 100, 100, my_texture, Color::WHITE);
         }
 
-        if (rainbow_shader != golias::INVALID_RID) {
-            renderer.draw_custom(rainbow_shader, 200, 170, 100, 100, golias::INVALID_RID, golias::Color::WHITE);
+        if (rainbow_shader != INVALID_RID) {
+            renderer.draw_custom(rainbow_shader, 200, 170, 100, 100, INVALID_RID, Color::WHITE);
         }
 
-        if (retro_shader != golias::INVALID_RID) {
-            renderer.draw_custom(retro_shader, 200, 290, 100, 100, my_texture, golias::Color::WHITE);
+        if (retro_shader != INVALID_RID) {
+            renderer.draw_custom(retro_shader, 200, 290, 100, 100, my_texture, Color::WHITE);
         }
 
         renderer.draw_texture_ex(700, 50, 80, 80, my_texture);
 
-        renderer.draw_texture_ex(800, 50, 80, 80, my_texture, {0, 0, 0, 0}, golias::Color::WHITE, 0.0f, true, false);
+        renderer.draw_texture_ex(800, 50, 80, 80, my_texture, {0, 0, 0, 0}, Color::WHITE, 0.0f, true, false);
 
-        renderer.draw_texture_ex(700, 150, 80, 80, my_texture, {0, 0, 0, 0}, golias::Color::WHITE, 0.0f, false, true);
+        renderer.draw_texture_ex(700, 150, 80, 80, my_texture, {0, 0, 0, 0}, Color::WHITE, 0.0f, false, true);
 
-        renderer.draw_texture_ex(800, 150, 80, 80, my_texture, {0, 0, 0, 0}, golias::Color::WHITE, 0.0f, true, true);
+        renderer.draw_texture_ex(800, 150, 80, 80, my_texture, {0, 0, 0, 0}, Color::WHITE, 0.0f, true, true);
 
-        renderer.draw_texture_ex(750, 270, 80, 80, my_texture, {0, 0, 0, 0}, golias::Color::WHITE, time * 2.0f, false, false, wavy_shader);
-
-
-        renderer.draw_texture_ex(700, 380, 64, 64, pixel_texture, {0, 0, 32, 32}, golias::Color::WHITE);
-
-        renderer.draw_text(mine, 400, 50, golias::Color::WHITE, "Hello World! 👋 Welcome!");
-        renderer.draw_text(font, 400, 80, golias::Color::WHITE, "Frame: {} 🎮", static_cast<int>(time * 60));
-        renderer.draw_text(font, 400, 110, golias::Color::WHITE, "Position: ({}, {}) 📍", 123, 456);
-        renderer.draw_text(font, 400, 140, golias::Color::WHITE, "Time: {:.2f}s ⏱️", time);
-        renderer.draw_text(font, 400, 170, golias::Color::WHITE, "FPS: {} 🚀", 60);
-        renderer.draw_text(font, 400, 200, golias::Color::WHITE, "Mixed: ABC 123 😀 🎉 🔥 ⭐ XYZ");
+        renderer.draw_texture_ex(750, 270, 80, 80, my_texture, {0, 0, 0, 0}, Color::WHITE, time * 2.0f, false, false, wavy_shader);
 
 
-        renderer.draw_text(font, 400, 240, golias::Color::GREEN, "Health: {}", 100);
-        renderer.draw_text(font, 400, 270, golias::Color::RED, "Score: 999,999 🏆");
+        renderer.draw_texture_ex(700, 380, 64, 64, pixel_texture, {0, 0, 32, 32}, Color::WHITE);
+
+        renderer.draw_text(mine, 400, 50, Color::WHITE, "Hello World! 👋 Welcome!");
+        renderer.draw_text(font, 400, 80, Color::WHITE, "Frame: {} 🎮", static_cast<int>(time * 60));
+        renderer.draw_text(font, 400, 110, Color::WHITE, "Position: ({}, {}) 📍", 123, 456);
+        renderer.draw_text(font, 400, 140, Color::WHITE, "Time: {:.2f}s ⏱️", time);
+        renderer.draw_text(font, 400, 170, Color::WHITE, "FPS: {} 🚀", 60);
+        renderer.draw_text(font, 400, 200, Color::WHITE, "Mixed: ABC 123 😀 🎉 🔥 ⭐ XYZ");
+
+
+        renderer.draw_text(font, 400, 240, Color::GREEN, "Health: {}", 100);
+        renderer.draw_text(font, 400, 270, Color::RED, "Score: 999,999 🏆");
 
         renderer.end();
 
@@ -300,18 +295,6 @@ int main(int argc, char* argv[]) {
         SDL_Delay(16);
     }
 
-
-    if (wavy_shader != golias::INVALID_RID) {
-        renderer.destroy_shader(wavy_shader);
-    }
-
-    if (rainbow_shader != golias::INVALID_RID) {
-        renderer.destroy_shader(rainbow_shader);
-    }
-
-    if (retro_shader != golias::INVALID_RID) {
-        renderer.destroy_shader(retro_shader);
-    }
 
     renderer.shutdown();
     rd.shutdown();

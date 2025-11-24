@@ -1,7 +1,5 @@
 #include "servers/rendering/rendering_canvas.h"
 
-using namespace golias;
-
 
 namespace shaders {
     const char* default_vertex_2d = R"(
@@ -48,11 +46,10 @@ void main() {
 } // namespace shaders
 
 
-RenderingCanvas::RenderingCanvas(golias::RenderingDevice* device)
-    : rd(device), shader(golias::INVALID_RID), pipeline(golias::INVALID_RID), vertex_buffer(golias::INVALID_RID),
-      index_buffer(golias::INVALID_RID), white_texture(golias::INVALID_RID), default_sampler(golias::INVALID_RID),
-      current_blend_mode(BlendMode::ALPHA), scale_mode(ScaleMode::KEEP), line_width(1.0f), window_width(800), window_height(600),
-      viewport_width(800), viewport_height(600), is_drawing(false) {
+RenderingCanvas::RenderingCanvas(RenderingDevice* device)
+    : rd(device), shader(INVALID_RID), pipeline(INVALID_RID), vertex_buffer(INVALID_RID), index_buffer(INVALID_RID),
+      white_texture(INVALID_RID), default_sampler(INVALID_RID), current_blend_mode(BlendMode::ALPHA), scale_mode(ScaleMode::KEEP),
+      line_width(1.0f), window_width(800), window_height(600), viewport_width(800), viewport_height(600), is_drawing(false) {
 }
 
 RenderingCanvas::~RenderingCanvas() {
@@ -75,46 +72,46 @@ bool RenderingCanvas::initialize(int width, int height) {
 
     shader = rd->shader_create_from_source(shaders::default_vertex_2d, shaders::default_fragment_2d);
 
-    if (shader == golias::INVALID_RID) {
+    if (shader == INVALID_RID) {
         return false;
     }
 
     uint8_t white_pixel[] = {255, 255, 255, 255};
     white_texture         = load_texture_from_memory(white_pixel, 1, 1, 4);
 
-    golias::SamplerState sampler_state;
-    sampler_state.min_filter = golias::TextureFilter::LINEAR;
-    sampler_state.mag_filter = golias::TextureFilter::LINEAR;
+    SamplerState sampler_state;
+    sampler_state.min_filter = TextureFilter::LINEAR;
+    sampler_state.mag_filter = TextureFilter::LINEAR;
     default_sampler          = rd->sampler_create(sampler_state);
 
     const size_t max_vertices = 10000;
     const size_t max_indices  = 15000;
 
-    vertex_buffer = rd->buffer_create(max_vertices * sizeof(Vertex), (uint32_t) golias::BufferUsage::VERTEX, nullptr);
+    vertex_buffer = rd->buffer_create(max_vertices * sizeof(Vertex), (uint32_t) BufferUsage::VERTEX, nullptr);
 
-    index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) golias::BufferUsage::INDEX, nullptr);
+    index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) BufferUsage::INDEX, nullptr);
 
-    golias::PipelineState pipeline_state;
+    PipelineState pipeline_state;
     pipeline_state.shader                          = shader;
-    pipeline_state.topology                        = golias::PrimitiveTopology::TRIANGLES;
+    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
     pipeline_state.vertex_format.stride            = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes        = {{0, golias::DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                      {1, golias::DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                      {2, golias::DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
-    pipeline_state.rasterization.cull_mode         = golias::CullMode::NONE;
+    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 
-    golias::BlendState blend;
+    BlendState blend;
     blend.enable    = true;
-    blend.src_color = golias::BlendFactor::SRC_ALPHA;
-    blend.dst_color = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
-    blend.src_alpha = golias::BlendFactor::ONE;
-    blend.dst_alpha = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
+    blend.src_color = BlendFactor::SRC_ALPHA;
+    blend.dst_color = BlendFactor::ONE_MINUS_SRC_ALPHA;
+    blend.src_alpha = BlendFactor::ONE;
+    blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
     pipeline_state.blend_states.push_back(blend);
 
     pipeline = rd->pipeline_create(pipeline_state);
 
-    if (pipeline == golias::INVALID_RID) {
+    if (pipeline == INVALID_RID) {
         return false;
     }
 
@@ -129,27 +126,27 @@ bool RenderingCanvas::initialize(int width, int height) {
 }
 
 void RenderingCanvas::shutdown() {
-    if (pipeline != golias::INVALID_RID) {
+    if (pipeline != INVALID_RID) {
         rd->pipeline_destroy(pipeline);
     }
 
-    if (vertex_buffer != golias::INVALID_RID) {
+    if (vertex_buffer != INVALID_RID) {
         rd->buffer_destroy(vertex_buffer);
     }
 
-    if (index_buffer != golias::INVALID_RID) {
+    if (index_buffer != INVALID_RID) {
         rd->buffer_destroy(index_buffer);
     }
 
-    if (white_texture != golias::INVALID_RID) {
+    if (white_texture != INVALID_RID) {
         rd->texture_destroy(white_texture);
     }
 
-    if (default_sampler != golias::INVALID_RID) {
+    if (default_sampler != INVALID_RID) {
         rd->sampler_destroy(default_sampler);
     }
 
-    if (shader != golias::INVALID_RID) {
+    if (shader != INVALID_RID) {
         rd->shader_destroy(shader);
     }
 
@@ -183,10 +180,10 @@ void RenderingCanvas::begin(const Color& clear_color) {
     int vp_x, vp_y, vp_w, vp_h;
     calculate_viewport(viewport_width, viewport_height, vp_x, vp_y, vp_w, vp_h);
 
-    golias::Viewport viewport{(float) vp_x, (float) vp_y, (float) vp_w, (float) vp_h, 0.0f, 1.0f};
-    golias::Scissor scissor{0, 0, (uint32_t) viewport_width, (uint32_t) viewport_height};
+    Viewport viewport{(float) vp_x, (float) vp_y, (float) vp_w, (float) vp_h, 0.0f, 1.0f};
+    Scissor scissor{0, 0, (uint32_t) viewport_width, (uint32_t) viewport_height};
 
-    rd->render_pass_begin(golias::INVALID_RID, viewport, scissor);
+    rd->render_pass_begin(INVALID_RID, viewport, scissor);
     rd->clear_color(clear_color.to_vec4());
 }
 
@@ -208,7 +205,7 @@ void RenderingCanvas::flush() {
 
     rd->bind_pipeline(pipeline);
     rd->bind_vertex_buffers({vertex_buffer});
-    rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
+    rd->bind_index_buffer(index_buffer, IndexType::UINT16);
 
     glm::mat4 vp = projection * view;
     rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
@@ -286,7 +283,7 @@ TTF_Font* RenderingCanvas::load_font_from_file(const char* filepath, int size) {
         return loaded_fonts.at(filepath);
     }
 
-    TTF_Font* font = TTF_OpenFont(filepath, (float)size);
+    TTF_Font* font = TTF_OpenFont(filepath, (float) size);
 
     if (!font) {
         spdlog::error("Failed to load Font from file {}: {}", filepath, SDL_GetError());
@@ -356,7 +353,7 @@ void RenderingCanvas::draw_polygon(const std::vector<glm::vec2>& points, const C
         {white_texture, (uint32_t) (indices.size() - (points.size() - 2) * 3), (uint32_t) ((points.size() - 2) * 3), false});
 }
 
-void RenderingCanvas::draw_texture(golias::RID texture, float x, float y, float width, float height, const Color& tint, float rotation) {
+void RenderingCanvas::draw_texture(RID texture, float x, float y, float width, float height, const Color& tint, float rotation) {
 
     if (width == 0 || height == 0) {
         uint32_t tex_w, tex_h;
@@ -376,7 +373,7 @@ void RenderingCanvas::draw_texture(golias::RID texture, float x, float y, float 
     add_quad(get_current_transform() * transform, tint, texture, true);
 }
 
-void RenderingCanvas::add_quad(const glm::mat4& transform, const Color& color, golias::RID texture, bool use_texture) {
+void RenderingCanvas::add_quad(const glm::mat4& transform, const Color& color, RID texture, bool use_texture) {
     uint16_t base_vertex = vertices.size();
 
     glm::vec4 positions[] = {glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec4(0.5f, -0.5f, 0, 1), glm::vec4(0.5f, 0.5f, 0, 1),
@@ -480,80 +477,80 @@ glm::mat4 RenderingCanvas::get_current_transform() const {
     return result;
 }
 
-golias::RID RenderingCanvas::load_texture_from_file(const char* filepath) {
+RID RenderingCanvas::load_texture_from_file(const char* filepath) {
     int width, height, channels;
     stbi_uc* data = stbi_load(filepath, &width, &height, &channels, STBI_rgb_alpha);
 
     if (!data) {
         spdlog::error("Failed to load texture '{}': {}", filepath, stbi_failure_reason());
-        return golias::INVALID_RID;
+        return INVALID_RID;
     }
 
     spdlog::info("Loaded texture '{}' ({}x{})", filepath, width, height);
 
-    golias::TextureFormat format;
-    format.type    = golias::TextureType::TYPE_2D;
-    format.format  = golias::DataFormat::R8G8B8A8_UNORM;
+    TextureFormat format;
+    format.type    = TextureType::TYPE_2D;
+    format.format  = DataFormat::R8G8B8A8_UNORM;
     format.width   = width;
     format.height  = height;
     format.mipmaps = 1;
 
-    golias::RID rid = rd->texture_create(format, data);
+    RID rid = rd->texture_create(format, data);
 
     stbi_image_free(data);
 
     return rid;
 }
 
-golias::RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureDescription& desc) {
+RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureDescription& desc) {
     int width, height, channels;
     stbi_uc* data = stbi_load(filepath, &width, &height, &channels, STBI_rgb_alpha);
 
     if (!data) {
         spdlog::error("Failed to load texture '{}': {}", filepath, stbi_failure_reason());
-        return golias::INVALID_RID;
+        return INVALID_RID;
     }
 
 
-    golias::TextureFormat format;
-    format.type    = golias::TextureType::TYPE_2D;
-    format.format  = golias::DataFormat::R8G8B8A8_UNORM;
+    TextureFormat format;
+    format.type    = TextureType::TYPE_2D;
+    format.format  = DataFormat::R8G8B8A8_UNORM;
     format.width   = width;
     format.height  = height;
     format.mipmaps = desc.generate_mipmaps ? 1 : 0;
 
-    golias::RID texture = rd->texture_create(format, data);
+    RID texture = rd->texture_create(format, data);
 
-    if (desc.generate_mipmaps && texture != golias::INVALID_RID) {
+    if (desc.generate_mipmaps && texture != INVALID_RID) {
         rd->texture_generate_mipmaps(texture);
     }
 
     stbi_image_free(data);
 
-    if (texture != golias::INVALID_RID) {
-        golias::SamplerState sampler_state;
+    if (texture != INVALID_RID) {
+        SamplerState sampler_state;
         sampler_state.min_filter = desc.min_filter;
         sampler_state.mag_filter = desc.mag_filter;
         sampler_state.wrap_u     = desc.wrap_u;
         sampler_state.wrap_v     = desc.wrap_v;
 
-        golias::RID sampler       = rd->sampler_create(sampler_state);
+        RID sampler               = rd->sampler_create(sampler_state);
         texture_samplers[texture] = sampler;
     }
 
 
-    spdlog::info("Loaded Texture '{}' Size ({}x{}) Description: mipmaps={}, min_filter={}, mag_filter={}, wrap_u={}, wrap_v={}", filepath, width, height,
-                 desc.generate_mipmaps, static_cast<int>(desc.min_filter), static_cast<int>(desc.mag_filter),
+    spdlog::info("Loaded Texture '{}' Size ({}x{}) Description: mipmaps={}, min_filter={}, mag_filter={}, wrap_u={}, wrap_v={}", filepath,
+                 width, height, desc.generate_mipmaps, static_cast<int>(desc.min_filter), static_cast<int>(desc.mag_filter),
                  static_cast<int>(desc.wrap_u), static_cast<int>(desc.wrap_v));
 
     return texture;
 }
 
 
-golias::RID RenderingCanvas::load_texture_from_memory(void* data, int width, int height, int channels) {
-    golias::TextureFormat format;
-    format.type    = golias::TextureType::TYPE_2D;
-    format.format  = (channels == 4) ? golias::DataFormat::R8G8B8A8_UNORM : golias::DataFormat::R8G8B8_UNORM;
+RID RenderingCanvas::load_texture_from_memory(void* data, int width, int height, int channels) {
+    TextureFormat format;
+    format.type    = TextureType::TYPE_2D;
+    format.format  = (channels == 4) ? DataFormat::R8G8B8A8_UNORM : DataFormat::R8G8B8_UNORM;
     format.width   = width;
     format.height  = height;
     format.mipmaps = 1;
@@ -561,7 +558,7 @@ golias::RID RenderingCanvas::load_texture_from_memory(void* data, int width, int
     return rd->texture_create(format, data);
 }
 
-void RenderingCanvas::unload_texture(golias::RID texture) {
+void RenderingCanvas::unload_texture(RID texture) {
     auto it = texture_samplers.find(texture);
     if (it != texture_samplers.end()) {
         rd->sampler_destroy(it->second);
@@ -571,28 +568,28 @@ void RenderingCanvas::unload_texture(golias::RID texture) {
 }
 
 
-golias::RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
+RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
     return rd->shader_create_from_source(vertex_src, fragment_src);
 }
 
-golias::RID RenderingCanvas::create_shader_from_file(const char* filepath) {
+RID RenderingCanvas::create_shader_from_file(const char* filepath) {
     ShaderSource parsed = load_shader_file(filepath);
 
     if (!parsed.is_loaded) {
         spdlog::error("Failed to parse Shader file: {}", filepath);
-        return golias::INVALID_RID;
+        return INVALID_RID;
     }
 
     if (parsed.is_compute) {
         spdlog::error("Compute Shaders not Supported for this Rendering: {}", filepath);
-        return golias::INVALID_RID;
+        return INVALID_RID;
     }
 
     spdlog::info("Creating shader from file: {}", filepath);
 
-    golias::RID shader = rd->shader_create_from_source(parsed.vertex_source.c_str(), parsed.fragment_source.c_str());
+    RID shader = rd->shader_create_from_source(parsed.vertex_source.c_str(), parsed.fragment_source.c_str());
 
-    if (shader == golias::INVALID_RID) {
+    if (shader == INVALID_RID) {
         spdlog::debug("=== VERTEX SHADER ===\n{}", parsed.vertex_source.c_str());
         spdlog::debug("=== FRAGMENT SHADER ===\n{}", parsed.fragment_source.c_str());
         spdlog::error("Failed to compile shader from file: {}", filepath);
@@ -603,13 +600,13 @@ golias::RID RenderingCanvas::create_shader_from_file(const char* filepath) {
     return shader;
 }
 
-golias::RID RenderingCanvas::create_shader_from_source(const char* source) {
+RID RenderingCanvas::create_shader_from_source(const char* source) {
     ShaderSource parsed = parse_shader(source);
 
     return rd->shader_create_from_source(parsed.vertex_source, parsed.fragment_source);
 }
 
-void RenderingCanvas::destroy_shader(golias::RID shader) {
+void RenderingCanvas::destroy_shader(RID shader) {
 
     auto it = custom_shader_pipelines.find(shader);
 
@@ -621,7 +618,7 @@ void RenderingCanvas::destroy_shader(golias::RID shader) {
     rd->shader_destroy(shader);
 }
 
-golias::RID RenderingCanvas::get_or_create_custom_pipeline(golias::RID shader) {
+RID RenderingCanvas::get_or_create_custom_pipeline(RID shader) {
 
     auto it = custom_shader_pipelines.find(shader);
 
@@ -629,19 +626,18 @@ golias::RID RenderingCanvas::get_or_create_custom_pipeline(golias::RID shader) {
         return it->second;
     }
 
-    golias::PipelineState pipeline_state;
+    PipelineState pipeline_state;
     pipeline_state.shader                          = shader;
-    pipeline_state.topology                        = golias::PrimitiveTopology::TRIANGLES;
+    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
     pipeline_state.vertex_format.stride            = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes        = {{0, golias::DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                      {1, golias::DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                      {2, golias::DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
-    pipeline_state.rasterization.cull_mode         = golias::CullMode::NONE;
+    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 }
 
-void RenderingCanvas::draw_custom(golias::RID custom_shader, float x, float y, float width, float height, golias::RID texture,
-                                  const Color& color) {
+void RenderingCanvas::draw_custom(RID custom_shader, float x, float y, float width, float height, RID texture, const Color& color) {
     if (!is_drawing) {
         return;
     }
@@ -667,33 +663,33 @@ void RenderingCanvas::draw_custom(golias::RID custom_shader, float x, float y, f
     custom_indices = {0, 1, 2, 2, 3, 0};
 
 
-    golias::PipelineState custom_pipeline_state;
+    PipelineState custom_pipeline_state;
     custom_pipeline_state.shader                   = custom_shader;
-    custom_pipeline_state.topology                 = golias::PrimitiveTopology::TRIANGLES;
+    custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
     custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
-    custom_pipeline_state.vertex_format.attributes = {{0, golias::DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                      {1, golias::DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                      {2, golias::DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
 
-    custom_pipeline_state.rasterization.cull_mode         = golias::CullMode::NONE;
+    custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     custom_pipeline_state.depth_stencil.depth_test_enable = false;
 
-    golias::BlendState blend;
+    BlendState blend;
     blend.enable    = true;
-    blend.src_color = golias::BlendFactor::SRC_ALPHA;
-    blend.dst_color = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
-    blend.src_alpha = golias::BlendFactor::ONE;
-    blend.dst_alpha = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
+    blend.src_color = BlendFactor::SRC_ALPHA;
+    blend.dst_color = BlendFactor::ONE_MINUS_SRC_ALPHA;
+    blend.src_alpha = BlendFactor::ONE;
+    blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
     custom_pipeline_state.blend_states.push_back(blend);
 
-    golias::RID custom_pipeline = rd->pipeline_create(custom_pipeline_state);
+    RID custom_pipeline = rd->pipeline_create(custom_pipeline_state);
 
     rd->buffer_update(vertex_buffer, 0, custom_vertices.size() * sizeof(Vertex), custom_vertices.data());
     rd->buffer_update(index_buffer, 0, custom_indices.size() * sizeof(uint16_t), custom_indices.data());
 
     rd->bind_pipeline(custom_pipeline);
     rd->bind_vertex_buffers({vertex_buffer});
-    rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
+    rd->bind_index_buffer(index_buffer, IndexType::UINT16);
 
     glm::mat4 vp = projection * view;
     rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
@@ -701,7 +697,7 @@ void RenderingCanvas::draw_custom(golias::RID custom_shader, float x, float y, f
     float time_value = SDL_GetTicks() / 1000.0f;
     rd->push_constant("TIME", &time_value, sizeof(float));
 
-    if (texture != golias::INVALID_RID) {
+    if (texture != INVALID_RID) {
         rd->bind_texture(0, texture, default_sampler);
         int tex_unit = 0;
         rd->push_constant("TEXTURE", &tex_unit, sizeof(int));
@@ -716,13 +712,13 @@ void RenderingCanvas::draw_custom(golias::RID custom_shader, float x, float y, f
     rd->bind_pipeline(pipeline);
 }
 
-void RenderingCanvas::draw_texture_ex(float x, float y, float width, float height, golias::RID texture, const Rect& source,
-                                      const Color& color, float rotation, bool flip_h, bool flip_v, golias::RID shader) {
+void RenderingCanvas::draw_texture_ex(float x, float y, float width, float height, RID texture, const Rect& source, const Color& color,
+                                      float rotation, bool flip_h, bool flip_v, RID shader) {
     if (!is_drawing) {
         return;
     }
 
-    bool use_custom_shader = shader != golias::INVALID_RID;
+    bool use_custom_shader = shader != INVALID_RID;
 
     if (use_custom_shader) {
         flush();
@@ -743,7 +739,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
     glm::vec2 texcoords[4];
     float u_min = 0.0f, v_min = 0.0f, u_max = 1.0f, v_max = 1.0f;
 
-    if (source.width > 0 && source.height > 0 && texture != golias::INVALID_RID) {
+    if (source.width > 0 && source.height > 0 && texture != INVALID_RID) {
         uint32_t tex_width = 0, tex_height = 0;
         rd->texture_get_size(texture, tex_width, tex_height);
 
@@ -783,32 +779,32 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
 
         custom_indices = {0, 1, 2, 2, 3, 0};
 
-        golias::PipelineState custom_pipeline_state;
+        PipelineState custom_pipeline_state;
         custom_pipeline_state.shader                          = shader;
-        custom_pipeline_state.topology                        = golias::PrimitiveTopology::TRIANGLES;
+        custom_pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
         custom_pipeline_state.vertex_format.stride            = sizeof(Vertex);
-        custom_pipeline_state.vertex_format.attributes        = {{0, golias::DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                                 {1, golias::DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                                 {2, golias::DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
-        custom_pipeline_state.rasterization.cull_mode         = golias::CullMode::NONE;
+        custom_pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                                 {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                                 {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+        custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
         custom_pipeline_state.depth_stencil.depth_test_enable = false;
 
-        golias::BlendState blend;
+        BlendState blend;
         blend.enable    = true;
-        blend.src_color = golias::BlendFactor::SRC_ALPHA;
-        blend.dst_color = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
-        blend.src_alpha = golias::BlendFactor::ONE;
-        blend.dst_alpha = golias::BlendFactor::ONE_MINUS_SRC_ALPHA;
+        blend.src_color = BlendFactor::SRC_ALPHA;
+        blend.dst_color = BlendFactor::ONE_MINUS_SRC_ALPHA;
+        blend.src_alpha = BlendFactor::ONE;
+        blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
         custom_pipeline_state.blend_states.push_back(blend);
 
-        golias::RID custom_pipeline = rd->pipeline_create(custom_pipeline_state);
+        RID custom_pipeline = rd->pipeline_create(custom_pipeline_state);
 
         rd->buffer_update(vertex_buffer, 0, custom_vertices.size() * sizeof(Vertex), custom_vertices.data());
         rd->buffer_update(index_buffer, 0, custom_indices.size() * sizeof(uint16_t), custom_indices.data());
 
         rd->bind_pipeline(custom_pipeline);
         rd->bind_vertex_buffers({vertex_buffer});
-        rd->bind_index_buffer(index_buffer, golias::IndexType::UINT16);
+        rd->bind_index_buffer(index_buffer, IndexType::UINT16);
 
         glm::mat4 vp = projection * view;
         rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
@@ -816,7 +812,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         float time_value = SDL_GetTicks() / 1000.0f;
         rd->push_constant("uTime", &time_value, sizeof(float));
 
-        if (texture != golias::INVALID_RID) {
+        if (texture != INVALID_RID) {
             rd->bind_texture(0, texture, default_sampler);
             int tex_unit = 0;
             rd->push_constant("uTexture", &tex_unit, sizeof(int));
@@ -841,7 +837,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         indices.push_back(base_index + 3);
         indices.push_back(base_index + 0);
 
-        golias::RID tex = texture != golias::INVALID_RID ? texture : white_texture;
+        RID tex = texture != INVALID_RID ? texture : white_texture;
 
         if (draw_commands.empty() || draw_commands.back().texture != tex) {
             DrawCommand cmd{};
