@@ -810,12 +810,12 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
         float time_value = SDL_GetTicks() / 1000.0f;
-        rd->push_constant("uTime", &time_value, sizeof(float));
+        rd->push_constant("TIME", &time_value, sizeof(float));
 
         if (texture != INVALID_RID) {
             rd->bind_texture(0, texture, default_sampler);
             int tex_unit = 0;
-            rd->push_constant("uTexture", &tex_unit, sizeof(int));
+            rd->push_constant("TEXTURE", &tex_unit, sizeof(int));
         } else {
             rd->bind_texture(0, white_texture, default_sampler);
         }
