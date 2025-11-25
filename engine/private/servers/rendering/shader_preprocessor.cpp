@@ -271,7 +271,6 @@ ShaderSource load_shader_file(const char* filepath) {
         return result;
     }
 
-    // Get  size
     SDL_SeekIO(file, 0, SDL_IO_SEEK_END);
     Sint64 file_size = SDL_TellIO(file);
     SDL_SeekIO(file, 0, SDL_IO_SEEK_SET);
