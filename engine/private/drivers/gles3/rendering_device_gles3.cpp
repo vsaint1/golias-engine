@@ -105,8 +105,8 @@ RID RenderingDeviceGLES3::buffer_create(size_t size, uint32_t usage_flags, const
     GLuint buffer;
     glGenBuffers(1, &buffer);
 
-    GLenum target = (usage_flags & (uint32_t) BufferUsage::UNIFORM) ? GL_UNIFORM_BUFFER : GL_ARRAY_BUFFER;
-    if (usage_flags & (uint32_t) BufferUsage::INDEX) {
+    GLenum target = (usage_flags & (uint32_t) BufferUsage::BUFFER_USAGE_UNIFORM) ? GL_UNIFORM_BUFFER : GL_ARRAY_BUFFER;
+    if (usage_flags & (uint32_t) BufferUsage::BUFFER_USAGE_INDEX) {
         target = GL_ELEMENT_ARRAY_BUFFER;
     }
 
@@ -172,11 +172,11 @@ RID RenderingDeviceGLES3::texture_create(const TextureFormat& format, void* data
     glGenTextures(1, &texture);
 
     GLenum target = GL_TEXTURE_2D;
-    if (format.type == TextureType::TYPE_CUBE) {
+    if (format.type == TextureType::TEXTURE_TYPE_CUBEMAP) {
         target = GL_TEXTURE_CUBE_MAP;
-    } else if (format.type == TextureType::TYPE_2D_ARRAY) {
+    } else if (format.type == TextureType::TEXTURE_TYPE_2D_ARRAY) {
         target = GL_TEXTURE_2D_ARRAY;
-    } else if (format.type == TextureType::TYPE_3D) {
+    } else if (format.type == TextureType::TEXTURE_TYPE_3D) {
         target = GL_TEXTURE_3D;
     }
 
@@ -203,7 +203,7 @@ RID RenderingDeviceGLES3::texture_create(const TextureFormat& format, void* data
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    if (format.type == TextureType::TYPE_2D) {
+    if (format.type == TextureType::TEXTURE_TYPE_2D) {
         if (data == nullptr) {
             printf("ERROR: texture_create called with null data!\n");
             glTexImage2D(GL_TEXTURE_2D, 0, internal_format, format.width, format.height, 0, pixel_format, pixel_type, nullptr);
@@ -546,7 +546,7 @@ void RenderingDeviceGLES3::bind_texture(uint32_t binding, RID texture, RID sampl
     if (tex_it != textures.end()) {
         glActiveTexture(GL_TEXTURE0 + binding);
         GLenum target = GL_TEXTURE_2D;
-        if (tex_it->second.format.type == TextureType::TYPE_CUBE) {
+        if (tex_it->second.format.type == TextureType::TEXTURE_TYPE_CUBEMAP) {
             target = GL_TEXTURE_CUBE_MAP;
         }
         glBindTexture(target, tex_it->second.texture);
@@ -781,7 +781,7 @@ void RenderingDeviceGLES3::texture_update(RID texture, uint32_t mip_level, uint3
 
     const auto& tex = it->second;
     GLenum target   = GL_TEXTURE_2D;
-    if (tex.format.type == TextureType::TYPE_CUBE) {
+    if (tex.format.type == TextureType::TEXTURE_TYPE_CUBEMAP) {
         target = GL_TEXTURE_CUBE_MAP;
     }
 
@@ -798,7 +798,7 @@ void RenderingDeviceGLES3::texture_update(RID texture, uint32_t mip_level, uint3
         pixel_format = GL_RED;
     }
 
-    if (tex.format.type == TextureType::TYPE_2D) {
+    if (tex.format.type == TextureType::TEXTURE_TYPE_2D) {
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexSubImage2D(GL_TEXTURE_2D, mip_level, 0, 0, tex.format.width >> mip_level, tex.format.height >> mip_level, pixel_format,
                         pixel_type, data);
@@ -815,7 +815,7 @@ void RenderingDeviceGLES3::texture_generate_mipmaps(RID texture) {
 
 
     GLenum target = GL_TEXTURE_2D;
-    if (it->second.format.type == TextureType::TYPE_CUBE) {
+    if (it->second.format.type == TextureType::TEXTURE_TYPE_CUBEMAP) {
         target = GL_TEXTURE_CUBE_MAP;
     }
 

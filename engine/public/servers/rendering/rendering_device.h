@@ -11,7 +11,12 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include <SDL3_ttf/SDL_ttf.h>
+
 #include <glm/gtx/string_cast.hpp>
+
+
+using Font = TTF_Font;
 
 
 struct Color {
@@ -34,14 +39,6 @@ struct Color {
     static const Color MAGENTA;
 };
 
-inline const Color Color::WHITE   = Color(1, 1, 1, 1);
-inline const Color Color::BLACK   = Color(0, 0, 0, 1);
-inline const Color Color::RED     = Color(1, 0, 0, 1);
-inline const Color Color::GREEN   = Color(0, 1, 0, 1);
-inline const Color Color::BLUE    = Color(0, 0, 1, 1);
-inline const Color Color::YELLOW  = Color(1, 1, 0, 1);
-inline const Color Color::CYAN    = Color(0, 1, 1, 1);
-inline const Color Color::MAGENTA = Color(1, 0, 1, 1);
 
 struct Rect {
     float x, y, width, height;
@@ -74,7 +71,7 @@ enum class DataFormat {
     D32_SFLOAT
 };
 
-enum class TextureType { TYPE_2D, TYPE_2D_ARRAY, TYPE_3D, TYPE_CUBE, TYPE_CUBE_ARRAY };
+enum class TextureType { TEXTURE_TYPE_2D, TEXTURE_TYPE_2D_ARRAY, TEXTURE_TYPE_3D, TEXTURE_TYPE_CUBEMAP, TEXTURE_TYPE_CUBEMAP_ARRAY };
 
 enum class TextureFilter { NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR };
 
@@ -108,12 +105,12 @@ enum class PrimitiveTopology { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_ST
 enum class ShaderStage { VERTEX = 1 << 0, FRAGMENT = 1 << 1, COMPUTE = 1 << 2 };
 
 enum class BufferUsage {
-    VERTEX       = 1 << 0,
-    INDEX        = 1 << 1,
-    UNIFORM      = 1 << 2,
-    STORAGE      = 1 << 3,
-    TRANSFER_SRC = 1 << 4,
-    TRANSFER_DST = 1 << 5
+    BUFFER_USAGE_VERTEX       = 1 << 0,
+    BUFFER_USAGE_INDEX        = 1 << 1,
+    BUFFER_USAGE_UNIFORM      = 1 << 2,
+    BUFFER_USAGE_STORAGE      = 1 << 3,
+    BUFFER_USAGE_TRANSFER_SRC = 1 << 4,
+    BUFFER_USAGE_TRANSFER_DST = 1 << 5
 };
 
 enum class IndexType { UINT16, UINT32 };
@@ -146,7 +143,7 @@ struct VertexFormat {
 };
 
 struct TextureFormat {
-    TextureType type      = TextureType::TYPE_2D;
+    TextureType type      = TextureType::TEXTURE_TYPE_2D;
     DataFormat format     = DataFormat::R8G8B8A8_UNORM;
     uint32_t width        = 1;
     uint32_t height       = 1;
