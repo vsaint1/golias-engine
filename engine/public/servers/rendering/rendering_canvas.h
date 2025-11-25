@@ -1,6 +1,5 @@
 #pragma once
 #include "drivers/gles3/rendering_device_gles3.h"
-#include <SDL3_ttf/SDL_ttf.h>
 #include <spdlog/spdlog.h>
 
 
@@ -41,17 +40,18 @@ public:
 
     void draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint = Color::WHITE, float rotation = 0.0f);
 
-    TTF_Font* load_font_from_file(const char* filepath, int size);
+    Font* load_font_from_file(const char* filepath, int size);
 
     RID load_texture_from_file(const char* filepath);
     RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
 
     RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
     void unload_texture(RID texture);
+    void texture_get_size(RID texture, uint32_t& width, uint32_t& height);
 
     template <typename... Args>
-    void draw_text(TTF_Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
-    void draw_text(TTF_Font* font, float x, float y, const Color& color, const std::string& text);
+    void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
+    void draw_text(Font* font, float x, float y, const Color& color, const std::string& text);
 
     RID create_shader(const char* vertex_src, const char* fragment_src);
     RID create_shader_from_file(const char* filepath);
@@ -110,8 +110,8 @@ private:
     std::unordered_map<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
 
 
-    TTF_Font* emoji_font = nullptr;
-    std::unordered_map<std::string, TTF_Font*> loaded_fonts;
+    Font* emoji_font = nullptr;
+    std::unordered_map<std::string, Font*> loaded_fonts;
 
     void flush();
     void add_quad(const glm::mat4& transform, const Color& color, RID texture, bool use_texture);
@@ -123,7 +123,7 @@ private:
 
 
 template <typename... Args>
-inline void RenderingCanvas::draw_text(TTF_Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
+inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
     if (!font) {
         spdlog::warn("DrawText called with null font!");
         return;
@@ -139,7 +139,7 @@ inline void RenderingCanvas::draw_text(TTF_Font* font, float x, float y, const C
     draw_text(font, x, y, color, formatted_text);
 }
 
-inline void RenderingCanvas::draw_text(TTF_Font* font, float x, float y, const Color& color, const std::string& text) {
+inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const std::string& text) {
     if (!font) {
         spdlog::warn("DrawText called with null font!");
         return;

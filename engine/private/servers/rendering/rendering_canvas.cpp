@@ -87,9 +87,9 @@ bool RenderingCanvas::initialize(int width, int height) {
     const size_t max_vertices = 10000;
     const size_t max_indices  = 15000;
 
-    vertex_buffer = rd->buffer_create(max_vertices * sizeof(Vertex), (uint32_t) BufferUsage::VERTEX, nullptr);
+    vertex_buffer = rd->buffer_create(max_vertices * sizeof(Vertex), (uint32_t) BufferUsage::BUFFER_USAGE_VERTEX, nullptr);
 
-    index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) BufferUsage::INDEX, nullptr);
+    index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) BufferUsage::BUFFER_USAGE_INDEX, nullptr);
 
     PipelineState pipeline_state;
     pipeline_state.shader                          = shader;
@@ -489,7 +489,7 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath) {
     spdlog::info("Loaded texture '{}' ({}x{})", filepath, width, height);
 
     TextureFormat format;
-    format.type    = TextureType::TYPE_2D;
+    format.type    = TextureType::TEXTURE_TYPE_2D;
     format.format  = DataFormat::R8G8B8A8_UNORM;
     format.width   = width;
     format.height  = height;
@@ -513,7 +513,7 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureD
 
 
     TextureFormat format;
-    format.type    = TextureType::TYPE_2D;
+    format.type    = TextureType::TEXTURE_TYPE_2D;
     format.format  = DataFormat::R8G8B8A8_UNORM;
     format.width   = width;
     format.height  = height;
@@ -549,7 +549,7 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureD
 
 RID RenderingCanvas::load_texture_from_memory(void* data, int width, int height, int channels) {
     TextureFormat format;
-    format.type    = TextureType::TYPE_2D;
+    format.type    = TextureType::TEXTURE_TYPE_2D;
     format.format  = (channels == 4) ? DataFormat::R8G8B8A8_UNORM : DataFormat::R8G8B8_UNORM;
     format.width   = width;
     format.height  = height;
@@ -567,6 +567,9 @@ void RenderingCanvas::unload_texture(RID texture) {
     rd->texture_destroy(texture);
 }
 
+void RenderingCanvas::texture_get_size(RID texture, uint32_t& width, uint32_t& height) {
+    rd->texture_get_size(texture, width, height);
+}
 
 RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
     return rd->shader_create_from_source(vertex_src, fragment_src);
@@ -635,6 +638,12 @@ RID RenderingCanvas::get_or_create_custom_pipeline(RID shader) {
                                                       {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
     pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
+
+    RID pso = rd->pipeline_create(pipeline_state);
+
+    custom_shader_pipelines[shader] = pso;
+
+    return pipeline;
 }
 
 void RenderingCanvas::draw_custom(RID custom_shader, float x, float y, float width, float height, RID texture, const Color& color) {
