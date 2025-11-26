@@ -234,7 +234,7 @@ void RenderingDeviceGLES3::texture_destroy(RID texture) {
     }
 }
 
-void RenderingDeviceGLES3::texture_get_size(RID texture, uint32_t& width, uint32_t& height) {
+void RenderingDeviceGLES3::get_texture_size(RID texture, uint32_t& width, uint32_t& height) {
     auto it = textures.find(texture);
     if (it != textures.end()) {
         width  = it->second.format.width;
@@ -401,7 +401,6 @@ void RenderingDeviceGLES3::bind_vertex_buffers(const std::vector<RID>& buffer_ri
         for (const auto& attr : vertex_format.attributes) {
             glEnableVertexAttribArray(attr.location);
 
-            // Derive attribute size/type/normalized from DataFormat
             GLint size           = 4;
             GLenum type          = GL_FLOAT;
             GLboolean normalized = GL_FALSE;
@@ -685,7 +684,6 @@ void RenderingDeviceGLES3::render_pass_begin(RID framebuffer, const Viewport& vi
         glBindFramebuffer(GL_FRAMEBUFFER, it->second.framebuffer);
         current_framebuffer = framebuffer;
 
-        // Clear attachments if requested
         for (const auto& attachment : it->second.attachments) {
             if (attachment.clear) {
                 auto tex_it = textures.find(attachment.texture);

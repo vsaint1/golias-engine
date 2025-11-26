@@ -20,11 +20,12 @@ namespace golias {
         void buffer_update(RID buffer, size_t offset, size_t size, const void* data) override;
         void buffer_destroy(RID buffer) override;
 
+
         RID texture_create(const TextureFormat& format, void* data = nullptr) override;
         void texture_update(RID texture, uint32_t mip_level, uint32_t layer, const void* data, size_t size) override;
         void texture_generate_mipmaps(RID texture) override;
         void texture_destroy(RID texture) override;
-        void texture_get_size(RID texture, uint32_t& width, uint32_t& height) override;
+        void get_texture_size(RID texture, uint32_t& width, uint32_t& height) override;
 
         RID sampler_create(const SamplerState& state) override;
         void sampler_destroy(RID sampler) override;
