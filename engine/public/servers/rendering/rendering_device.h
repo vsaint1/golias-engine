@@ -14,6 +14,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include <glm/gtx/string_cast.hpp>
+#include <SDL3_ttf/SDL_ttf.h>
 
 
 using Font = TTF_Font;
@@ -273,7 +274,7 @@ public:
     virtual void texture_update(RID texture, uint32_t mip_level, uint32_t layer, const void* data, size_t size) = 0;
     virtual void texture_generate_mipmaps(RID texture)                                                          = 0;
     virtual void texture_destroy(RID texture)                                                                   = 0;
-    virtual void texture_get_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
+    virtual void get_texture_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
 
     virtual RID sampler_create(const SamplerState& state) = 0;
     virtual void sampler_destroy(RID sampler)             = 0;

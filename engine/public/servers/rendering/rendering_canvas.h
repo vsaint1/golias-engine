@@ -1,5 +1,6 @@
 #pragma once
 #include "drivers/gles3/rendering_device_gles3.h"
+#include <SDL3_ttf/SDL_ttf.h>
 #include <spdlog/spdlog.h>
 
 
@@ -40,14 +41,15 @@ public:
 
     void draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint = Color::WHITE, float rotation = 0.0f);
 
-    Font* load_font_from_file(const char* filepath, int size);
+    void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
+
+    TTF_Font* load_font_from_file(const char* filepath, int size);
 
     RID load_texture_from_file(const char* filepath);
     RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
 
     RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
     void unload_texture(RID texture);
-    void texture_get_size(RID texture, uint32_t& width, uint32_t& height);
 
     template <typename... Args>
     void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);

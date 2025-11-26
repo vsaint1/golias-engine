@@ -91,7 +91,7 @@
         "CMAKE_SYSTEM_NAME": "Emscripten",
         "CMAKE_BUILD_TYPE": "Debug",
         "WITH_EDITOR": "ON",
-        "CURL_DISABLE_INSTALL":"ON"
+        "CURL_DISABLE_INSTALL": "ON"
       }
     },
     {
@@ -102,7 +102,7 @@
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Emscripten",
         "CMAKE_BUILD_TYPE": "Release",
-        "CURL_DISABLE_INSTALL":"ON"
+        "CURL_DISABLE_INSTALL": "ON"
       }
     },
     {
@@ -132,56 +132,56 @@
       "name": "mac-debug-build",
       "displayName": "macOS Debug Build",
       "configurePreset": "mac-debug",
-      "targets": [ "golias_engine" ],
+      "targets": ["ALL_BUILD"],
       "verbose": true
     },
     {
       "name": "mac-release-build",
       "displayName": "macOS Release Build",
       "configurePreset": "mac-release",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "linux-debug-build",
       "displayName": "Linux Debug Build",
       "configurePreset": "linux-debug",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "linux-release-build",
       "displayName": "Linux Release Build",
       "configurePreset": "linux-release",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "windows-debug-build",
       "displayName": "Windows Debug Build",
       "configurePreset": "windows-debug",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "windows-release-build",
       "displayName": "Windows Release Build",
       "configurePreset": "windows-release",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "webgl-debug-build",
       "displayName": "WebGL Debug Build",
       "configurePreset": "web-debug",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     },
     {
       "name": "webgl-release-build",
       "displayName": "WebGL Release Build",
       "configurePreset": "web-release",
-      "targets": [ "golias_engine" ],
+      "targets": ["golias_engine"],
       "verbose": true
     }
   ]

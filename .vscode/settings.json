@@ -1,0 +1,28 @@
+{
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}",
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--function-arg-placeholders",
+    "--fallback-style=llvm",
+    "--query-driver=**"
+  ],
+  "clangd.fallbackFlags": [
+    "-std=c++20",
+    "-I${workspaceFolder}/engine/public",
+    "-I${workspaceFolder}/vendor/lua",
+    "-I${workspaceFolder}/vendor/mini_audio/include",
+    "-I${workspaceFolder}/vendor/glm",
+    "-I${workspaceFolder}/vendor/SDL/include",
+    "-I${workspaceFolder}/vendor/SDL_ttf/include",
+    "-I${workspaceFolder}/vendor/glad/include",
+    "-I${workspaceFolder}/vendor/stb_image/include",
+    "-I${workspaceFolder}/vendor/tinyxml/include",
+    "-I${workspaceFolder}/vendor/json",
+    "-I${workspaceFolder}/vendor/spdlog/include",
+    "-I${workspaceFolder}/vendor/assimp/include",
+    "-I${workspaceFolder}/vendor/sol2",
+  ]
+}

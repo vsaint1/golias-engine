@@ -10,6 +10,7 @@ const Color Color::YELLOW  = Color(1, 1, 0, 1);
 const Color Color::CYAN    = Color(0, 1, 1, 1);
 const Color Color::MAGENTA = Color(1, 0, 1, 1);
 
+
 RID RIDAllocator::allocate_rid() {
     return next_rid++;
 }
