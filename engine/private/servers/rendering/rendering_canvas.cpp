@@ -2,10 +2,9 @@
 
 
 namespace shaders {
-    const char* default_vertex_2d = R"(
-#version 300 es
-precision highp float;
-
+    std::string get_default_vertex_2d() {
+        std::string header = get_shader_header();
+        return header + R"(
 layout(location = 0) in vec3 VERTEX;
 layout(location = 1) in vec4 COLOR;
 layout(location = 2) in vec2 UV;
@@ -21,11 +20,11 @@ void main() {
     gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 }
 )";
+    }
 
-    const char* default_fragment_2d = R"(
-#version 300 es
-precision highp float;
-
+    std::string get_default_fragment_2d() {
+        std::string header = get_shader_header();
+        return header + R"(
 in vec4 vColor;
 in vec2 vTexCoord;
 
@@ -43,6 +42,7 @@ void main() {
     ALBEDO = texColor * vColor;
 }
 )";
+    }
 } // namespace shaders
 
 
@@ -62,7 +62,7 @@ bool RenderingCanvas::initialize(int width, int height) {
     viewport_width  = width;
     viewport_height = height;
 
-    emoji_font = TTF_OpenFont("res/fonts/Twemoji.ttf", 24);
+    emoji_font = TTF_OpenFont((ASSETS_PATH + "fonts/Twemoji.ttf").c_str(), 24);
 
     if (!emoji_font) {
         spdlog::warn("Failed to load emoji font (Twemoji.ttf), emoji support disabled: {}", SDL_GetError());
@@ -70,9 +70,10 @@ bool RenderingCanvas::initialize(int width, int height) {
         spdlog::info("Loaded emoji font (Twemoji.ttf) for emoji support.");
     }
 
-    shader = rd->shader_create_from_source(shaders::default_vertex_2d, shaders::default_fragment_2d);
+    shader = rd->shader_create_from_source(shaders::get_default_vertex_2d(), shaders::get_default_fragment_2d());
 
     if (shader == INVALID_RID) {
+        spdlog::error("Failed to create default shader for RenderingCanvas.");
         return false;
     }
 
@@ -92,12 +93,12 @@ bool RenderingCanvas::initialize(int width, int height) {
     index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) BufferUsage::INDEX, nullptr);
 
     PipelineState pipeline_state;
-    pipeline_state.shader                          = shader;
-    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
-    pipeline_state.vertex_format.stride            = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.shader                   = shader;
+    pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
+    pipeline_state.vertex_format.stride     = sizeof(Vertex);
+    pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                               {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                               {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
     pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 
@@ -113,12 +114,6 @@ bool RenderingCanvas::initialize(int width, int height) {
 
     if (pipeline == INVALID_RID) {
         return false;
-    }
-
-    emoji_font = TTF_OpenFont("res/fonts/Twemoji.ttf", 24.0f);
-
-    if (!emoji_font) {
-        spdlog::warn("Failed to load emoji font, emojis may not display: {}", SDL_GetError());
     }
 
     reset_camera();
@@ -277,6 +272,14 @@ void RenderingCanvas::draw_circle_outlined(float x, float y, float radius, const
 void RenderingCanvas::draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint, float rotation) {
 }
 
+void RenderingCanvas::get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height) {
+    if (texture == INVALID_RID) {
+        return;
+    }
+
+    rd->get_texture_size(texture, out_width, out_height);
+}
+
 TTF_Font* RenderingCanvas::load_font_from_file(const char* filepath, int size) {
 
     if (loaded_fonts.contains(filepath)) {
@@ -357,7 +360,7 @@ void RenderingCanvas::draw_texture(RID texture, float x, float y, float width, f
 
     if (width == 0 || height == 0) {
         uint32_t tex_w, tex_h;
-        rd->texture_get_size(texture, tex_w, tex_h);
+        rd->get_texture_size(texture, tex_w, tex_h);
         width  = (float) tex_w;
         height = (float) tex_h;
     }
@@ -424,26 +427,25 @@ void RenderingCanvas::calculate_viewport(int window_w, int window_h, int& out_x,
         out_h = window_height;
         break;
 
-    case ScaleMode::KEEP:
-        {
-            float target_aspect = (float) window_width / (float) window_height;
-            float window_aspect = (float) window_w / (float) window_h;
+    case ScaleMode::KEEP: {
+        float target_aspect = (float) window_width / (float) window_height;
+        float window_aspect = (float) window_w / (float) window_h;
 
-            if (window_aspect > target_aspect) {
-                // pillarbox (black bars on sides)
-                out_h = window_h;
-                out_w = (int) (window_h * target_aspect);
-                out_x = (window_w - out_w) / 2;
-                out_y = 0;
-            } else {
-                //  letterbox (black bars on top/bottom)
-                out_w = window_w;
-                out_h = (int) (window_w / target_aspect);
-                out_x = 0;
-                out_y = (window_h - out_h) / 2;
-            }
+        if (window_aspect > target_aspect) {
+            // pillarbox (black bars on sides)
+            out_h = window_h;
+            out_w = (int) (window_h * target_aspect);
+            out_x = (window_w - out_w) / 2;
+            out_y = 0;
+        } else {
+            //  letterbox (black bars on top/bottom)
+            out_w = window_w;
+            out_h = (int) (window_w / target_aspect);
+            out_x = 0;
+            out_y = (window_h - out_h) / 2;
         }
-        break;
+    }
+    break;
 
     case ScaleMode::EXPAND:
         out_x = 0;
@@ -627,12 +629,12 @@ RID RenderingCanvas::get_or_create_custom_pipeline(RID shader) {
     }
 
     PipelineState pipeline_state;
-    pipeline_state.shader                          = shader;
-    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
-    pipeline_state.vertex_format.stride            = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.shader                   = shader;
+    pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
+    pipeline_state.vertex_format.stride     = sizeof(Vertex);
+    pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                               {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                               {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
     pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 }
@@ -741,7 +743,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
 
     if (source.width > 0 && source.height > 0 && texture != INVALID_RID) {
         uint32_t tex_width = 0, tex_height = 0;
-        rd->texture_get_size(texture, tex_width, tex_height);
+        rd->get_texture_size(texture, tex_width, tex_height);
 
         if (tex_width > 0 && tex_height > 0) {
             u_min = source.x / (float) tex_width;
@@ -780,12 +782,12 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         custom_indices = {0, 1, 2, 2, 3, 0};
 
         PipelineState custom_pipeline_state;
-        custom_pipeline_state.shader                          = shader;
-        custom_pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
-        custom_pipeline_state.vertex_format.stride            = sizeof(Vertex);
-        custom_pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                                 {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                                 {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+        custom_pipeline_state.shader                   = shader;
+        custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
+        custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
+        custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                          {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                          {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
         custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
         custom_pipeline_state.depth_stencil.depth_test_enable = false;
 
@@ -810,12 +812,12 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
         float time_value = SDL_GetTicks() / 1000.0f;
-        rd->push_constant("uTime", &time_value, sizeof(float));
+        rd->push_constant("TIME", &time_value, sizeof(float));
 
         if (texture != INVALID_RID) {
             rd->bind_texture(0, texture, default_sampler);
             int tex_unit = 0;
-            rd->push_constant("uTexture", &tex_unit, sizeof(int));
+            rd->push_constant("TEXTURE", &tex_unit, sizeof(int));
         } else {
             rd->bind_texture(0, white_texture, default_sampler);
         }

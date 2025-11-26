@@ -41,6 +41,8 @@ public:
 
     void draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint = Color::WHITE, float rotation = 0.0f);
 
+    void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
+
     TTF_Font* load_font_from_file(const char* filepath, int size);
 
     RID load_texture_from_file(const char* filepath);
