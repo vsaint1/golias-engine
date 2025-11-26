@@ -15,3 +15,5 @@ struct ShaderSource {
 ShaderSource parse_shader(const std::string& source);
 
 ShaderSource load_shader_file(const char* filepath);
+
+std::string get_shader_header();

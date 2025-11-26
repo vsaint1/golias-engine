@@ -1,5 +1,13 @@
 #include "servers/rendering/shader_preprocessor.h"
 
+std::string get_shader_header() {
+#if defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    return "#version 300 es\nprecision highp float;\n\n";
+#else
+    return "#version 330 core\n\n";
+#endif
+}
+
 
 static  void remove_builtin_declarations(std::string& shader_code) {
 
@@ -112,6 +120,8 @@ static std::string inject_fragment_outputs(const std::string& shader_source) {
 ShaderSource parse_shader(const std::string& source) {
     ShaderSource result;
 
+    std::string shader_header;
+
     // ========================================
     // 1. Detect shader type (Compute vs Vertex/Fragment)
     // ========================================
@@ -122,20 +132,24 @@ ShaderSource parse_shader(const std::string& source) {
 
     // Handle compute shaders (no processing needed)
     if (has_compute_tag || (has_main && !has_vertex && !has_fragment)) {
+
+        shader_header = "#version 450";
+
         result.is_compute     = true;
-        result.compute_source = source;
+        result.compute_source = shader_header + source;
         result.is_loaded      = true;
         spdlog::info("Shader Type: Compute | Size: {} bytes", result.compute_source.size());
         return result;
     }
 
+    shader_header = get_shader_header();
+
     // ========================================
     // 2. Add default GLSL version if missing
     // ========================================
     if (source.find("#version") == std::string::npos) {
-        result.vertex_source.append("#version 300 es\nprecision highp float;\n\n");
-        result.fragment_source.append("#version 300 es\nprecision highp float;\n\n");
-        spdlog::debug("Auto-injected: GLSL ES 3.0 version header");
+        result.vertex_source.append(shader_header);
+        result.fragment_source.append(shader_header);
     }
 
     // ========================================
