@@ -12,7 +12,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/gtx/string_cast.hpp>
+#include <SDL3_ttf/SDL_ttf.h>
 
+using Font = TTF_Font;
 
 struct Color {
     float r, g, b, a;
@@ -34,14 +36,6 @@ struct Color {
     static const Color MAGENTA;
 };
 
-inline const Color Color::WHITE   = Color(1, 1, 1, 1);
-inline const Color Color::BLACK   = Color(0, 0, 0, 1);
-inline const Color Color::RED     = Color(1, 0, 0, 1);
-inline const Color Color::GREEN   = Color(0, 1, 0, 1);
-inline const Color Color::BLUE    = Color(0, 0, 1, 1);
-inline const Color Color::YELLOW  = Color(1, 1, 0, 1);
-inline const Color Color::CYAN    = Color(0, 1, 1, 1);
-inline const Color Color::MAGENTA = Color(1, 0, 1, 1);
 
 struct Rect {
     float x, y, width, height;
@@ -276,7 +270,7 @@ public:
     virtual void texture_update(RID texture, uint32_t mip_level, uint32_t layer, const void* data, size_t size) = 0;
     virtual void texture_generate_mipmaps(RID texture)                                                          = 0;
     virtual void texture_destroy(RID texture)                                                                   = 0;
-    virtual void texture_get_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
+    virtual void get_texture_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
 
     virtual RID sampler_create(const SamplerState& state) = 0;
     virtual void sampler_destroy(RID sampler)             = 0;
