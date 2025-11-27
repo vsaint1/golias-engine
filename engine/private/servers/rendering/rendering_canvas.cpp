@@ -258,11 +258,13 @@ void RenderingCanvas::draw_rect_outlined(float x, float y, float width, float he
 }
 
 void RenderingCanvas::draw_circle(float x, float y, float radius, const Color& color, int segments) {
-    std::vector<glm::vec2> points;
+    Vector<glm::vec2> points;
+
     for (int i = 0; i < segments; i++) {
         float angle = (float) i / segments * 2.0f * 3.14159265359f;
         points.push_back(glm::vec2(x + std::cos(angle) * radius, y + std::sin(angle) * radius));
     }
+
     draw_polygon(points, color);
 }
 
@@ -333,7 +335,7 @@ void RenderingCanvas::draw_triangle(float x1, float y1, float x2, float y2, floa
     draw_polygon({glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(x3, y3)}, color);
 }
 
-void RenderingCanvas::draw_polygon(const std::vector<glm::vec2>& points, const Color& color) {
+void RenderingCanvas::draw_polygon(const Vector<glm::vec2>& points, const Color& color) {
     if (points.size() < 3) {
         return;
     }
@@ -656,8 +658,8 @@ void RenderingCanvas::draw_custom(RID custom_shader, float x, float y, float wid
     transform           = glm::scale(transform, glm::vec3(width, height, 1));
     transform           = get_current_transform() * transform;
 
-    std::vector<Vertex> custom_vertices;
-    std::vector<uint16_t> custom_indices;
+    Vector<Vertex> custom_vertices;
+    Vector<uint16_t> custom_indices;
 
     glm::vec4 positions[] = {glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec4(0.5f, -0.5f, 0, 1), glm::vec4(0.5f, 0.5f, 0, 1),
                              glm::vec4(-0.5f, 0.5f, 0, 1)};
@@ -777,8 +779,8 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
     texcoords[3] = {u_min, v_max};
 
     if (use_custom_shader) {
-        std::vector<Vertex> custom_vertices;
-        std::vector<uint16_t> custom_indices;
+        Vector<Vertex> custom_vertices;
+        Vector<uint16_t> custom_indices;
 
         for (int i = 0; i < 4; i++) {
             glm::vec4 pos = transform * positions[i];

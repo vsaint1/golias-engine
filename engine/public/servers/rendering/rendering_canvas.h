@@ -1,6 +1,5 @@
 #pragma once
 #include "drivers/gles3/rendering_device_gles3.h"
-#include <SDL3_ttf/SDL_ttf.h>
 #include <spdlog/spdlog.h>
 
 
@@ -34,7 +33,7 @@ public:
 
     void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, const Color& color = Color::WHITE);
 
-    void draw_polygon(const std::vector<glm::vec2>& points, const Color& color = Color::WHITE);
+    void draw_polygon(const Vector<glm::vec2>& points, const Color& color = Color::WHITE);
 
     void draw_texture(RID texture, float x, float y, float width = 0, float height = 0, const Color& tint = Color::WHITE,
                       float rotation = 0.0f);
@@ -53,7 +52,7 @@ public:
 
     template <typename... Args>
     void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
-    void draw_text(Font* font, float x, float y, const Color& color, const std::string& text);
+    void draw_text(Font* font, float x, float y, const Color& color, const String& text);
 
     RID create_shader(const char* vertex_src, const char* fragment_src);
     RID create_shader_from_file(const char* filepath);
@@ -95,13 +94,13 @@ private:
 
     std::unordered_map<RID, RID> texture_samplers;
 
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
-    std::vector<DrawCommand> draw_commands;
+    Vector<Vertex> vertices;
+    Vector<uint16_t> indices;
+    Vector<DrawCommand> draw_commands;
 
     glm::mat4 projection;
     glm::mat4 view;
-    std::vector<glm::mat4> transform_stack;
+    Vector<glm::mat4> transform_stack;
     BlendMode current_blend_mode;
     ScaleMode scale_mode;
     float line_width;
@@ -141,7 +140,7 @@ inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color
     draw_text(font, x, y, color, formatted_text);
 }
 
-inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const std::string& text) {
+inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const String& text) {
     if (!font) {
         spdlog::warn("DrawText called with null font!");
         return;

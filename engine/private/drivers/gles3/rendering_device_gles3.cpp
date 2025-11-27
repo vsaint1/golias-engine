@@ -39,7 +39,7 @@ void RenderingDeviceGLES3::shutdown() {
 }
 
 GLuint RenderingDeviceGLES3::compile_shader(GLenum type,
-                                            const std::string &source) {
+                                            const String &source) {
   GLuint shader = glCreateShader(type);
   const char *src = source.c_str();
   glShaderSource(shader, 1, &src, nullptr);
@@ -58,7 +58,7 @@ GLuint RenderingDeviceGLES3::compile_shader(GLenum type,
 }
 
 RID RenderingDeviceGLES3::shader_create_from_source(
-    const std::string &vertex_src, const std::string &fragment_src) {
+    const String &vertex_src, const String &fragment_src) {
   GLuint vs = compile_shader(GL_VERTEX_SHADER, vertex_src);
   GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
 
@@ -311,7 +311,8 @@ void RenderingDeviceGLES3::apply_depth_stencil_state(
 }
 
 void RenderingDeviceGLES3::apply_blend_state(
-    const std::vector<BlendState> &states) {
+    const Vector<BlendState> &states) {
+
   if (states.empty() || !states[0].enable) {
     glDisable(GL_BLEND);
   } else {
@@ -390,10 +391,11 @@ GLenum RenderingDeviceGLES3::to_gl_blend_op(BlendOp op) {
 }
 
 void RenderingDeviceGLES3::bind_vertex_buffers(
-    const std::vector<RID> &buffer_rids, const std::vector<size_t> &offsets) {
+    const Vector<RID> &buffer_rids, const Vector<size_t> &offsets) {
   if (current_pipeline == INVALID_RID) {
     return;
   }
+
   auto pipe_it = pipelines.find(current_pipeline);
   if (pipe_it == pipelines.end()) {
     return;
@@ -645,7 +647,7 @@ GLenum RenderingDeviceGLES3::to_gl_wrap(TextureWrap wrap) {
 }
 
 RID RenderingDeviceGLES3::framebuffer_create(
-    const std::vector<RenderPassAttachment> &attachments) {
+    const Vector<RenderPassAttachment> &attachments) {
   GLuint fbo;
   glGenFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -765,7 +767,7 @@ void RenderingDeviceGLES3::clear_depth_stencil(float depth, uint32_t stencil) {
   glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void RenderingDeviceGLES3::push_constant(const std::string &name,
+void RenderingDeviceGLES3::push_constant(const String &name,
                                          const void *data, size_t size) {
   if (current_pipeline == INVALID_RID) {
     return;

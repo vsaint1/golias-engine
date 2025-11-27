@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shader_preprocessor.h"
-#include <vector>
+#include "core/gstl/str.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -140,7 +140,7 @@ struct VertexAttribute {
 struct VertexFormat {
     uint32_t binding = 0;
     uint32_t stride  = 0;
-    std::vector<VertexAttribute> attributes;
+    Vector<VertexAttribute> attributes;
 };
 
 struct TextureFormat {
@@ -211,7 +211,7 @@ struct PipelineState {
     PrimitiveTopology topology = PrimitiveTopology::TRIANGLES;
     RasterizationState rasterization;
     DepthStencilState depth_stencil;
-    std::vector<BlendState> blend_states;
+    Vector<BlendState> blend_states;
     uint32_t color_attachment_count = 1;
 };
 
@@ -263,7 +263,7 @@ public:
     virtual bool initialize() = 0;
     virtual void shutdown()   = 0;
 
-    virtual RID shader_create_from_source(const std::string& vertex_src, const std::string& fragment_src) = 0;
+    virtual RID shader_create_from_source(const String& vertex_src, const String& fragment_src) = 0;
     virtual void shader_destroy(RID shader)                                                               = 0;
 
     virtual RID buffer_create(size_t size, uint32_t usage_flags, const void* data = nullptr) = 0;
@@ -279,7 +279,7 @@ public:
     virtual RID sampler_create(const SamplerState& state) = 0;
     virtual void sampler_destroy(RID sampler)             = 0;
 
-    virtual RID framebuffer_create(const std::vector<RenderPassAttachment>& attachments) = 0;
+    virtual RID framebuffer_create(const Vector<RenderPassAttachment>& attachments) = 0;
     virtual void framebuffer_destroy(RID framebuffer)                                    = 0;
 
     virtual RID pipeline_create(const PipelineState& state) = 0;
@@ -292,12 +292,12 @@ public:
     virtual void render_pass_end()                                                                    = 0;
 
     virtual void bind_pipeline(RID pipeline)                                                                   = 0;
-    virtual void bind_vertex_buffers(const std::vector<RID>& buffers, const std::vector<size_t>& offsets = {}) = 0;
+    virtual void bind_vertex_buffers(const Vector<RID>& buffers, const Vector<size_t>& offsets = {}) = 0;
     virtual void bind_index_buffer(RID buffer, IndexType type, size_t offset = 0)                              = 0;
     virtual void bind_uniform_buffer(uint32_t binding, RID buffer, size_t offset = 0, size_t size = 0)         = 0;
     virtual void bind_texture(uint32_t binding, RID texture, RID sampler)                                      = 0;
 
-    virtual void push_constant(const std::string& name, const void* data, size_t size) = 0;
+    virtual void push_constant(const String& name, const void* data, size_t size) = 0;
 
     virtual void draw(uint32_t vertex_count, uint32_t instance_count = 1, uint32_t first_vertex = 0, uint32_t first_instance = 0) = 0;
     virtual void draw_indexed(uint32_t index_count, uint32_t instance_count = 1, uint32_t first_index = 0, int32_t vertex_offset = 0,
