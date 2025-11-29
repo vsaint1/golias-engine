@@ -318,10 +318,6 @@ void RenderingCanvas::draw_arc(float x, float y, float radius, float start_angle
     draw_polygon(points, color);
 }
 
-
-void RenderingCanvas::draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint, float rotation) {
-}
-
 void RenderingCanvas::get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height) {
     if (texture == INVALID_RID) {
         return;
@@ -619,6 +615,88 @@ void RenderingCanvas::unload_texture(RID texture) {
     rd->texture_destroy(texture);
 }
 
+void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const String& text) {
+    if (!font) {
+        spdlog::warn("DrawText called with null font!");
+        return;
+    }
+
+    if (text.empty()) {
+        return;
+    }
+
+    SDL_Color text_color;
+    text_color.r = (uint8_t) (color.r * 255);
+    text_color.g = (uint8_t) (color.g * 255);
+    text_color.b = (uint8_t) (color.b * 255);
+    text_color.a = (uint8_t) (color.a * 255);
+
+    SDL_Surface* text_surface = TTF_RenderText_Blended(font, text.data(), text.length(), text_color);
+    if (!text_surface) {
+        spdlog::error("Failed to render Text '{}': {}", text, SDL_GetError());
+        return;
+    }
+
+    SDL_Surface* rgba_surface = SDL_ConvertSurface(text_surface, SDL_PIXELFORMAT_RGBA32);
+    SDL_DestroySurface(text_surface);
+
+    if (!rgba_surface) {
+        spdlog::error("Failed to convert Text surface to RGBA: {}", SDL_GetError());
+        return;
+    }
+
+
+    RID text_texture = load_texture_from_memory(rgba_surface->pixels, rgba_surface->w, rgba_surface->h, 4);
+
+    if (text_texture == INVALID_RID) {
+        SDL_DestroySurface(rgba_surface);
+        spdlog::error("Failed to create Texture from Text surface");
+        return;
+    }
+
+    flush();
+
+    std::vector<Vertex> text_vertices;
+    std::vector<uint16_t> text_indices;
+
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, 0));
+    transform           = get_current_transform() * transform;
+
+    glm::vec4 positions[] = {glm::vec4(0, 0, 0, 1), glm::vec4(static_cast<float>(rgba_surface->w), 0, 0, 1),
+                             glm::vec4(static_cast<float>(rgba_surface->w), static_cast<float>(rgba_surface->h), 0, 1),
+                             glm::vec4(0, static_cast<float>(rgba_surface->h), 0, 1)};
+
+    glm::vec2 texcoords[] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+    glm::vec4 tint_color  = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+    for (int i = 0; i < 4; i++) {
+        glm::vec4 pos = transform * positions[i];
+        text_vertices.push_back({glm::vec3(pos), tint_color, texcoords[i]});
+    }
+
+    text_indices = {0, 1, 2, 2, 3, 0};
+
+    rd->buffer_update(vertex_buffer, 0, text_vertices.size() * sizeof(Vertex), text_vertices.data());
+    rd->buffer_update(index_buffer, 0, text_indices.size() * sizeof(uint16_t), text_indices.data());
+
+    rd->bind_pipeline(pipeline);
+    rd->bind_vertex_buffers({vertex_buffer});
+    rd->bind_index_buffer(index_buffer, IndexType::UINT16);
+
+    glm::mat4 vp = projection * view;
+    rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
+
+    rd->bind_texture(0, text_texture, default_sampler);
+    int tex_unit = 0;
+    rd->push_constant("uTexture", &tex_unit, sizeof(int));
+
+
+    rd->draw_indexed(6, 1, 0, 0, 0);
+
+
+    unload_texture(text_texture);
+    SDL_DestroySurface(rgba_surface);
+}
 
 RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
     return rd->shader_create_from_source(vertex_src, fragment_src);
@@ -837,7 +915,8 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
     texcoords[2] = {u_max, v_max};
     texcoords[3] = {u_min, v_max};
 
-    if (use_custom_shader) {
+    if (use_custom_shader && material) {
+
         Vector<Vertex> custom_vertices;
         Vector<uint16_t> custom_indices;
 
@@ -848,25 +927,37 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
 
         custom_indices = {0, 1, 2, 2, 3, 0};
 
-        PipelineState custom_pipeline_state;
-        custom_pipeline_state.shader                   = material->get_shader();
-        custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
-        custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
-        custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                          {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                          {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
-        custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
-        custom_pipeline_state.depth_stencil.depth_test_enable = false;
+        RID shader_rid = material->get_shader();
+        RID custom_pipeline = INVALID_RID;
 
-        BlendState blend;
-        blend.enable    = true;
-        blend.src_color = BlendFactor::SRC_ALPHA;
-        blend.dst_color = BlendFactor::ONE_MINUS_SRC_ALPHA;
-        blend.src_alpha = BlendFactor::ONE;
-        blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
-        custom_pipeline_state.blend_states.push_back(blend);
+        auto it = custom_shader_pipelines.find(shader_rid);
+        if (it != custom_shader_pipelines.end()) {
+            custom_pipeline = it->second;
+        } else {
+            // Create new pipeline and cache it
+            PipelineState custom_pipeline_state;
+            custom_pipeline_state.shader                   = shader_rid;
+            custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
+            custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
+            custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                              {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                              {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+            custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
+            custom_pipeline_state.depth_stencil.depth_test_enable = false;
 
-        RID custom_pipeline = rd->pipeline_create(custom_pipeline_state);
+            BlendState blend;
+            blend.enable    = true;
+            blend.src_color = BlendFactor::SRC_ALPHA;
+            blend.dst_color = BlendFactor::ONE_MINUS_SRC_ALPHA;
+            blend.src_alpha = BlendFactor::ONE;
+            blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
+            custom_pipeline_state.blend_states.push_back(blend);
+
+            custom_pipeline = rd->pipeline_create(custom_pipeline_state);
+            custom_shader_pipelines[shader_rid] = custom_pipeline;
+
+            spdlog::info("Created custom Pipeline for Shader RID={}", shader_rid);
+        }
 
         rd->buffer_update(vertex_buffer, 0, custom_vertices.size() * sizeof(Vertex), custom_vertices.data());
         rd->buffer_update(index_buffer, 0, custom_indices.size() * sizeof(uint16_t), custom_indices.data());
@@ -917,7 +1008,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         }
 
         rd->draw_indexed(6, 1, 0, 0, 0);
-        rd->pipeline_destroy(custom_pipeline);
+
         rd->bind_pipeline(pipeline);
     } else {
         for (int i = 0; i < 4; i++) {

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "drivers/gles3/rendering_device_gles3.h"
 #include "servers/rendering/shader_material.h"
 #include <spdlog/spdlog.h>
@@ -41,27 +42,6 @@ public:
     void draw_texture(RID texture, float x, float y, float width = 0, float height = 0, const Color& tint = Color::WHITE,
                       float rotation = 0.0f);
 
-    void draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint = Color::WHITE, float rotation = 0.0f);
-
-    void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
-
-    TTF_Font* load_font_from_file(const char* filepath, int size);
-
-    RID load_texture_from_file(const char* filepath);
-    RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
-
-    RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
-    void unload_texture(RID texture);
-
-    template <typename... Args>
-    void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
-    void draw_text(Font* font, float x, float y, const Color& color, const String& text);
-
-    RID create_shader(const char* vertex_src, const char* fragment_src);
-    RID create_shader_from_file(const char* filepath);
-    RID create_shader_from_source(const char* source);
-    void destroy_shader(RID shader);
-
     /// @deprecated  Use draw_texture_ex with a CanvasMaterial (optional) instead
     void draw_custom(RID shader, float x, float y, float width, float height, RID texture = INVALID_RID, const Color& color = Color::WHITE);
 
@@ -69,6 +49,24 @@ public:
                          const Color& color = Color::WHITE, float rotation = 0.0f, bool flip_h = false, bool flip_v = false,
                          const CanvasMaterial* material = nullptr);
 
+    template <typename... Args>
+    void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
+
+    void draw_text(Font* font, float x, float y, const Color& color, const String& text);
+
+    TTF_Font* load_font_from_file(const char* filepath, int size);
+
+    RID load_texture_from_file(const char* filepath);
+    RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
+    void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
+
+    RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
+    void unload_texture(RID texture);
+
+    RID create_shader(const char* vertex_src, const char* fragment_src);
+    RID create_shader_from_file(const char* filepath);
+    RID create_shader_from_source(const char* source);
+    void destroy_shader(RID shader);
 
     void set_blend_mode(BlendMode mode);
     void set_line_width(float width);
@@ -129,7 +127,7 @@ private:
 
 
 template <typename... Args>
-inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
+void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
     if (!font) {
         spdlog::warn("DrawText called with null font!");
         return;
@@ -143,87 +141,4 @@ inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color
     }
 
     draw_text(font, x, y, color, formatted_text);
-}
-
-inline void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const String& text) {
-    if (!font) {
-        spdlog::warn("DrawText called with null font!");
-        return;
-    }
-
-    if (text.empty()) {
-        return;
-    }
-
-    SDL_Color text_color;
-    text_color.r = (uint8_t) (color.r * 255);
-    text_color.g = (uint8_t) (color.g * 255);
-    text_color.b = (uint8_t) (color.b * 255);
-    text_color.a = (uint8_t) (color.a * 255);
-
-    SDL_Surface* text_surface = TTF_RenderText_Blended(font, text.data(), text.length(), text_color);
-    if (!text_surface) {
-        spdlog::error("Failed to render Text '{}': {}", text, SDL_GetError());
-        return;
-    }
-
-    SDL_Surface* rgba_surface = SDL_ConvertSurface(text_surface, SDL_PIXELFORMAT_RGBA32);
-    SDL_DestroySurface(text_surface);
-
-    if (!rgba_surface) {
-        spdlog::error("Failed to convert Text surface to RGBA: {}", SDL_GetError());
-        return;
-    }
-
-
-    RID text_texture = load_texture_from_memory(rgba_surface->pixels, rgba_surface->w, rgba_surface->h, 4);
-
-    if (text_texture == INVALID_RID) {
-        SDL_DestroySurface(rgba_surface);
-        spdlog::error("Failed to create Texture from Text surface");
-        return;
-    }
-
-    flush();
-
-    std::vector<Vertex> text_vertices;
-    std::vector<uint16_t> text_indices;
-
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, 0));
-    transform           = get_current_transform() * transform;
-
-    glm::vec4 positions[] = {glm::vec4(0, 0, 0, 1), glm::vec4(static_cast<float>(rgba_surface->w), 0, 0, 1),
-                             glm::vec4(static_cast<float>(rgba_surface->w), static_cast<float>(rgba_surface->h), 0, 1),
-                             glm::vec4(0, static_cast<float>(rgba_surface->h), 0, 1)};
-
-    glm::vec2 texcoords[] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-    glm::vec4 tint_color  = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-    for (int i = 0; i < 4; i++) {
-        glm::vec4 pos = transform * positions[i];
-        text_vertices.push_back({glm::vec3(pos), tint_color, texcoords[i]});
-    }
-
-    text_indices = {0, 1, 2, 2, 3, 0};
-
-    rd->buffer_update(vertex_buffer, 0, text_vertices.size() * sizeof(Vertex), text_vertices.data());
-    rd->buffer_update(index_buffer, 0, text_indices.size() * sizeof(uint16_t), text_indices.data());
-
-    rd->bind_pipeline(pipeline);
-    rd->bind_vertex_buffers({vertex_buffer});
-    rd->bind_index_buffer(index_buffer, IndexType::UINT16);
-
-    glm::mat4 vp = projection * view;
-    rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
-
-    rd->bind_texture(0, text_texture, default_sampler);
-    int tex_unit = 0;
-    rd->push_constant("uTexture", &tex_unit, sizeof(int));
-
-
-    rd->draw_indexed(6, 1, 0, 0, 0);
-
-
-    unload_texture(text_texture);
-    SDL_DestroySurface(rgba_surface);
 }
