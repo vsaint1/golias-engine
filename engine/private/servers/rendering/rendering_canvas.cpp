@@ -269,7 +269,55 @@ void RenderingCanvas::draw_circle(float x, float y, float radius, const Color& c
 }
 
 void RenderingCanvas::draw_circle_outlined(float x, float y, float radius, const Color& color, float thickness, int segments) {
+    if (segments < 3) {
+        segments = 32;
+    }
+
+    const float angle_step = 2.0f * glm::pi<float>() / segments;
+
+    for (int i = 0; i < segments; i++) {
+        float angle1 = i * angle_step;
+        float angle2 = (i + 1) * angle_step;
+
+        float x1 = x + glm::cos(angle1) * radius;
+        float y1 = y + glm::sin(angle1) * radius;
+        float x2 = x + glm::cos(angle2) * radius;
+        float y2 = y + glm::sin(angle2) * radius;
+
+        draw_line(x1, y1, x2, y2, color, thickness);
+    }
 }
+
+void RenderingCanvas::draw_arc(float x, float y, float radius, float start_angle, float end_angle, const Color& color, int segments) {
+    if (segments < 3) {
+        segments = 32;
+    }
+
+    while (start_angle < 0.0f) start_angle += 2.0f * glm::pi<float>();
+    while (end_angle < 0.0f) end_angle += 2.0f * glm::pi<float>();
+    while (start_angle >= 2.0f * glm::pi<float>()) start_angle -= 2.0f * glm::pi<float>();
+    while (end_angle >= 2.0f * glm::pi<float>()) end_angle -= 2.0f * glm::pi<float>();
+
+    float angle_span = end_angle - start_angle;
+    if (angle_span < 0.0f) {
+        angle_span += 2.0f * glm::pi<float>();
+    }
+
+    int arc_segments = SDL_max(3, static_cast<int>(segments * (angle_span / (2.0f * glm::pi<float>()))));
+
+    Vector<glm::vec2> points;
+
+    points.push_back(glm::vec2(x, y));
+
+    for (int i = 0; i <= arc_segments; i++) {
+        float t = static_cast<float>(i) / arc_segments;
+        float angle = start_angle + angle_span * t;
+        points.push_back(glm::vec2(x + glm::cos(angle) * radius, y + glm::sin(angle) * radius));
+    }
+
+    draw_polygon(points, color);
+}
+
 
 void RenderingCanvas::draw_texture_rect(RID texture, const Rect& dest, const Rect& source, const Color& tint, float rotation) {
 }
@@ -723,12 +771,23 @@ void RenderingCanvas::draw_custom(RID custom_shader, float x, float y, float wid
 }
 
 void RenderingCanvas::draw_texture_ex(float x, float y, float width, float height, RID texture, const Rect& source, const Color& color,
-                                      float rotation, bool flip_h, bool flip_v, RID shader) {
+                                      float rotation, bool flip_h, bool flip_v, const CanvasMaterial* material) {
     if (!is_drawing) {
         return;
     }
 
-    bool use_custom_shader = shader != INVALID_RID;
+    RID final_texture = texture;
+    glm::vec4 final_color = color.to_vec4();
+
+    if (material) {
+        if (texture == INVALID_RID && material->get_texture() != INVALID_RID) {
+            final_texture = material->get_texture();
+        }
+
+        final_color *= material->get_albedo().to_vec4();
+    }
+
+    bool use_custom_shader = material && material->has_custom_shader();
 
     if (use_custom_shader) {
         flush();
@@ -749,9 +808,9 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
     glm::vec2 texcoords[4];
     float u_min = 0.0f, v_min = 0.0f, u_max = 1.0f, v_max = 1.0f;
 
-    if (source.width > 0 && source.height > 0 && texture != INVALID_RID) {
+    if (source.width > 0 && source.height > 0 && final_texture != INVALID_RID) {
         uint32_t tex_width = 0, tex_height = 0;
-        rd->get_texture_size(texture, tex_width, tex_height);
+        rd->get_texture_size(final_texture, tex_width, tex_height);
 
         if (tex_width > 0 && tex_height > 0) {
             u_min = source.x / (float) tex_width;
@@ -784,13 +843,13 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
 
         for (int i = 0; i < 4; i++) {
             glm::vec4 pos = transform * positions[i];
-            custom_vertices.push_back({glm::vec3(pos), color.to_vec4(), texcoords[i]});
+            custom_vertices.push_back({glm::vec3(pos), final_color, texcoords[i]});
         }
 
         custom_indices = {0, 1, 2, 2, 3, 0};
 
         PipelineState custom_pipeline_state;
-        custom_pipeline_state.shader                   = shader;
+        custom_pipeline_state.shader                   = material->get_shader();
         custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
         custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
         custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
@@ -819,11 +878,38 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         glm::mat4 vp = projection * view;
         rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
-        float time_value = SDL_GetTicks() / 1000.0f;
+        float time_value = SDL_GetTicks() / 1000.0f; /// TODO: get from engine DT
         rd->push_constant("TIME", &time_value, sizeof(float));
 
-        if (texture != INVALID_RID) {
-            rd->bind_texture(0, texture, default_sampler);
+        int next_texture_unit = 1;
+
+        for (const auto& [name, value] : material->get_uniforms()) {
+            std::visit([&]<typename T0>(T0&& val) {
+                using T = std::decay_t<T0>;
+                if constexpr (std::is_same_v<T, float>) {
+                    rd->push_constant(name, &val, sizeof(float));
+                } else if constexpr (std::is_same_v<T, glm::vec2>) {
+                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec2));
+                } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec3));
+                } else if constexpr (std::is_same_v<T, glm::vec4>) {
+                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec4));
+                } else if constexpr (std::is_same_v<T, int>) {
+                    rd->push_constant(name, &val, sizeof(int));
+                }
+            }, value);
+        }
+
+        for (const auto& [name, tex_rid] : material->get_custom_textures()) {
+            if (tex_rid != INVALID_RID) {
+                rd->bind_texture(next_texture_unit, tex_rid, default_sampler);
+                rd->push_constant(name, &next_texture_unit, sizeof(int));
+                next_texture_unit++;
+            }
+        }
+
+        if (final_texture != INVALID_RID) {
+            rd->bind_texture(0, final_texture, default_sampler);
             int tex_unit = 0;
             rd->push_constant("TEXTURE", &tex_unit, sizeof(int));
         } else {
@@ -836,7 +922,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
     } else {
         for (int i = 0; i < 4; i++) {
             glm::vec4 pos = transform * positions[i];
-            vertices.push_back({glm::vec3(pos), color.to_vec4(), texcoords[i]});
+            vertices.push_back({glm::vec3(pos), final_color, texcoords[i]});
         }
 
         uint16_t base_index = (uint16_t) (vertices.size() - 4);
@@ -847,7 +933,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         indices.push_back(base_index + 3);
         indices.push_back(base_index + 0);
 
-        RID tex = texture != INVALID_RID ? texture : white_texture;
+        RID tex = final_texture != INVALID_RID ? final_texture : white_texture;
 
         if (draw_commands.empty() || draw_commands.back().texture != tex) {
             DrawCommand cmd{};

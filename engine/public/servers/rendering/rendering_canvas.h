@@ -30,6 +30,8 @@ public:
 
     void draw_circle_outlined(float x, float y, float radius, const Color& color = Color::WHITE, float thickness = 1.0f, int segments = 32);
 
+    void draw_arc(float x, float y, float radius, float start_angle, float end_angle, const Color& color = Color::WHITE, int segments = 32);
+
     void draw_line(float x1, float y1, float x2, float y2, const Color& color = Color::WHITE, float thickness = 1.0f);
 
     void draw_triangle(float x1, float y1, float x2, float y2, float x3, float y3, const Color& color = Color::WHITE);
@@ -85,7 +87,6 @@ private:
         bool use_texture;
     };
 
-    RenderingDevice* rd;
 
     RID shader;
     RID pipeline;
@@ -106,15 +107,17 @@ private:
     BlendMode current_blend_mode;
     ScaleMode scale_mode;
     float line_width;
+
     int window_width, window_height; /// Render resolution (internal)
     int viewport_width, viewport_height;
     bool is_drawing;
 
-    std::unordered_map<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
-
+    HashMap<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
 
     Font* emoji_font = nullptr;
-    std::unordered_map<std::string, Font*> loaded_fonts;
+    HashMap<String, Font*> loaded_fonts;
+
+    RenderingDevice* rd;
 
     void flush();
     void add_quad(const glm::mat4& transform, const Color& color, RID texture, bool use_texture);
