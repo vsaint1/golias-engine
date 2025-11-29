@@ -1,5 +1,6 @@
 #pragma once
 #include "drivers/gles3/rendering_device_gles3.h"
+#include "servers/rendering/shader_material.h"
 #include <spdlog/spdlog.h>
 
 
@@ -59,11 +60,12 @@ public:
     RID create_shader_from_source(const char* source);
     void destroy_shader(RID shader);
 
+    /// @deprecated  Use draw_texture_ex with a CanvasMaterial (optional) instead
     void draw_custom(RID shader, float x, float y, float width, float height, RID texture = INVALID_RID, const Color& color = Color::WHITE);
 
     void draw_texture_ex(float x, float y, float width, float height, RID texture = INVALID_RID, const Rect& source = {0, 0, 0, 0},
                          const Color& color = Color::WHITE, float rotation = 0.0f, bool flip_h = false, bool flip_v = false,
-                         RID shader = INVALID_RID);
+                         const CanvasMaterial* material = nullptr);
 
 
     void set_blend_mode(BlendMode mode);
