@@ -69,11 +69,8 @@ add_subdirectory(engine)
 # =========================================================
 # TESTS
 # =========================================================
-if (BUILD_Golias_TESTS)
+if (BUILD_GOLIAS_TESTS)
     enable_testing()
-endif ()
-
-if (BUILD_Golias_TESTS)
     add_subdirectory(tests)
 endif ()
 
