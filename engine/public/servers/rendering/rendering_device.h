@@ -5,7 +5,6 @@
 #include "core/gstl/str.h"
 
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include "core/math/math.h"
 
 #include <SDL3_ttf/SDL_ttf.h>
