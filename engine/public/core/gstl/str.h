@@ -47,7 +47,7 @@ public:
 
     String rstrip(const String& chars = " \t\n\r") const;
 
-    Vector<String> split(char delimiter) const;
+    Vector<String> split(const char delimiter) const;
 
     String join(const Vector<String>& parts) const;
 

@@ -106,7 +106,7 @@ String String::rstrip(const String& chars) const {
     return String(std::string::substr(0, end + 1));
 }
 
-Vector<String> String::split(char delimiter) const {
+Vector<String> String::split(const char delimiter) const {
     Vector<String> result;
     size_t start = 0;
     size_t end = this->find(delimiter);
