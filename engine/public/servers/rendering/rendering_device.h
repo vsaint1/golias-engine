@@ -256,7 +256,7 @@ class RenderingDevice : public RIDAllocator {
 public:
     virtual ~RenderingDevice() = default;
 
-    virtual bool initialize() = 0;
+    virtual bool initialize(SDL_Window* sdl_window) = 0;
     virtual void shutdown()   = 0;
 
     virtual RID shader_create_from_source(const String& vertex_src, const String& fragment_src) = 0;
