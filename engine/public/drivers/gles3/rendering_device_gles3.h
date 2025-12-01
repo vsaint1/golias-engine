@@ -8,7 +8,7 @@ public:
     RenderingDeviceGLES3() = default;
     ~RenderingDeviceGLES3() override;
 
-    bool initialize() override;
+    bool initialize(SDL_Window* sdl_window) override;
     void shutdown() override;
 
     RID shader_create_from_source(const String& vertex_src, const String& fragment_src) override;
@@ -101,6 +101,8 @@ private:
     RID current_pipeline         = INVALID_RID;
     RID current_framebuffer      = INVALID_RID;
     IndexType current_index_type = IndexType::UINT16;
+
+    SDL_GLContext gl_context = NULL;
 
     GLuint compile_shader(GLenum type, const String& source);
     GLenum to_gl_format(DataFormat format, bool* is_int = nullptr);

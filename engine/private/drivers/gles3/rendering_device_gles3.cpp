@@ -7,7 +7,43 @@ RenderingDeviceGLES3::~RenderingDeviceGLES3() {
     shutdown();
 }
 
-bool RenderingDeviceGLES3::initialize() {
+bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
+
+    gl_context = SDL_GL_CreateContext(sdl_window);
+
+    if (!gl_context) {
+        spdlog::critical("Failed to create OpenGL/ES context: {}", SDL_GetError());
+        return false;
+    }
+
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+
+    if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        spdlog::error("Failed to initialize OpenGLES Loader (GLAD)");
+        return false;
+    }
+
+#else
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+    #if defined(SDL_PLATFORM_MACOS)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // OSX compatibility Bit
+    #endif
+
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        spdlog::error("Failed to initialize OpenGL Loader (GLAD)");
+        return false;
+    }
+
+#endif
+
+    SDL_GL_SetSwapInterval(1); // TODO: make configurable (vsync on/off)
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
@@ -39,6 +75,8 @@ void RenderingDeviceGLES3::shutdown() {
     for (auto& [id, pipeline] : pipelines) {
         glDeleteVertexArrays(1, &pipeline.vao);
     }
+
+    SDL_GL_DestroyContext(gl_context);
 }
 
 GLuint RenderingDeviceGLES3::compile_shader(GLenum type, const String& source) {
