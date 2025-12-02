@@ -152,7 +152,7 @@
       "displayName": "macOS Debug Build",
       "configurePreset": "mac-debug",
       "targets": [
-        "ALL_BUILD"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -161,7 +161,7 @@
       "displayName": "macOS Release Build",
       "configurePreset": "mac-release",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -170,7 +170,7 @@
       "displayName": "Linux Debug Build",
       "configurePreset": "linux-debug",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -179,7 +179,7 @@
       "displayName": "Linux Release Build",
       "configurePreset": "linux-release",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -188,7 +188,7 @@
       "displayName": "Windows Debug Build",
       "configurePreset": "windows-debug",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -197,7 +197,7 @@
       "displayName": "Windows Release Build",
       "configurePreset": "windows-release",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -206,7 +206,7 @@
       "displayName": "WebGL Debug Build",
       "configurePreset": "web-debug",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     },
@@ -215,7 +215,7 @@
       "displayName": "WebGL Release Build",
       "configurePreset": "web-release",
       "targets": [
-        "golias_engine"
+        "golias_runtime"
       ],
       "verbose": true
     }
