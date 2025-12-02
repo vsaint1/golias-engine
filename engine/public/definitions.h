@@ -30,6 +30,7 @@
     #define GOLIAS_ASSERT_BREAK() ((void)0)
 #endif
 
+
 /*!
 * @defgroup Components
 * @defgroup Systems

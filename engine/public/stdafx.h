@@ -15,11 +15,11 @@
 #define FLECS_META
 #define FLECS_CPP
 #define FLECS_PIPELINE
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
+// #include <assimp/postprocess.h>
+// #include <assimp/scene.h>
 #include <condition_variable>
 #include <deque>
-#include <flecs/flecs.h>
+// #include <flecs/flecs.h>
 #include <functional>
 #include <glad.h>
 #include <map>
@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "json.hpp"
-#include <assimp/Importer.hpp>
+// #include <assimp/Importer.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
