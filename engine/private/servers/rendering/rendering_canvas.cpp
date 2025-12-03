@@ -594,6 +594,26 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureD
     return texture;
 }
 
+Texture RenderingCanvas::load_texture(const char* filepath) {
+    RID rid = load_texture_from_file(filepath);
+   
+    if (rid != INVALID_RID) {
+        return rd->get_texture(rid);
+    }
+
+    return Texture{};
+}
+
+Texture RenderingCanvas::load_texture(const char* filepath, const TextureDescription& desc) {
+    RID rid = load_texture_from_file(filepath, desc);
+   
+    if (rid != INVALID_RID) {
+        return rd->get_texture(rid);
+    }
+
+    return Texture{};
+}
+
 
 RID RenderingCanvas::load_texture_from_memory(void* data, int width, int height, int channels) {
     TextureFormat format;

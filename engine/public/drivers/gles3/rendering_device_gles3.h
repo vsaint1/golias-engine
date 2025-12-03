@@ -19,10 +19,12 @@ public:
     void buffer_destroy(RID buffer) override;
 
     RID texture_create(const TextureFormat& format, void* data = nullptr) override;
-    void texture_update(RID texture, uint32_t mip_level, uint32_t layer, const void* data, size_t size) override;
-    void texture_generate_mipmaps(RID texture) override;
-    void texture_destroy(RID texture) override;
-    void get_texture_size(RID texture, uint32_t& width, uint32_t& height) override;
+    void texture_update(RID texture_rid, uint32_t mip_level, uint32_t layer, const void* data, size_t size) override;
+    void texture_generate_mipmaps(RID texture_rid) override;
+    void texture_destroy(RID texture_rid) override;
+    void get_texture_size(RID texture_rid, uint32_t& width, uint32_t& height) override;
+    uint32_t texture_get_native_handle(RID texture_rid) override;
+    Texture get_texture(RID texture_rid) override;
 
     RID sampler_create(const SamplerState& state) override;
     void sampler_destroy(RID sampler) override;
@@ -57,40 +59,6 @@ public:
     void clear_depth_stencil(float depth = 1.0f, uint32_t stencil = 0) override;
 
 private:
-    // TODO: move all this code to abstract and have only GLES-specific code here
-    struct ShaderModule {
-        GLuint program = 0;
-        HashMap<String, GLint> uniform_locations;
-    };
-
-    struct Buffer {
-        GLuint buffer        = 0;
-        size_t size          = 0;
-        uint32_t usage_flags = 0;
-        GLenum target        = GL_ARRAY_BUFFER;
-    };
-
-    struct Texture {
-        GLuint texture = 0;
-        TextureFormat format;
-    };
-
-    struct Sampler {
-        GLuint sampler = 0;
-        SamplerState state;
-    };
-
-    struct Framebuffer {
-        GLuint framebuffer = 0;
-       Vector<RenderPassAttachment> attachments;
-        uint32_t width = 0, height = 0;
-    };
-
-    struct Pipeline {
-        PipelineState state;
-        GLuint vao = 0;
-    };
-
     HashMap<RID, ShaderModule> shaders;
     HashMap<RID, Buffer> buffers;
     HashMap<RID, Texture> textures;

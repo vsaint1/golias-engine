@@ -58,6 +58,8 @@ public:
 
     RID load_texture_from_file(const char* filepath);
     RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
+    Texture load_texture(const char* filepath);
+    Texture load_texture(const char* filepath, const TextureDescription& desc);
     void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
 
     RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
@@ -70,6 +72,8 @@ public:
 
     void set_blend_mode(BlendMode mode);
     void set_line_width(float width);
+
+    RenderingDevice* get_rendering_device() const { return rd; }
 
 private:
     struct Vertex {

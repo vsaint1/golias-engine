@@ -252,6 +252,41 @@ struct TextureDescription {
     bool generate_mipmaps    = false;
 };
 
+struct ShaderModule {
+    uint32_t program = 0;
+    HashMap<String, int32_t> uniform_locations;
+};
+
+struct Buffer {
+    uint32_t handle = 0;
+    size_t size = 0;
+    uint32_t usage_flags = 0;
+    uint32_t target = 0;  
+};
+
+struct Texture {
+    RID rid = INVALID_RID;
+    uint32_t handle = 0;
+    TextureFormat format;
+};
+
+struct Sampler {
+    uint32_t handle = 0;
+    SamplerState state;
+};
+
+struct Framebuffer {
+    uint32_t handle = 0;
+    Vector<RenderPassAttachment> attachments;
+    uint32_t width = 0;
+    uint32_t height = 0;
+};
+
+struct Pipeline {
+    PipelineState state;
+    uint32_t handle = 0;  
+};
+
 class RenderingDevice : public RIDAllocator {
 public:
     virtual ~RenderingDevice() = default;
@@ -271,6 +306,8 @@ public:
     virtual void texture_generate_mipmaps(RID texture)                                                          = 0;
     virtual void texture_destroy(RID texture)                                                                   = 0;
     virtual void get_texture_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
+    virtual uint32_t texture_get_native_handle(RID texture)                                                     = 0;
+    virtual Texture get_texture(RID texture)                                                               = 0;
 
     virtual RID sampler_create(const SamplerState& state) = 0;
     virtual void sampler_destroy(RID sampler)             = 0;
