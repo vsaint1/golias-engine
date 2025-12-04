@@ -54,19 +54,19 @@ public:
 
     void draw_text(Font* font, float x, float y, const Color& color, const String& text);
 
-    TTF_Font* load_font_from_file(const char* filepath, int size);
+    Font* load_font_from_file(const char* filepath, int size);
 
-    RID load_texture_from_file(const char* filepath);
-    RID load_texture_from_file(const char* filepath, const TextureDescription& desc);
-    Texture load_texture(const char* filepath);
-    Texture load_texture(const char* filepath, const TextureDescription& desc);
+    RID load_texture(const char* filepath);
+    RID load_texture(const char* filepath, const TextureDescription& desc);
+    Texture load_texture_from_file(const char* filepath);
+    Texture load_texture_from_file(const char* filepath, const TextureDescription& desc);
     void get_texture_size(RID texture, uint32_t& out_width, uint32_t& out_height);
 
     RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
     void unload_texture(RID texture);
 
     RID create_shader(const char* vertex_src, const char* fragment_src);
-    RID create_shader_from_file(const char* filepath);
+    RID load_shader_from_file(const char* filepath);
     RID create_shader_from_source(const char* source);
     void destroy_shader(RID shader);
 

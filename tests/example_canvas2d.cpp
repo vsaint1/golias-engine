@@ -196,16 +196,10 @@ int main(int argc, char* argv[]) {
             }
 
             if (keys[SDL_SCANCODE_EQUALS] || keys[SDL_SCANCODE_KP_PLUS]) {
-                camera.zoom += 0.5f * 0.016f;
-                if (camera.zoom > 3.0f) {
-                    camera.zoom = 3.0f;
-                }
+                camera.update_zoom(0.5f * 0.016f);
             }
             if (keys[SDL_SCANCODE_MINUS] || keys[SDL_SCANCODE_KP_MINUS]) {
-                camera.zoom -= 0.5f * 0.016f;
-                if (camera.zoom < 0.1f) {
-                    camera.zoom = 0.1f;
-                }
+                camera.update_zoom(-0.5f * 0.016f);
             }
 
             if (keys[SDL_SCANCODE_R]) {

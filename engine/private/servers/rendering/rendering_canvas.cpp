@@ -326,7 +326,7 @@ void RenderingCanvas::get_texture_size(RID texture, uint32_t& out_width, uint32_
     rd->get_texture_size(texture, out_width, out_height);
 }
 
-TTF_Font* RenderingCanvas::load_font_from_file(const char* filepath, int size) {
+Font* RenderingCanvas::load_font_from_file(const char* filepath, int size) {
 
     if (loaded_fonts.contains(filepath)) {
         return loaded_fonts.at(filepath);
@@ -525,7 +525,7 @@ glm::mat4 RenderingCanvas::get_current_transform() const {
     return result;
 }
 
-RID RenderingCanvas::load_texture_from_file(const char* filepath) {
+RID RenderingCanvas::load_texture(const char* filepath) {
     int width, height, channels;
     stbi_uc* data = stbi_load(filepath, &width, &height, &channels, STBI_rgb_alpha);
 
@@ -550,7 +550,7 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath) {
     return rid;
 }
 
-RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureDescription& desc) {
+RID RenderingCanvas::load_texture(const char* filepath, const TextureDescription& desc) {
     int width, height, channels;
     stbi_uc* data = stbi_load(filepath, &width, &height, &channels, STBI_rgb_alpha);
 
@@ -594,8 +594,8 @@ RID RenderingCanvas::load_texture_from_file(const char* filepath, const TextureD
     return texture;
 }
 
-Texture RenderingCanvas::load_texture(const char* filepath) {
-    RID rid = load_texture_from_file(filepath);
+Texture RenderingCanvas::load_texture_from_file(const char* filepath) {
+    RID rid = load_texture(filepath);
    
     if (rid != INVALID_RID) {
         return rd->get_texture(rid);
@@ -604,8 +604,8 @@ Texture RenderingCanvas::load_texture(const char* filepath) {
     return Texture{};
 }
 
-Texture RenderingCanvas::load_texture(const char* filepath, const TextureDescription& desc) {
-    RID rid = load_texture_from_file(filepath, desc);
+Texture RenderingCanvas::load_texture_from_file(const char* filepath, const TextureDescription& desc) {
+    RID rid = load_texture(filepath, desc);
    
     if (rid != INVALID_RID) {
         return rd->get_texture(rid);
@@ -722,7 +722,7 @@ RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_
     return rd->shader_create_from_source(vertex_src, fragment_src);
 }
 
-RID RenderingCanvas::create_shader_from_file(const char* filepath) {
+RID RenderingCanvas::load_shader_from_file(const char* filepath) {
     ShaderSource parsed = load_shader_file(filepath);
 
     if (!parsed.is_loaded) {
