@@ -39,7 +39,7 @@ add_subdirectory(SDL_ttf)
 add_subdirectory(lua)
 add_subdirectory(sol2)
 # add_subdirectory(assimp)
-# add_subdirectory(flecs)
+add_subdirectory(flecs)
 add_subdirectory(spdlog)
 add_subdirectory(nuklear)
 
@@ -58,7 +58,7 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         lua
         sol2
         # assimp
-        # flecs
+        flecs
         spdlog
         nuklear
 )
