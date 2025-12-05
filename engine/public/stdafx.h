@@ -19,7 +19,7 @@
 // #include <assimp/scene.h>
 #include <condition_variable>
 #include <deque>
-// #include <flecs/flecs.h>
+#include <flecs/flecs.h>
 #include <functional>
 #include <glad.h>
 #include <map>
