@@ -23,15 +23,11 @@ message("Golias Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12
 # ENGINE CONFIGURATION
 # TODO: build client shared and server static
 # =========================================================
-option(WITH_EDITOR "Build the engine with editor support" OFF)
-option(BUILD_SERVER "Build server binaries" OFF)
-option(BUILD_RUNTIME "Build runtime binaries" ON)
+option(BUILD_SANDBOX "Build Sandbox (engine development)" ON)
 option(BUILD_GOLIAS_TESTS "Build tests" OFF)
 
 message(STATUS "Build configuration:")
-message(STATUS "  WITH_EDITOR: ${WITH_EDITOR}")
-message(STATUS "  BUILD RUNTIME (CLIENT): ${BUILD_RUNTIME}")
-message(STATUS "  BUILD RUNTIME (SERVER): ${BUILD_SERVER}")
+message(STATUS "  BUILD SANDBOX (ENGINE DEVELOPMENT): ${BUILD_SANDBOX}")
 message(STATUS "  BUILD TESTS: ${BUILD_GOLIAS_TESTS}")
 message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
 
@@ -57,7 +53,6 @@ endif ()
 # =========================================================
 # VENDOR LIBRARIES AND CONFIGURATION
 # =========================================================
-
 add_subdirectory(vendor)
 
 # =========================================================
@@ -74,14 +69,8 @@ if (BUILD_GOLIAS_TESTS)
     add_subdirectory(tests)
 endif ()
 
-if (BUILD_SERVER)
-    message(STATUS "Adding server build")
-    add_compile_definitions(BUILD_SERVER)
-    add_subdirectory(server)
-endif ()
-
-if (BUILD_RUNTIME)
-    message(STATUS "Adding runtime build")
-    add_compile_definitions(BUILD_RUNTIME)
-    add_subdirectory(runtime)
+if (BUILD_SANDBOX)
+    message(STATUS "Adding sandbox build")
+    add_compile_definitions(BUILD_SANDBOX)
+    add_subdirectory(sandbox)
 endif ()

@@ -13,7 +13,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_GOLIAS_TESTS": "ON",
-        "BUILD_RUNTIME": "OFF"
+        "BUILD_SANDBOX": "OFF"
       }
     },
     {
@@ -111,8 +111,7 @@
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME": "Emscripten",
-        "CMAKE_BUILD_TYPE": "Release",
-        "CURL_DISABLE_INSTALL": "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -152,7 +151,7 @@
       "displayName": "macOS Debug Build",
       "configurePreset": "mac-debug",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -161,7 +160,7 @@
       "displayName": "macOS Release Build",
       "configurePreset": "mac-release",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -170,7 +169,7 @@
       "displayName": "Linux Debug Build",
       "configurePreset": "linux-debug",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -179,7 +178,7 @@
       "displayName": "Linux Release Build",
       "configurePreset": "linux-release",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -188,7 +187,7 @@
       "displayName": "Windows Debug Build",
       "configurePreset": "windows-debug",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -197,7 +196,7 @@
       "displayName": "Windows Release Build",
       "configurePreset": "windows-release",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -206,7 +205,7 @@
       "displayName": "WebGL Debug Build",
       "configurePreset": "web-debug",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     },
@@ -215,7 +214,7 @@
       "displayName": "WebGL Release Build",
       "configurePreset": "web-release",
       "targets": [
-        "golias_runtime"
+        "golias_sandbox"
       ],
       "verbose": true
     }
