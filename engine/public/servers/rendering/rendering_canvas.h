@@ -18,10 +18,10 @@ public:
 
     void set_camera(const glm::mat4& view_projection);
     void reset_camera();
+    
     void set_viewport_size(int width, int height);
     void set_scale_mode(ScaleMode mode);
-    void push_transform(const glm::mat4& transform);
-    void pop_transform();
+
 
     void draw_rect(float x, float y, float width, float height, const Color& color = Color::WHITE, float rotation = 0.0f);
 
