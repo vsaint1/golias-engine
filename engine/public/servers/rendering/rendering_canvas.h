@@ -53,7 +53,9 @@ public:
     void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
 
     void draw_text(Font* font, float x, float y, const Color& color, const String& text);
-
+    
+    void draw_text(float x, float y, const Color& color, const String& text);
+    
     Font* load_font_from_file(const char* filepath, int size);
 
     RID load_texture(const char* filepath);
@@ -116,6 +118,7 @@ private:
 
     HashMap<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
 
+    Font* default_font = nullptr;
     Font* emoji_font = nullptr;
     HashMap<String, Font*> loaded_fonts;
 

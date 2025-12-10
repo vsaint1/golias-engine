@@ -70,6 +70,13 @@ bool RenderingCanvas::initialize(int width, int height) {
         spdlog::info("Loaded emoji font (Twemoji.ttf) for emoji support.");
     }
 
+    default_font = load_font_from_file((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24);
+
+    if(!default_font) {
+        spdlog::error("Failed to load default font (Default.ttf): {}", SDL_GetError());
+        return false;
+    }
+
     shader = rd->shader_create_from_source(shaders::get_default_vertex_2d(), shaders::get_default_fragment_2d());
 
     if (shader == INVALID_RID) {
@@ -161,6 +168,11 @@ void RenderingCanvas::shutdown() {
     if (emoji_font) {
         TTF_CloseFont(emoji_font);
         emoji_font = nullptr;
+    }
+
+    if(default_font) {
+        TTF_CloseFont(default_font);
+        default_font = nullptr;
     }
 
     custom_shader_pipelines.clear();
@@ -505,15 +517,15 @@ void RenderingCanvas::calculate_viewport(int window_w, int window_h, int& out_x,
     }
 }
 
-void RenderingCanvas::push_transform(const glm::mat4& transform) {
-    transform_stack.push_back(transform);
-}
+// void RenderingCanvas::push_transform(const glm::mat4& transform) {
+//     transform_stack.push_back(transform);
+// }
 
-void RenderingCanvas::pop_transform() {
-    if (!transform_stack.empty()) {
-        transform_stack.pop_back();
-    }
-}
+// void RenderingCanvas::pop_transform() {
+//     if (!transform_stack.empty()) {
+//         transform_stack.pop_back();
+//     }
+// }
 
 glm::mat4 RenderingCanvas::get_current_transform() const {
     glm::mat4 result(1.0f);
@@ -716,6 +728,15 @@ void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color
 
     unload_texture(text_texture);
     SDL_DestroySurface(rgba_surface);
+}
+
+void RenderingCanvas::draw_text(float x, float y, const Color& color, const String& text) {
+    if(!default_font) {
+        spdlog::warn("Default font not loaded, cannot draw text.");
+        return;
+    }
+
+    draw_text(default_font, x, y, color, text);
 }
 
 RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
