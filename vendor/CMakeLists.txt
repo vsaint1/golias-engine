@@ -41,7 +41,6 @@ add_subdirectory(sol2)
 # add_subdirectory(assimp)
 add_subdirectory(flecs)
 add_subdirectory(spdlog)
-add_subdirectory(nuklear)
 
 add_library(vendor INTERFACE)
 
@@ -57,8 +56,8 @@ target_link_libraries(${PROJECT_NAME} INTERFACE
         json
         lua
         sol2
+        glad
         # assimp
         flecs
         spdlog
-        nuklear
 )
