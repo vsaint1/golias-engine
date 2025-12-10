@@ -67,6 +67,4 @@ const std::filesystem::path BASE_PATH = SDL_GetBasePath();
 #define ASSETS_PATH std::string("res/")
 #endif
 
-#include "nuklear.h"
-#include "nuklear_sdl3_ogl3.h"
 #include <stb_image.h>

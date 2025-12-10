@@ -1,19 +1,46 @@
 #pragma once
 
-#include "shader_preprocessor.h"
-
 #include "core/gstl/str.h"
-
-
 #include "core/math/math.h"
-
+#include "shader_preprocessor.h"
 #include <SDL3_ttf/SDL_ttf.h>
 
 #include <glm/gtx/string_cast.hpp>
-#include <SDL3_ttf/SDL_ttf.h>
 
 
-using Font = TTF_Font;
+struct Font {
+
+    Font() = default;
+    explicit Font(TTF_Font* ptr, int size = 24) : handle(ptr), size(size) {
+    }
+
+    TTF_Font* get_native_handle() const {
+        return handle;
+    }
+
+
+    void get_text_size(const String& text, int* out_w, int* out_h) const {
+        if (!TTF_GetStringSize(handle, text.c_str(), text.length(), out_w, out_h)) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get text size: %s", SDL_GetError());
+        }
+    }
+
+    int get_font_size_internal() const {
+        return TTF_GetFontHeight(handle);
+    }
+
+    void destroy()  {
+        if (handle) {
+            TTF_CloseFont(handle);
+            handle = nullptr;
+        }
+    }
+
+private:
+    TTF_Font* handle = nullptr;
+    int size = 16;
+
+};
 
 
 struct Color {
@@ -258,14 +285,14 @@ struct ShaderModule {
 };
 
 struct Buffer {
-    uint32_t handle = 0;
-    size_t size = 0;
+    uint32_t handle      = 0;
+    size_t size          = 0;
     uint32_t usage_flags = 0;
-    uint32_t target = 0;  
+    uint32_t target      = 0;
 };
 
 struct Texture {
-    RID rid = INVALID_RID;
+    RID rid         = INVALID_RID;
     uint32_t handle = 0;
     TextureFormat format;
 };
@@ -278,13 +305,13 @@ struct Sampler {
 struct Framebuffer {
     uint32_t handle = 0;
     Vector<RenderPassAttachment> attachments;
-    uint32_t width = 0;
+    uint32_t width  = 0;
     uint32_t height = 0;
 };
 
 struct Pipeline {
     PipelineState state;
-    uint32_t handle = 0;  
+    uint32_t handle = 0;
 };
 
 class RenderingDevice : public RIDAllocator {
@@ -292,10 +319,10 @@ public:
     virtual ~RenderingDevice() = default;
 
     virtual bool initialize(SDL_Window* sdl_window) = 0;
-    virtual void shutdown()   = 0;
+    virtual void shutdown()                         = 0;
 
     virtual RID shader_create_from_source(const String& vertex_src, const String& fragment_src) = 0;
-    virtual void shader_destroy(RID shader)                                                               = 0;
+    virtual void shader_destroy(RID shader)                                                     = 0;
 
     virtual RID buffer_create(size_t size, uint32_t usage_flags, const void* data = nullptr) = 0;
     virtual void buffer_update(RID buffer, size_t offset, size_t size, const void* data)     = 0;
@@ -307,13 +334,13 @@ public:
     virtual void texture_destroy(RID texture)                                                                   = 0;
     virtual void get_texture_size(RID texture, uint32_t& width, uint32_t& height)                               = 0;
     virtual uint32_t texture_get_native_handle(RID texture)                                                     = 0;
-    virtual Texture get_texture(RID texture)                                                               = 0;
+    virtual Texture get_texture(RID texture)                                                                    = 0;
 
     virtual RID sampler_create(const SamplerState& state) = 0;
     virtual void sampler_destroy(RID sampler)             = 0;
 
     virtual RID framebuffer_create(const Vector<RenderPassAttachment>& attachments) = 0;
-    virtual void framebuffer_destroy(RID framebuffer)                                    = 0;
+    virtual void framebuffer_destroy(RID framebuffer)                               = 0;
 
     virtual RID pipeline_create(const PipelineState& state) = 0;
     virtual void pipeline_destroy(RID pipeline)             = 0;
@@ -324,11 +351,11 @@ public:
     virtual void render_pass_begin(RID framebuffer, const Viewport& viewport, const Scissor& scissor) = 0;
     virtual void render_pass_end()                                                                    = 0;
 
-    virtual void bind_pipeline(RID pipeline)                                                                   = 0;
-    virtual void bind_vertex_buffers(const Vector<RID>& buffers, const Vector<size_t>& offsets = {}) = 0;
-    virtual void bind_index_buffer(RID buffer, IndexType type, size_t offset = 0)                              = 0;
-    virtual void bind_uniform_buffer(uint32_t binding, RID buffer, size_t offset = 0, size_t size = 0)         = 0;
-    virtual void bind_texture(uint32_t binding, RID texture, RID sampler)                                      = 0;
+    virtual void bind_pipeline(RID pipeline)                                                           = 0;
+    virtual void bind_vertex_buffers(const Vector<RID>& buffers, const Vector<size_t>& offsets = {})   = 0;
+    virtual void bind_index_buffer(RID buffer, IndexType type, size_t offset = 0)                      = 0;
+    virtual void bind_uniform_buffer(uint32_t binding, RID buffer, size_t offset = 0, size_t size = 0) = 0;
+    virtual void bind_texture(uint32_t binding, RID texture, RID sampler)                              = 0;
 
     virtual void push_constant(const String& name, const void* data, size_t size) = 0;
 

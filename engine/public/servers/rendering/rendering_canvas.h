@@ -50,13 +50,13 @@ public:
                          const CanvasMaterial* material = nullptr);
 
     template <typename... Args>
-    void draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args);
+    void draw_text(Font font, float x, float y, const Color& color, const char* format_str, Args&&... args);
 
-    void draw_text(Font* font, float x, float y, const Color& color, const String& text);
-    
+    void draw_text(Font font, float x, float y, const Color& color, const String& text);
+
     void draw_text(float x, float y, const Color& color, const String& text);
     
-    Font* load_font_from_file(const char* filepath, int size);
+    Font load_font_from_file(const char* filepath, int size);
 
     RID load_texture(const char* filepath);
     RID load_texture(const char* filepath, const TextureDescription& desc);
@@ -118,9 +118,10 @@ private:
 
     HashMap<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
 
-    Font* default_font = nullptr;
-    Font* emoji_font = nullptr;
-    HashMap<String, Font*> loaded_fonts;
+    Font default_font = {};
+    Font emoji_font = {};
+
+    HashMap<String, Font> loaded_fonts;
 
     RenderingDevice* rd;
 
@@ -134,8 +135,8 @@ private:
 
 
 template <typename... Args>
-void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
-    if (!font) {
+void RenderingCanvas::draw_text(Font font, float x, float y, const Color& color, const char* format_str, Args&&... args) {
+    if (!font.get_native_handle()) {
         spdlog::warn("DrawText called with null font!");
         return;
     }

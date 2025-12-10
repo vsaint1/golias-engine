@@ -1,5 +1,5 @@
 #include "servers/rendering/rendering_canvas.h"
-
+#include "stdafx.h"
 
 namespace shaders {
     std::string get_default_vertex_2d() {
@@ -62,19 +62,25 @@ bool RenderingCanvas::initialize(int width, int height) {
     viewport_width  = width;
     viewport_height = height;
 
-    emoji_font = TTF_OpenFont((ASSETS_PATH + "fonts/Twemoji.ttf").c_str(), 24);
+    emoji_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Twemoji.ttf").c_str(), 24));
 
-    if (!emoji_font) {
+    if (!emoji_font.get_native_handle()) {
         spdlog::warn("Failed to load emoji font (Twemoji.ttf), emoji support disabled: {}", SDL_GetError());
     } else {
         spdlog::info("Loaded emoji font (Twemoji.ttf) for emoji support.");
     }
 
-    default_font = load_font_from_file((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24);
+    default_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24));
 
-    if(!default_font) {
-        spdlog::error("Failed to load default font (Default.ttf): {}", SDL_GetError());
+    if(!default_font.get_native_handle()) {
+        spdlog::error("Failed to load Default font (Default.ttf): {}", SDL_GetError());
         return false;
+    }
+
+    if (emoji_font.get_native_handle()) {
+        if (!TTF_AddFallbackFont(default_font.get_native_handle(), emoji_font.get_native_handle())) {
+            spdlog::warn("Failed to add emoji fallback font: {}", SDL_GetError());
+        }
     }
 
     shader = rd->shader_create_from_source(shaders::get_default_vertex_2d(), shaders::get_default_fragment_2d());
@@ -158,22 +164,14 @@ void RenderingCanvas::shutdown() {
     }
 
     for (auto& pair : loaded_fonts) {
-        if (pair.second) {
-            TTF_CloseFont(pair.second);
-        }
+       pair.second.destroy();
     }
 
     loaded_fonts.clear();
 
-    if (emoji_font) {
-        TTF_CloseFont(emoji_font);
-        emoji_font = nullptr;
-    }
+    emoji_font.destroy();
 
-    if(default_font) {
-        TTF_CloseFont(default_font);
-        default_font = nullptr;
-    }
+    default_font.destroy();
 
     custom_shader_pipelines.clear();
 }
@@ -338,21 +336,21 @@ void RenderingCanvas::get_texture_size(RID texture, uint32_t& out_width, uint32_
     rd->get_texture_size(texture, out_width, out_height);
 }
 
-Font* RenderingCanvas::load_font_from_file(const char* filepath, int size) {
+Font RenderingCanvas::load_font_from_file(const char* filepath, int size) {
 
     if (loaded_fonts.contains(filepath)) {
         return loaded_fonts.at(filepath);
     }
 
-    TTF_Font* font = TTF_OpenFont(filepath, (float) size);
+    const Font font = Font(TTF_OpenFont(filepath, (float) size),size);
 
-    if (!font) {
+    if (!font.get_native_handle()) {
         spdlog::error("Failed to load Font from file {}: {}", filepath, SDL_GetError());
-        return nullptr;
+        return {};
     }
 
-    if (emoji_font) {
-        if (!TTF_AddFallbackFont(font, emoji_font)) {
+    if (emoji_font.get_native_handle()) {
+        if (!TTF_AddFallbackFont(font.get_native_handle(), emoji_font.get_native_handle())) {
             spdlog::warn("Failed to add emoji fallback font: {}", SDL_GetError());
         }
     }
@@ -647,8 +645,8 @@ void RenderingCanvas::unload_texture(RID texture) {
     rd->texture_destroy(texture);
 }
 
-void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color, const String& text) {
-    if (!font) {
+void RenderingCanvas::draw_text(Font font, float x, float y, const Color& color, const String& text) {
+    if (!font.get_native_handle()) {
         spdlog::warn("DrawText called with null font!");
         return;
     }
@@ -663,7 +661,7 @@ void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color
     text_color.b = (uint8_t) (color.b * 255);
     text_color.a = (uint8_t) (color.a * 255);
 
-    SDL_Surface* text_surface = TTF_RenderText_Blended(font, text.data(), text.length(), text_color);
+    SDL_Surface* text_surface = TTF_RenderText_Blended(font.get_native_handle(), text.data(), text.length(), text_color);
     if (!text_surface) {
         spdlog::error("Failed to render Text '{}': {}", text, SDL_GetError());
         return;
@@ -731,7 +729,7 @@ void RenderingCanvas::draw_text(Font* font, float x, float y, const Color& color
 }
 
 void RenderingCanvas::draw_text(float x, float y, const Color& color, const String& text) {
-    if(!default_font) {
+    if(!default_font.get_native_handle()) {
         spdlog::warn("Default font not loaded, cannot draw text.");
         return;
     }
