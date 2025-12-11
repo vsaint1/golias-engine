@@ -9,22 +9,11 @@ RenderingDeviceGLES3::~RenderingDeviceGLES3() {
 
 bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
 
-    gl_context = SDL_GL_CreateContext(sdl_window);
-
-    if (!gl_context) {
-        spdlog::critical("Failed to create OpenGL/ES context: {}", SDL_GetError());
-        return false;
-    }
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-
-    if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-        spdlog::error("Failed to initialize OpenGLES Loader (GLAD)");
-        return false;
-    }
 
 #else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -35,11 +24,27 @@ bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // OSX compatibility Bit
     #endif
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-        spdlog::error("Failed to initialize OpenGL Loader (GLAD)");
+
+#endif
+
+    gl_context = SDL_GL_CreateContext(sdl_window);
+
+    if (!gl_context) {
+        spdlog::critical("Failed to create OpenGL/ES context: {}", SDL_GetError());
         return false;
     }
 
+
+#if defined(SDL_PLATFORM_ANDROID) && !defined(SDL_PLATFORM_IOS) && !defined(SDL_PLATFORM_EMSCRIPTEN)
+    if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        spdlog::error("Failed to initialize OpenGL Loader (GLAD)");
+        return false;
+    }
+#else
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        spdlog::error("Failed to initialize OpenGLES Loader (GLAD)");
+        return false;
+    }
 #endif
 
     SDL_GL_SetSwapInterval(1); // TODO: make configurable (vsync on/off)
@@ -53,31 +58,31 @@ bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
 
 void RenderingDeviceGLES3::shutdown() {
     for (auto& [id, shader] : shaders) {
-        glDeleteProgram((GLuint)shader.program);
+        glDeleteProgram((GLuint) shader.program);
     }
 
     for (auto& [id, buffer] : buffers) {
-        GLuint buf = (GLuint)buffer.handle;
+        GLuint buf = (GLuint) buffer.handle;
         glDeleteBuffers(1, &buf);
     }
 
     for (auto& [id, texture] : textures) {
-        GLuint tex = (GLuint)texture.handle;
+        GLuint tex = (GLuint) texture.handle;
         glDeleteTextures(1, &tex);
     }
 
     for (auto& [id, sampler] : samplers) {
-        GLuint samp = (GLuint)sampler.handle;
+        GLuint samp = (GLuint) sampler.handle;
         glDeleteSamplers(1, &samp);
     }
 
     for (auto& [id, fb] : framebuffers) {
-        GLuint fbo = (GLuint)fb.handle;
+        GLuint fbo = (GLuint) fb.handle;
         glDeleteFramebuffers(1, &fbo);
     }
 
     for (auto& [id, pipeline] : pipelines) {
-        GLuint vao = (GLuint)pipeline.handle;
+        GLuint vao = (GLuint) pipeline.handle;
         glDeleteVertexArrays(1, &vao);
     }
 
@@ -140,7 +145,7 @@ RID RenderingDeviceGLES3::shader_create_from_source(const String& vertex_src, co
 void RenderingDeviceGLES3::shader_destroy(RID shader) {
     auto it = shaders.find(shader);
     if (it != shaders.end()) {
-        glDeleteProgram((GLuint)it->second.program);
+        glDeleteProgram((GLuint) it->second.program);
         shaders.erase(it);
     }
 }
@@ -159,23 +164,23 @@ RID RenderingDeviceGLES3::buffer_create(size_t size, uint32_t usage_flags, const
     glBindBuffer(target, 0);
 
     RID rid      = allocate_rid();
-    buffers[rid] = Buffer{buffer, size, usage_flags, (uint32_t)target};
+    buffers[rid] = Buffer{buffer, size, usage_flags, (uint32_t) target};
     return rid;
 }
 
 void RenderingDeviceGLES3::buffer_update(RID buffer, size_t offset, size_t size, const void* data) {
     auto it = buffers.find(buffer);
     if (it != buffers.end()) {
-        glBindBuffer((GLenum)it->second.target, (GLuint)it->second.handle);
-        glBufferSubData((GLenum)it->second.target, offset, size, data);
-        glBindBuffer((GLenum)it->second.target, 0);
+        glBindBuffer((GLenum) it->second.target, (GLuint) it->second.handle);
+        glBufferSubData((GLenum) it->second.target, offset, size, data);
+        glBindBuffer((GLenum) it->second.target, 0);
     }
 }
 
 void RenderingDeviceGLES3::buffer_destroy(RID buffer) {
     auto it = buffers.find(buffer);
     if (it != buffers.end()) {
-        GLuint buf = (GLuint)it->second.handle;
+        GLuint buf = (GLuint) it->second.handle;
         glDeleteBuffers(1, &buf);
         buffers.erase(it);
     }
@@ -272,7 +277,7 @@ RID RenderingDeviceGLES3::texture_create(const TextureFormat& format, void* data
 void RenderingDeviceGLES3::texture_destroy(RID texture) {
     auto it = textures.find(texture);
     if (it != textures.end()) {
-        GLuint tex = (GLuint)it->second.handle;
+        GLuint tex = (GLuint) it->second.handle;
         glDeleteTextures(1, &tex);
         textures.erase(it);
     }
@@ -317,7 +322,7 @@ RID RenderingDeviceGLES3::pipeline_create(const PipelineState& state) {
 void RenderingDeviceGLES3::pipeline_destroy(RID pipeline) {
     auto it = pipelines.find(pipeline);
     if (it != pipelines.end()) {
-        GLuint vao = (GLuint)it->second.handle;
+        GLuint vao = (GLuint) it->second.handle;
         glDeleteVertexArrays(1, &vao);
         pipelines.erase(it);
     }
@@ -332,7 +337,7 @@ void RenderingDeviceGLES3::bind_pipeline(RID pipeline) {
     current_pipeline = pipeline;
     const auto& pipe = it->second;
 
-    glBindVertexArray((GLuint)pipe.handle);
+    glBindVertexArray((GLuint) pipe.handle);
 
     auto shader_it = shaders.find(pipe.state.shader);
     if (shader_it != shaders.end()) {
@@ -459,7 +464,7 @@ void RenderingDeviceGLES3::bind_vertex_buffers(const Vector<RID>& buffer_rids, c
             continue;
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, (GLuint)buf_it->second.handle);
+        glBindBuffer(GL_ARRAY_BUFFER, (GLuint) buf_it->second.handle);
 
         for (const auto& attr : vertex_format.attributes) {
             glEnableVertexAttribArray(attr.location);
@@ -540,7 +545,7 @@ void RenderingDeviceGLES3::bind_vertex_buffers(const Vector<RID>& buffer_rids, c
 void RenderingDeviceGLES3::bind_index_buffer(RID buffer, IndexType type, size_t offset) {
     auto it = buffers.find(buffer);
     if (it != buffers.end()) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (GLuint)it->second.handle);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (GLuint) it->second.handle);
         current_index_type = type;
     }
 }
@@ -599,7 +604,7 @@ void RenderingDeviceGLES3::bind_uniform_buffer(uint32_t binding, RID buffer, siz
         if (size == 0) {
             size = it->second.size - offset;
         }
-        glBindBufferRange(GL_UNIFORM_BUFFER, binding, (GLuint)it->second.handle, offset, size);
+        glBindBufferRange(GL_UNIFORM_BUFFER, binding, (GLuint) it->second.handle, offset, size);
     }
 }
 
@@ -611,13 +616,13 @@ void RenderingDeviceGLES3::bind_texture(uint32_t binding, RID texture, RID sampl
         if (tex_it->second.format.type == TextureType::TEXTURE_TYPE_CUBEMAP) {
             target = GL_TEXTURE_CUBE_MAP;
         }
-        
-        glBindTexture(target, (GLuint)tex_it->second.handle);
+
+        glBindTexture(target, (GLuint) tex_it->second.handle);
 
         if (sampler != INVALID_RID) {
             auto samp_it = samplers.find(sampler);
             if (samp_it != samplers.end()) {
-                glBindSampler(binding, (GLuint)samp_it->second.handle);
+                glBindSampler(binding, (GLuint) samp_it->second.handle);
             }
         }
     }
@@ -646,7 +651,7 @@ RID RenderingDeviceGLES3::sampler_create(const SamplerState& state) {
 void RenderingDeviceGLES3::sampler_destroy(RID sampler) {
     auto it = samplers.find(sampler);
     if (it != samplers.end()) {
-        GLuint samp = (GLuint)it->second.handle;
+        GLuint samp = (GLuint) it->second.handle;
         glDeleteSamplers(1, &samp);
         samplers.erase(it);
     }
@@ -712,7 +717,7 @@ RID RenderingDeviceGLES3::framebuffer_create(const Vector<RenderPassAttachment>&
             attachment_point = GL_COLOR_ATTACHMENT0 + color_attachment_idx++;
         }
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment_point, GL_TEXTURE_2D, (GLuint)tex.handle, attachment.mip_level);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment_point, GL_TEXTURE_2D, (GLuint) tex.handle, attachment.mip_level);
     }
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -734,7 +739,7 @@ RID RenderingDeviceGLES3::framebuffer_create(const Vector<RenderPassAttachment>&
 void RenderingDeviceGLES3::framebuffer_destroy(RID framebuffer) {
     auto it = framebuffers.find(framebuffer);
     if (it != framebuffers.end()) {
-        GLuint fbo = (GLuint)it->second.handle;
+        GLuint fbo = (GLuint) it->second.handle;
         glDeleteFramebuffers(1, &fbo);
         framebuffers.erase(it);
     }
@@ -749,7 +754,7 @@ void RenderingDeviceGLES3::render_pass_begin(RID framebuffer, const Viewport& vi
             return;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)it->second.handle);
+        glBindFramebuffer(GL_FRAMEBUFFER, (GLuint) it->second.handle);
         current_framebuffer = framebuffer;
 
         for (const auto& attachment : it->second.attachments) {
@@ -851,7 +856,7 @@ void RenderingDeviceGLES3::texture_update(RID texture, uint32_t mip_level, uint3
         target = GL_TEXTURE_CUBE_MAP;
     }
 
-    glBindTexture(target, (GLuint)tex.handle);
+    glBindTexture(target, (GLuint) tex.handle);
 
     GLenum pixel_format = GL_RGBA;
     GLenum pixel_type   = GL_UNSIGNED_BYTE;
@@ -885,7 +890,7 @@ void RenderingDeviceGLES3::texture_generate_mipmaps(RID texture) {
         target = GL_TEXTURE_CUBE_MAP;
     }
 
-    glBindTexture(target, (GLuint)it->second.handle);
+    glBindTexture(target, (GLuint) it->second.handle);
     glGenerateMipmap(target);
     glBindTexture(target, 0);
 }
