@@ -1,21 +1,20 @@
-void vertex() {
-    vec3 pos = VERTEX;
-    pos.z += sin(TIME * 2.0 + VERTEX.x * 0.1) * 0.1;
+shader_type canvas_item;
 
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(pos, 1.0);
+uniform float pixel_size;
+
+void vertex() {
+    VERTEX.z += sin(TIME * 2.0 + VERTEX.x * 0.1) * 0.1;
+
 }
 
 void fragment() {
     vec2 uv = UV;
-
-    float pixelSize = 16.0;
+    float pixelSize = pixel_size;
     uv = floor(uv * pixelSize) / pixelSize;
 
     vec4 texColor = texture(TEXTURE, uv);
-
     float scanline = sin(UV.y * 300.0) * 0.1 + 0.9;
 
-    ALBEDO = texColor.rgb * COLOR.rgb * scanline;
-    ALPHA = texColor.a * COLOR.a;
+    COLOR.rgb = texColor.rgb * scanline;
+    ALPHA = texColor.a;
 }
-

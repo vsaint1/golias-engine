@@ -33,14 +33,32 @@ The shader file should be placed in your project's shader directory (typically `
 
 Every shader consists of two main functions: `vertex()` and `fragment()`. Here's a minimal working shader:
 
+### Shader Header
+
+- shader_type canvas_item; // For 2D shaders
+- shader_type spatial; // For 3D shaders
+- #[compute]; // For Compute shaders
+
+| Header                     | Type      | Description              |
+  |----------------------------|-----------|--------------------------|
+| `shader_type canvas_item;` | `2D`      | Used for 2D rendering    |
+| `shader_type spatial;`     | `3D`      | Used for 3D rendering    |
+| `#[compute]`               | `compute` | Used for compute shaders |
+
+
+
 ```glsl
+
+shader_type canvas_item;
+
+// Can be empty if not needed
 void vertex() {
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
+
 }
 
 void fragment() {
     vec4 tex = texture(TEXTURE, UV);
-    ALBEDO = tex.rgb * COLOR.rgb;
+    COLOR = tex.rgb * COLOR.rgb;
     ALPHA = tex.a * COLOR.a;
 }
 ```
@@ -55,9 +73,12 @@ void fragment() {
 ## Shader Structure
 
 ### Compute Shader
-The compute shader is used for general-purpose computing tasks on the GPU. It operates independently of the graphics pipeline.
+
+The compute shader is used for general-purpose computing tasks on the GPU. It operates independently of the graphics
+pipeline.
 
 > ⚠️ Note: Compute shaders are not supported on `Compatibility` renderer backend.
+
 ```glsl
 #[compute]
 #version 450
@@ -72,15 +93,13 @@ void main(){
 
 ### Vertex Shader
 
-The vertex shader processes each vertex of your mesh. Its primary responsibility is to set `gl_Position`, which
-determines where the vertex appears on screen.
+The vertex shader processes each vertex of your mesh.
 
 ```glsl
-void vertex() {
-    // Transform vertex to clip space (required)
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 
+void vertex() {
     // You can also modify vertex positions, pass data to fragment shader, etc.
+    VERTEX.z += sin(TIME * 2.0 + VERTEX.x * 0.1) * 0.1;
 }
 ```
 
@@ -91,7 +110,7 @@ The fragment shader runs for each pixel and determines its final color and trans
 ```glsl
 void fragment() {
     // Set the pixel's color (RGB)
-    ALBEDO = vec3(1.0, 0.0, 0.0);  // Red
+    COLOR = vec3(1.0, 0.0, 0.0);  // Red
 
     // Set the pixel's transparency (0.0 = transparent, 1.0 = opaque)
     ALPHA = 1.0;
@@ -114,9 +133,8 @@ void fragment() {
 
 #### Outputs
 
-| Variable      | Type   | Description                                       |
-|---------------|--------|---------------------------------------------------|
-| `gl_Position` | `vec4` | **Required.** Final vertex position in clip space |
+| Variable | Type | Description |
+|----------|------|-------------|
 
 ### Fragment Shader Variables
 
@@ -131,20 +149,23 @@ void fragment() {
 
 | Variable | Type    | Default     | Description                   |
 |----------|---------|-------------|-------------------------------|
-| `ALBEDO` | `vec3`  | `vec3(1.0)` | Base color of the pixel (RGB) |
+| `COLOR`  | `vec3`  | `vec3(1.0)` | Base color of the pixel (RGB) |
 | `ALPHA`  | `float` | `1.0`       | Transparency (0.0-1.0)        |
 
 ### Uniform Variables (Available in Both Shaders)
 
-| Variable                 | Type        | Description                            |
-|--------------------------|-------------|----------------------------------------|
-| `MODEL_MATRIX`           | `mat4`      | Transforms from local to world space   |
-| `VIEW_MATRIX`            | `mat4`      | Camera view transformation             |
-| `PROJECTION_MATRIX`      | `mat4`      | Projection transformation              |
-| `VIEW_PROJECTION_MATRIX` | `mat4`      | Combined view × projection (optimized) |
-| `TIME`                   | `float`     | Elapsed time in seconds since start    |
-| `CAMERA_POSITION`        | `vec3`      | World position of the camera           |
-| `TEXTURE`                | `sampler2D` | The default texture sampler            |
+| Variable                 | Type        | Description                                |
+|--------------------------|-------------|--------------------------------------------|
+| `MODEL_MATRIX`           | `mat4`      | Transforms from local to world space       |
+| `VIEW_MATRIX`            | `mat4`      | Camera view transformation                 |
+| `PROJECTION_MATRIX`      | `mat4`      | Projection transformation                  |
+| `VIEW_PROJECTION_MATRIX` | `mat4`      | Combined view × projection (optimized)     |
+| `TIME`                   | `float`     | Elapsed time in seconds since start        |
+| `CAMERA_POSITION`        | `vec3`      | World position of the camera               |
+| `TEXTURE`                | `sampler2D` | The default texture sampler                |
+| `SCREEN_SIZE`            | `vec2`      | Dimensions of the screen (width, height)   |
+| `COLOR`                  | `vec4`      | Global color multiplier (RGBA)             |
+| `VIEWPORT_SIZE`          | `vec2`      | Dimensions of the viewport (width, height) |
 
 ---
 
@@ -219,7 +240,7 @@ uniform vec3 myColor;
 uniform sampler2D customTexture;
 
 void fragment() {
-    ALBEDO = myColor * myValue;
+    COLOR = myColor * myValue;
     ALPHA = 1.0;
 }
 ```
@@ -244,13 +265,12 @@ void vertex() {
     worldPos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
     customUV = UV * 2.0;
 
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 }
 
 void fragment() {
     // Use the interpolated world position
     float dist = length(worldPos - CAMERA_POSITION);
-    ALBEDO = vec3(dist * 0.1) * texture(TEXTURE, customUV).rgb;
+    COLOR = vec3(dist * 0.1) * texture(TEXTURE, customUV).rgb;
     ALPHA = 1.0;
 }
 ```
@@ -273,11 +293,11 @@ void fragment() {
 ```glsl
 // Good
 vec4 tex = texture(TEXTURE, UV);
-ALBEDO = tex.rgb * 0.5;
+COLOR = tex.rgb * 0.5;
 ALPHA = tex.a;
 
 // Bad
-ALBEDO = texture(TEXTURE, UV).rgb * 0.5;
+COLOR = texture(TEXTURE, UV).rgb * 0.5;
 ALPHA = texture(TEXTURE, UV).a; // Samples texture twice!
 ```
 
@@ -288,13 +308,13 @@ ALPHA = texture(TEXTURE, UV).a; // Samples texture twice!
 ```glsl
 // Slower
 if (UV.x > 0.5) {
-ALBEDO = vec3(1.0);
+COLOR = vec3(1.0);
 } else {
-ALBEDO = vec3(0.0);
+COLOR = vec3(0.0);
 }
 
 // Faster
-ALBEDO = vec3(step(0.5, UV.x));
+COLOR = vec3(step(0.5, UV.x));
 ```
 
 ### Debugging Tips
@@ -302,8 +322,8 @@ ALBEDO = vec3(step(0.5, UV.x));
 1. **Visualize values**: Output variables as colors to see what's happening
 
 ```glsl
-ALBEDO = vec3(UV, 0.0); // Visualize UV coordinates
-ALBEDO = vec3(fract(TIME)); // Visualize time
+COLOR = vec3(UV, 0.0); // Visualize UV coordinates
+COLOR = vec3(fract(TIME)); // Visualize time
 ```
 
 2. **Test incrementally**: Start with a simple shader and add complexity gradually
@@ -348,12 +368,10 @@ vec2 tiledUV = fract(UV * 4.0);  // Tile 4x4
 
 - Check for syntax errors (missing semicolons, mismatched brackets)
 - Ensure all variables are declared before use
-- Verify that `gl_Position` is set in vertex shader
 
 **"Black screen / Nothing renders"**
 
 - Make sure `ALPHA` is set to a value > 0
-- Verify `gl_Position` calculation is correct
 - Check that textures are loaded properly
 
 **"Shader compiles but looks wrong"**

@@ -1,16 +1,19 @@
+shader_type canvas_item;
+
+uniform float amplitude;
+uniform float frequency;
 
 void vertex() {
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 }
 
 void fragment() {
     vec2 uv = UV;
 
-    uv.x += sin(uv.y * 10.0 + TIME * 3.0) * 0.05;
-    uv.y += cos(uv.x * 10.0 + TIME * 2.0) * 0.03;
+    uv.x += sin(uv.y * amplitude + TIME * frequency) * 0.05;
+    uv.y += cos(uv.x * amplitude + TIME * frequency) * 0.03;
 
     vec4 texColor = texture(TEXTURE, uv);
-    ALBEDO = texColor.rgb * COLOR.rgb;
-    ALPHA = texColor.a * COLOR.a;
+    COLOR.rgb *= texColor.rgb;
+    ALPHA = texColor.a;
 }
 
