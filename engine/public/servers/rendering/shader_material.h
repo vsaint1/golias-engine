@@ -12,28 +12,18 @@ public:
     explicit CanvasMaterial(const RID shader_rid) : shader(shader_rid) {
     }
 
-
     CanvasMaterial& set_shader(RID shader_rid);
 
-    CanvasMaterial& set_albedo(const Color& color);
+    CanvasMaterial& set_color(const Color& col);
 
     CanvasMaterial& set_texture(RID tex);
 
-    CanvasMaterial& set_float(const String& name, float value);
+    CanvasMaterial& set_custom_texture(const char* name, RID tex);
 
-    CanvasMaterial& set_vec2(const String& name, const glm::vec2& value);
+    template<typename T>
+    CanvasMaterial& set_shader_param(const char* uniform_name, const T& value);
 
-    CanvasMaterial& set_vec3(const String& name, const glm::vec3& value);
-
-    CanvasMaterial& set_vec4(const String& name, const glm::vec4& value);
-
-    CanvasMaterial& set_color(const String& name, const Color& color);
-
-    CanvasMaterial& set_int(const String& name, int value);
-
-    CanvasMaterial& set_custom_texture(const String& name, RID tex);
-
-    RID get_custom_texture(const String& name) const;
+    RID get_custom_texture(const char* uniform_name) const;
 
     RID get_shader() const;
 
@@ -43,16 +33,23 @@ public:
 
     const HashMap<String, RID>& get_custom_textures() const;
 
-    Color get_albedo() const;
+    Color get_color() const;
 
     RID  get_texture() const;
 
 private:
 
-    Color albedo = Color::WHITE;
+    Color color = Color::WHITE;
     RID texture  = INVALID_RID;
 
     RID shader = INVALID_RID;
     HashMap<String, UniformType> uniforms;
     HashMap<String, RID> custom_textures;
 };
+
+
+template<typename T>
+CanvasMaterial& CanvasMaterial::set_shader_param(const char* uniform_name, const T& value) {
+    uniforms[uniform_name] = value;
+    return *this;
+}

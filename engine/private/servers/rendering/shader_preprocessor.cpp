@@ -9,7 +9,7 @@ std::string get_shader_header() {
 }
 
 
-static  void remove_builtin_declarations(std::string& shader_code) {
+static void remove_builtin_declarations(std::string& shader_code) {
 
     // List of built-in varyings to remove (users shouldn't declare these)
     const char* builtins[] = {
@@ -43,20 +43,54 @@ static  void remove_builtin_declarations(std::string& shader_code) {
             pos = line_start;
         }
     }
-};
+}
+
+static void remove_shader_type_directive(std::string& shader_code) {
+    // Remove "shader_type canvas_item;" or "shader_type spatial;" lines
+    const char* directives[] = {
+        "shader_type canvas_item;",
+        "shader_type spatial;"
+    };
+
+    for (const char* directive : directives) {
+        size_t pos = 0;
+        while ((pos = shader_code.find(directive, pos)) != std::string::npos) {
+            // Find line start
+            size_t line_start = shader_code.rfind('\n', pos);
+            line_start = (line_start == std::string::npos) ? 0 : line_start + 1;
+
+            // Find line end
+            size_t line_end = shader_code.find('\n', pos);
+            if (line_end == std::string::npos) {
+                line_end = shader_code.length();
+            } else {
+                line_end++; // Include the newline
+            }
+
+            shader_code.erase(line_start, line_end - line_start);
+            pos = line_start;
+        }
+    }
+}
 
 
 static std::string inject_vertex_attributes(const std::string& shader_source) {
     std::stringstream ss;
 
     ss << "// Vertex Attributes (auto-injected)\n";
-    ss << "layout(location = 0) in vec3 VERTEX;\n";
-    ss << "layout(location = 1) in vec4 COLOR;\n";
-    ss << "layout(location = 2) in vec2 UV;\n\n";
+    ss << "layout(location = 0) in vec3 a_vertex;\n";
+    ss << "layout(location = 1) in vec4 a_color;\n";
+    ss << "layout(location = 2) in vec2 a_uv;\n\n";
+
+    ss << "// Shader variables - writable in vertex shader\n";
+    ss << "vec3 VERTEX;\n";
+    ss << "vec4 COLOR;\n";
+    ss << "vec2 UV;\n\n";
 
     ss << "// Built-in Varyings (auto-injected)\n";
     ss << "out vec4 v_COLOR;\n";
-    ss << "out vec2 v_UV;\n\n";
+    ss << "out vec2 v_UV;\n";
+    ss << "out vec3 v_VERTEX;\n\n";
 
     ss << shader_source;
 
@@ -68,15 +102,16 @@ static std::string inject_fragment_inputs(const std::string& shader_source) {
 
     ss << "// Built-in Varyings (auto-injected)\n";
     ss << "in vec4 v_COLOR;\n";
-    ss << "in vec2 v_UV;\n\n";
+    ss << "in vec2 v_UV;\n";
+    ss << "in vec3 v_VERTEX;\n\n";
 
-    ss << "// Shader variables (Godot-style)\n";
-    ss << "vec3 ALBEDO = vec3(1.0);\n";
+    ss << "// Shader variables\n";
+    ss << "vec4 COLOR = vec4(1.0);\n";
     ss << "float ALPHA = 1.0;\n\n";
 
     ss << "// Aliases for reading\n";
     ss << "#define UV v_UV\n";
-    ss << "#define COLOR v_COLOR\n\n";
+    ss << "#define VERTEX v_VERTEX\n\n";
 
     ss << shader_source;
 
@@ -113,8 +148,10 @@ static std::string inject_fragment_outputs(const std::string& shader_source) {
 // Shader Parser - Processes custom shader syntax
 // ============================================================================
 // Syntax:
-//   - void vertex() {...}   -> becomes vertex shader main()
-//   - void fragment() {...} -> becomes fragment shader main()
+//   - shader_type canvas_item; -> 2D shader (supported)
+//   - shader_type spatial;     -> 3D shader (not supported)
+//   - void vertex() {...}      -> becomes vertex shader main()
+//   - void fragment() {...}    -> becomes fragment shader main()
 //   - #[compute] tag for compute shaders
 // ============================================================================
 ShaderSource parse_shader(const std::string& source) {
@@ -123,12 +160,23 @@ ShaderSource parse_shader(const std::string& source) {
     std::string shader_header;
 
     // ========================================
-    // 1. Detect shader type (Compute vs Vertex/Fragment)
+    // 1. Detect shader type
     // ========================================
     const bool has_compute_tag = source.find("#[compute]") != std::string::npos;
     const bool has_main        = source.find("void main()") != std::string::npos;
     const bool has_vertex      = source.find("void vertex") != std::string::npos;
     const bool has_fragment    = source.find("void fragment") != std::string::npos;
+
+    // Check for shader_type directives
+    const bool has_spatial = source.find("shader_type spatial") != std::string::npos;
+    const bool has_canvas_item = source.find("shader_type canvas_item") != std::string::npos;
+
+    // Spatial shaders are not supported
+    if (has_spatial) {
+        spdlog::error("shader_type spatial is not supported");
+        result.is_loaded = false;
+        return result;
+    }
 
     // Handle compute shaders (no processing needed)
     if (has_compute_tag || (has_main && !has_vertex && !has_fragment)) {
@@ -181,10 +229,10 @@ ShaderSource parse_shader(const std::string& source) {
     // ========================================
     // 5. Inject built-ins
     // ========================================
-    // First, remove any manual built-in declarations from common code
-    // Clean common code first
+    // Clean common code - remove built-in declarations and shader_type directives
     std::string clean_common_code = common_code;
     remove_builtin_declarations(clean_common_code);
+    remove_shader_type_directive(clean_common_code);
 
     // Vertex shader gets: attributes + varyings + uniforms
     std::string vertex_common = inject_builtin_uniforms(clean_common_code);
@@ -230,12 +278,27 @@ ShaderSource parse_shader(const std::string& source) {
     if (vertex_main_pos != std::string::npos) {
         result.vertex_source.replace(vertex_main_pos, 13, "void main()");
 
+        // Find the opening brace of main() and inject initialization
+        size_t main_start = result.vertex_source.find('{', vertex_main_pos);
+        if (main_start != std::string::npos) {
+            std::string init_code =
+                "\n    // Initialize shader variables from attributes\n"
+                "    VERTEX = a_vertex;\n"
+                "    COLOR = a_color;\n"
+                "    UV = a_uv;\n\n";
+            result.vertex_source.insert(main_start + 1, init_code);
+        }
+
         size_t main_end = result.vertex_source.find_last_of('}');
         if (main_end != std::string::npos) {
             std::string varying_passthrough =
                 "    // Auto-pass built-in varyings\n"
                 "    v_COLOR = COLOR;\n"
-                "    v_UV = UV;\n";
+                "    v_UV = UV;\n"
+                "    v_VERTEX = VERTEX;\n"
+                "    \n"
+                "    // Auto-inject gl_Position\n"
+                "    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);\n";
             result.vertex_source.insert(main_end, varying_passthrough);
         }
     }
@@ -252,12 +315,12 @@ ShaderSource parse_shader(const std::string& source) {
     if (fragment_main_pos != std::string::npos) {
         result.fragment_source.replace(fragment_main_pos, 15, "void main()");
 
-        // Find the closing brace of main() and inject ALBEDO/ALPHA assignment to fragColor
+        // Find the closing brace of main() and inject COLOR assignment to fragColor
         size_t main_end = result.fragment_source.find_last_of('}');
         if (main_end != std::string::npos) {
             std::string output_assignment =
-                "    // Auto-assign ALBEDO and ALPHA to output\n"
-                "    fragColor = vec4(ALBEDO, ALPHA);\n";
+                "    // Auto-assign COLOR and ALPHA to output\n"
+                "    fragColor = vec4(COLOR.rgb, ALPHA);\n";
             result.fragment_source.insert(main_end, output_assignment);
         }
     }
@@ -269,7 +332,8 @@ ShaderSource parse_shader(const std::string& source) {
     spdlog::debug("=== Final Vertex Shader ===\n{}", result.vertex_source);
     spdlog::debug("=== Final Fragment Shader ===\n{}", result.fragment_source);
 
-    spdlog::info("Shader Type: Vertex/Fragment | Vertex: {} bytes | Fragment: {} bytes",
+    spdlog::info("Shader Type: {} | Vertex: {} bytes | Fragment: {} bytes",
+                 has_canvas_item ? "canvas_item (2D)" : "Vertex/Fragment",
                  result.vertex_source.size(), result.fragment_source.size());
     result.is_loaded = true;
     return result;

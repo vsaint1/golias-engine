@@ -6,8 +6,8 @@ CanvasMaterial& CanvasMaterial::set_shader(const RID shader_rid) {
     return *this;
 }
 
-CanvasMaterial& CanvasMaterial::set_albedo(const Color& color) {
-    albedo = color;
+CanvasMaterial& CanvasMaterial::set_color(const Color& col) {
+    color = col;
     return *this;
 }
 
@@ -16,52 +16,23 @@ CanvasMaterial& CanvasMaterial::set_texture(const RID tex) {
     return *this;
 }
 
-CanvasMaterial& CanvasMaterial::set_float(const String& name, float value) {
-    uniforms[name] = value;
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_vec2(const String& name, const glm::vec2& value) {
-    uniforms[name] = value;
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_vec3(const String& name, const glm::vec3& value) {
-    uniforms[name] = value;
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_vec4(const String& name, const glm::vec4& value) {
-    uniforms[name] = value;
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_color(const String& name, const Color& color) {
-    uniforms[name] = color.to_vec4();
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_int(const String& name, int value) {
-    uniforms[name] = value;
-    return *this;
-}
-
-CanvasMaterial& CanvasMaterial::set_custom_texture(const String& name, RID tex) {
+CanvasMaterial& CanvasMaterial::set_custom_texture(const char* name, RID tex) {
     custom_textures[name] = tex;
     return *this;
 }
 
-RID CanvasMaterial::get_custom_texture(const String& name) const {
-    if (custom_textures.contains(name)) {
-        return custom_textures.at(name);
+RID CanvasMaterial::get_custom_texture(const char* uniform_name) const {
+    if (custom_textures.contains(uniform_name)) {
+        return custom_textures.at(uniform_name);
     }
 
     return INVALID_RID;
 }
 
-Color CanvasMaterial::get_albedo() const {
-    return albedo;
+Color CanvasMaterial::get_color() const {
+    return color;
 }
+
 RID CanvasMaterial::get_texture() const {
 
     return texture;
