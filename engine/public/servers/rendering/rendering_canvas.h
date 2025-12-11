@@ -67,15 +67,15 @@ public:
     RID load_texture_from_memory(void* data, int width, int height, int channels = 4);
     void unload_texture(RID texture);
 
-    RID create_shader(const char* vertex_src, const char* fragment_src);
+    RID load_shader_from_source(const char* vertex_src, const char* fragment_src);
     RID load_shader_from_file(const char* filepath);
-    RID create_shader_from_source(const char* source);
+    RID load_shader_from_source(const char* source);
     void destroy_shader(RID shader);
 
     void set_blend_mode(BlendMode mode);
     void set_line_width(float width);
 
-    RenderingDevice* get_rendering_device() const { return rd; }
+    RenderingDevice* get_rendering_device() const;
 
 private:
     struct Vertex {

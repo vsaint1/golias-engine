@@ -5,9 +5,9 @@ namespace shaders {
     std::string get_default_vertex_2d() {
         std::string header = get_shader_header();
         return header + R"(
-layout(location = 0) in vec3 VERTEX;
-layout(location = 1) in vec4 COLOR;
-layout(location = 2) in vec2 UV;
+layout(location = 0) in vec3 a_vertex;
+layout(location = 1) in vec4 a_color;
+layout(location = 2) in vec2 a_uv;
 
 uniform mat4 VIEW_PROJECTION_MATRIX;
 
@@ -15,9 +15,9 @@ out vec4 vColor;
 out vec2 vTexCoord;
 
 void main() {
-    vColor = COLOR;
-    vTexCoord = UV;
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(VERTEX, 1.0);
+    vColor = a_color;
+    vTexCoord = a_uv;
+    gl_Position = VIEW_PROJECTION_MATRIX * vec4(a_vertex, 1.0);
 }
 )";
     }
@@ -28,7 +28,7 @@ void main() {
 in vec4 vColor;
 in vec2 vTexCoord;
 
-out vec4 ALBEDO;
+out vec4 COLOR;
 
 uniform sampler2D TEXTURE;
 
@@ -39,7 +39,7 @@ void main() {
         discard;
     }
 
-    ALBEDO = texColor * vColor;
+    COLOR = texColor * vColor;
 }
 )";
     }
@@ -366,6 +366,10 @@ void RenderingCanvas::set_blend_mode(BlendMode mode) {
 }
 
 void RenderingCanvas::set_line_width(float width) {
+}
+
+RenderingDevice* RenderingCanvas::get_rendering_device() const {
+    return rd;
 }
 
 void RenderingCanvas::setup_pipeline_for_blend_mode(BlendMode mode) {
@@ -737,7 +741,7 @@ void RenderingCanvas::draw_text(float x, float y, const Color& color, const Stri
     draw_text(default_font, x, y, color, text);
 }
 
-RID RenderingCanvas::create_shader(const char* vertex_src, const char* fragment_src) {
+RID RenderingCanvas::load_shader_from_source(const char* vertex_src, const char* fragment_src) {
     return rd->shader_create_from_source(vertex_src, fragment_src);
 }
 
@@ -769,7 +773,8 @@ RID RenderingCanvas::load_shader_from_file(const char* filepath) {
     return shader;
 }
 
-RID RenderingCanvas::create_shader_from_source(const char* source) {
+
+RID RenderingCanvas::load_shader_from_source(const char* source) {
     ShaderSource parsed = parse_shader(source);
 
     return rd->shader_create_from_source(parsed.vertex_source, parsed.fragment_source);
@@ -867,7 +872,6 @@ void RenderingCanvas::draw_custom(RID custom_shader, float x, float y, float wid
     rd->bind_index_buffer(index_buffer, IndexType::UINT16);
 
     glm::mat4 vp = projection * view;
-    rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
     float time_value = SDL_GetTicks() / 1000.0f;
     rd->push_constant("TIME", &time_value, sizeof(float));
@@ -901,7 +905,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
             final_texture = material->get_texture();
         }
 
-        final_color *= material->get_albedo().to_vec4();
+        final_color *= material->get_color().to_vec4();
     }
 
     bool use_custom_shader = material && material->has_custom_shader();
@@ -973,7 +977,6 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         if (it != custom_shader_pipelines.end()) {
             custom_pipeline = it->second;
         } else {
-            // Create new pipeline and cache it
             PipelineState custom_pipeline_state;
             custom_pipeline_state.shader                   = shader_rid;
             custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
@@ -1006,6 +1009,9 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         rd->bind_index_buffer(index_buffer, IndexType::UINT16);
 
         glm::mat4 vp = projection * view;
+        rd->push_constant("MODEL_MATRIX", glm::value_ptr(transform), sizeof(glm::mat4));
+        rd->push_constant("VIEW_MATRIX", glm::value_ptr(view), sizeof(glm::mat4));
+        rd->push_constant("PROJECTION_MATRIX", glm::value_ptr(projection), sizeof(glm::mat4));
         rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
 
         float time_value = SDL_GetTicks() / 1000.0f; /// TODO: get from engine DT
