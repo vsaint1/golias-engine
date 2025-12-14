@@ -1,7 +1,16 @@
 #pragma once
 #include "servers/rendering/rendering_device.h"
 
+/*!
+   @brief Rendering device implementation using SDL_GPU.
 
+    Backend:
+    - Direct3d12
+    - Vulkan
+    - Metal
+    - Private
+
+*/
 class RenderingDeviceSDL_GPU final : public RenderingDevice {
 public:
     RenderingDeviceSDL_GPU() = default;

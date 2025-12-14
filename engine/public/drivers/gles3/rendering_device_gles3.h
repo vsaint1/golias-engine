@@ -4,6 +4,14 @@
 #include "drivers/gles3/shaders/gles3.h"
 #include <glad.h>
 
+/*!
+   @brief Rendering device implementation using OpenGL/ES 3.
+
+    Backend:
+    - OpenGL ES 3.0+
+    - OpenGL 3.3+ (Core Profile)
+
+*/
 class RenderingDeviceGLES3 final : public RenderingDevice {
 public:
     RenderingDeviceGLES3() = default;

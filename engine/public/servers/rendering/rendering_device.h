@@ -320,7 +320,9 @@ struct Pipeline {
     PipelineState state;
     uint32_t handle = 0;
 };
-
+/*!
+ * @brief  Abstract base class for rendering devices.
+ */
 class RenderingDevice : public RIDAllocator {
 public:
     virtual ~RenderingDevice() = default;
