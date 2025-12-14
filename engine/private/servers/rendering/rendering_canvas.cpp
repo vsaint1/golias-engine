@@ -20,23 +20,23 @@ bool RenderingCanvas::initialize(int width, int height) {
     viewport_width  = width;
     viewport_height = height;
 
-    emoji_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Twemoji.ttf").c_str(), 24));
+    text_storage.emoji_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Twemoji.ttf").c_str(), 24));
 
-    if (!emoji_font.get_native_handle()) {
+    if (!text_storage.emoji_font.get_native_handle()) {
         spdlog::warn("Failed to load emoji font (Twemoji.ttf), emoji support disabled: {}", SDL_GetError());
     } else {
         spdlog::info("Loaded emoji font (Twemoji.ttf) for emoji support.");
     }
 
-    default_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24));
+    text_storage.default_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24));
 
-    if (!default_font.get_native_handle()) {
+    if (!text_storage.default_font.get_native_handle()) {
         spdlog::error("Failed to load Default font (Default.ttf): {}", SDL_GetError());
         return false;
     }
 
-    if (emoji_font.get_native_handle()) {
-        if (!TTF_AddFallbackFont(default_font.get_native_handle(), emoji_font.get_native_handle())) {
+    if (text_storage.emoji_font.get_native_handle()) {
+        if (!TTF_AddFallbackFont(text_storage.default_font.get_native_handle(), text_storage.emoji_font.get_native_handle())) {
             spdlog::warn("Failed to add emoji fallback font: {}", SDL_GetError());
         }
     }
@@ -123,15 +123,15 @@ void RenderingCanvas::shutdown() {
         rd->pipeline_destroy(pair.second);
     }
 
-    for (auto& pair : loaded_fonts) {
+    for (auto& pair : text_storage.loaded_fonts) {
         pair.second.destroy();
     }
 
-    loaded_fonts.clear();
+    text_storage.loaded_fonts.clear();
 
-    emoji_font.destroy();
+    text_storage.emoji_font.destroy();
 
-    default_font.destroy();
+    text_storage.default_font.destroy();
 
     custom_shader_pipelines.clear();
 }
@@ -158,13 +158,21 @@ void RenderingCanvas::end() {
     }
 
     rd->begin_frame();
-    rd->render_pass_begin(INVALID_RID, viewport, scissor);
+    // Set clear color BEFORE render_pass_begin so SDL GPU can use it
     rd->clear_color(clear_color.to_vec4());
+    rd->render_pass_begin(INVALID_RID, viewport, scissor);
 
     flush();
 
     rd->render_pass_end();
     rd->end_frame();
+
+    /// Each texture loaded for text rendering is temporary and should be unloaded after each frame
+    for (RID tex : text_storage.textures) {
+        unload_texture(tex);
+    }
+
+    text_storage.textures.clear();
 
     is_drawing = false;
 }
@@ -308,8 +316,8 @@ void RenderingCanvas::get_texture_size(RID texture, uint32_t& out_width, uint32_
 
 Font RenderingCanvas::load_font_from_file(const char* filepath, int size) {
 
-    if (loaded_fonts.contains(filepath)) {
-        return loaded_fonts.at(filepath);
+    if (text_storage.loaded_fonts.contains(filepath)) {
+        return text_storage.loaded_fonts.at(filepath);
     }
 
     const Font font = Font(TTF_OpenFont(filepath, (float) size), size);
@@ -319,13 +327,13 @@ Font RenderingCanvas::load_font_from_file(const char* filepath, int size) {
         return {};
     }
 
-    if (emoji_font.get_native_handle()) {
-        if (!TTF_AddFallbackFont(font.get_native_handle(), emoji_font.get_native_handle())) {
+    if (text_storage.emoji_font.get_native_handle()) {
+        if (!TTF_AddFallbackFont(font.get_native_handle(), text_storage.emoji_font.get_native_handle())) {
             spdlog::warn("Failed to add emoji fallback font: {}", SDL_GetError());
         }
     }
 
-    loaded_fonts[filepath] = font;
+    text_storage.loaded_fonts[filepath] = font;
 
     spdlog::info("Loaded Font from file: {} (size {})", filepath, size);
 
@@ -654,7 +662,6 @@ void RenderingCanvas::draw_text(Font font, float x, float y, const Color& color,
         return;
     }
 
-
     RID text_texture = load_texture_from_memory(rgba_surface->pixels, rgba_surface->w, rgba_surface->h, 4);
 
     if (text_texture == INVALID_RID) {
@@ -663,57 +670,24 @@ void RenderingCanvas::draw_text(Font font, float x, float y, const Color& color,
         return;
     }
 
-    flush();
-
-    std::vector<Vertex> text_vertices;
-    std::vector<uint16_t> text_indices;
-
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, 0));
-    transform           = get_current_transform() * transform;
-
-    glm::vec4 positions[] = {glm::vec4(0, 0, 0, 1), glm::vec4(static_cast<float>(rgba_surface->w), 0, 0, 1),
-                             glm::vec4(static_cast<float>(rgba_surface->w), static_cast<float>(rgba_surface->h), 0, 1),
-                             glm::vec4(0, static_cast<float>(rgba_surface->h), 0, 1)};
-
-    glm::vec2 texcoords[] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-    glm::vec4 tint_color  = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-    for (int i = 0; i < 4; i++) {
-        glm::vec4 pos = transform * positions[i];
-        text_vertices.push_back({glm::vec3(pos), tint_color, texcoords[i]});
-    }
-
-    text_indices = {0, 1, 2, 2, 3, 0};
-
-    rd->buffer_update(vertex_buffer, 0, text_vertices.size() * sizeof(Vertex), text_vertices.data());
-    rd->buffer_update(index_buffer, 0, text_indices.size() * sizeof(uint16_t), text_indices.data());
-
-    rd->bind_pipeline(pipeline);
-    rd->bind_vertex_buffers({vertex_buffer});
-    rd->bind_index_buffer(index_buffer, IndexType::UINT16);
-
-    glm::mat4 vp = projection * view;
-    rd->push_constant("uViewProjection", glm::value_ptr(vp), sizeof(glm::mat4));
-
-    rd->bind_texture(0, text_texture, default_sampler);
-    int tex_unit = 0;
-    rd->push_constant("uTexture", &tex_unit, sizeof(int));
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(x + rgba_surface->w / 2.0f, y + rgba_surface->h / 2.0f, 0));
+    transform = glm::scale(transform, glm::vec3(rgba_surface->w, rgba_surface->h, 1));
 
 
-    rd->draw_indexed(6, 1, 0, 0, 0);
+    text_storage.textures.push_back(text_texture);
 
+    add_quad(get_current_transform() * transform, Color::WHITE, text_texture, true);
 
-    unload_texture(text_texture);
     SDL_DestroySurface(rgba_surface);
 }
 
 void RenderingCanvas::draw_text(float x, float y, const Color& color, const String& text) {
-    if (!default_font.get_native_handle()) {
+    if (!text_storage.default_font.get_native_handle()) {
         spdlog::warn("Default font not loaded, cannot draw text.");
         return;
     }
 
-    draw_text(default_font, x, y, color, text);
+    draw_text(text_storage.default_font, x, y, color, text);
 }
 
 RID RenderingCanvas::load_shader_from_source(const char* vertex_src, const char* fragment_src) {
@@ -735,7 +709,7 @@ RID RenderingCanvas::load_shader_from_file(const char* filepath) {
 
     spdlog::info("Creating shader from file: {}", filepath);
 
-    RID shader = rd->shader_create_from_source(parsed.vertex_source.c_str(), parsed.fragment_source.c_str());
+     shader = rd->shader_create_from_source(parsed.vertex_source.c_str(), parsed.fragment_source.c_str());
 
     if (shader == INVALID_RID) {
         spdlog::debug("=== VERTEX SHADER ===\n{}", parsed.vertex_source.c_str());

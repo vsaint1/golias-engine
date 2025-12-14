@@ -92,6 +92,7 @@ private:
 
     RID _current_pipeline = INVALID_RID;
     Viewport _current_viewport;
+    glm::vec4 _clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     struct BoundVertexBuffer {
         SDL_GPUBuffer* buffer = nullptr;

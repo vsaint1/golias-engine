@@ -19,7 +19,7 @@ public:
 
     void set_camera(const glm::mat4& view_projection);
     void reset_camera();
-    
+
     void set_viewport_size(int width, int height);
     void set_scale_mode(ScaleMode mode);
 
@@ -56,7 +56,7 @@ public:
     void draw_text(Font font, float x, float y, const Color& color, const String& text);
 
     void draw_text(float x, float y, const Color& color, const String& text);
-    
+
     Font load_font_from_file(const char* filepath, int size);
 
     RID load_texture(const char* filepath);
@@ -122,10 +122,12 @@ private:
 
     HashMap<RID, RID> custom_shader_pipelines; /// Shader RID -> pipeline RID
 
-    Font default_font = {};
-    Font emoji_font = {};
-
-    HashMap<String, Font> loaded_fonts;
+    struct TextStorage {
+        Vector<RID> textures;
+        HashMap<String, Font> loaded_fonts;
+        Font default_font = {};
+        Font emoji_font   = {};
+    } text_storage;
 
     RenderingDevice* rd;
 

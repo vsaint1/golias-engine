@@ -97,7 +97,7 @@ RID RenderingDeviceSDL_GPU::shader_create_from_source(const String& vertex_src, 
     }
 
     const SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(_device);
-    spdlog::info("SDL_GPU Shader Format: {} (SPIRV={}, DXIL={}, MSL={})", format, (format & SDL_GPU_SHADERFORMAT_SPIRV) != 0,
+    spdlog::info("GPU Shader Format: {} (SPIRV={}, DXIL={}, MSL={})", format, (format & SDL_GPU_SHADERFORMAT_SPIRV) != 0,
                  (format & SDL_GPU_SHADERFORMAT_DXIL) != 0, (format & SDL_GPU_SHADERFORMAT_MSL) != 0);
 
     if (format & SDL_GPU_SHADERFORMAT_SPIRV) {
@@ -154,7 +154,7 @@ RID RenderingDeviceSDL_GPU::shader_create_from_bytecode(const void* vertex_bytec
     fragment_info.num_samplers            = num_samplers;
     fragment_info.num_storage_buffers     = 0;
     fragment_info.num_storage_textures    = 0;
-    fragment_info.num_uniform_buffers     = num_uniform_buffers;
+    fragment_info.num_uniform_buffers     = 0;
 
     SDL_GPUShader* fragment_shader = SDL_CreateGPUShader(_device, &fragment_info);
     if (!fragment_shader) {
@@ -704,10 +704,10 @@ void RenderingDeviceSDL_GPU::render_pass_begin(RID framebuffer, const Viewport& 
         color_targets[0].texture       = swapchain;
         color_targets[0].load_op       = SDL_GPU_LOADOP_CLEAR;
         color_targets[0].store_op      = SDL_GPU_STOREOP_STORE;
-        color_targets[0].clear_color.r = 0.1f;
-        color_targets[0].clear_color.g = 0.1f;
-        color_targets[0].clear_color.b = 0.1f;
-        color_targets[0].clear_color.a = 1.0f;
+        color_targets[0].clear_color.r = _clear_color.r;
+        color_targets[0].clear_color.g = _clear_color.g;
+        color_targets[0].clear_color.b = _clear_color.b;
+        color_targets[0].clear_color.a = _clear_color.a;
         color_targets[0].cycle         = true;
         num_color_targets              = 1;
     }
@@ -836,12 +836,13 @@ void RenderingDeviceSDL_GPU::bind_texture(uint32_t binding, RID texture, RID sam
 }
 
 void RenderingDeviceSDL_GPU::push_constant(const String& name, const void* data, size_t size) {
-    if (!_render_pass || !data || size == 0) {
+    if (!_cmd_buffer || !data || size == 0) {
         return;
     }
 
+    // Push uniform data to vertex shader only
+    // The fragment shader uses samplers for textures, not uniform buffers
     SDL_PushGPUVertexUniformData(_cmd_buffer, 0, data, (Uint32) size);
-    SDL_PushGPUFragmentUniformData(_cmd_buffer, 0, data, (Uint32) size);
 }
 
 void RenderingDeviceSDL_GPU::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
@@ -893,9 +894,8 @@ void RenderingDeviceSDL_GPU::set_scissor(const Scissor& scissor) {
 }
 
 void RenderingDeviceSDL_GPU::clear_color(const glm::vec4& color) {
-    // In SDL GPU, clearing is handled at render pass begin via load_op = SDL_GPU_LOADOP_CLEAR
-    // This function is kept for API compatibility but the actual clear happens in render_pass_begin
-    // If we need to clear mid-pass, we would need to end and restart the render pass
+    // Store the clear color for use in render_pass_begin
+    _clear_color = color;
 }
 void RenderingDeviceSDL_GPU::clear_depth_stencil(float depth, uint32_t stencil) {
     // In SDL GPU, clearing is handled at render pass begin via load_op = SDL_GPU_LOADOP_CLEAR
