@@ -1,6 +1,7 @@
 #pragma once
 
 #include "servers/rendering/rendering_device.h"
+#include "drivers/gles3/shaders/gles3.h"
 #include <glad.h>
 
 class RenderingDeviceGLES3 final : public RenderingDevice {

@@ -13,7 +13,7 @@ bool RenderingDeviceSDL_GPU::initialize(SDL_Window* sdl_window) {
 
     for (int i = 0; i < drivers; ++i) {
         const char* name = SDL_GetGPUDriver(i);
-        SDL_Log("Available GPU Driver %d: %s", i, name);
+        spdlog::debug("Available GPU Driver {}: {}", i, name);
     }
 
     _device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL, true, nullptr);
@@ -31,7 +31,6 @@ bool RenderingDeviceSDL_GPU::initialize(SDL_Window* sdl_window) {
         _device = nullptr;
         return false;
     }
-
 
     _window = sdl_window;
 

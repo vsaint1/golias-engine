@@ -55,6 +55,18 @@ bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     _window = sdl_window;
+
+    int major,minor;
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major);
+    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor);
+    spdlog::info("Initialized OpenGL/ES context version {}.{}", major, minor);
+
+    const char* vendor   = (const char*) glGetString(GL_VENDOR);
+    const char* renderer = (const char*) glGetString(GL_RENDERER);
+
+    spdlog::info("GPU Vendor: {}", vendor);
+    spdlog::info("GPU Renderer: {}", renderer);
+
     return true;
 }
 

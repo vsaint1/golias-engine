@@ -1,6 +1,7 @@
 #pragma once
 
 #include "drivers/gles3/rendering_device_gles3.h"
+#include "drivers/sdl_gpu/rendering_device_sdl_gpu.h"
 #include "servers/rendering/shader_material.h"
 #include <spdlog/spdlog.h>
 
@@ -13,7 +14,7 @@ public:
     bool initialize(int window_width, int window_height);
     void shutdown();
 
-    void begin(const Color& clear_color = Color::BLACK);
+    void begin(const Color& color = Color::BLACK);
     void end();
 
     void set_camera(const glm::mat4& view_projection);
@@ -113,6 +114,7 @@ private:
     BlendMode current_blend_mode;
     ScaleMode scale_mode;
     float line_width;
+    Color clear_color;
 
     int window_width, window_height; /// Render resolution (internal)
     int viewport_width, viewport_height;

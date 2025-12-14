@@ -1,49 +1,6 @@
 #include "servers/rendering/rendering_canvas.h"
+
 #include "stdafx.h"
-
-namespace shaders {
-    std::string get_default_vertex_2d() {
-        std::string header = get_shader_header();
-        return header + R"(
-layout(location = 0) in vec3 a_vertex;
-layout(location = 1) in vec4 a_color;
-layout(location = 2) in vec2 a_uv;
-
-uniform mat4 VIEW_PROJECTION_MATRIX;
-
-out vec4 vColor;
-out vec2 vTexCoord;
-
-void main() {
-    vColor = a_color;
-    vTexCoord = a_uv;
-    gl_Position = VIEW_PROJECTION_MATRIX * vec4(a_vertex, 1.0);
-}
-)";
-    }
-
-    std::string get_default_fragment_2d() {
-        std::string header = get_shader_header();
-        return header + R"(
-in vec4 vColor;
-in vec2 vTexCoord;
-
-out vec4 COLOR;
-
-uniform sampler2D TEXTURE;
-
-void main() {
-    vec4 texColor = texture(TEXTURE, vTexCoord);
-
-    if (texColor.a < 0.01) {
-        discard;
-    }
-
-    COLOR = texColor * vColor;
-}
-)";
-    }
-} // namespace shaders
 
 
 RenderingCanvas::RenderingCanvas(RenderingDevice* device)
@@ -57,6 +14,7 @@ RenderingCanvas::~RenderingCanvas() {
 }
 
 bool RenderingCanvas::initialize(int width, int height) {
+
     window_width    = width;
     window_height   = height;
     viewport_width  = width;
@@ -72,7 +30,7 @@ bool RenderingCanvas::initialize(int width, int height) {
 
     default_font = Font(TTF_OpenFont((ASSETS_PATH + "fonts/Default.ttf").c_str(), 24));
 
-    if(!default_font.get_native_handle()) {
+    if (!default_font.get_native_handle()) {
         spdlog::error("Failed to load Default font (Default.ttf): {}", SDL_GetError());
         return false;
     }
@@ -83,7 +41,9 @@ bool RenderingCanvas::initialize(int width, int height) {
         }
     }
 
+    // TODO: we need to handle shader compilations (glslang, spirv-cross and dxcompiler)
     shader = rd->shader_create_from_source(shaders::get_default_vertex_2d(), shaders::get_default_fragment_2d());
+
 
     if (shader == INVALID_RID) {
         spdlog::error("Failed to create default shader for RenderingCanvas.");
@@ -106,12 +66,12 @@ bool RenderingCanvas::initialize(int width, int height) {
     index_buffer = rd->buffer_create(max_indices * sizeof(uint16_t), (uint32_t) BufferUsage::BUFFER_USAGE_INDEX, nullptr);
 
     PipelineState pipeline_state;
-    pipeline_state.shader                   = shader;
-    pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
-    pipeline_state.vertex_format.stride     = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                               {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                               {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.shader                          = shader;
+    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
+    pipeline_state.vertex_format.stride            = sizeof(Vertex);
+    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
     pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 
@@ -164,7 +124,7 @@ void RenderingCanvas::shutdown() {
     }
 
     for (auto& pair : loaded_fonts) {
-       pair.second.destroy();
+        pair.second.destroy();
     }
 
     loaded_fonts.clear();
@@ -176,26 +136,35 @@ void RenderingCanvas::shutdown() {
     custom_shader_pipelines.clear();
 }
 
-void RenderingCanvas::begin(const Color& clear_color) {
+void RenderingCanvas::begin(const Color& color) {
     is_drawing = true;
     vertices.clear();
     indices.clear();
     draw_commands.clear();
 
+    clear_color = color;
+}
+
+void RenderingCanvas::end() {
     int vp_x, vp_y, vp_w, vp_h;
     calculate_viewport(viewport_width, viewport_height, vp_x, vp_y, vp_w, vp_h);
 
     Viewport viewport{(float) vp_x, (float) vp_y, (float) vp_w, (float) vp_h, 0.0f, 1.0f};
     Scissor scissor{0, 0, (uint32_t) viewport_width, (uint32_t) viewport_height};
 
+    if (!vertices.empty() && !indices.empty()) {
+        rd->buffer_update(vertex_buffer, 0, vertices.size() * sizeof(Vertex), vertices.data());
+        rd->buffer_update(index_buffer, 0, indices.size() * sizeof(uint16_t), indices.data());
+    }
+
+    rd->begin_frame();
     rd->render_pass_begin(INVALID_RID, viewport, scissor);
     rd->clear_color(clear_color.to_vec4());
-}
 
-void RenderingCanvas::end() {
     flush();
 
     rd->render_pass_end();
+    rd->end_frame();
 
     is_drawing = false;
 }
@@ -205,8 +174,8 @@ void RenderingCanvas::flush() {
         return;
     }
 
-    rd->buffer_update(vertex_buffer, 0, vertices.size() * sizeof(Vertex), vertices.data());
-    rd->buffer_update(index_buffer, 0, indices.size() * sizeof(uint16_t), indices.data());
+    // Buffer updates already done in end() before render pass started
+    // flush();
 
     rd->bind_pipeline(pipeline);
     rd->bind_vertex_buffers({vertex_buffer});
@@ -214,10 +183,6 @@ void RenderingCanvas::flush() {
 
     glm::mat4 vp = projection * view;
     rd->push_constant("VIEW_PROJECTION_MATRIX", glm::value_ptr(vp), sizeof(glm::mat4));
-
-
-    int tex_unit = 0;
-    rd->push_constant("uTexture", &tex_unit, sizeof(int));
 
     for (const auto& cmd : draw_commands) {
         RID tex = cmd.use_texture ? cmd.texture : white_texture;
@@ -231,9 +196,6 @@ void RenderingCanvas::flush() {
         }
 
         rd->bind_texture(0, tex, sampler);
-
-        // int use_tex = cmd.use_texture ? 1 : 0;
-        // rd->push_constant("uUseTexture", &use_tex, sizeof(int));
 
 
         rd->draw_indexed(cmd.index_count, 1, cmd.index_start, 0, 0);
@@ -303,10 +265,18 @@ void RenderingCanvas::draw_arc(float x, float y, float radius, float start_angle
         segments = 32;
     }
 
-    while (start_angle < 0.0f) start_angle += 2.0f * glm::pi<float>();
-    while (end_angle < 0.0f) end_angle += 2.0f * glm::pi<float>();
-    while (start_angle >= 2.0f * glm::pi<float>()) start_angle -= 2.0f * glm::pi<float>();
-    while (end_angle >= 2.0f * glm::pi<float>()) end_angle -= 2.0f * glm::pi<float>();
+    while (start_angle < 0.0f) {
+        start_angle += 2.0f * glm::pi<float>();
+    }
+    while (end_angle < 0.0f) {
+        end_angle += 2.0f * glm::pi<float>();
+    }
+    while (start_angle >= 2.0f * glm::pi<float>()) {
+        start_angle -= 2.0f * glm::pi<float>();
+    }
+    while (end_angle >= 2.0f * glm::pi<float>()) {
+        end_angle -= 2.0f * glm::pi<float>();
+    }
 
     float angle_span = end_angle - start_angle;
     if (angle_span < 0.0f) {
@@ -320,7 +290,7 @@ void RenderingCanvas::draw_arc(float x, float y, float radius, float start_angle
     points.push_back(glm::vec2(x, y));
 
     for (int i = 0; i <= arc_segments; i++) {
-        float t = static_cast<float>(i) / arc_segments;
+        float t     = static_cast<float>(i) / arc_segments;
         float angle = start_angle + angle_span * t;
         points.push_back(glm::vec2(x + glm::cos(angle) * radius, y + glm::sin(angle) * radius));
     }
@@ -342,7 +312,7 @@ Font RenderingCanvas::load_font_from_file(const char* filepath, int size) {
         return loaded_fonts.at(filepath);
     }
 
-    const Font font = Font(TTF_OpenFont(filepath, (float) size),size);
+    const Font font = Font(TTF_OpenFont(filepath, (float) size), size);
 
     if (!font.get_native_handle()) {
         spdlog::error("Failed to load Font from file {}: {}", filepath, SDL_GetError());
@@ -491,25 +461,26 @@ void RenderingCanvas::calculate_viewport(int window_w, int window_h, int& out_x,
         out_h = window_height;
         break;
 
-    case ScaleMode::KEEP: {
-        float target_aspect = (float) window_width / (float) window_height;
-        float window_aspect = (float) window_w / (float) window_h;
+    case ScaleMode::KEEP:
+        {
+            float target_aspect = (float) window_width / (float) window_height;
+            float window_aspect = (float) window_w / (float) window_h;
 
-        if (window_aspect > target_aspect) {
-            // pillarbox (black bars on sides)
-            out_h = window_h;
-            out_w = (int) (window_h * target_aspect);
-            out_x = (window_w - out_w) / 2;
-            out_y = 0;
-        } else {
-            //  letterbox (black bars on top/bottom)
-            out_w = window_w;
-            out_h = (int) (window_w / target_aspect);
-            out_x = 0;
-            out_y = (window_h - out_h) / 2;
+            if (window_aspect > target_aspect) {
+                // pillarbox (black bars on sides)
+                out_h = window_h;
+                out_w = (int) (window_h * target_aspect);
+                out_x = (window_w - out_w) / 2;
+                out_y = 0;
+            } else {
+                //  letterbox (black bars on top/bottom)
+                out_w = window_w;
+                out_h = (int) (window_w / target_aspect);
+                out_x = 0;
+                out_y = (window_h - out_h) / 2;
+            }
         }
-    }
-    break;
+        break;
 
     case ScaleMode::EXPAND:
         out_x = 0;
@@ -614,7 +585,7 @@ RID RenderingCanvas::load_texture(const char* filepath, const TextureDescription
 
 Texture RenderingCanvas::load_texture_from_file(const char* filepath) {
     RID rid = load_texture(filepath);
-   
+
     if (rid != INVALID_RID) {
         return rd->get_texture(rid);
     }
@@ -624,7 +595,7 @@ Texture RenderingCanvas::load_texture_from_file(const char* filepath) {
 
 Texture RenderingCanvas::load_texture_from_file(const char* filepath, const TextureDescription& desc) {
     RID rid = load_texture(filepath, desc);
-   
+
     if (rid != INVALID_RID) {
         return rd->get_texture(rid);
     }
@@ -737,7 +708,7 @@ void RenderingCanvas::draw_text(Font font, float x, float y, const Color& color,
 }
 
 void RenderingCanvas::draw_text(float x, float y, const Color& color, const String& text) {
-    if(!default_font.get_native_handle()) {
+    if (!default_font.get_native_handle()) {
         spdlog::warn("Default font not loaded, cannot draw text.");
         return;
     }
@@ -805,12 +776,12 @@ RID RenderingCanvas::get_or_create_custom_pipeline(RID shader) {
     }
 
     PipelineState pipeline_state;
-    pipeline_state.shader                   = shader;
-    pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
-    pipeline_state.vertex_format.stride     = sizeof(Vertex);
-    pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                               {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                               {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+    pipeline_state.shader                          = shader;
+    pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
+    pipeline_state.vertex_format.stride            = sizeof(Vertex);
+    pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                      {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                      {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
     pipeline_state.rasterization.cull_mode         = CullMode::NONE;
     pipeline_state.depth_stencil.depth_test_enable = false;
 
@@ -901,7 +872,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         return;
     }
 
-    RID final_texture = texture;
+    RID final_texture     = texture;
     glm::vec4 final_color = color.to_vec4();
 
     if (material) {
@@ -974,7 +945,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
 
         custom_indices = {0, 1, 2, 2, 3, 0};
 
-        RID shader_rid = material->get_shader();
+        RID shader_rid      = material->get_shader();
         RID custom_pipeline = INVALID_RID;
 
         auto it = custom_shader_pipelines.find(shader_rid);
@@ -982,12 +953,12 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
             custom_pipeline = it->second;
         } else {
             PipelineState custom_pipeline_state;
-            custom_pipeline_state.shader                   = shader_rid;
-            custom_pipeline_state.topology                 = PrimitiveTopology::TRIANGLES;
-            custom_pipeline_state.vertex_format.stride     = sizeof(Vertex);
-            custom_pipeline_state.vertex_format.attributes = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
-                                                              {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
-                                                              {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
+            custom_pipeline_state.shader                          = shader_rid;
+            custom_pipeline_state.topology                        = PrimitiveTopology::TRIANGLES;
+            custom_pipeline_state.vertex_format.stride            = sizeof(Vertex);
+            custom_pipeline_state.vertex_format.attributes        = {{0, DataFormat::R32G32B32_SFLOAT, offsetof(Vertex, position)},
+                                                                     {1, DataFormat::R32G32B32A32_SFLOAT, offsetof(Vertex, color)},
+                                                                     {2, DataFormat::R32G32_SFLOAT, offsetof(Vertex, texcoord)}};
             custom_pipeline_state.rasterization.cull_mode         = CullMode::NONE;
             custom_pipeline_state.depth_stencil.depth_test_enable = false;
 
@@ -999,7 +970,7 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
             blend.dst_alpha = BlendFactor::ONE_MINUS_SRC_ALPHA;
             custom_pipeline_state.blend_states.push_back(blend);
 
-            custom_pipeline = rd->pipeline_create(custom_pipeline_state);
+            custom_pipeline                     = rd->pipeline_create(custom_pipeline_state);
             custom_shader_pipelines[shader_rid] = custom_pipeline;
 
             spdlog::info("Created custom Pipeline for Shader RID={}", shader_rid);
@@ -1024,20 +995,22 @@ void RenderingCanvas::draw_texture_ex(float x, float y, float width, float heigh
         int next_texture_unit = 1;
 
         for (const auto& [name, value] : material->get_uniforms()) {
-            std::visit([&]<typename T0>(T0&& val) {
-                using T = std::decay_t<T0>;
-                if constexpr (std::is_same_v<T, float>) {
-                    rd->push_constant(name, &val, sizeof(float));
-                } else if constexpr (std::is_same_v<T, glm::vec2>) {
-                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec2));
-                } else if constexpr (std::is_same_v<T, glm::vec3>) {
-                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec3));
-                } else if constexpr (std::is_same_v<T, glm::vec4>) {
-                    rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec4));
-                } else if constexpr (std::is_same_v<T, int>) {
-                    rd->push_constant(name, &val, sizeof(int));
-                }
-            }, value);
+            std::visit(
+                [&]<typename T0>(T0&& val) {
+                    using T = std::decay_t<T0>;
+                    if constexpr (std::is_same_v<T, float>) {
+                        rd->push_constant(name, &val, sizeof(float));
+                    } else if constexpr (std::is_same_v<T, glm::vec2>) {
+                        rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec2));
+                    } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                        rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec3));
+                    } else if constexpr (std::is_same_v<T, glm::vec4>) {
+                        rd->push_constant(name, glm::value_ptr(val), sizeof(glm::vec4));
+                    } else if constexpr (std::is_same_v<T, int>) {
+                        rd->push_constant(name, &val, sizeof(int));
+                    }
+                },
+                value);
         }
 
         for (const auto& [name, tex_rid] : material->get_custom_textures()) {
