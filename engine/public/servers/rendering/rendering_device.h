@@ -146,6 +146,8 @@ enum class BufferUsage {
     BUFFER_USAGE_TRANSFER_DST = 1 << 5
 };
 
+bool operator&(uint32_t lhs, BufferUsage rhs);
+
 enum class IndexType { UINT16, UINT32 };
 
 class RIDAllocator {
