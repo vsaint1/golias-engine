@@ -137,6 +137,17 @@ void RenderingCanvas::shutdown() {
 }
 
 void RenderingCanvas::begin(const Color& color) {
+    int current_w, current_h;
+
+    rd->get_drawable_size(current_w, current_h);
+
+    if (current_w > 0 && current_h > 0 && (current_w != window_width || current_h != window_height)) {
+        window_width = current_w;
+        window_height = current_h;
+        viewport_width = current_w;
+        viewport_height = current_h;
+    }
+
     is_drawing = true;
     vertices.clear();
     indices.clear();
@@ -158,7 +169,6 @@ void RenderingCanvas::end() {
     }
 
     rd->begin_frame();
-    // Set clear color BEFORE render_pass_begin so SDL GPU can use it
     rd->clear_color(clear_color.to_vec4());
     rd->render_pass_begin(INVALID_RID, viewport, scissor);
 
@@ -167,7 +177,6 @@ void RenderingCanvas::end() {
     rd->render_pass_end();
     rd->end_frame();
 
-    /// Each texture loaded for text rendering is temporary and should be unloaded after each frame
     for (RID tex : text_storage.textures) {
         unload_texture(tex);
     }

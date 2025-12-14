@@ -14,3 +14,12 @@ const Color Color::MAGENTA = Color(1, 0, 1, 1);
 RID RIDAllocator::allocate_rid() {
     return next_rid++;
 }
+
+void RenderingDevice::get_drawable_size(int& width, int& height) {
+    if (_window) {
+        SDL_GetWindowSizeInPixels(_window, &width, &height);
+    } else {
+        width  = 0;
+        height = 0;
+    }
+}

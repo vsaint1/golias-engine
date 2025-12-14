@@ -376,6 +376,9 @@ public:
     virtual void clear_depth_stencil(float depth = 1.0f, uint32_t stencil = 0) = 0;
 
     virtual void swap_buffers() = 0;
+
+    virtual void get_drawable_size(int& width, int& height);
+
 protected:
     SDL_Window* _window = nullptr;
 };
