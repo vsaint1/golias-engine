@@ -58,6 +58,7 @@ public:
     void clear_color(const glm::vec4& color) override;
     void clear_depth_stencil(float depth = 1.0f, uint32_t stencil = 0) override;
 
+    void swap_buffers() override;
 private:
     HashMap<RID, ShaderModule> shaders;
     HashMap<RID, Buffer> buffers;
@@ -70,7 +71,7 @@ private:
     RID current_framebuffer      = INVALID_RID;
     IndexType current_index_type = IndexType::UINT16;
 
-    SDL_GLContext gl_context = NULL;
+    SDL_GLContext gl_context = nullptr;
 
     GLuint compile_shader(GLenum type, const String& source);
     GLenum to_gl_format(DataFormat format, bool* is_int = nullptr);

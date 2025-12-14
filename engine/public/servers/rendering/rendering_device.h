@@ -8,6 +8,15 @@
 #include <glm/gtx/string_cast.hpp>
 
 
+
+using RID                 = uint32_t;
+constexpr RID INVALID_RID = -1;
+
+struct Shader {
+ RID handle =  INVALID_RID;
+
+};
+
 struct Font {
 
     Font() = default;
@@ -138,10 +147,6 @@ enum class BufferUsage {
 };
 
 enum class IndexType { UINT16, UINT32 };
-
-using RID                 = uint32_t;
-constexpr RID INVALID_RID = -1;
-
 
 class RIDAllocator {
 public:
@@ -367,4 +372,8 @@ public:
     virtual void set_scissor(const Scissor& scissor)                           = 0;
     virtual void clear_color(const glm::vec4& color)                           = 0;
     virtual void clear_depth_stencil(float depth = 1.0f, uint32_t stencil = 0) = 0;
+
+    virtual void swap_buffers() = 0;
+protected:
+    SDL_Window* _window = nullptr;
 };

@@ -368,6 +368,10 @@ void RenderingCanvas::set_blend_mode(BlendMode mode) {
 void RenderingCanvas::set_line_width(float width) {
 }
 
+void RenderingCanvas::present() {
+    rd->swap_buffers();
+}
+
 RenderingDevice* RenderingCanvas::get_rendering_device() const {
     return rd;
 }

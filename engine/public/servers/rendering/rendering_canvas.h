@@ -75,6 +75,8 @@ public:
     void set_blend_mode(BlendMode mode);
     void set_line_width(float width);
 
+    void present();
+
     RenderingDevice* get_rendering_device() const;
 
 private:

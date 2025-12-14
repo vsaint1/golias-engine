@@ -53,6 +53,8 @@ bool RenderingDeviceGLES3::initialize(SDL_Window* sdl_window) {
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    _window = sdl_window;
     return true;
 }
 
@@ -803,6 +805,10 @@ void RenderingDeviceGLES3::clear_depth_stencil(float depth, uint32_t stencil) {
     glClearDepth(depth);
     glClearStencil(stencil);
     glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void RenderingDeviceGLES3::swap_buffers() {
+    SDL_GL_SwapWindow(_window);
 }
 
 void RenderingDeviceGLES3::push_constant(const String& name, const void* data, size_t size) {
