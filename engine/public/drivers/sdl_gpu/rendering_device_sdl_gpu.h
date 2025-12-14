@@ -11,6 +11,9 @@ public:
     void shutdown() override;
 
     RID shader_create_from_source(const String& vertex_src, const String& fragment_src) override;
+    RID shader_create_from_bytecode(const void* vertex_bytecode, size_t vertex_size,
+                                    const void* fragment_bytecode, size_t fragment_size,
+                                    uint32_t num_samplers = 0, uint32_t num_uniform_buffers = 1);
     void shader_destroy(RID shader) override;
 
     RID buffer_create(size_t size, uint32_t usage_flags, const void* data = nullptr) override;
@@ -89,6 +92,23 @@ private:
 
     RID _current_pipeline = INVALID_RID;
     Viewport _current_viewport;
+
+    struct BoundVertexBuffer {
+        SDL_GPUBuffer* buffer = nullptr;
+        Uint32 offset = 0;
+    };
+
+    Vector<BoundVertexBuffer> _bound_vertex_buffers;
+
+    SDL_GPUBuffer* _bound_index_buffer = nullptr;
+    SDL_GPUIndexElementSize _bound_index_type = SDL_GPU_INDEXELEMENTSIZE_16BIT;
+    Uint32 _bound_index_offset = 0;
+
+    struct BoundTextureSampler {
+        SDL_GPUTexture* texture = nullptr;
+        SDL_GPUSampler* sampler = nullptr;
+    };
+    HashMap<uint32_t, BoundTextureSampler> _bound_textures;
 
     SDL_GPUTextureFormat sdl_format(DataFormat fmt);
     SDL_GPUVertexElementFormat sdl_vertex_format(DataFormat fmt);
