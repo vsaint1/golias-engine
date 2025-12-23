@@ -1,0 +1,16 @@
+This project includes third-party libraries under the following licenses:
+
+------------------------------------------------------------
+SDL3
+License: Zlib
+https://www.libsdl.org/
+
+------------------------------------------------------------
+GLM
+License: MIT
+https://glm.g-truc.net/
+
+------------------------------------------------------------
+stb_image
+License: Public Domain / MIT
+https://github.com/nothings/stb
