@@ -3,7 +3,7 @@
 
 
 int main(int argc, char* argv[]) {
-    GameApplication* gameApp = new GameApplication();
+    SandboxApplication* gameApp = new SandboxApplication();
 
     golias::Engine& engine = golias::Engine::GetInstance();
     engine.SetApplication(gameApp);

@@ -3,6 +3,20 @@
 #include "core/application.h"
 
 
+bool create_renderer_internal(golias::ERenderingDeviceType deviceType, golias::RenderingDevice** pOutDevice) {
+    switch (deviceType) {
+    case golias::ERenderingDeviceType::COMPATIBILITY:
+        *pOutDevice = new golias::RenderingDeviceGLES3();
+        return true;
+    case golias::ERenderingDeviceType::FORWARD_PLUS:
+        spdlog::error("FORWARD_PLUS rendering device not implemented yet.");
+        return false;
+    default:
+        spdlog::error("Unknown rendering device type.");
+        return false;
+    }
+}
+
 namespace golias {
 
     Engine& Engine::GetInstance() {
@@ -10,7 +24,31 @@ namespace golias {
         return instance;
     }
 
-    bool Engine::Initialize(const char* title, int width, int height) {
+    bool Engine::Initialize(const char* pTitle, int width, int height, ERenderingDeviceType deviceType) {
+
+
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
+            spdlog::error("Failed to initialize SDL : {}", SDL_GetError());
+            return false;
+        }
+
+        window = SDL_CreateWindow(pTitle, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+
+        if (!window) {
+            spdlog::error("Failed to create SDL Window : {}", SDL_GetError());
+            return false;
+        }
+
+
+        if (!create_renderer_internal(deviceType, &rendering_device)) {
+            spdlog::error("Failed to create Rendering Device.");
+            return false;
+        }
+
+        if (!rendering_device->Initialize(window)) {
+            spdlog::error("Failed to initialize Rendering Device.");
+            return false;
+        }
 
         if (application) {
             if (!application->Initialize()) {
@@ -18,19 +56,6 @@ namespace golias {
                 return false;
             }
         }
-
-        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
-            spdlog::error("Failed to initialize SDL : {}", SDL_GetError());
-            return false;
-        }
-
-        window = SDL_CreateWindow(title, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-
-        if (!window) {
-            spdlog::error("Failed to create SDL Window : {}", SDL_GetError());
-            return false;
-        }
-
 
         spdlog::info("Golias Engine Initialized successfully.");
 
@@ -67,7 +92,9 @@ namespace golias {
 
             application->Update(delta_time);
 
-            // SDL_GL_SwapWindow(window);
+            rendering_device->Clear();
+            rendering_canvas.Draw(rendering_device);
+            rendering_device->Present();
         }
     }
 
@@ -77,6 +104,9 @@ namespace golias {
             application->Destroy();
             application.reset();
         }
+
+        delete rendering_device;
+        rendering_device = nullptr;
 
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -97,5 +127,13 @@ namespace golias {
         return input_manager;
     }
 
+    RenderingDevice* Engine::GetRenderingDevice() {
+        return rendering_device;
+    }
+
+
+    RenderingCanvas& Engine::GetRenderingCanvas() {
+        return rendering_canvas;
+    }
 
 } // namespace golias

@@ -1,8 +1,7 @@
 #pragma once
+#include "core/graphics/rendering_canvas.h"
+#include "core/graphics/rendering_device.h"
 #include "core/input/input_manager.h"
-#include <SDL3/SDL.h>
-#include <memory>
-#include <spdlog/spdlog.h>
 
 namespace golias {
 
@@ -10,12 +9,12 @@ namespace golias {
 
     class Engine {
     public:
-
         ~Engine() = default;
 
         static Engine& GetInstance();
 
-        bool Initialize(const char* title = "Golias Engine", int width = 1280, int height = 720);
+        bool Initialize(const char* pTitle = "Golias Engine", int width = 1280, int height = 720,
+                        ERenderingDeviceType deviceType = ERenderingDeviceType::COMPATIBILITY);
 
         void Run();
 
@@ -27,8 +26,12 @@ namespace golias {
 
         InputManager& GetInputManager();
 
+        RenderingDevice* GetRenderingDevice();
+
+        RenderingCanvas& GetRenderingCanvas();
+
     private:
-        Engine()  = default;
+        Engine()                         = default;
         Engine(const Engine&)            = delete;
         Engine& operator=(const Engine&) = delete;
         Engine(Engine&&)                 = delete;
@@ -36,10 +39,15 @@ namespace golias {
 
     private:
         InputManager input_manager;
+
         std::unique_ptr<Application> application;
         Uint64 last_time_point = 0;
 
         SDL_Window* window = nullptr;
+
+    private:
+        RenderingDevice* rendering_device = nullptr;
+        RenderingCanvas rendering_canvas;
     };
 
 }; // namespace golias
