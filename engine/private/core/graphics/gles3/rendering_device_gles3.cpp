@@ -1,7 +1,7 @@
 #include "core/graphics/gles3/rendering_device_gles3.h"
 
 #include "core/graphics/rendering_device.h"
-
+#include "core/graphics/gles3/gl_common.h"
 
 namespace golias {
 
@@ -46,7 +46,7 @@ namespace golias {
         }
 #endif
 
-        
+
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully.");
         return true;
     }
@@ -97,9 +97,11 @@ namespace golias {
     Buffer RenderingDeviceGLES3::CreateGPUBuffer(size_t size, const void* data, EBufferUsageFlags bufferFlags, EBufferTarget bufferTarget) {
         Buffer buffer;
         glGenBuffers(1, &buffer.handle);
-        glBindBuffer(static_cast<uint32_t>(bufferTarget), buffer.handle);
-        glBufferData(static_cast<uint32_t>(bufferTarget), size, data, static_cast<uint32_t>(bufferFlags));
-        glBindBuffer(static_cast<uint32_t>(bufferTarget), 0);
+
+        GLint gl_buffer_target = ToGLBuferTarget(bufferTarget);
+        glBindBuffer(gl_buffer_target, buffer.handle);
+        glBufferData(gl_buffer_target, size, data, ToGLBufferUsage(bufferFlags));
+        glBindBuffer(gl_buffer_target, 0);
 
         buffer.size        = size;
         buffer.usage_flags = bufferFlags;
@@ -127,5 +129,6 @@ namespace golias {
 
         spdlog::info("RenderingDeviceGLES3::~RenderingDeviceGLES3 GLES3 Rendering Device destroyed.");
     }
+
 
 }; // namespace golias

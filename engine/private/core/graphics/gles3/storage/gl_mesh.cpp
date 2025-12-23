@@ -2,6 +2,8 @@
 
 #include "core/engine.h"
 
+#include "core/graphics/gles3/gl_common.h"
+
 namespace golias {
     OpenglMesh::OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
         : Mesh(layout, vertices, indices) {
@@ -22,7 +24,7 @@ namespace golias {
 
         for (const auto& e : layout.elements) {
             glEnableVertexAttribArray(e.location);
-            glVertexAttribPointer(e.location, e.components, e.type, e.normalized ? GL_TRUE : GL_FALSE, layout.stride,
+            glVertexAttribPointer(e.location, e.components, ToGLDataType(e.type), e.normalized ? GL_TRUE : GL_FALSE, layout.stride,
                                   reinterpret_cast<void*>(static_cast<uintptr_t>(e.offset)));
         }
 
@@ -44,7 +46,7 @@ namespace golias {
 
         for (const auto& e : layout.elements) {
             glEnableVertexAttribArray(e.location);
-            glVertexAttribPointer(e.location, e.components, e.type, e.normalized ? GL_TRUE : GL_FALSE, layout.stride,
+            glVertexAttribPointer(e.location, e.components, ToGLDataType(e.type), e.normalized ? GL_TRUE : GL_FALSE, layout.stride,
                                   reinterpret_cast<void*>(static_cast<uintptr_t>(e.offset)));
         }
 

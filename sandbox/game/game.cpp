@@ -48,9 +48,9 @@ void main() {
 
     golias::VertexLayout layout;
     layout.elements = {
-        {0, 3, GL_FLOAT, false, 0},
-        {1, 3, GL_FLOAT, false, 3 * sizeof(float)},
-        {2, 2, GL_FLOAT, false, 6 * sizeof(float)}
+        {0, 3, EDataType::FLOAT, false, 0},
+        {1, 3, EDataType::FLOAT, false, 3 * sizeof(float)},
+        {2, 2, EDataType::FLOAT, false, 6 * sizeof(float)}
     };
 
     layout.stride = 8 * sizeof(float);
