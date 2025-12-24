@@ -12,7 +12,11 @@ namespace golias {
         void SetShader(const std::shared_ptr<Shader>& pShader);
         std::shared_ptr<Shader> GetShader() const;
 
-        void SetParameter(const std::string_view pName, UniformValue& value);
+        template<typename T>
+        void SetParameter(const std::string_view pName, T& value) {
+            parameters[std::string(pName)] = value;
+        }
+
 
     private:
         std::shared_ptr<Shader> shader;

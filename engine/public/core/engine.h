@@ -3,6 +3,8 @@
 #include "core/graphics/rendering_device.h"
 #include "core/input/input_manager.h"
 
+#include "scene/scene.h"
+
 namespace golias {
 
     class Application;

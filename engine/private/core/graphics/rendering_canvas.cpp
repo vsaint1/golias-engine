@@ -10,7 +10,9 @@ namespace golias{
         for (const auto& command : command_queue) {
 
             rendering_device->BindMaterial(command.material);
-            rendering_device->BindMesh(command.mesh);
+            command.material->SetParameter("MODEL_MATRIX", command.modelMatrix);
+            
+            rendering_device->BindMesh(command.mesh);   
             
             rendering_device->DrawMesh(command.mesh);
         }

@@ -1,6 +1,5 @@
 #include "core/application.h"
-#include "core/engine.h"
-
+#include "test_obj.h"
 
 class SandboxApplication : public golias::Application {
 public:
@@ -11,6 +10,5 @@ public:
     void Destroy() override;
 
 private:
-    golias::Material material;
-    std::shared_ptr<golias::Mesh> mesh;
+    golias::Scene scene;
 };

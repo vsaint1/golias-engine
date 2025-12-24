@@ -22,7 +22,5 @@ namespace golias {
         return shader;
     }
 
-    void Material::SetParameter(const std::string_view pName, UniformValue& value) {
-        parameters[std::string(pName)] = value;
-    }
+ 
 } // namespace golias
