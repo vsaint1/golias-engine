@@ -15,7 +15,7 @@ namespace golias {
 
         static Engine& GetInstance();
 
-        bool Initialize(const char* pTitle = "Golias Engine", int width = 1280, int height = 720,
+        bool Initialize(const char* pTitle = "Golias Engine", int w = 1280, int h = 720,
                         ERenderingDeviceType deviceType = ERenderingDeviceType::COMPATIBILITY);
 
         void Run();
@@ -32,6 +32,9 @@ namespace golias {
 
         RenderingCanvas& GetRenderingCanvas();
 
+        Scene* GetScene() const;
+        void SetScene(Scene* pScene);
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -46,7 +49,9 @@ namespace golias {
         Uint64 last_time_point = 0;
 
         SDL_Window* window = nullptr;
-
+        int _width       = 1280;
+        int _height      = 720;
+        std::unique_ptr<Scene> scene = nullptr;
     private:
         RenderingDevice* rendering_device = nullptr;
         RenderingCanvas rendering_canvas;

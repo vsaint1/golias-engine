@@ -1,8 +1,10 @@
 #pragma once
 
+#include "component.h"
 #include <memory>
 #include <string>
 #include <vector>
+
 #include <glm/glm.hpp>
 
 namespace golias {
@@ -19,7 +21,10 @@ namespace golias {
         GameObject* GetParent() const;
         void SetParent(GameObject* pParent);
 
-        void AddChild(std::unique_ptr<GameObject> child);
+        template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<Component, T>>>
+        T* GetComponent() const;
+
+        void AddComponent(Component* pComponent);
 
         const std::vector<std::unique_ptr<GameObject>>& GetChildren() const;
 
@@ -27,21 +32,24 @@ namespace golias {
 
         bool IsAlive() const;
 
-        std::vector<std::unique_ptr<GameObject>> children;
 
         glm::vec3& GetPosition();
         void SetPosition(const glm::vec3& newPosition);
+
         glm::vec3& GetRotation();
         void SetRotation(const glm::vec3& newRotation);
+
         glm::vec3& GetScale();
         void SetScale(const glm::vec3& newScale);
 
-        const glm::mat4& GetLocalTransform() const;
-
-        const glm::mat4& GetWorldTransform() const;
+        glm::mat4 GetLocalTransform() const;
+        glm::mat4 GetWorldTransform() const;
 
     protected:
         GameObject() = default;
+
+        std::vector<std::unique_ptr<GameObject>> children;
+        std::vector<std::unique_ptr<Component>> components;
 
         std::string name;
         GameObject* parent = nullptr;
@@ -52,6 +60,20 @@ namespace golias {
     private:
         glm::vec3 position = glm::vec3(0.0f);
         glm::vec3 rotation = glm::vec3(0.0f);
-        glm::vec3 scale = glm::vec3(1.0f);
+        glm::vec3 scale    = glm::vec3(1.0f);
     };
+
+
+    template <typename T, typename>
+    T* GameObject::GetComponent() const {
+        size_t typeId = Component::StaticTypeId<T>();
+
+        for (const auto& comp : components) {
+            if (comp->GetTypeId() == typeId) {
+                return static_cast<T*>(comp.get());
+            }
+        }
+
+        return nullptr;
+    }
 } // namespace golias

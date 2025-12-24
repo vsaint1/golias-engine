@@ -7,7 +7,6 @@ namespace golias {
 
     bool RenderingDeviceGLES3::Initialize(SDL_Window* sdl_window) {
         window = sdl_window;
-        spdlog::info("RenderingDeviceGLES3::Initialize Initializing GLES3 Rendering Device.");
 
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -29,25 +28,26 @@ namespace golias {
         gl_context = SDL_GL_CreateContext(sdl_window);
 
         if (!gl_context) {
-            spdlog::critical("Failed to create OpenGL/ES context: {}", SDL_GetError());
+            spdlog::critical("RenderingDeviceGLES3::Initialize Failed to create OpenGL/ES context: {}", SDL_GetError());
             return false;
         }
 
 
 #if defined(SDL_PLATFORM_ANDROID) && !defined(SDL_PLATFORM_IOS) && !defined(SDL_PLATFORM_EMSCRIPTEN)
         if (!gladLoadGLES2Loader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-            spdlog::error("Failed to initialize OpenGL Loader (GLAD)");
+            spdlog::error("RenderingDeviceGLES3::Initialize Failed to initialize OpenGL Loader (GLAD)");
             return false;
         }
 #else
         if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
-            spdlog::error("Failed to initialize OpenGLES Loader (GLAD)");
+            spdlog::error("RenderingDeviceGLES3::Initialize Failed to initialize OpenGLES Loader (GLAD)");
             return false;
         }
 #endif
 
 
-        spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully.");
+        spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
+
         return true;
     }
 

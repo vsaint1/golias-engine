@@ -1,5 +1,6 @@
 #include "test_obj.h"
 
+#include "scene/3d/mesh_component.h"
 
 TestObject::TestObject() {
 
@@ -12,12 +13,15 @@ layout(location = 2) in vec2 a_texcoord;
 
 out vec3 v_color;
 out vec2 v_texcoord;
+
 uniform mat4 MODEL_MATRIX;
+uniform mat4 PROJECTION_MATRIX;
+uniform mat4 VIEW_MATRIX;
 
 void main() {
-    gl_Position = MODEL_MATRIX * vec4(a_pos, 1.0);
     v_color = a_color;
     v_texcoord = a_texcoord;
+    gl_Position = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * vec4(a_pos, 1.0);
 }
 )";
 
@@ -26,23 +30,38 @@ void main() {
 in vec3 v_color;
 in vec2 v_texcoord;
 
-out vec4 frag_color;
+out vec4 COLOR;
 
 void main() {
-    frag_color = vec4(v_color, 1.0);
+    COLOR = vec4(v_color, 1.0);
 }
 )";
 
     auto rd     = golias::Engine::GetInstance().GetRenderingDevice();
     auto shader = rd->CreateShaderFromSource(vertex_source, fragment_source);
 
-    material.SetShader(shader);
+    auto material = std::make_shared<golias::Material>();
+    material->SetShader(shader);
 
-    std::vector<float> vertices = {// positions        // colors         // texcoords
-                                   -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f,
-                                   1.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  0.5f, 1.0f};
+    // std::vector<float> vertices = {// positions        // colors         // texcoords
+    //                                -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f,
+    //                                1.0f,  0.0f,  1.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  0.5f, 1.0f};
 
-    std::vector<uint32_t> indices = {0, 1, 2};
+    // std::vector<uint32_t> indices = {0, 1, 2};
+
+                                   std::vector<float> quad_vertices = {
+        // positions        // colors         // texcoords
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    std::vector<Uint32> quad_indices = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
 
     golias::VertexLayout layout;
     layout.elements = {{0, 3, EDataType::FLOAT, false, 0},
@@ -51,7 +70,10 @@ void main() {
 
     layout.stride = 8 * sizeof(float);
 
-    mesh = rd->CreateMeshFromData(layout, vertices, indices);
+    auto mesh = rd->CreateMeshFromData(layout, quad_vertices, quad_indices);
+
+
+    AddComponent(new golias::MeshComponent(mesh, material));
 }
 
 void TestObject::Update(float deltaTime) {
@@ -61,11 +83,11 @@ void TestObject::Update(float deltaTime) {
 
     auto& input = golias::Engine::GetInstance().GetInputManager();
 
-    if(input.IsKeyPressed(SDLK_W)) {
+    if (input.IsKeyPressed(SDLK_W)) {
         pos.y += 1.0f * deltaTime;
     }
 
-    if(input.IsKeyPressed(SDLK_S)) {
+    if (input.IsKeyPressed(SDLK_S)) {
         pos.y -= 1.0f * deltaTime;
     }
 
@@ -78,13 +100,4 @@ void TestObject::Update(float deltaTime) {
     }
 
     SetPosition(pos);
-
-
-    golias::DrawCommand command;
-    command.mesh     = mesh.get();
-    command.material = &material;
-    command.modelMatrix = GetWorldTransform();
-    
-    auto& rendering_canvas = golias::Engine::GetInstance().GetRenderingCanvas();
-    rendering_canvas.Submit(command);
 }

@@ -1,9 +1,22 @@
 #include "scene/game_object.h"
+
 #include <glm/gtc/matrix_transform.hpp>
+#include <spdlog/spdlog.h>
 
 namespace golias {
+    void GameObject::AddComponent(Component* pComponent) {
+        components.emplace_back(pComponent);
+        pComponent->SetOwner(this);
+
+        spdlog::info("GameObject::AddComponent added Component: {} to GameObject: {}", typeid(*pComponent).name(), typeid(*this).name());
+    }
 
     void GameObject::Update(float deltaTime) {
+
+        for (auto& component : components) {
+            component->Update(deltaTime);
+        }
+
 
         for (auto it = children.begin(); it != children.end(); ++it) {
             if ((*it)->IsAlive()) {
@@ -33,10 +46,6 @@ namespace golias {
         return parent;
     }
 
-    void GameObject::AddChild(std::unique_ptr<GameObject> child) {
-        child->SetParent(this);
-        children.push_back(std::move(child));
-    }
 
     const std::vector<std::unique_ptr<GameObject>>& GameObject::GetChildren() const {
         return children;
@@ -75,7 +84,7 @@ namespace golias {
         scale = newScale;
     }
 
-    const glm::mat4& GameObject::GetLocalTransform() const {
+     glm::mat4 GameObject::GetLocalTransform() const {
         glm::mat4 mat = glm::mat4(1.0f);
         mat           = glm::translate(mat, position);
         mat           = glm::rotate(mat, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -85,7 +94,7 @@ namespace golias {
         return mat;
     }
 
-    const glm::mat4& GameObject::GetWorldTransform() const {
+     glm::mat4 GameObject::GetWorldTransform() const {
         if (parent) {
             return parent->GetWorldTransform() * GetLocalTransform();
         } else {

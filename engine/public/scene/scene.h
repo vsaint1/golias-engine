@@ -26,8 +26,12 @@ namespace golias {
 
         void Clear();
 
+        void SetMainCamera(GameObject* pCamera);
+        GameObject* GetMainCamera() const;
+
     private:
         std::vector<std::unique_ptr<GameObject>> game_objects;
+        GameObject* main_camera = nullptr;
     };
 
     template <typename T, typename>

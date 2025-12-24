@@ -10,5 +10,5 @@ public:
     void Destroy() override;
 
 private:
-    golias::Scene scene;
+    golias::Scene* scene = nullptr;
 };

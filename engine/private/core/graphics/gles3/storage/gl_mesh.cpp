@@ -87,7 +87,6 @@ namespace golias {
             index_buffer.handle = 0;
         }
 
-        spdlog::info("OpenglMesh::~OpenglMesh called, resources released.");
     }
 
 

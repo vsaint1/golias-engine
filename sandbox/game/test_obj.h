@@ -9,7 +9,4 @@ public:
 
     void Update(float deltaTime) override;
 
-private:
-    golias::Material material;
-    std::shared_ptr<golias::Mesh> mesh;
 };

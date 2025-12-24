@@ -1,22 +1,24 @@
 #include "core/graphics/rendering_canvas.h"
 
-namespace golias{
+namespace golias {
     void RenderingCanvas::Submit(const DrawCommand& command) {
-       command_queue.push_back(command);
+        command_queue.push_back(command);
     }
 
 
-    void RenderingCanvas::Draw(RenderingDevice* rendering_device) {
+    void RenderingCanvas::Draw(RenderingDevice* rd, const CameraData& camera) {
         for (const auto& command : command_queue) {
 
-            rendering_device->BindMaterial(command.material);
+            rd->BindMaterial(command.material);
             command.material->SetParameter("MODEL_MATRIX", command.modelMatrix);
-            
-            rendering_device->BindMesh(command.mesh);   
-            
-            rendering_device->DrawMesh(command.mesh);
+            command.material->SetParameter("VIEW_MATRIX", camera.viewMatrix);
+            command.material->SetParameter("PROJECTION_MATRIX", camera.projectionMatrix);
+
+            rd->BindMesh(command.mesh);
+
+            rd->DrawMesh(command.mesh);
         }
 
         command_queue.clear();
     }
-};
+}; // namespace golias

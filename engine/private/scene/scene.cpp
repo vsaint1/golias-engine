@@ -7,7 +7,7 @@ namespace golias {
         obj->SetName(name);
         SetParent(obj, pParent);
 
-        spdlog::info("Created GameObject with Name '{}'", name);
+        spdlog::info("Scene::CreateObject Created GameObject with Name '{}'", name);
 
         return obj;
     }
@@ -31,7 +31,7 @@ namespace golias {
     }
 
     void Scene::Clear() {
-        spdlog::info("Clearing Scene with {} GameObjects", game_objects.size());
+        spdlog::info("Scene::Clear Clearing Scene with {} GameObjects", game_objects.size());
         game_objects.clear();
     }
 
@@ -103,7 +103,7 @@ namespace golias {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
                     pParent->children.push_back(std::move(objHolder));
                     pGameObject->parent = pParent;
-                    result      = true;
+                    result              = true;
                 } else {
                     bool found          = false;
                     auto currentElement = pParent;
@@ -128,5 +128,12 @@ namespace golias {
         return result;
     }
 
+    void Scene::SetMainCamera(GameObject* pCamera) {
+        main_camera = pCamera;
+    }
 
+    GameObject* Scene::GetMainCamera() const {
+        return main_camera;
+    }
+    
 }; // namespace golias

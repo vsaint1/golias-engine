@@ -11,10 +11,15 @@ namespace golias {
         glm::mat4 modelMatrix;
     };
 
+    struct CameraData {
+        glm::mat4 viewMatrix;
+        glm::mat4 projectionMatrix;
+    };
+
     class RenderingCanvas {
     public:
         void Submit(const DrawCommand& command);
-        void Draw(RenderingDevice* rendering_device);
+        void Draw(RenderingDevice* rd,const CameraData& camera);
 
     private:
         std::vector<DrawCommand> command_queue;
