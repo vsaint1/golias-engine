@@ -11,9 +11,19 @@ namespace golias {
 
     glm::mat4 CameraComponent::GetViewMatrix() const {
 
-        auto world = GetOwner()->GetWorldTransform();
-        
-        return glm::inverse(world);
+        glm::mat4 mat(1.0f);
+        mat = glm::mat4_cast(GetOwner()->GetRotation());
+        mat = glm::translate(mat, GetOwner()->GetPosition());
+
+        mat[3] = glm::vec4(GetOwner()->GetPosition(), 1.0f); 
+
+        if (GetOwner()->GetParent()) {
+            mat = GetOwner()->GetParent()->GetWorldTransform() * mat;
+        }
+
+        mat = glm::inverse(mat);
+
+        return mat;
     }
 
     glm::mat4 CameraComponent::GetProjectionMatrix(float aspectRatio) const {

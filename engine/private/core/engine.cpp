@@ -26,7 +26,6 @@ namespace golias {
 
     bool Engine::Initialize(const char* pTitle, int width, int height, ERenderingDeviceType deviceType) {
 
-
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
             spdlog::error("Engine::Initialize Failed to initialize SDL : {}", SDL_GetError());
             return false;
@@ -41,6 +40,8 @@ namespace golias {
             return false;
         }
 
+
+        // SDL_SetWindowRelativeMouseMode(window, true);
 
         if (!create_renderer_internal(deviceType, &rendering_device)) {
             spdlog::error("Engine::Initialize Failed to create Rendering Device.");

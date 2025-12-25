@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace golias {
 
@@ -36,8 +37,8 @@ namespace golias {
         glm::vec3& GetPosition();
         void SetPosition(const glm::vec3& newPosition);
 
-        glm::vec3& GetRotation();
-        void SetRotation(const glm::vec3& newRotation);
+        glm::quat& GetRotation();
+        void SetRotation(const glm::quat& newRotation);
 
         glm::vec3& GetScale();
         void SetScale(const glm::vec3& newScale);
@@ -59,7 +60,7 @@ namespace golias {
 
     private:
         glm::vec3 position = glm::vec3(0.0f);
-        glm::vec3 rotation = glm::vec3(0.0f);
+        glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         glm::vec3 scale    = glm::vec3(1.0f);
     };
 

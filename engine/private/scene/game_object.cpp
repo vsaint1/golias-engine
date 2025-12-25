@@ -1,7 +1,7 @@
 #include "scene/game_object.h"
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace golias {
     void GameObject::AddComponent(Component* pComponent) {
@@ -68,11 +68,11 @@ namespace golias {
         position = newPosition;
     }
 
-    glm::vec3& GameObject::GetRotation() {
+    glm::quat& GameObject::GetRotation() {
         return rotation;
     }
 
-    void GameObject::SetRotation(const glm::vec3& newRotation) {
+    void GameObject::SetRotation(const glm::quat& newRotation) {
         rotation = newRotation;
     }
 
@@ -86,11 +86,10 @@ namespace golias {
 
      glm::mat4 GameObject::GetLocalTransform() const {
         glm::mat4 mat = glm::mat4(1.0f);
-        mat           = glm::translate(mat, position);
-        mat           = glm::rotate(mat, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        mat           = glm::rotate(mat, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        mat           = glm::rotate(mat, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        mat           = glm::scale(mat, scale);
+        mat = glm::translate(mat, position);
+        mat = mat * glm::mat4_cast(rotation);
+        mat = glm::scale(mat, scale);
+
         return mat;
     }
 

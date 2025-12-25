@@ -48,6 +48,7 @@ namespace golias {
 
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
 
+        glEnable(GL_DEPTH_TEST);  
         return true;
     }
 
