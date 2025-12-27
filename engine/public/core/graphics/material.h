@@ -13,10 +13,11 @@ namespace golias {
         std::shared_ptr<Shader> GetShader() const;
 
         template<typename T>
-        void SetParameter(const std::string_view pName, T& value) {
+        void SetParameter(const std::string_view pName, const T& value) {
             parameters[std::string(pName)] = value;
         }
 
+        static std::shared_ptr<Material> Load(const std::string& pPath);
 
     private:
         std::shared_ptr<Shader> shader;

@@ -1,0 +1,23 @@
+{
+    "shader": {
+        "vertex": "shaders/vertex.glsl",
+        "fragment": "shaders/fragment.glsl"
+    },
+    "parameters": {
+        "textures": [
+            {
+                "name": "TEXTURE",
+                "path": "textures/brick.png"
+            }
+        ],
+        "floats": [
+        ],
+        "vectors": [
+            {
+                "name": "DUMMY",
+                "value": [1.0, 0.0, 0.0, 1.0],
+                "type": "vec4"
+            }
+        ]
+    }
+}

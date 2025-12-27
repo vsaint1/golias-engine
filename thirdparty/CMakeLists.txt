@@ -24,6 +24,8 @@ add_subdirectory(SDL EXCLUDE_FROM_ALL)
 add_subdirectory(glm)
 add_subdirectory(spdlog)
 
+add_subdirectory(json)
+
 add_library(thirdparty INTERFACE)
 
 target_include_directories(thirdparty INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,4 +36,5 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         glm
         glad
         spdlog
+        json
 )

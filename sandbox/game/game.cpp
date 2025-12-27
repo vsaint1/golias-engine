@@ -15,18 +15,10 @@ bool SandboxApplication::Initialize() {
     auto fs = golias::Engine::GetInstance().GetFileSystem();
 
 
-    std::string vertex_source = fs.LoadAssetFileText("shaders/vertex.glsl");
-
-    std::string fragment_source = fs.LoadAssetFileText("shaders/fragment.glsl");
-
-
     auto rd      = golias::Engine::GetInstance().GetRenderingDevice();
-    auto shader  = rd->CreateShaderFromSource(vertex_source, fragment_source);
-    auto texture = rd->CreateTextureFromFile("textures/brick.png");
 
-    auto material = std::make_shared<golias::Material>();
-    material->SetShader(shader);
-    material->SetParameter("TEXTURE", texture);
+    auto material = golias::Material::Load("materials/brick.mat");
+
 
 
     std::vector<float> box_vertices = {
