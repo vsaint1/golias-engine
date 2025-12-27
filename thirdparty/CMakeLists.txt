@@ -26,6 +26,7 @@ add_subdirectory(spdlog)
 
 add_subdirectory(json)
 add_subdirectory(cgltf)
+add_subdirectory(tinyobjloader)
 
 add_library(thirdparty INTERFACE)
 
@@ -39,4 +40,5 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         spdlog
         json
         cgltf
+        tinyobjloader
 )
