@@ -2,7 +2,7 @@
 #include "core/graphics/rendering_canvas.h"
 #include "core/graphics/rendering_device.h"
 #include "core/input/input_manager.h"
-
+#include "core/io/file_system.h"
 #include "scene/scene.h"
 
 namespace golias {
@@ -31,6 +31,8 @@ namespace golias {
         RenderingDevice* GetRenderingDevice();
 
         RenderingCanvas& GetRenderingCanvas();
+        
+        FileSystem& GetFileSystem();
 
         Scene* GetScene() const;
         void SetScene(Scene* pScene);
@@ -44,6 +46,7 @@ namespace golias {
 
     private:
         InputManager input_manager;
+        FileSystem file_system;
 
         std::unique_ptr<Application> application;
         Uint64 last_time_point = 0;

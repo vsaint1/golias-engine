@@ -157,6 +157,10 @@ namespace golias {
         return rendering_canvas;
     }
 
+    FileSystem& Engine::GetFileSystem() {
+        return file_system;
+    }
+
     Scene* Engine::GetScene() const {
         return scene.get();
     }
