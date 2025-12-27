@@ -103,4 +103,18 @@ namespace golias {
         return std::string(buffer.data(), buffer.size());
     }
 
+    std::string FileSystem::GetFileExtension(const std::string_view pFileName) {
+        std::filesystem::path p(pFileName);
+
+        auto ext = p.extension().string(); // e.g. ".gltf"
+        if (!ext.empty() && ext.front() == '.') {
+            ext.erase(0, 1);
+        }
+
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        return ext;
+    }
+
+
 } // namespace golias

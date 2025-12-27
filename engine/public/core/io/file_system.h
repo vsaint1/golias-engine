@@ -25,5 +25,7 @@ namespace golias {
         std::string LoadFileText(const std::string_view pPath) const;
         std::string LoadAssetFileText(const std::string_view pFileName) const;
 
+        static std::string  GetFileExtension(const std::string_view pFileName);
+
     };
 } // namespace golias
