@@ -28,8 +28,9 @@ namespace golias {
         std::shared_ptr<Shader> CreateShaderFromSource(const std::string& vertexSource, const std::string& fragmentSource) override;
 
 
+        std::shared_ptr<Mesh> CreateMeshFromFile(const std::string_view pPath) override;
         std::shared_ptr<Mesh> CreateMeshFromData(const VertexLayout& layout, const std::vector<float>& vertices,
-                                                 const std::vector<uint32_t>& indices);
+                                                 const std::vector<uint32_t>& indices) override;
 
         Buffer CreateGPUBuffer(size_t size, const void* data, EBufferUsageFlags bufferFlags, EBufferTarget bufferTarget) override;
 

@@ -8,6 +8,8 @@ namespace golias {
 
     class OpenglMesh final : public Mesh {
     public:
+        OpenglMesh(const std::string_view pPath);
+        
         OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<Uint32>& indices);
 
         OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices);
