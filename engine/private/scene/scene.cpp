@@ -1,17 +1,22 @@
 #include "scene/scene.h"
 
 namespace golias {
+    size_t Scene::next_type_id = 0;
 
     GameObject* Scene::CreateObject(const std::string& name, GameObject* pParent) {
         auto obj = new GameObject();
-        obj->SetName(name);
+        std::string fname = std::format("{}_{}", name, next_type_id++);
+        obj->SetName(fname);
         SetParent(obj, pParent);
 
-        spdlog::info("Scene::CreateObject Created GameObject with Name '{}'", name);
-
+        spdlog::info("Scene::CreateObject Created GameObject with Name '{}'", fname);
         return obj;
     }
-
+      
+    GameObject* Scene::CreateObject(GameObject* pParent) {
+        return CreateObject("GameObject", pParent);
+    }
+        
     const std::vector<std::unique_ptr<GameObject>>& Scene::GetGameObjects() const {
         return game_objects;
     }

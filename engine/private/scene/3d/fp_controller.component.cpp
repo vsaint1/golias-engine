@@ -13,7 +13,7 @@ namespace golias {
         if (input.IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
             const auto mouse_delta = input.GetMouseDelta();
 
- 
+
             // rot around Y axis
             float yAngle   = -mouse_delta.x * sensitivity * deltaTime;
             glm::quat yRot = glm::angleAxis(yAngle, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -37,17 +37,17 @@ namespace golias {
         // Left/Right movement
         if (input.IsKeyPressed(SDLK_A)) {
             position -= right * speed * deltaTime;
-        } 
-        
+        }
+
         if (input.IsKeyPressed(SDLK_D)) {
             position += right * speed * deltaTime;
         }
-        
+
         // Vertical movement
         if (input.IsKeyPressed(SDLK_W)) {
             position += front * speed * deltaTime;
-        } 
-         if (input.IsKeyPressed(SDLK_S)) {
+        }
+        if (input.IsKeyPressed(SDLK_S)) {
             position -= front * speed * deltaTime;
         }
 

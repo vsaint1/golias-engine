@@ -14,6 +14,7 @@ namespace golias {
         ~Scene() = default;
 
         GameObject* CreateObject(const std::string& name, GameObject* pParent = nullptr);
+        GameObject* CreateObject(GameObject* pParent = nullptr);
         
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<GameObject, T>>>
         T* CreateObject(const std::string& name, GameObject* pParent = nullptr);
@@ -32,15 +33,19 @@ namespace golias {
     private:
         std::vector<std::unique_ptr<GameObject>> game_objects;
         GameObject* main_camera = nullptr;
+        static size_t next_type_id;
+
     };
 
     template <typename T, typename>
     T* Scene::CreateObject(const std::string& name, GameObject* pParent) {
         auto obj = new T();
-        obj->SetName(name);
+        std::string fname = std::format("{}_{}", name, next_type_id++);
+
+        obj->SetName(fname);
         SetParent(obj, pParent);
 
-        spdlog::info("Created GameObject of type {} with Name '{}'", typeid(T).name(), name);
+        spdlog::info("Created GameObject of type {} with Name '{}'", typeid(T).name(), fname);
         return obj;
     }
 

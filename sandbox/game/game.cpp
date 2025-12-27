@@ -4,6 +4,7 @@
 #include "scene/3d/fp_controller_component.h"
 #include "scene/3d/mesh_component.h"
 
+
 bool SandboxApplication::Initialize() {
 
     scene = new golias::Scene();
@@ -11,66 +12,236 @@ bool SandboxApplication::Initialize() {
 
     golias::Engine::GetInstance().SetScene(scene);
 
+    auto fs = golias::Engine::GetInstance().GetFileSystem();
 
-    std::string vertex_source = R"(
-#version 330 core
-layout(location = 0) in vec3 a_pos;
-layout(location = 1) in vec3 a_color;
-layout(location = 2) in vec2 a_texcoord;
 
-out vec3 v_color;
-out vec2 v_texcoord;
+    std::string vertex_source = fs.LoadAssetFileText("shaders/vertex.glsl");
 
-uniform mat4 MODEL_MATRIX;
-uniform mat4 PROJECTION_MATRIX;
-uniform mat4 VIEW_MATRIX;
+    std::string fragment_source = fs.LoadAssetFileText("shaders/fragment.glsl");
 
-void main() {
-    v_color = a_color;
-    v_texcoord = a_texcoord;
-    gl_Position = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * vec4(a_pos, 1.0);
-}
-)";
 
-    std::string fragment_source = R"(
-#version 330 core
-in vec3 v_color;
-in vec2 v_texcoord;
-
-out vec4 COLOR;
-
-void main() {
-    COLOR = vec4(v_color, 1.0);
-}
-)";
-
-    auto rd     = golias::Engine::GetInstance().GetRenderingDevice();
-    auto shader = rd->CreateShaderFromSource(vertex_source, fragment_source);
+    auto rd      = golias::Engine::GetInstance().GetRenderingDevice();
+    auto shader  = rd->CreateShaderFromSource(vertex_source, fragment_source);
+    auto texture = rd->CreateTextureFromFile("textures/brick.png");
 
     auto material = std::make_shared<golias::Material>();
     material->SetShader(shader);
+    material->SetParameter("TEXTURE", texture);
 
 
     std::vector<float> box_vertices = {
-        // pos              // color           // uv
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // 0
-        0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // 1
-        0.5f,  0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // 2
-        -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, // 3
+        // ----- Front -----
+        -0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
 
-        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f, // 4
-        0.5f,  -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 1.0f, 0.0f, // 5
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // 6
-        -0.5f, 0.5f,  0.5f,  1.0f, 0.0f, 0.5f, 0.0f, 1.0f // 7
+        // ----- Back -----
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+
+        // ----- Left -----
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        -0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
+
+        // ----- Right -----
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+
+        // ----- Top -----
+        -0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0.5f,
+        0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        -0.5f,
+        0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+
+        // ----- Bottom -----
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0.5f,
+        -0.5f,
+        -0.5f,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        1,
+        1,
+        -0.5f,
+        -0.5f,
+        0.5f,
+        1,
+        1,
+        1,
+        0,
+        1,
     };
 
-    std::vector<Uint32> box_indices = {
-        0, 1, 2, 2, 3, 0, // back face
-        4, 5, 6, 6, 7, 4, // front face
-        0, 4, 7, 7, 3, 0, // left face
-        1, 5, 6, 6, 2, 1, // right face
-        3, 2, 6, 6, 7, 3, // top face
-        0, 1, 5, 5, 4, 0 // bottom face
+    std::vector<uint32_t> box_indices = {
+        0,  1,  2,  2,  3,  0, // front
+        4,  5,  6,  6,  7,  4, // back
+        8,  9,  10, 10, 11, 8, // left
+        12, 13, 14, 14, 15, 12, // right
+        16, 17, 18, 18, 19, 16, // top
+        20, 21, 22, 22, 23, 20 // bottom
     };
 
 
@@ -84,8 +255,6 @@ void main() {
     auto mesh = rd->CreateMeshFromData(layout, box_vertices, box_indices);
 
 
-
-
     auto camera = scene->CreateObject<golias::GameObject>("Camera");
     camera->AddComponent(new golias::CameraComponent());
     camera->AddComponent(new golias::FirstPersonControllerComponent());
@@ -93,13 +262,13 @@ void main() {
     scene->SetMainCamera(camera);
 
 
-    const int grid_size = 10;
-    for  (int x = -grid_size / 2; x < grid_size / 2; ++x) {
+    const int grid_size = 2;
+    for (int x = -grid_size / 2; x < grid_size / 2; ++x) {
         for (int y = -grid_size / 2; y < grid_size / 2; ++y) {
-            auto obj = scene->CreateObject(std::string("Box_") + std::to_string(x) + "_" + std::to_string(y));
+            auto obj = scene->CreateObject();
             obj->SetPosition({static_cast<float>(x), static_cast<float>(y), 0.0f});
             auto meshComp = new golias::MeshComponent();
-            obj->AddComponent(new golias::MeshComponent(mesh,material));
+            obj->AddComponent(new golias::MeshComponent(mesh, material));
         }
     }
 
