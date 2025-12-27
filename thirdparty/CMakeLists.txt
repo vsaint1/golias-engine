@@ -25,6 +25,7 @@ add_subdirectory(glm)
 add_subdirectory(spdlog)
 
 add_subdirectory(json)
+add_subdirectory(cgltf)
 
 add_library(thirdparty INTERFACE)
 
@@ -37,4 +38,5 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         glad
         spdlog
         json
+        cgltf
 )
