@@ -13,6 +13,7 @@ namespace golias {
 
     void OpenglShader::Bind() {
         glUseProgram(handle);
+        current_texture_unit = 0;
     }
 
     void OpenglShader::Unbind() {
@@ -58,6 +59,13 @@ namespace golias {
                     glUniform4fv(location, 1, &v.x);
                 } else if constexpr (std::is_same_v<T, glm::mat4>) {
                     glUniformMatrix4fv(location, 1, GL_FALSE, &v[0][0]);
+                }else if constexpr (std::is_same_v<T, golias::Texture2D*>) {
+                    if(v){
+                        glActiveTexture(GL_TEXTURE0 + current_texture_unit);
+                        glBindTexture(GL_TEXTURE_2D, v->GetNativeHandle());
+                        glUniform1i(location, current_texture_unit);
+                        ++current_texture_unit;
+                    }
                 }
             },
             value);

@@ -21,6 +21,7 @@ namespace golias {
         GLuint CreateProgram(const std::string& vertexSource, const std::string& fragmentSource);
 
         const char* GetShaderTypeCStr(GLenum type);
+
     };
 
 }; // namespace golias

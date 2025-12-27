@@ -42,3 +42,71 @@ GLint ToGLDataType(EDataType type) {
         return GL_FLOAT;
     }
 }
+
+
+GLenum ToGLTextureWrapMode(ETextureWrapMode mode) {
+
+    switch (mode) {
+    case ETextureWrapMode::REPEAT:
+        return GL_REPEAT;
+    case ETextureWrapMode::CLAMP_TO_EDGE:
+        return GL_CLAMP_TO_EDGE;
+    case ETextureWrapMode::MIRRORED_REPEAT:
+        return GL_MIRRORED_REPEAT;
+    case ETextureWrapMode::CLAMP_TO_BORDER:
+        return GL_CLAMP_TO_BORDER;
+    default:
+        spdlog::warn("ToGLTextureWrapMode: Unknown ETextureWrapMode enum value.");
+        return GL_REPEAT;
+    }
+}
+
+GLenum ToGLTextureFilterMode(ETextureFilterMode mode) {
+    switch (mode) {
+    case ETextureFilterMode::NEAREST:
+        return GL_NEAREST;
+    case ETextureFilterMode::BILINEAR:
+        return GL_LINEAR;
+    case ETextureFilterMode::TRILINEAR:
+        return GL_LINEAR_MIPMAP_LINEAR;
+    default:
+        spdlog::warn("ToGLTextureFilterMode: Unknown ETextureFilterMode enum value.");
+        return GL_LINEAR;
+    }
+}
+
+GLenum ToGLTextureFormat(ETextureFormat format) {
+
+    switch (format) {
+    case ETextureFormat::RED:
+        return GL_RED;
+    case ETextureFormat::RG:
+        return GL_RG;
+    case ETextureFormat::RGB:
+        return GL_RGB;
+    case ETextureFormat::RGBA:
+        return GL_RGBA;
+    default:
+        spdlog::warn("ToGLTextureFormat: Unknown ETextureFormat enum value.");
+
+        return GL_RGBA;
+    }
+}
+
+GLenum ToGLTextureFormatFromChannels(int num_channels) {
+    switch (num_channels) {
+    case 1:
+        return GL_RED;
+
+    case 2:
+        return GL_RG;
+    case 3:
+        return GL_RGB;
+
+    case 4:
+        return GL_RGBA;
+    default:
+        spdlog::warn("OpenglTexture2D::CreateInternal: Unknown number of channels: {}. Defaulting to RGBA.", num_channels);
+        return GL_RGBA;
+    }
+}

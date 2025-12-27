@@ -1,8 +1,49 @@
 #pragma once
 #include <SDL3/SDL_stdinc.h>
+#include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
+
+
+enum class ETextureFormat {
+    RGB,
+    RGBA,
+    RED,
+    RG
+};
+
+enum class ETextureWrapMode {
+    REPEAT,
+    CLAMP_TO_EDGE,
+    MIRRORED_REPEAT,
+    CLAMP_TO_BORDER
+};
+
+enum class ETextureFilterMode {
+    NEAREST,
+    BILINEAR,
+    TRILINEAR,
+};
+
+// Texture Mip Gen Settings
+enum class ETextureMipGenSettings {
+    NO_MIPMAPS, // No mipmaps
+    FROM_TEXTURE_GROUP, // Use texture group settings (not implemented here)
+    SIMPLE_AVERAGE, // Generate mipmaps using simple averaging
+    SHARPEN0, // Future: Sharpen filter level 0
+    SHARPEN1, // Future: Sharpen filter level 1
+};
+
+
+enum class ETextureCompressionSettings {
+    DEFAULT,
+    NORMALMAP,
+    HIGH_QUALITY,
+    LOW_QUALITY,
+    HDR,
+    MAX,
+};
 
 
 enum class EBufferTarget : uint32_t {
@@ -25,7 +66,7 @@ struct Buffer {
 
 
 enum class EDataType : uint32_t {
-    FLOAT = 0x1, // GL_FLOAT 
+    FLOAT = 0x1, // GL_FLOAT
     INT   = 0x2, // GL_INT
     SHORT = 0x3 // GL_SHORT
 };
