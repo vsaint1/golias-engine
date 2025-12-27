@@ -19,5 +19,6 @@ jniLibs/
 
 logs/
 
+res/tests/
 
 build/

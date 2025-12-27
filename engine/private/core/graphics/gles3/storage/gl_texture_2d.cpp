@@ -7,7 +7,7 @@ namespace golias {
 
     OpenglTexture2D::OpenglTexture2D(const std::string_view pFilePath) : Texture2D(pFilePath) {
         int w, h, n;
-        stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(false);
 
         Uint8* data = stbi_load(pFilePath.data(), &w, &h, &n, 0);
 
