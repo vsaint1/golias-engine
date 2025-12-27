@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/graphics/texture_2d.h"
 #include "core/graphics/material.h"
 #include "core/graphics/mesh.h"
 #include "core/graphics/shader.h"
@@ -25,6 +26,9 @@ namespace golias {
         virtual void BindShader(Shader* shader)       = 0;
         virtual void BindMesh(Mesh* mesh)             = 0;
         virtual void BindMaterial(Material* material) = 0;
+
+        virtual std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) = 0;
+        virtual std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) = 0;
 
         virtual std::shared_ptr<Shader> CreateShaderFromFile(const std::string_view pFilePath)                                     = 0;
         virtual std::shared_ptr<Shader> CreateShaderFromSource(const std::string& vertexSource, const std::string& fragmentSource) = 0;

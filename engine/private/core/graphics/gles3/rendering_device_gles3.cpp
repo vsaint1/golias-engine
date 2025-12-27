@@ -1,7 +1,8 @@
 #include "core/graphics/gles3/rendering_device_gles3.h"
 
-#include "core/graphics/rendering_device.h"
+#include "core/engine.h"
 #include "core/graphics/gles3/gl_common.h"
+#include "core/graphics/rendering_device.h"
 
 namespace golias {
 
@@ -48,7 +49,7 @@ namespace golias {
 
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
 
-        glEnable(GL_DEPTH_TEST);  
+        glEnable(GL_DEPTH_TEST);
         return true;
     }
 
@@ -75,6 +76,19 @@ namespace golias {
         if (mesh) {
             mesh->Draw();
         }
+    }
+
+
+    std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromFile(const std::string_view pFilePath) {
+
+        auto file_system = golias::Engine::GetInstance().GetFileSystem();
+
+        return std::make_shared<OpenglTexture2D>(file_system.GetAssetFile(pFilePath));
+    }
+
+    std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) {
+
+        return std::make_shared<OpenglTexture2D>(w, h, 3, const_cast<Uint8*>(data));
     }
 
     std::shared_ptr<Shader> RenderingDeviceGLES3::CreateShaderFromSource(const std::string& vertexSource,

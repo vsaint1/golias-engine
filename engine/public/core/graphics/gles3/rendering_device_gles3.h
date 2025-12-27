@@ -2,6 +2,7 @@
 
 #include "core/graphics/gles3/shaders/gl_shader.h"
 #include "core/graphics/gles3/storage/gl_mesh.h"
+#include "core/graphics/gles3/storage/gl_texture_2d.h"
 #include "core/graphics/rendering_device.h"
 
 
@@ -19,6 +20,9 @@ namespace golias {
         void BindShader(Shader* shader);
         void BindMesh(Mesh* mesh);
         void BindMaterial(Material* material);
+
+        std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) override;
+        std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) override;
 
         std::shared_ptr<Shader> CreateShaderFromFile(const std::string_view pFilePath) override;
         std::shared_ptr<Shader> CreateShaderFromSource(const std::string& vertexSource, const std::string& fragmentSource) override;
