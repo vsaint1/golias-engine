@@ -17,6 +17,7 @@ namespace golias {
             rd->BindMesh(command.mesh);
 
             rd->DrawMesh(command.mesh);
+           
         }
 
         command_queue.clear();

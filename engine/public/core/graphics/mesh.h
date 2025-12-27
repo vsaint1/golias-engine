@@ -8,11 +8,12 @@ namespace golias {
     class Mesh {
     public:
 
-        Mesh() = default;
+        Mesh(const std::string_view pPath);
 
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<Uint32>& indices);
-        
+
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices);
+
 
         virtual void Bind() = 0;
 
@@ -30,17 +31,29 @@ namespace golias {
 
         size_t GetIndexCount() const;
 
+        EDataType GetIndexType() const;
+
+        void SetIndexType(EDataType type);
+    
         virtual ~Mesh() = default;
 
-    private:
-        Mesh(const Mesh&)            = delete;
-        Mesh& operator=(const Mesh&) = delete;
+private:
+    Mesh(const Mesh&)            = delete;
+    Mesh& operator=(const Mesh&) = delete;
 
-    protected:
-        VertexLayout vertex_layout;
-        size_t vertex_count = 0;
-        size_t index_count  = 0;
+protected:
+    Mesh() = default;
 
-    };
+    VertexLayout vertex_layout = VertexLayout();
+    size_t vertex_count = 0;
+    size_t index_count  = 0;
 
-}; // namespace golias
+    std::vector<float> vertices_data;
+    std::vector<Uint32> indices_data;
+    EDataType index_type = EDataType::UNSIGNED_INT;
+
+    
+
+};
+}
+; // namespace golias

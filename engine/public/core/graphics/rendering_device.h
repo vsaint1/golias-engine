@@ -35,6 +35,7 @@ namespace golias {
 
         virtual Buffer CreateGPUBuffer(size_t size, const void* data, EBufferUsageFlags bufferFlags, EBufferTarget bufferTarget) = 0;
 
+        virtual std::shared_ptr<Mesh> CreateMeshFromFile(const std::string_view pPath) = 0;
         virtual std::shared_ptr<Mesh> CreateMeshFromData(const VertexLayout& layout, const std::vector<float>& vertices,
                                                          const std::vector<uint32_t>& indices) = 0;
 

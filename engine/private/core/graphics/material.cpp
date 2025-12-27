@@ -20,6 +20,7 @@ namespace golias {
         }
     }
 
+
     std::shared_ptr<Shader> Material::GetShader() const {
         return shader;
     }
@@ -70,6 +71,7 @@ namespace golias {
                 spdlog::error("Material::Load: Failed to create Shader for Material: {}", pPath);
                 return nullptr;
             }
+
         }
 
 
@@ -92,6 +94,8 @@ namespace golias {
                     } else {
                         spdlog::error("Material::Load: Failed to load Texture2D '{}' for Material: {}", value, pPath);
                     }
+
+                    spdlog::info("Material::Load: Loaded Texture2D '{}' for Material: {}", value, pPath);
                 }
             }
 

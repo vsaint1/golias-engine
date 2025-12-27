@@ -59,8 +59,8 @@ namespace golias {
                     glUniform4fv(location, 1, &v.x);
                 } else if constexpr (std::is_same_v<T, glm::mat4>) {
                     glUniformMatrix4fv(location, 1, GL_FALSE, &v[0][0]);
-                }else if constexpr (std::is_same_v<T, golias::Texture2D*>) {
-                    if(v){
+                } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture2D>>) {
+                    if (v && v.get()) {
                         glActiveTexture(GL_TEXTURE0 + current_texture_unit);
                         glBindTexture(GL_TEXTURE_2D, v->GetNativeHandle());
                         glUniform1i(location, current_texture_unit);

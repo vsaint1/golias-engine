@@ -48,7 +48,7 @@ namespace golias {
 
 
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
-
+        
         glEnable(GL_DEPTH_TEST);
         return true;
     }
@@ -78,7 +78,6 @@ namespace golias {
         }
     }
 
-
     std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromFile(const std::string_view pFilePath) {
 
         auto file_system = golias::Engine::GetInstance().GetFileSystem();
@@ -98,8 +97,14 @@ namespace golias {
     }
 
     std::shared_ptr<Mesh> RenderingDeviceGLES3::CreateMeshFromData(const VertexLayout& layout, const std::vector<float>& vertices,
+
                                                                    const std::vector<uint32_t>& indices) {
         return std::make_shared<OpenglMesh>(layout, vertices, indices);
+    }
+
+
+    std::shared_ptr<Mesh> RenderingDeviceGLES3::CreateMeshFromFile(const std::string_view pPath) {
+        return std::make_shared<OpenglMesh>(pPath);
     }
 
     void RenderingDeviceGLES3::Clear(glm::vec4 color) {
