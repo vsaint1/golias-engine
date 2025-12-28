@@ -10,6 +10,8 @@
 
 namespace golias {
 
+    class Scene;
+
     class GameObject {
     public:
         virtual void Update(float deltaTime);
@@ -20,7 +22,7 @@ namespace golias {
         void SetName(const std::string& newName);
 
         GameObject* GetParent() const;
-        void SetParent(GameObject* pParent);
+        bool SetParent(GameObject* pParent);
 
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<Component, T>>>
         T* GetComponent() const;
@@ -29,11 +31,15 @@ namespace golias {
 
         const std::vector<std::unique_ptr<GameObject>>& GetChildren() const;
 
+        Scene* GetScene() const;
+
         void Destroy();
 
         bool IsAlive() const;
 
+        static GameObject* LoadModel(const std::string_view pPath);
 
+        glm::vec3 GetWorldPosition() const;
         glm::vec3& GetPosition();
         void SetPosition(const glm::vec3& newPosition);
 
@@ -57,11 +63,13 @@ namespace golias {
         bool is_alive      = true;
 
         friend class Scene;
+        Scene* scene = nullptr;
 
     private:
         glm::vec3 position = glm::vec3(0.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         glm::vec3 scale    = glm::vec3(1.0f);
+
     };
 
 

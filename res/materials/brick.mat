@@ -1,18 +1,27 @@
 {
-
     "parameters": {
         "textures": [
             {
-                "name": "TEXTURE",
+                "name": "ALBEDO_TEXTURE",
                 "path": "textures/brick.png"
             }
         ],
-        "floats": [
+        "bools": [
+            {
+                "name": "HAS_ALBEDO",
+                "value": true
+            }
         ],
+        "floats": [],
         "vectors": [
             {
                 "name": "DUMMY",
-                "value": [1.0, 0.0, 0.0, 1.0],
+                "value": [
+                    1.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
                 "type": "vec4"
             }
         ]

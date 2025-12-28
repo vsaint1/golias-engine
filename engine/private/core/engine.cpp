@@ -102,6 +102,7 @@ namespace golias {
 
             CameraData camera_data;
             if (scene && scene->GetMainCamera()) {
+                camera_data.position = scene->GetMainCamera()->GetPosition();
                 auto camera_component = scene->GetMainCamera()->GetComponent<CameraComponent>();
                 
                 if (camera_component) {

@@ -43,6 +43,7 @@ namespace golias {
         std::string fname = std::format("{}_{}", name, next_type_id++);
 
         obj->SetName(fname);
+        obj->scene = this;
         SetParent(obj, pParent);
 
         spdlog::info("Created GameObject of type {} with Name '{}'", typeid(T).name(), fname);

@@ -55,6 +55,8 @@ namespace golias {
 
                 if constexpr (std::is_same_v<T, int>) {
                     glUniform1i(location, v);
+                }else if constexpr (std::is_same_v<T, bool>) {
+                    glUniform1i(location, v ? 1 : 0);
                 } else if constexpr (std::is_same_v<T, float>) {
                     glUniform1f(location, v);
                 } else if constexpr (std::is_same_v<T, glm::vec2>) {

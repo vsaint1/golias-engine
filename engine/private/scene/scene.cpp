@@ -4,31 +4,29 @@ namespace golias {
     size_t Scene::next_type_id = 0;
 
     GameObject* Scene::CreateObject(const std::string& name, GameObject* pParent) {
-        auto obj = new GameObject();
+        auto obj          = new GameObject();
         std::string fname = std::format("{}_{}", name, next_type_id++);
         obj->SetName(fname);
+        obj->scene = this;
         SetParent(obj, pParent);
 
         spdlog::info("Scene::CreateObject Created GameObject with Name '{}'", fname);
         return obj;
     }
-      
+
     GameObject* Scene::CreateObject(GameObject* pParent) {
         return CreateObject("GameObject", pParent);
     }
-        
+
     const std::vector<std::unique_ptr<GameObject>>& Scene::GetGameObjects() const {
         return game_objects;
     }
 
     void Scene::Update(float deltaTime) {
-
         for (auto it = game_objects.begin(); it != game_objects.end();) {
             if ((*it)->IsAlive()) {
-
                 (*it)->Update(deltaTime);
                 ++it;
-
             } else {
                 it = game_objects.erase(it);
             }
@@ -140,5 +138,5 @@ namespace golias {
     GameObject* Scene::GetMainCamera() const {
         return main_camera;
     }
-    
+
 }; // namespace golias

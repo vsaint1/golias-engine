@@ -102,6 +102,17 @@ namespace golias {
                 }
             }
 
+            if (paramsObj.contains("bools")){
+                Json boolsArray = paramsObj["bools"];
+
+                for (const auto& boolEntry : boolsArray) {
+                    std::string name = boolEntry.value("name", "");
+                    bool value       = boolEntry.value("value", false);
+
+                    material->SetParameter(name, value);
+                }
+            }
+            
             if (paramsObj.contains("floats")) {
 
                 Json floatsArray = paramsObj["floats"];
