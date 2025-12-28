@@ -6,31 +6,7 @@
 
 namespace golias {
 
-    OpenglMesh::OpenglMesh(const std::string_view pPath) : Mesh(pPath) {
-        auto rd = Engine::GetInstance().GetRenderingDevice();
 
-        glGenVertexArrays(1, &VAO);
-        glBindVertexArray(VAO);
-
-        vertex_buffer = rd->CreateGPUBuffer(vertices_data.size() * sizeof(float), vertices_data.data(), EBufferUsageFlags::STATIC_DRAW,
-                                           EBufferTarget::ARRAY_BUFFER);
-        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.handle);
-
-        if (index_count > 0) {
-            index_buffer = rd->CreateGPUBuffer(indices_data.size() * sizeof(uint32_t), indices_data.data(), EBufferUsageFlags::STATIC_DRAW,
-                                              EBufferTarget::ELEMENT_ARRAY_BUFFER);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer.handle);
-        }
-
-        for (const auto& e : vertex_layout.elements) {
-            glEnableVertexAttribArray(e.location);
-            glVertexAttribPointer(e.location, e.components, ToGLDataType(e.type), e.normalized ? GL_TRUE : GL_FALSE, vertex_layout.stride,
-                                  reinterpret_cast<void*>(static_cast<uintptr_t>(e.offset)));
-        }
-
-        glBindVertexArray(0);
-   
-    }
 
     OpenglMesh::OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
         : Mesh(layout, vertices, indices) {

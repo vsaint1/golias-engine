@@ -31,7 +31,6 @@ namespace golias {
 
 
         std::shared_ptr<Mesh> CreateMesh() override;
-        std::shared_ptr<Mesh> CreateMeshFromFile(const std::string_view pPath) override;
         std::shared_ptr<Mesh> CreateMeshFromData(const VertexLayout& layout, const std::vector<float>& vertices,
                                                  const std::vector<uint32_t>& indices) override;
 

@@ -8,8 +8,6 @@ namespace golias {
     class Mesh {
     public:
 
-        Mesh(const std::string_view pPath);
-
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<Uint32>& indices);
 
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices);

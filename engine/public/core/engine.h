@@ -31,6 +31,10 @@ namespace golias {
         RenderingDevice* GetRenderingDevice();
 
         RenderingCanvas& GetRenderingCanvas();
+
+        TextureManager2D& GetTextureManager2D() {
+            return texture_manager_2d;
+        }
         
         FileSystem& GetFileSystem();
 
@@ -47,6 +51,7 @@ namespace golias {
     private:
         InputManager input_manager;
         FileSystem file_system;
+        TextureManager2D texture_manager_2d;
 
         std::unique_ptr<Application> application;
         Uint64 last_time_point = 0;

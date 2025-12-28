@@ -21,6 +21,9 @@ namespace golias {
         channels = static_cast<Uint32>(n);
 
         CreateInternal(data);
+
+        spdlog::info("OpenglTexture2D::OpenglTexture2D Loaded texture from file: {} (Handle: {}, Width: {}, Height: {}, Channels: {})", pFilePath,
+                     handle, width, height, channels);
     }
 
     OpenglTexture2D::OpenglTexture2D(int w, int h, int num_channels, Uint8* data) : Texture2D(w, h, num_channels) {
@@ -33,7 +36,6 @@ namespace golias {
 
         GLenum format = ToGLTextureFormatFromChannels(channels);
 
-
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -44,9 +46,6 @@ namespace golias {
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        spdlog::info("OpenglTexture2D::Create Loaded texture (Handle: {}, Width: {}, Height: {}, Channels: {})", handle, width, height,
-                     channels);
 
         stbi_image_free(data);
     }

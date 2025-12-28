@@ -115,11 +115,6 @@ namespace golias {
         return std::shared_ptr<OpenglMesh>();
     }
 
-    std::shared_ptr<Mesh> RenderingDeviceGLES3::CreateMeshFromFile(const std::string_view pPath) {
-
-
-        return std::make_shared<OpenglMesh>(pPath);
-    }
 
     void RenderingDeviceGLES3::Clear(glm::vec4 color) {
         glClearColor(color.r, color.g, color.b, color.a);

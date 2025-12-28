@@ -509,7 +509,7 @@ namespace golias {
 
     bool GameObject::SetParent(GameObject* pParent) {
 
-        if (scene) {
+        if (!scene) {
             return false;
         }
 
@@ -585,21 +585,20 @@ namespace golias {
         return glm::vec3(hom) / hom.w;
     }
 
-    // Forward declarations
     void ParseGLTFNode(cgltf_node* node, GameObject* parent, cgltf_data* data, const std::string& base_path);
     void ParseOBJ(const tinyobj::attrib_t& attrib, const std::vector<tinyobj::shape_t>& shapes,
                         const std::vector<tinyobj::material_t>& materials, GameObject* parent, const std::string& base_path);
 
-    // Helper to create mesh component from vertex data
-    void CreateMeshComponent(GameObject* gameObject, const VertexLayout& layout, const std::vector<float>& vertices,
+ 
+    void CreateMeshComponentGLTF(GameObject* gameObject, const VertexLayout& layout, const std::vector<float>& vertices,
                              const std::vector<Uint32>& indices, cgltf_material* gltf_material, const std::string& base_path) {
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetRenderingDevice();
 
-        // Create mesh from data
+      
         std::shared_ptr<Mesh> mesh = rd->CreateMeshFromData(layout, vertices, indices);
 
-        // Create material
+       
         std::shared_ptr<Material> material = std::make_shared<Material>();
         std::shared_ptr<Shader> shader     = rd->GetDefaultShader3D();
         material->SetShader(shader);
@@ -627,7 +626,7 @@ namespace golias {
             // Albedo texture
             if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image && pbr.base_color_texture.texture->image->uri) {
                 std::string tex_path = base_path + pbr.base_color_texture.texture->image->uri;
-                auto texture         = rd->CreateTextureFromFile(tex_path);
+                auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
                 if (texture) {
                     material->SetParameter("ALBEDO_TEXTURE", texture);
                     material->SetParameter("HAS_ALBEDO", 1);
@@ -641,7 +640,7 @@ namespace golias {
             if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image
                 && pbr.metallic_roughness_texture.texture->image->uri) {
                 std::string tex_path = base_path + pbr.metallic_roughness_texture.texture->image->uri;
-                auto texture         = rd->CreateTextureFromFile(tex_path);
+                auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
                 if (texture) {
                     // In GLTF, metallic is in B channel, roughness is in G channel
                     material->SetParameter("METALLIC_TEXTURE", texture);
@@ -656,7 +655,7 @@ namespace golias {
         if (gltf_material && gltf_material->normal_texture.texture && gltf_material->normal_texture.texture->image
             && gltf_material->normal_texture.texture->image->uri) {
             std::string tex_path = base_path + gltf_material->normal_texture.texture->image->uri;
-            auto texture         = rd->CreateTextureFromFile(tex_path);
+            auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
             if (texture) {
                 material->SetParameter("NORMAL_TEXTURE", texture);
                 material->SetParameter("HAS_NORMAL", 1);
@@ -667,7 +666,8 @@ namespace golias {
         if (gltf_material && gltf_material->occlusion_texture.texture && gltf_material->occlusion_texture.texture->image
             && gltf_material->occlusion_texture.texture->image->uri) {
             std::string tex_path = base_path + gltf_material->occlusion_texture.texture->image->uri;
-            auto texture         = rd->CreateTextureFromFile(tex_path);
+            auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
+
             if (texture) {
                 material->SetParameter("AO_TEXTURE", texture);
                 material->SetParameter("HAS_AO", 1);
@@ -681,7 +681,8 @@ namespace golias {
             if (gltf_material->emissive_texture.texture && gltf_material->emissive_texture.texture->image
                 && gltf_material->emissive_texture.texture->image->uri) {
                 std::string tex_path = base_path + gltf_material->emissive_texture.texture->image->uri;
-                auto texture         = rd->CreateTextureFromFile(tex_path);
+                auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
+
                 if (texture) {
                     material->SetParameter("EMISSIVE_TEXTURE", texture);
                     material->SetParameter("HAS_EMISSIVE", 1);
@@ -703,10 +704,10 @@ namespace golias {
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetRenderingDevice();
 
-        // Create mesh from data
+       
         std::shared_ptr<Mesh> mesh = rd->CreateMeshFromData(layout, vertices, indices);
 
-        // Create material
+ 
         std::shared_ptr<Material> material = std::make_shared<Material>();
         std::shared_ptr<Shader> shader     = rd->GetDefaultShader3D();
         material->SetShader(shader);
@@ -728,7 +729,8 @@ namespace golias {
             // Diffuse texture
             if (!obj_material->diffuse_texname.empty()) {
                 std::string tex_path = base_path + obj_material->diffuse_texname;
-                auto texture         = rd->CreateTextureFromFile(tex_path);
+                auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
+
                 if (texture) {
                     material->SetParameter("ALBEDO_TEXTURE", texture);
                     material->SetParameter("HAS_ALBEDO", 1);
@@ -738,7 +740,7 @@ namespace golias {
             // Normal map
             if (!obj_material->normal_texname.empty()) {
                 std::string tex_path = base_path + obj_material->normal_texname;
-                auto texture         = rd->CreateTextureFromFile(tex_path);
+                auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
                 if (texture) {
                     material->SetParameter("NORMAL_TEXTURE", texture);
                     material->SetParameter("HAS_NORMAL", 1);
@@ -752,7 +754,7 @@ namespace golias {
         material->SetParameter("BASE_COLOR", base_color);
         material->SetParameter("METALLIC_FACTOR", 0.0f);
 
-        // Add MeshComponent
+       
         gameObject->AddComponent(new MeshComponent(mesh, material));
     }
 
@@ -894,7 +896,7 @@ namespace golias {
                     ExtractIndexData(prim->indices, indices, index_type);
                 }
 
-                CreateMeshComponent(nodeObject, layout, vertices, indices, prim->material, base_path);
+                CreateMeshComponentGLTF(nodeObject, layout, vertices, indices, prim->material, base_path);
             }
         }
 

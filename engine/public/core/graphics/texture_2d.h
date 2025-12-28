@@ -1,6 +1,8 @@
 #pragma once
 
 #include "structs.h"
+#include <memory>
+#include <unordered_map>
 
 namespace golias {
 
@@ -49,5 +51,12 @@ namespace golias {
         }
     };
 
-   
+    class TextureManager2D {
+    public:
+        std::shared_ptr<Texture2D> EnsureTexture(const std::string_view pFilePath);
+
+    private:
+        std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures;
+    };
+
 } // namespace golias

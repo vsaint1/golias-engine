@@ -8,24 +8,6 @@
 namespace golias {
 
 
-
-    Mesh::Mesh(const std::string_view path) {
-
-        // std::string extension = FileSystem::GetFileExtension(path);
-
-        // if (extension == "gltf" || extension == "glb") {
-        //     if (!LoadGLTF(path, vertex_layout, vertices_data, indices_data, vertex_count, index_count, index_type)) {
-        //         spdlog::error("Mesh::Mesh Failed to load model: {} ", path);
-        //     }
-        // } else if (extension == "obj") {
-        //     if (!LoadOBJ(path, vertex_layout, vertices_data, indices_data, vertex_count, index_count, index_type)) {
-        //         spdlog::error("Mesh::Mesh Failed to load model: {} ", path);
-        //     }
-        // } else {
-        //     spdlog::error("Mesh::Mesh Unsupported Model format: {} ", path);
-        // }
-    }
-
     Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& v, const std::vector<Uint32>& i)
         : vertex_layout(layout), vertices_data(v), indices_data(i) {
         size_t floats_per_vertex = layout.stride / sizeof(float);

@@ -98,7 +98,6 @@ namespace golias {
                         spdlog::error("Material::Load: Failed to load Texture2D '{}' for Material: {}", value, pPath);
                     }
 
-                    spdlog::info("Material::Load: Loaded Texture2D '{}' for Material: {}", value, pPath);
                 }
             }
 
