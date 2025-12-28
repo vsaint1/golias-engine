@@ -39,9 +39,15 @@ namespace golias {
         return -1;
     }
 
-    void OpenglShader::SetUniform(const std::string_view pName, UniformValue& value) {
+    void OpenglShader::SetUniform(const std::string_view pName, const UniformValue& value) {
 
         GLint location = GetUniformLocation(pName);
+
+        if (location == -1) {
+            // spdlog::warn("OpenglShader::SetUniform: Uniform '{}' not found in shader.", pName);
+            return;
+        }
+
 
         std::visit(
             [&](auto&& v) {

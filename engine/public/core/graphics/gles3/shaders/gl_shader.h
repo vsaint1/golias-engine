@@ -12,7 +12,7 @@ namespace golias {
         void Unbind() override;
 
         int32_t GetUniformLocation(const std::string_view pName) override;
-        void SetUniform(const std::string_view pName, UniformValue& value) override;
+        void SetUniform(const std::string_view pName, const UniformValue& value) override;
 
 
     private:

@@ -27,6 +27,7 @@ namespace golias {
         virtual void BindMesh(Mesh* mesh)             = 0;
         virtual void BindMaterial(Material* material) = 0;
 
+        virtual std::shared_ptr<Shader> GetDefaultShader3D() const = 0;
         virtual std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) = 0;
         virtual std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) = 0;
 

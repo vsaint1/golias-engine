@@ -24,7 +24,7 @@ namespace golias {
 
         virtual int32_t GetUniformLocation(const std::string_view pName) = 0;
 
-        virtual void SetUniform(const std::string_view pName, UniformValue& value) = 0;
+        virtual void SetUniform(const std::string_view pName, const UniformValue& value) = 0;
 
         int32_t GetNativeHandle() const;
 
@@ -32,10 +32,8 @@ namespace golias {
 
     protected:
         int32_t handle = -1;
-
         std::unordered_map<std::string, uint32_t> uniform_location_cache;
 
         int current_texture_unit = 0;
-
     };
 }; // namespace golias

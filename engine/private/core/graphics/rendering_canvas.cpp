@@ -7,19 +7,21 @@ namespace golias {
 
 
     void RenderingCanvas::Draw(RenderingDevice* rd, const CameraData& camera) {
-        for (const auto& command : command_queue) {
 
+        for (const auto& command : command_queue) {
+            
+            
             rd->BindMaterial(command.material);
-            command.material->SetParameter("MODEL_MATRIX", command.modelMatrix);
-            command.material->SetParameter("VIEW_MATRIX", camera.viewMatrix);
-            command.material->SetParameter("PROJECTION_MATRIX", camera.projectionMatrix);
+
+            auto shader = command.material->GetShader();
+            
+            shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+            shader->SetUniform("VIEW_MATRIX", camera.viewMatrix);
+            shader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
 
             rd->BindMesh(command.mesh);
-
             rd->DrawMesh(command.mesh);
-           
         }
-
         command_queue.clear();
     }
 }; // namespace golias

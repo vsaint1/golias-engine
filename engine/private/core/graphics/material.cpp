@@ -72,6 +72,9 @@ namespace golias {
                 return nullptr;
             }
 
+        } else {
+            spdlog::info("Material::Load: No shader specified in Material: {}, using default shader.", pPath);
+            material->SetShader(rd->GetDefaultShader3D());
         }
 
 

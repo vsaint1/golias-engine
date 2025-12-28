@@ -21,6 +21,8 @@ namespace golias {
         void BindMesh(Mesh* mesh);
         void BindMaterial(Material* material);
 
+        std::shared_ptr<Shader> GetDefaultShader3D() const;
+        
         std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) override;
         std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) override;
 
@@ -42,5 +44,9 @@ namespace golias {
 
     private:
         SDL_GLContext gl_context = nullptr;
+
+        std::shared_ptr<Shader> default_shader_3d = nullptr;
+        bool CreateDefaultShaders() ;
+
     };
 }; // namespace golias

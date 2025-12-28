@@ -66,9 +66,14 @@ struct Buffer {
 
 
 enum class EDataType : uint32_t {
-    FLOAT = 0x1, // GL_FLOAT
-    INT   = 0x2, // GL_INT
-    SHORT = 0x3 // GL_SHORT
+    BYTE,
+    UNSIGNED_BYTE,
+    SHORT,
+    UNSIGNED_SHORT,
+    INT,
+    UNSIGNED_INT,
+    FLOAT
+
 };
 
 namespace golias {
@@ -79,6 +84,10 @@ namespace golias {
         EDataType type; // GL_FLOAT, GL_INT, etc.
         bool normalized; // GL_TRUE / GL_FALSE
         Uint32 offset; // Byte offset in vertex
+
+        static constexpr int POSITION_INDEX = 0;
+        static constexpr int COLOR_INDEX   = 1;
+        static constexpr int TEXCOORD_INDEX = 2; 
     };
 
     struct VertexLayout {
