@@ -21,7 +21,7 @@ BasedOnStyle:  LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 # AlignAfterOpenBracket: DontAlign
-# AlignArrayOfStructures: None
+AlignArrayOfStructures: Left
 # AlignConsecutiveAssignments:
 #   Enabled:         false
 #   AcrossEmptyLines: false
@@ -86,8 +86,8 @@ AllowShortFunctionsOnASingleLine: None
 AlwaysBreakTemplateDeclarations: Yes
 # AttributeMacros:
 #   - __capability
-# BinPackArguments: true
-# BinPackParameters: true
+BinPackArguments: false
+BinPackParameters: false
 # BitFieldColonSpacing: Both
 # BraceWrapping:
 #   AfterCaseLabel:  false
