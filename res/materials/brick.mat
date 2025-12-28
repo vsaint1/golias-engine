@@ -15,11 +15,11 @@
         "floats": [],
         "vectors": [
             {
-                "name": "DUMMY",
+                "name": "BASE_COLOR",
                 "value": [
                     1.0,
-                    0.0,
-                    0.0,
+                    1.0,
+                    1.0,
                     1.0
                 ],
                 "type": "vec4"

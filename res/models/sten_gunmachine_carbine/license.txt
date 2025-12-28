@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sten Gun(Machine Carbine)
+* source:	https://sketchfab.com/3d-models/sten-gunmachine-carbine-f61b01edd0e74cd8bd6217a3b2e6afb4
+* author:	BadassCreeper (https://sketchfab.com/badasscreeper)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sten Gun(Machine Carbine)" (https://sketchfab.com/3d-models/sten-gunmachine-carbine-f61b01edd0e74cd8bd6217a3b2e6afb4) by BadassCreeper (https://sketchfab.com/badasscreeper) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
