@@ -1,7 +1,6 @@
 #pragma once
 
 #include "game_object.h"
-
 #include <spdlog/spdlog.h>
 
 
@@ -15,7 +14,7 @@ namespace golias {
 
         GameObject* CreateObject(const std::string& name, GameObject* pParent = nullptr);
         GameObject* CreateObject(GameObject* pParent = nullptr);
-        
+
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<GameObject, T>>>
         T* CreateObject(const std::string& name, GameObject* pParent = nullptr);
 
@@ -35,12 +34,14 @@ namespace golias {
         GameObject* main_camera = nullptr;
         static size_t next_type_id;
 
+        std::string MakeUniqueName(const std::string& baseName);
     };
 
     template <typename T, typename>
     T* Scene::CreateObject(const std::string& name, GameObject* pParent) {
         auto obj = new T();
-        std::string fname = std::format("{}_{}", name, next_type_id++);
+
+        std::string fname = MakeUniqueName(name);
 
         obj->SetName(fname);
         obj->scene = this;

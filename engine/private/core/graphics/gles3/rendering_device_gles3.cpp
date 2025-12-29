@@ -91,7 +91,7 @@ namespace golias {
 
     std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) {
 
-        return std::make_shared<OpenglTexture2D>(w, h, 3, const_cast<Uint8*>(data));
+        return std::make_shared<OpenglTexture2D>(w, h, format, const_cast<Uint8*>(data));
     }
 
     std::shared_ptr<Shader> RenderingDeviceGLES3::CreateShaderFromSource(const std::string& vertexSource,
@@ -191,10 +191,12 @@ void main() {
 
 const std::string fragmentSource = R"(
 #version 330 core
+
 in vec3 v_color;
 in vec2 v_texcoord;
 in vec3 v_normal;
 in vec3 v_frag_pos;
+
 out vec4 COLOR;
 
 // PBR Textures
@@ -205,81 +207,82 @@ uniform sampler2D NORMAL_TEXTURE;
 uniform sampler2D AO_TEXTURE;
 uniform sampler2D EMISSIVE_TEXTURE;
 
-// Texture flags (0 = not present, 1 = present) - WITH DEFAULTS
-uniform int HAS_ALBEDO = 0;
-uniform int HAS_METALLIC = 0;
-uniform int HAS_ROUGHNESS = 0;
-uniform int HAS_NORMAL = 0;
-uniform int HAS_AO = 0;
-uniform int HAS_EMISSIVE = 0;
+// Texture flags (0 = not present, 1 = present)
+uniform int HAS_ALBEDO;
+uniform int HAS_METALLIC;
+uniform int HAS_ROUGHNESS;
+uniform int HAS_NORMAL;
+uniform int HAS_AO;
+uniform int HAS_EMISSIVE;
 
-// Material properties - WITH DEFAULTS
-uniform vec4 BASE_COLOR = vec4(1.0, 1.0, 1.0, 1.0);
-uniform float METALLIC_FACTOR = 0.0;
-uniform float ROUGHNESS_FACTOR = 1.0;
-uniform vec3 EMISSIVE_FACTOR = vec3(0.0);
+// Material properties
+uniform vec4  BASE_COLOR;
+uniform float METALLIC_FACTOR;
+uniform float ROUGHNESS_FACTOR;
+uniform vec3  EMISSIVE_FACTOR;
 
-// Lighting - WITH DEFAULTS
-uniform vec3 VIEW_POSITION = vec3(0.0, 0.0, 5.0);
-uniform vec3 LIGHT_POSITION = vec3(50.0, 100.0, 80.0);
-uniform vec3 LIGHT_COLOR = vec3(1.0, 0.95, 0.9);
-uniform float AMBIENT_STRENGTH = 0.25;
-uniform float SPECULAR_STRENGTH = 0.4;
-uniform float SHININESS = 32.0;
+uniform vec3 VIEW_POSITION;  
+uniform vec3 LIGHT_POSITION;
+uniform vec3 LIGHT_COLOR;
+uniform float AMBIENT_STRENGTH;
+uniform float SPECULAR_STRENGTH;
+uniform float SHININESS;
 
-void main() {
-    // Sample albedo texture or use base color
-    vec4 albedo = (HAS_ALBEDO == 1) ? texture(ALBEDO_TEXTURE, v_texcoord) : BASE_COLOR;
-    albedo.rgb *= v_color; // Multiply by vertex color
-    
-    // Sample metallic
-    float metallic = (HAS_METALLIC == 1) ? texture(METALLIC_TEXTURE, v_texcoord).b : METALLIC_FACTOR;
-    
-    // Sample roughness (G channel in GLTF metallic-roughness texture)
+void main()
+{
+    // --- Material sampling ---
+    vec4 albedo = (HAS_ALBEDO == 1)
+        ? texture(ALBEDO_TEXTURE, v_texcoord)
+        : BASE_COLOR;
+
+    albedo.rgb *= v_color;
+
+    float metallic  = (HAS_METALLIC  == 1) ? texture(METALLIC_TEXTURE,  v_texcoord).b : METALLIC_FACTOR;
     float roughness = (HAS_ROUGHNESS == 1) ? texture(ROUGHNESS_TEXTURE, v_texcoord).g : ROUGHNESS_FACTOR;
-    
-    // Sample AO (Ambient Occlusion)
-    float ao = (HAS_AO == 1) ? texture(AO_TEXTURE, v_texcoord).r : 1.0;
-    
-    // Sample emissive
-    vec3 emissive = (HAS_EMISSIVE == 1) ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * EMISSIVE_FACTOR : vec3(0.0);
-    
-    // Get normal
+    float ao        = (HAS_AO        == 1) ? texture(AO_TEXTURE,        v_texcoord).r : 1.0;
+
+    vec3 emissive = (HAS_EMISSIVE == 1)
+        ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * EMISSIVE_FACTOR
+        : vec3(0.0);
+
+    // --- Normal ---
     vec3 norm = normalize(v_normal);
+
     if (HAS_NORMAL == 1) {
         vec3 tangentNormal = texture(NORMAL_TEXTURE, v_texcoord).xyz * 2.0 - 1.0;
-        // TODO: Apply TBN matrix here
-        norm = normalize(v_normal);
+        // TODO: apply TBN matrix
+        norm = normalize(v_normal); // fallback for now
     }
-    
-    // Base color
+
     vec3 baseColor = albedo.rgb;
-    
-    // Ambient lighting (affected by AO)
-    vec3 ambient = AMBIENT_STRENGTH * LIGHT_COLOR * ao;
-    
-    // Diffuse lighting
+
+    // --- Lighting ---
     vec3 lightDir = normalize(LIGHT_POSITION - v_frag_pos);
+    vec3 viewDir  = normalize(VIEW_POSITION - v_frag_pos);
+
+    // Ambient (AO-affected)
+    vec3 ambient = AMBIENT_STRENGTH * LIGHT_COLOR * ao;
+
+    // Diffuse
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * LIGHT_COLOR;
-    
-    // Specular lighting (Blinn-Phong) - affected by roughness
-    vec3 viewDir = normalize(VIEW_POSITION - v_frag_pos);
+
+    // Specular (Blinn-Phong, roughness-weighted)
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float adjustedShininess = max(SHININESS * (1.0 - roughness), 1.0); // Clamp to avoid pow(x,0)
+    float adjustedShininess = max(SHININESS * (1.0 - roughness), 1.0);
     float spec = pow(max(dot(norm, halfwayDir), 0.0), adjustedShininess);
     vec3 specular = SPECULAR_STRENGTH * spec * LIGHT_COLOR;
-    
-    // Metallic surfaces have different specular behavior
+
+    // Metallic influence
     vec3 F0 = mix(vec3(0.04), baseColor, metallic);
     specular = mix(specular, specular * baseColor, metallic);
-    
-    // Combine lighting
+
+    // Final color
     vec3 result = (ambient + diffuse + specular) * baseColor + emissive;
-    
-    // Output final color with original alpha
+
     COLOR = vec4(result, albedo.a);
 }
+
 )";
 
         default_shader_3d = std::make_shared<OpenglShader>(vertexSource, fragmentSource);

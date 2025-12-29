@@ -1,7 +1,7 @@
 #pragma once
 
 #include "structs.h"
-
+#include <memory>
 
 namespace golias {
 
@@ -12,6 +12,7 @@ namespace golias {
 
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices);
 
+        static std::shared_ptr<Mesh> Box();
 
         virtual void Bind() = 0;
 
@@ -46,8 +47,8 @@ protected:
     size_t vertex_count = 0;
     size_t index_count  = 0;
 
-    std::vector<float> vertices_data;
-    std::vector<Uint32> indices_data;
+    // std::vector<float> vertices_data;
+    // std::vector<Uint32> indices_data;
     EDataType index_type = EDataType::UNSIGNED_INT;
 
     

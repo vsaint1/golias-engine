@@ -17,6 +17,8 @@ namespace golias {
         virtual void Update(float deltaTime);
         virtual ~GameObject() = default;
 
+        bool IsActive() const;
+        void SetActive(bool active);
 
         const std::string& GetName() const;
         void SetName(const std::string& newName);
@@ -26,6 +28,8 @@ namespace golias {
 
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<Component, T>>>
         T* GetComponent() const;
+
+        GameObject* FindChildByName(const std::string_view pName) const;
 
         void AddComponent(Component* pComponent);
 
@@ -69,6 +73,8 @@ namespace golias {
         glm::vec3 position = glm::vec3(0.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         glm::vec3 scale    = glm::vec3(1.0f);
+
+        bool is_active = true;
 
     };
 

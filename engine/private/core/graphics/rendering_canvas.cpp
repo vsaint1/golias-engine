@@ -21,8 +21,8 @@ namespace golias {
             shader->SetUniform("LIGHT_POSITION", glm::vec3(50.0f, 100.0f, 80.0f));
             shader->SetUniform("LIGHT_COLOR", glm::vec3(1.0f, 0.95f, 0.9f)); 
             shader->SetUniform("AMBIENT_STRENGTH", 0.25f); 
-            shader->SetUniform("SPECULAR_STRENGTH", 0.4f);
-            shader->SetUniform("SHININESS", 32.0f);
+            // shader->SetUniform("SPECULAR_STRENGTH", 0.4f);
+            // shader->SetUniform("SHININESS", 32.0f);
 
             rd->BindMesh(command.mesh);
             rd->DrawMesh(command.mesh);

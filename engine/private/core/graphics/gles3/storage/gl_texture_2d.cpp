@@ -26,7 +26,27 @@ namespace golias {
                      handle, width, height, channels);
     }
 
-    OpenglTexture2D::OpenglTexture2D(int w, int h, int num_channels, Uint8* data) : Texture2D(w, h, num_channels) {
+    OpenglTexture2D::OpenglTexture2D(int w, int h, ETextureFormat fmt, Uint8* data) : Texture2D(w, h, fmt, data) {
+        
+        switch(fmt){
+            case ETextureFormat::RED:
+                channels = 1;
+                break;
+            case ETextureFormat::RG:
+                channels = 2;
+                break;
+            case ETextureFormat::RGB:
+                channels = 3;
+                break;
+            case ETextureFormat::RGBA:
+                channels = 4;
+                break;
+            default:
+                channels = 4;
+                spdlog::warn("OpenglTexture2D::OpenglTexture2D Unknown ETextureFormat, defaulting to 4 channels (RGBA).");
+                break;
+        }
+
         CreateInternal(data);
     }
 
@@ -34,9 +54,10 @@ namespace golias {
         glGenTextures(1, &handle);
         glBindTexture(GL_TEXTURE_2D, handle);
 
-        GLenum format = ToGLTextureFormatFromChannels(channels);
+    
+        GLenum gl_fmt = ToGLTextureFormatFromChannels(static_cast<int>(channels));
 
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, gl_fmt, width, height, 0, gl_fmt, GL_UNSIGNED_BYTE, data);
 
         glGenerateMipmap(GL_TEXTURE_2D);
 

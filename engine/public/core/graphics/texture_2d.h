@@ -47,13 +47,13 @@ namespace golias {
         Texture2D(const std::string_view pFilePath) : file_path(pFilePath) {
         }
 
-        Texture2D(int w, int h, int num_channels) : width(w), height(h), channels(num_channels) {
-        }
+        Texture2D(int w, int h, ETextureFormat fmt, Uint8* data) : width(w), height(h), format(fmt){}
     };
 
     class TextureManager2D {
     public:
         std::shared_ptr<Texture2D> EnsureTexture(const std::string_view pFilePath);
+        std::shared_ptr<Texture2D> EnsureTexture(const std::string_view pFilePath,int width, int height, ETextureFormat format, const Uint8* data);
 
     private:
         std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures;

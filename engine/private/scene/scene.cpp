@@ -1,11 +1,13 @@
 #include "scene/scene.h"
 
+#include <SDL3/SDL_stdinc.h>
+
 namespace golias {
     size_t Scene::next_type_id = 0;
 
     GameObject* Scene::CreateObject(const std::string& name, GameObject* pParent) {
         auto obj          = new GameObject();
-        std::string fname = std::format("{}_{}", name, next_type_id++);
+        std::string fname = MakeUniqueName(name);
         obj->SetName(fname);
         obj->scene = this;
         SetParent(obj, pParent);
@@ -45,7 +47,8 @@ namespace golias {
 
         if (pParent == nullptr) {
             if (currentParent != nullptr) {
-                auto it = std::find_if(currentParent->children.begin(), currentParent->children.end(),
+                auto it = std::find_if(currentParent->children.begin(),
+                                       currentParent->children.end(),
                                        [pGameObject](const std::unique_ptr<GameObject>& el) { return el.get() == pGameObject; });
 
                 if (it != currentParent->children.end()) {
@@ -59,8 +62,9 @@ namespace golias {
             // 1. The object is in the scene root
             // 2. The object has been just created
             else {
-                auto it = std::find_if(game_objects.begin(), game_objects.end(),
-                                       [pGameObject](const std::unique_ptr<GameObject>& el) { return el.get() == pGameObject; });
+                auto it = std::find_if(game_objects.begin(), game_objects.end(), [pGameObject](const std::unique_ptr<GameObject>& el) {
+                    return el.get() == pGameObject;
+                });
 
                 if (it == game_objects.end()) {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
@@ -72,7 +76,8 @@ namespace golias {
         // We are trying to add it as a child of another object
         else {
             if (currentParent != nullptr) {
-                auto it = std::find_if(currentParent->children.begin(), currentParent->children.end(),
+                auto it = std::find_if(currentParent->children.begin(),
+                                       currentParent->children.end(),
                                        [pGameObject](const std::unique_ptr<GameObject>& el) { return el.get() == pGameObject; });
 
                 if (it != currentParent->children.end()) {
@@ -98,8 +103,9 @@ namespace golias {
             // 1. The object is in the scene root
             // 2. The object has been just created
             else {
-                auto it = std::find_if(game_objects.begin(), game_objects.end(),
-                                       [pGameObject](const std::unique_ptr<GameObject>& el) { return el.get() == pGameObject; });
+                auto it = std::find_if(game_objects.begin(), game_objects.end(), [pGameObject](const std::unique_ptr<GameObject>& el) {
+                    return el.get() == pGameObject;
+                });
 
                 // The object has been hust created
                 if (it == game_objects.end()) {
@@ -138,5 +144,34 @@ namespace golias {
     GameObject* Scene::GetMainCamera() const {
         return main_camera;
     }
+
+    std::string Scene::MakeUniqueName(const std::string& baseName) {
+
+        size_t count = 0;
+
+        for (const auto& obj : game_objects) {
+            const std::string& existing = obj->GetName();
+
+            if (existing == baseName) {
+
+                count = SDL_max(count, size_t(1));
+            } else if (existing.starts_with(baseName + "_")) {
+
+                auto suffix = existing.substr(baseName.size() + 1);
+                if (std::all_of(suffix.begin(), suffix.end(), ::isdigit)) {
+                    count = SDL_max(count, std::stoul(suffix) + 1);
+                }
+            }
+        }
+
+
+        if (count == 0) {
+            return baseName;
+        }
+
+
+        return std::format("{}_{}", baseName, count);
+    }
+
 
 }; // namespace golias

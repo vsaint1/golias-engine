@@ -1,4 +1,5 @@
 #include "core/graphics/texture_2d.h"
+
 #include "core/engine.h"
 
 namespace golias {
@@ -34,7 +35,7 @@ namespace golias {
 
     std::shared_ptr<Texture2D> TextureManager2D::EnsureTexture(const std::string_view pFilePath) {
         auto it = textures.find(std::string(pFilePath));
-        
+
         if (it != textures.end()) {
             return it->second;
         }
@@ -49,4 +50,24 @@ namespace golias {
 
         return texture;
     }
+
+    std::shared_ptr<Texture2D> TextureManager2D::EnsureTexture(const std::string_view pFilePath,int width, int height, ETextureFormat format, const Uint8* data) {
+
+        auto it = textures.find(std::string(pFilePath));
+
+        if (it != textures.end()) {
+            return it->second;
+        }
+
+        auto rd = golias::Engine::GetInstance().GetRenderingDevice();
+
+        auto texture = rd->CreateTextureFromData(width, height, format, data);
+
+        if (texture) {
+            textures[std::string(pFilePath)] = texture;
+        }
+
+        return texture;
+    }
+
 } // namespace golias
