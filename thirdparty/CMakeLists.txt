@@ -28,9 +28,16 @@ add_subdirectory(json)
 add_subdirectory(cgltf)
 add_subdirectory(tinyobjloader)
 
+
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXTRAS OFF)
+add_subdirectory(bullet3 EXCLUDE_FROM_ALL)
+
 add_library(thirdparty INTERFACE)
 
-target_include_directories(thirdparty INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME}  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR}/bullet3/src)
 
 target_link_libraries(${PROJECT_NAME}  INTERFACE
         stb_image
@@ -41,4 +48,7 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         json
         cgltf
         tinyobjloader
+        BulletDynamics
+        BulletCollision
+        LinearMath
 )
