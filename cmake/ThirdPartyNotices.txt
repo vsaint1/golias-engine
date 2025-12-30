@@ -14,3 +14,29 @@ https://glm.g-truc.net/
 stb_image
 License: Public Domain / MIT
 https://github.com/nothings/stb
+
+
+------------------------------------------------------------
+Bullet Physics
+License: Zlib
+https://github.com/bulletphysics/bullet3
+
+------------------------------------------------------------
+cgltf
+License: Public Domain / MIT
+https://github.com/jkuhlmann/cgltf
+
+------------------------------------------------------------
+tinyobjloader
+License: Public Domain / MIT
+https://github.com/tinyobjloader/tinyobjloader
+
+------------------------------------------------------------
+nlohmann-json
+License: Public Domain / MIT
+https://github.com/nlohmann/json 
+
+------------------------------------------------------------
+spdlog
+License: Public Domain / MIT
+https://github.com/gabime/spdlog
