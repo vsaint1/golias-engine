@@ -41,7 +41,7 @@ namespace golias {
         }
 
 
-        // SDL_SetWindowRelativeMouseMode(window, true);
+        SDL_SetWindowRelativeMouseMode(window, true);
 
         if (!create_renderer_internal(deviceType, &rendering_device)) {
             spdlog::error("Engine::Initialize Failed to create Rendering Device.");
