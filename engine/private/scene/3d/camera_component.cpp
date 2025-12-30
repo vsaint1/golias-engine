@@ -6,6 +6,9 @@
 #include <glm/gtx/string_cast.hpp>
 namespace golias {
 
+    void CameraComponent::Start() {
+    }
+    
     void CameraComponent::Update(float deltaTime) {
     }
 
@@ -15,7 +18,7 @@ namespace golias {
         mat = glm::mat4_cast(GetOwner()->GetRotation());
         mat = glm::translate(mat, GetOwner()->GetPosition());
 
-        mat[3] = glm::vec4(GetOwner()->GetPosition(), 1.0f); 
+        mat[3] = glm::vec4(GetOwner()->GetPosition(), 1.0f);
 
         if (GetOwner()->GetParent()) {
             mat = GetOwner()->GetParent()->GetWorldTransform() * mat;

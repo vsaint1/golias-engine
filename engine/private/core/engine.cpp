@@ -53,6 +53,11 @@ namespace golias {
             return false;
         }
 
+        if (!physics_manager.Initialize()) {
+            spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
+            return false;
+        }
+
         if (application) {
             if (!application->Initialize()) {
                 spdlog::error("Engine::Initialize Failed to initialize the Application.");
@@ -98,17 +103,18 @@ namespace golias {
             float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
             last_time_point           = current_time_point;
 
+            physics_manager.StepSimulation(delta_time);
             application->Update(delta_time);
 
             CameraData camera_data;
             if (scene && scene->GetMainCamera()) {
-                camera_data.position = scene->GetMainCamera()->GetWorldPosition();
+                camera_data.position  = scene->GetMainCamera()->GetWorldPosition();
                 auto camera_component = scene->GetMainCamera()->GetComponent<CameraComponent>();
-                
+
                 if (camera_component) {
                     camera_data.viewMatrix = camera_component->GetViewMatrix();
 
-                    float aspect            = static_cast<float>(_width) / static_cast<float>(_height);
+                    float aspect                 = static_cast<float>(_width) / static_cast<float>(_height);
                     camera_data.projectionMatrix = camera_component->GetProjectionMatrix(aspect);
                 }
             }
@@ -117,6 +123,8 @@ namespace golias {
 
             rendering_canvas.Draw(rendering_device, camera_data);
             rendering_device->Present();
+
+            SDL_Delay(16); // HACK for development purposes
         }
     }
 
@@ -168,5 +176,14 @@ namespace golias {
 
     void Engine::SetScene(Scene* pScene) {
         scene.reset(pScene);
+    }
+
+
+    TextureManager2D& Engine::GetTextureManager2D() {
+        return texture_manager_2d;
+    }
+
+    PhysicsManager& Engine::GetPhysicsManager() {
+        return physics_manager;
     }
 } // namespace golias

@@ -5,6 +5,10 @@
 
 namespace golias {
 
+    void FirstPersonControllerComponent::Start() {
+       
+    }
+
     void FirstPersonControllerComponent::Update(float deltaTime) {
         auto& input   = Engine::GetInstance().GetInputManager();
         auto rotation = GetOwner()->GetRotation();

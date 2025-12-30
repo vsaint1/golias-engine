@@ -4,6 +4,10 @@
 
 namespace golias {
 
+    void AnimationComponent::Start() {
+        BuildBindings();
+    }
+
     void AnimationComponent::Update(float deltaTime) {
         if (!animation_clip) {
             return;
@@ -52,7 +56,7 @@ namespace golias {
 
     void AnimationComponent::SetClip(AnimationClip* clip) {
         animation_clip = clip;
-        BuildBindings();
+        // BuildBindings();
     }
 
     void AnimationComponent::RegisterClip(const std::string& name, const std::shared_ptr<AnimationClip>& clip) {

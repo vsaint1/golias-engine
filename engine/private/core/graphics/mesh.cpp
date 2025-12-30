@@ -22,54 +22,56 @@ namespace golias {
         index_type               = EDataType::UNSIGNED_INT;
     }
 
-    std::shared_ptr<Mesh> Mesh::Box() {
+    
+    std::shared_ptr<Mesh> Mesh::CreateBox(const glm::vec3& extents) {
+        const auto half_extents = extents * 0.5f;
 
         // pos(x,y,z) | color(r,g,b) | uv(u,v)
         std::vector<float> box_vertices = {
             // ---------- Front ----------
-            -0.5f,-0.5f, 0.5f, 1,1,1, 0,0,
-            0.5f,-0.5f, 0.5f, 1,1,1, 1,0,
-            0.5f, 0.5f, 0.5f, 1,1,1, 1,1,
-            -0.5f, 0.5f, 0.5f, 1,1,1, 0,1,
+            -half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 0,0,
+            half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 1,0,
+            half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 1,1,
+            -half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 0,1,
 
             // ---------- Back ----------
-            -0.5f,-0.5f,-0.5f, 1,1,1, 1,0,
-            0.5f,-0.5f,-0.5f, 1,1,1, 0,0,
-            0.5f, 0.5f,-0.5f, 1,1,1, 0,1,
-            -0.5f, 0.5f,-0.5f, 1,1,1, 1,1,
+            -half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 1,0,
+            half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 0,0,
+            half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 0,1,
+            -half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 1,1,
 
             // ---------- Left ----------
-            -0.5f,-0.5f,-0.5f, 1,1,1, 0,0,
-            -0.5f,-0.5f, 0.5f, 1,1,1, 1,0,
-            -0.5f, 0.5f, 0.5f, 1,1,1, 1,1,
-            -0.5f, 0.5f,-0.5f, 1,1,1, 0,1,
+            -half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 0,0,
+            -half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 1,0,
+            -half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 1,1,
+            -half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 0,1,
 
             // ---------- Right ----------
-            0.5f,-0.5f,-0.5f, 1,1,1, 1,0,
-            0.5f,-0.5f, 0.5f, 1,1,1, 0,0,
-            0.5f, 0.5f, 0.5f, 1,1,1, 0,1,
-            0.5f, 0.5f,-0.5f, 1,1,1, 1,1,
+            half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 1,0,
+            half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 0,0,
+            half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 0,1,
+            half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 1,1,
 
             // ---------- Top ----------
-            -0.5f, 0.5f,-0.5f, 1,1,1, 0,1,
-            0.5f, 0.5f,-0.5f, 1,1,1, 1,1,
-            0.5f, 0.5f, 0.5f, 1,1,1, 1,0,
-            -0.5f, 0.5f, 0.5f, 1,1,1, 0,0,
+            -half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 0,1,
+            half_extents.x,  half_extents.y, -half_extents.z, 1,1,1, 1,1,
+            half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 1,0,
+            -half_extents.x,  half_extents.y,  half_extents.z, 1,1,1, 0,0,
 
             // ---------- Bottom ----------
-            -0.5f,-0.5f,-0.5f, 1,1,1, 0,0,
-            0.5f,-0.5f,-0.5f, 1,1,1, 1,0,
-            0.5f,-0.5f, 0.5f, 1,1,1, 1,1,
-            -0.5f,-0.5f, 0.5f, 1,1,1, 0,1,
+            -half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 0,0,
+            half_extents.x, -half_extents.y, -half_extents.z, 1,1,1, 1,0,
+            half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 1,1,
+            -half_extents.x, -half_extents.y,  half_extents.z, 1,1,1, 0,1,
         };
 
         std::vector<uint32_t> box_indices = {
-            0,  1,  2,  2,  3,  0,  // front
-            4,  5,  6,  6,  7,  4,  // back
-            8,  9, 10, 10, 11,  8,  // left
-            12, 13, 14, 14, 15, 12,  // right
-            16, 17, 18, 18, 19, 16,  // top
-            20, 21, 22, 22, 23, 20   // bottom
+            0,1,2, 2,3,0,
+            4,5,6, 6,7,4,
+            8,9,10, 10,11,8,
+            12,13,14, 14,15,12,
+            16,17,18, 18,19,16,
+            20,21,22, 22,23,20
         };
 
         golias::VertexLayout layout;
@@ -83,6 +85,7 @@ namespace golias {
         auto rd = Engine::GetInstance().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, box_vertices, box_indices);
     }
+
 
 
     const VertexLayout& Mesh::GetVertexLayout() const {

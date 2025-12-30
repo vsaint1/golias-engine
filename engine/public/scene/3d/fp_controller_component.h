@@ -6,6 +6,8 @@ namespace golias {
     class FirstPersonControllerComponent : public Component {
         COMPONENT(FirstPersonControllerComponent)
     public:
+    
+        void Start() override;
         void Update(float deltaTime) override;
 
         float GetSensitivity() const;

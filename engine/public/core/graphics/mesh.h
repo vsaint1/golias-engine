@@ -12,7 +12,7 @@ namespace golias {
 
         Mesh(const VertexLayout& layout, const std::vector<float>& vertices);
 
-        static std::shared_ptr<Mesh> Box();
+        static std::shared_ptr<Mesh> CreateBox(const glm::vec3& extents = glm::vec3(1.0f));
 
         virtual void Bind() = 0;
 

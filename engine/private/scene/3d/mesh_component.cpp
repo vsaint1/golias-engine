@@ -10,6 +10,9 @@ namespace golias {
             
     }
 
+    void MeshComponent::Start() {
+    }
+    
     void MeshComponent::Update(float deltaTime) {
 
         if (!mesh || !material) {

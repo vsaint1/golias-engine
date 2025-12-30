@@ -13,6 +13,7 @@ namespace golias {
         GameObject* GetOwner() const;
         void SetOwner(GameObject* pOwner);
 
+        virtual void Start() = 0;
         virtual void Update(float deltaTime) = 0;
 
         template <typename T>

@@ -12,7 +12,8 @@ namespace golias {
 
         virtual ~CameraComponent() = default;
 
-        virtual void Update(float deltaTime) override;
+        void Start() override;
+        void Update(float deltaTime) override;
 
         glm::mat4 GetViewMatrix() const;
         glm::mat4 GetProjectionMatrix(float aspectRatio) const;

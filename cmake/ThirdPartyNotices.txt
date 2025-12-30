@@ -15,7 +15,6 @@ stb_image
 License: Public Domain / MIT
 https://github.com/nothings/stb
 
-
 ------------------------------------------------------------
 Bullet Physics
 License: Zlib

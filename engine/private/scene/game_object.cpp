@@ -1024,8 +1024,13 @@ namespace golias {
     }
 
     void GameObject::AddComponent(Component* pComponent) {
+        if(!pComponent){
+            return;
+        }
+
         components.emplace_back(pComponent);
         pComponent->SetOwner(this);
+        pComponent->Start();
         spdlog::info("GameObject::AddComponent added Component: {} to GameObject: {}", typeid(*pComponent).name(), typeid(*this).name());
     }
 

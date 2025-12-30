@@ -41,7 +41,10 @@ namespace golias {
     class AnimationComponent : public Component {
         COMPONENT(AnimationComponent)
     public:
+    
+        void Start() override;
         void Update(float deltaTime) override;
+
         void SetClip(AnimationClip* clip);
         void RegisterClip(const std::string& name, const std::shared_ptr<AnimationClip>& clip);
         void Play(const std::string& name, bool loop = true);
