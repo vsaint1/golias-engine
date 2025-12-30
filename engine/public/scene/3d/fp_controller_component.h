@@ -1,5 +1,6 @@
 #pragma once
 #include "scene/component.h"
+#include  "physics/3d/kinematic_body.h"
 
 namespace golias {
 
@@ -17,7 +18,12 @@ namespace golias {
         void SetSpeed(float value);
 
     private:
-        float sensitivity = 1.5f;
-        float speed       = 5.0f;
+        float sensitivity = 0.4f;
+        float speed       = 10.0f;
+
+        float pitch = 0.0f;
+        float yaw  = 0.0f;
+
+        std::unique_ptr<KinematicCharacterController> characterController;
     };
 } // namespace golias

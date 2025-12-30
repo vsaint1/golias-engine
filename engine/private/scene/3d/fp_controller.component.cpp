@@ -6,30 +6,26 @@
 namespace golias {
 
     void FirstPersonControllerComponent::Start() {
-       
+        characterController = std::make_unique<KinematicCharacterController>(0.4f, 1.2f);
     }
 
     void FirstPersonControllerComponent::Update(float deltaTime) {
         auto& input   = Engine::GetInstance().GetInputManager();
         auto rotation = GetOwner()->GetRotation();
 
+        const auto mouse_delta = input.GetMouseDelta();
 
-        if (input.IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
-            const auto mouse_delta = input.GetMouseDelta();
+        if (mouse_delta.x != 0.0f || mouse_delta.y != 0.0f) {
 
+            yaw += -mouse_delta.x * sensitivity;
+            pitch += -mouse_delta.y * sensitivity;
 
-            // rot around Y axis
-            float yAngle   = -mouse_delta.x * sensitivity * deltaTime;
-            glm::quat yRot = glm::angleAxis(yAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+            pitch = glm::clamp(pitch, -89.0f, 89.0f);
 
-            // rot around X axis
-            float xAngle    = -mouse_delta.y * sensitivity * deltaTime;
-            glm::vec3 right = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
-            glm::quat xRot  = glm::angleAxis(xAngle, right);
+            glm::quat rotY = glm::angleAxis(glm::radians(yaw), glm::vec3(0, 1, 0));
+            glm::quat rotX = glm::angleAxis(glm::radians(pitch), glm::vec3(1, 0, 0));
 
-            glm::quat deltaRot = yRot * xRot;
-            rotation           = glm::normalize(deltaRot * rotation);
-
+            rotation = glm::normalize(rotY * rotX);
             GetOwner()->SetRotation(rotation);
         }
 
@@ -38,25 +34,36 @@ namespace golias {
 
         auto position = GetOwner()->GetPosition();
 
+        glm::vec3 velocity(0.0f);
+
         // Left/Right movement
         if (input.IsKeyPressed(SDLK_A)) {
-            position -= right * speed * deltaTime;
+            velocity -= right;
         }
 
         if (input.IsKeyPressed(SDLK_D)) {
-            position += right * speed * deltaTime;
+            velocity += right;
         }
 
         // Vertical movement
         if (input.IsKeyPressed(SDLK_W)) {
-            position += front * speed * deltaTime;
+            velocity += front;
         }
         if (input.IsKeyPressed(SDLK_S)) {
-            position -= front * speed * deltaTime;
+            velocity -= front;
         }
 
+        if (input.IsKeyPressed(SDLK_SPACE)) {
+            characterController->Jump(glm::vec3(0.0f, 5.0f, 0.0f));
+        }
 
-        GetOwner()->SetPosition(position);
+        if (glm::dot(velocity, velocity) > 0.0f) {
+            velocity = glm::normalize(velocity) * speed * deltaTime;
+        }
+
+        characterController->Move(velocity);
+
+        GetOwner()->SetPosition(characterController->GetPosition());
     }
 
     float FirstPersonControllerComponent::GetSensitivity() const {
