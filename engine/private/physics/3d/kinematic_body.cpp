@@ -30,7 +30,7 @@ namespace golias {
         controller->setUpInterpolate(true);
         controller->setMaxPenetrationDepth(btScalar(0.2f));
 
-        physicsWorld->addCollisionObject(ghostObject.get(),btBroadphaseProxy::CharacterFilter,btBroadphaseProxy::DefaultFilter);
+        physicsWorld->addCollisionObject(ghostObject.get(),btBroadphaseProxy::CharacterFilter,btBroadphaseProxy::AllFilter);
 
         physicsWorld->addAction(controller.get());
     }
