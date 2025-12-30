@@ -44,14 +44,19 @@ namespace golias {
         static GameObject* LoadModel(const std::string_view pPath);
 
         glm::vec3 GetWorldPosition() const;
-        glm::vec3& GetPosition();
-        void SetPosition(const glm::vec3& newPosition);
+        glm::vec3 GetPosition() const;
+        
+        void SetWorldPosition(const glm::vec3& pos);
+        void SetPosition(const glm::vec3& pos);
 
-        glm::quat& GetRotation();
-        void SetRotation(const glm::quat& newRotation);
+        glm::quat GetWorldRotation() const;
+        glm::quat GetRotation() const;
 
-        glm::vec3& GetScale();
-        void SetScale(const glm::vec3& newScale);
+        void SetWorldRotation(const glm::quat& rot);
+        void SetRotation(const glm::quat& rot);
+
+        glm::vec3 GetScale()const; 
+        void SetScale(const glm::vec3& value);
 
         glm::mat4 GetLocalTransform() const;
         glm::mat4 GetWorldTransform() const;
@@ -64,7 +69,7 @@ namespace golias {
 
         std::string name;
         GameObject* parent = nullptr;
-        bool is_alive      = true;
+        bool isAlive      = true;
 
         friend class Scene;
         Scene* scene = nullptr;
@@ -74,7 +79,7 @@ namespace golias {
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         glm::vec3 scale    = glm::vec3(1.0f);
 
-        bool is_active = true;
+        bool isActive = true;
 
     };
 

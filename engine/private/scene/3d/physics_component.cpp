@@ -18,7 +18,7 @@ namespace golias {
         }
 
         const auto pos = GetOwner()->GetWorldPosition();
-        const auto rot = GetOwner()->GetRotation();
+        const auto rot = GetOwner()->GetWorldRotation();
 
         rigid_body->SetPosition(pos);
         rigid_body->SetRotation(rot);
@@ -34,14 +34,8 @@ namespace golias {
         }
 
         if (rigid_body->GetBodyType() == EBodyType::DYNAMIC) {
-            GetOwner()->SetPosition(rigid_body->GetPosition());
-            GetOwner()->SetRotation(rigid_body->GetRotation());
-        }else if (rigid_body->GetBodyType() == EBodyType::KINEMATIC) {
-            const auto pos = GetOwner()->GetWorldPosition();
-            const auto rot = GetOwner()->GetRotation();
-
-            rigid_body->SetPosition(pos);
-            rigid_body->SetRotation(rot);
+            GetOwner()->SetWorldPosition(rigid_body->GetPosition());
+            GetOwner()->SetWorldRotation(rigid_body->GetRotation());
         }
     }
 

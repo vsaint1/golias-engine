@@ -591,7 +591,7 @@ namespace golias {
                             std::shared_ptr<Texture2D> loaded_texture =
                                 texture_manager.EnsureTexture(embedded_path, width, height, format, image_data);
 
- 
+
                             if (loaded_texture) {
                                 spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)",
                                               embedded_path,
@@ -663,7 +663,7 @@ namespace golias {
                     if (!fallback_name.empty()) {
                         embedded_id << fallback_name;
                     } else {
-                        
+
                         uint32_t hash = 0;
                         for (size_t i = 0; i < std::min(size, static_cast<size_t>(1024)); ++i) {
                             hash = ((hash << 5) + hash) + data[i];
@@ -693,7 +693,7 @@ namespace golias {
 
                         std::shared_ptr<Texture2D> loaded_texture =
                             texture_manager.EnsureTexture(embedded_path, width, height, format, image_data);
-                  
+
 
                         if (loaded_texture) {
                             spdlog::debug(
@@ -1024,7 +1024,7 @@ namespace golias {
     }
 
     void GameObject::AddComponent(Component* pComponent) {
-        if(!pComponent){
+        if (!pComponent) {
             return;
         }
 
@@ -1081,35 +1081,75 @@ namespace golias {
     }
 
     void GameObject::Destroy() {
-        is_alive = false;
+        isAlive = false;
     }
 
     bool GameObject::IsAlive() const {
-        return is_alive;
+        return isAlive;
     }
 
-    glm::vec3& GameObject::GetPosition() {
+    glm::vec3 GameObject::GetWorldPosition() const {
+        if (parent) {
+            glm::mat4 worldTransform = parent->GetWorldTransform();
+            glm::mat4 inverseWorld   = glm::inverse(worldTransform);
+            glm::vec4 localPos       = inverseWorld * glm::vec4(position, 1.0f);
+            return glm::vec3(localPos) / localPos.w;
+        } else {
+            return position;
+        }
+    }
+
+
+    glm::vec3 GameObject::GetPosition() const {
         return position;
     }
 
-    void GameObject::SetPosition(const glm::vec3& newPosition) {
-        position = newPosition;
+    void GameObject::SetPosition(const glm::vec3& pos) {
+        position = pos;
     }
 
-    glm::quat& GameObject::GetRotation() {
+    void GameObject::SetWorldPosition(const glm::vec3& pos) {
+        if (parent) {
+            glm::mat4 parentWorldTransform = parent->GetWorldTransform();
+            glm::mat4 inverseParentWorld   = glm::inverse(parentWorldTransform);
+            glm::vec4 localPos             = inverseParentWorld * glm::vec4(pos, 1.0f);
+            SetPosition(glm::vec3(localPos) / localPos.w);
+        } else {
+            SetPosition(pos);
+        }
+    }
+
+
+    glm::quat GameObject::GetWorldRotation() const {
+        if (parent) {
+            return parent->GetWorldRotation() * rotation;
+        } else {
+            return rotation;
+        }
+    }
+    glm::quat GameObject::GetRotation() const {
         return rotation;
     }
 
-    void GameObject::SetRotation(const glm::quat& newRotation) {
-        rotation = newRotation;
+    void GameObject::SetWorldRotation(const glm::quat& rot) {
+        if (parent) {
+            glm::quat parentWorldRotation = parent->GetWorldRotation();
+            SetRotation(glm::inverse(parentWorldRotation) * rot);
+        } else {
+            SetRotation(rot);
+        }
     }
 
-    glm::vec3& GameObject::GetScale() {
+    void GameObject::SetRotation(const glm::quat& rot) {
+        rotation = rot;
+    }
+
+    glm::vec3 GameObject::GetScale() const {
         return scale;
     }
 
-    void GameObject::SetScale(const glm::vec3& newScale) {
-        scale = newScale;
+    void GameObject::SetScale(const glm::vec3& value) {
+        scale = value;
     }
 
     glm::mat4 GameObject::GetLocalTransform() const {
@@ -1128,10 +1168,6 @@ namespace golias {
         }
     }
 
-    glm::vec3 GameObject::GetWorldPosition() const {
-        glm::vec4 hom = GetWorldTransform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        return glm::vec3(hom) / hom.w;
-    }
 
     GameObject* GameObject::LoadModel(const std::string_view pPath) {
         auto& engine = Engine::GetInstance();
@@ -1221,11 +1257,11 @@ namespace golias {
     }
 
     bool GameObject::IsActive() const {
-        return is_active;
+        return isActive;
     }
 
     void GameObject::SetActive(bool active) {
-        is_active = active;
+        isActive = active;
     }
 
 } // namespace golias

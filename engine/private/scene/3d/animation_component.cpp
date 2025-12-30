@@ -9,7 +9,7 @@ namespace golias {
     }
 
     void AnimationComponent::Update(float deltaTime) {
-        if (!animation_clip) {
+        if (!animationClip) {
             return;
         }
 
@@ -19,11 +19,11 @@ namespace golias {
 
         time += deltaTime;
 
-        if (time > animation_clip->duration) {
+        if (time > animationClip->duration) {
             if (looping) {
-                time = std::fmod(time, animation_clip->duration);
+                time = std::fmod(time, animationClip->duration);
             } else {
-                time    = animation_clip->duration; 
+                time    = animationClip->duration;
                 playing = false;
                 return;
             }
@@ -34,7 +34,7 @@ namespace golias {
             auto& trackIndices = binding.second->trackIndices;
 
             for (auto i : trackIndices) {
-                auto& track = animation_clip->tracks[i];
+                auto& track = animationClip->tracks[i];
 
                 if (!track.positions.empty()) {
                     auto pos = Interpolate(track.positions, time);
@@ -45,7 +45,7 @@ namespace golias {
                     auto rot = Interpolate(track.rotations, time);
                     obj->SetRotation(rot);
                 }
-                
+
                 if (!track.scales.empty()) {
                     auto scale = Interpolate(track.scales, time);
                     obj->SetScale(scale);
@@ -54,23 +54,32 @@ namespace golias {
         }
     }
 
+
+    std::unordered_map<GameObject*, std::unique_ptr<ObjectBinding>>& AnimationComponent::GetBindings()  {
+        return bindings;
+    }
+
+    std::unordered_map<std::string, std::shared_ptr<AnimationClip>>& AnimationComponent::GetRegisteredClips()  {
+        return animationClips;
+    }
+
     void AnimationComponent::SetClip(AnimationClip* clip) {
-        animation_clip = clip;
-        // BuildBindings();
+        animationClip = clip;
+        BuildBindings();
     }
 
-    void AnimationComponent::RegisterClip(const std::string& name, const std::shared_ptr<AnimationClip>& clip) {
-        animation_clips[name] = clip;
+    void AnimationComponent::RegisterClip(const std::string_view pName, const std::shared_ptr<AnimationClip>& clip) {
+        animationClips[std::string(pName)] = clip;
     }
 
-    void AnimationComponent::Play(const std::string& name, bool loop) {
-        if (animation_clip && animation_clip->name == name) {
+    void AnimationComponent::Play(const std::string_view pName, bool loop) {
+        if (animationClip && animationClip->name == pName) {
             time    = 0.0f;
             playing = true;
             looping = loop;
         } else {
-            auto it = animation_clips.find(name);
-            if (it != animation_clips.end()) {
+            auto it = animationClips.find(pName.data());
+            if (it != animationClips.end()) {
                 SetClip(it->second.get());
                 time    = 0.0f;
                 playing = true;
@@ -85,12 +94,12 @@ namespace golias {
 
     void AnimationComponent::BuildBindings() {
         bindings.clear();
-        if (!animation_clip) {
+        if (!animationClip) {
             return;
         }
 
-        for (size_t i = 0; i < animation_clip->tracks.size(); ++i) {
-            auto& track       = animation_clip->tracks[i];
+        for (size_t i = 0; i < animationClip->tracks.size(); ++i) {
+            auto& track       = animationClip->tracks[i];
             auto targetObject = GetOwner()->FindChildByName(track.targetName);
             if (targetObject) {
                 auto it = bindings.find(targetObject);
@@ -106,7 +115,7 @@ namespace golias {
         }
     }
 
-    glm::vec3 AnimationComponent::Interpolate(const std::vector<KeyFrameVec3>& keys, float time) {
+    glm::vec3 AnimationComponent::Interpolate(const std::vector<KeyFrameVec3>& keys, float _time) {
         if (keys.empty()) {
             return glm::vec3(0.0f);
         }
@@ -115,11 +124,11 @@ namespace golias {
             return keys[0].value;
         }
 
-        if (time <= keys.front().time) {
+        if (_time <= keys.front().time) {
             return keys.front().value;
         }
 
-        if (time >= keys.back().time) {
+        if (_time >= keys.back().time) {
             return keys.back().value;
         }
 
@@ -136,14 +145,14 @@ namespace golias {
 
         float deltaTime = keys[i1].time - keys[i0].time;
         if (deltaTime > 0.0f) {
-            float k = (time - keys[i0].time) / deltaTime;
+            float k = (_time - keys[i0].time) / deltaTime;
             return glm::mix(keys[i0].value, keys[i1].value, k);
         }
 
         return keys[i0].value;
     }
 
-    glm::quat AnimationComponent::Interpolate(const std::vector<KeyFrameQuat>& keys, float time) {
+    glm::quat AnimationComponent::Interpolate(const std::vector<KeyFrameQuat>& keys, float _time) {
         if (keys.empty()) {
             return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         }
@@ -152,11 +161,11 @@ namespace golias {
             return keys[0].value;
         }
 
-        if (time <= keys.front().time) {
+        if (_time <= keys.front().time) {
             return keys.front().value;
         }
 
-        if (time >= keys.back().time) {
+        if (_time >= keys.back().time) {
             return keys.back().value;
         }
 
@@ -173,7 +182,7 @@ namespace golias {
 
         float deltaTime = keys[i1].time - keys[i0].time;
         if (deltaTime > 0.0f) {
-            float k = (time - keys[i0].time) / deltaTime;
+            float k = (_time - keys[i0].time) / deltaTime;
             return glm::slerp(keys[i0].value, keys[i1].value, k);
         }
 
