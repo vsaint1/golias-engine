@@ -1,137 +1,130 @@
-#include "core/engine.h"
 #include "physics/3d/rigid_body.h"
+
+#include "core/engine.h"
 #include <btBulletCollisionCommon.h>
 #include <btBulletDynamicsCommon.h>
 
 namespace golias {
 
-    RigidBody::RigidBody(EBodyType type, const std::shared_ptr<Collider>& pCollider, float _mass, float _friciton)
-        : body_type(type), collider(pCollider), mass(_mass), friction(_friciton) {
+    RigidBody::RigidBody(EBodyType bodyType, const std::shared_ptr<Collider>& pCollider, float mass, float friction)
+        : type(bodyType), collider(pCollider), _mass(mass), _friction(friction) {
 
         btVector3 localInertia(0, 0, 0);
 
-        if (type == EBodyType::DYNAMIC && mass != 0.0f && collider && collider->GetCollisionShape()) {
-            collider->GetCollisionShape()->calculateLocalInertia(btScalar(mass), localInertia);
+        btScalar btMass = 0.0f;
+        if (type == EBodyType::DYNAMIC) {
+            btMass = (_mass > 0.0f) ? btScalar(_mass) : btScalar(1.0f); 
+
+            if (collider && collider->GetCollisionShape()) {
+                collider->GetCollisionShape()->calculateLocalInertia(btMass, localInertia);
+            }
         }
 
         btTransform transform;
         transform.setIdentity();
-
         btDefaultMotionState* motionState = new btDefaultMotionState(transform);
 
-        btScalar btMass = type == EBodyType::DYNAMIC ? btScalar(mass) : btScalar(0.0f);
-
         btRigidBody::btRigidBodyConstructionInfo rbInfo(btMass, motionState, collider->GetCollisionShape(), localInertia);
-
-        rigid_body = std::make_unique<btRigidBody>(rbInfo);
-
-        rigid_body->setFriction(btScalar(friction));
+        rigidBody = std::make_unique<btRigidBody>(rbInfo);
+        rigidBody->setFriction(btScalar(_friction));
 
         if (type == EBodyType::KINEMATIC) {
-            rigid_body->setCollisionFlags(rigid_body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
-            rigid_body->setActivationState(DISABLE_DEACTIVATION);
+            rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+            rigidBody->setActivationState(DISABLE_DEACTIVATION);
         }
 
-
-        rigid_body->setMotionState(motionState);
+        rigidBody->setMotionState(motionState);
     }
 
 
     RigidBody::~RigidBody() {
-        if (added_to_world) {
+        if (addedToWorld) {
             Engine::GetInstance().GetPhysicsManager().RemoveRigidBody(this);
         }
     }
 
     EBodyType RigidBody::GetBodyType() const {
-        return body_type;
+        return type;
     }
 
     btRigidBody* RigidBody::GetdBody() const {
-        return rigid_body.get();
+        return rigidBody.get();
     }
 
     void RigidBody::SetMass(float value) {
-        mass = value;
+        _mass = value;
     }
 
     float RigidBody::GetMass() const {
-        return mass;
+        return _mass;
     }
 
     void RigidBody::SetFriction(float value) {
-        friction = value;
+        _friction = value;
     }
 
     float RigidBody::GetFriction() const {
-        return friction;
+        return _friction;
     }
 
     void RigidBody::SetAddedToWorld(bool added) {
-        added_to_world = added;
+        addedToWorld = added;
     }
 
     bool RigidBody::IsAddedToWorld() const {
-        return added_to_world;
+        return addedToWorld;
     }
 
     void RigidBody::SetPosition(const glm::vec3& pos) {
-        if (!rigid_body) {
+        if (!rigidBody) {
             return;
         }
 
-        auto& tr = rigid_body->getWorldTransform();
+        auto& tr = rigidBody->getWorldTransform();
         tr.setOrigin(btVector3(btScalar(pos.x), btScalar(pos.y), btScalar(pos.z)));
 
-        if (rigid_body->getMotionState()) {
-            rigid_body->getMotionState()->setWorldTransform(tr);
+        if (rigidBody->getMotionState()) {
+            rigidBody->getMotionState()->setWorldTransform(tr);
         }
 
-        rigid_body->setWorldTransform(tr);
+        rigidBody->setWorldTransform(tr);
     }
 
     glm::vec3 RigidBody::GetPosition() const {
-        if (!rigid_body) {
+        if (!rigidBody) {
             return glm::vec3(0.0f);
         }
 
-        auto& tr         = rigid_body->getWorldTransform();
+        auto& tr         = rigidBody->getWorldTransform();
         btVector3 origin = tr.getOrigin();
 
-        return glm::vec3(static_cast<float>(origin.getX()), static_cast<float>(origin.getY()), static_cast<float>(origin.getZ()));
+        return glm::vec3(origin.getX(), origin.getY(), origin.getZ());
     }
 
     void RigidBody::SetRotation(const glm::quat& rot) {
-        if (!rigid_body) {
+        if (!rigidBody) {
             return;
         }
 
-        auto& tr = rigid_body->getWorldTransform();
+        auto& tr = rigidBody->getWorldTransform();
         tr.setRotation(btQuaternion(btScalar(rot.x), btScalar(rot.y), btScalar(rot.z), btScalar(rot.w)));
 
-        if (rigid_body->getMotionState()) {
-            rigid_body->getMotionState()->setWorldTransform(tr);
+        if (rigidBody->getMotionState()) {
+            rigidBody->getMotionState()->setWorldTransform(tr);
         }
 
-        rigid_body->setWorldTransform(tr);
+        rigidBody->setWorldTransform(tr);
     }
 
     glm::quat RigidBody::GetRotation() const {
 
-        if (!rigid_body) {
+        if (!rigidBody) {
             return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         }
 
-        const auto& rot = rigid_body->getWorldTransform().getRotation();
-        return glm::quat(
-            static_cast<float>(rot.getW()), static_cast<float>(rot.getX()), static_cast<float>(rot.getY()), static_cast<float>(rot.getZ()));
+        const auto& rot = rigidBody->getWorldTransform().getRotation();
+        return glm::quat(rot.getW(), rot.getX(), rot.getY(), rot.getZ());
     }
 
-    void RigidBody::SetScale(const glm::vec3& scl) {
-        scale = scl;
-    }
 
-    glm::vec3 RigidBody::GetScale() const {
-        return scale;
-    }
 } // namespace golias

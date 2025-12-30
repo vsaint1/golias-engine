@@ -21,7 +21,7 @@ namespace golias {
 
     class RigidBody {
     public:
-        RigidBody(EBodyType type, const std::shared_ptr<Collider>& pCollider, float _mass = 0.0f, float _friction = 0.5f);
+        RigidBody(EBodyType bodyType, const std::shared_ptr<Collider>& pCollider, float mass = 0.0f, float friction = 0.5f);
         ~RigidBody();
 
         EBodyType GetBodyType() const;
@@ -39,21 +39,20 @@ namespace golias {
 
         void SetPosition(const glm::vec3& pos);
         glm::vec3 GetPosition() const;
+     
         void SetRotation(const glm::quat& rot);
         glm::quat GetRotation() const;
-        void SetScale(const glm::vec3& scl);
-        glm::vec3 GetScale() const;
+
 
     private:
-        EBodyType body_type = EBodyType::STATIC;
+        EBodyType type = EBodyType::STATIC;
         std::shared_ptr<Collider> collider;
-        float mass                              = 0.0f;
-        float friction                          = 0.5f;
-        bool added_to_world                     = false;
-        std::unique_ptr<btRigidBody> rigid_body = nullptr;
+        float _mass                              = 0.0f;
+        float _friction                          = 0.5f;
+        bool addedToWorld                     = false;
+        std::unique_ptr<btRigidBody> rigidBody = nullptr;
 
         glm::vec3 position = glm::vec3(0.0f);
         glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-        glm::vec3 scale    = glm::vec3(1.0f);
     };
 } // namespace golias
