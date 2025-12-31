@@ -6,7 +6,9 @@
 namespace golias {
 
     void FirstPersonControllerComponent::Start() {
-        characterController = std::make_unique<KinematicCharacterController>(0.4f, 1.2f);
+        const auto& pos = GetOwner()->GetWorldPosition();
+        characterController = std::make_unique<KinematicCharacterController>(1.6f, 0.4f, pos);
+        characterController->SetPosition(pos);
     }
 
     void FirstPersonControllerComponent::Update(float deltaTime) {
@@ -34,34 +36,34 @@ namespace golias {
 
         auto position = GetOwner()->GetPosition();
 
-        glm::vec3 velocity(0.0f);
+        glm::vec3 direction(0.0f);
 
         // Left/Right movement
         if (input.IsKeyPressed(SDLK_A)) {
-            velocity -= right;
+            direction -= right;
         }
 
         if (input.IsKeyPressed(SDLK_D)) {
-            velocity += right;
+            direction += right;
         }
 
         // Vertical movement
         if (input.IsKeyPressed(SDLK_W)) {
-            velocity += front;
+            direction += front;
         }
         if (input.IsKeyPressed(SDLK_S)) {
-            velocity -= front;
+            direction -= front;
         }
 
         if (input.IsKeyPressed(SDLK_SPACE)) {
             characterController->Jump(glm::vec3(0.0f, 5.0f, 0.0f));
         }
 
-        if (glm::dot(velocity, velocity) > 0.0f) {
-            velocity = glm::normalize(velocity) * speed * deltaTime;
+        if (glm::dot(direction, direction) > 0.0f) {
+            direction = glm::normalize(direction) * speed * deltaTime;
         }
 
-        characterController->Move(velocity);
+        characterController->Move(direction);
 
         GetOwner()->SetPosition(characterController->GetPosition());
     }
@@ -80,5 +82,9 @@ namespace golias {
 
     void FirstPersonControllerComponent::SetSpeed(float value) {
         speed = value;
+    }
+
+    KinematicCharacterController* FirstPersonControllerComponent::GetCharacterController() const {
+        return characterController.get();
     }
 } // namespace golias

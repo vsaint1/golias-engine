@@ -17,6 +17,8 @@ namespace golias {
         float GetSpeed() const;
         void SetSpeed(float value);
 
+        KinematicCharacterController* GetCharacterController() const;
+
     private:
         float sensitivity = 0.4f;
         float speed       = 10.0f;
