@@ -6,7 +6,7 @@
 namespace golias {
 
     void FirstPersonControllerComponent::Start() {
-        const auto& pos = GetOwner()->GetWorldPosition();
+        const auto& pos     = GetOwner()->GetWorldPosition();
         characterController = std::make_unique<KinematicCharacterController>(1.6f, 0.4f, pos);
         characterController->SetPosition(pos);
     }
@@ -31,23 +31,25 @@ namespace golias {
             GetOwner()->SetRotation(rotation);
         }
 
-        glm::vec3 front = rotation * glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 right = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
+        glm::quat yawRot = glm::angleAxis(glm::radians(yaw), glm::vec3(0, 1, 0));
 
-        auto position = GetOwner()->GetPosition();
+        glm::vec3 front = yawRot * glm::vec3(0, 0, -1);
+        glm::vec3 right = yawRot * glm::vec3(1, 0, 0);
+
+        front.y = 0.0f;
+        right.y = 0.0f;
+
+        front = glm::normalize(front);
+        right = glm::normalize(right);
 
         glm::vec3 direction(0.0f);
 
-        // Left/Right movement
         if (input.IsKeyPressed(SDLK_A)) {
             direction -= right;
         }
-
         if (input.IsKeyPressed(SDLK_D)) {
             direction += right;
         }
-
-        // Vertical movement
         if (input.IsKeyPressed(SDLK_W)) {
             direction += front;
         }
@@ -55,11 +57,12 @@ namespace golias {
             direction -= front;
         }
 
+
         if (input.IsKeyPressed(SDLK_SPACE)) {
             characterController->Jump(glm::vec3(0.0f, 5.0f, 0.0f));
         }
 
-        if (glm::dot(direction, direction) > 0.0f) {
+        if (glm::length(direction) > 0.0f) {
             direction = glm::normalize(direction) * speed * deltaTime;
         }
 

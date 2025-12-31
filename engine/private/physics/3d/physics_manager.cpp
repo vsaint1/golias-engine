@@ -48,12 +48,11 @@ namespace golias {
             return;
         }
 
-        if (pBody->GetdBody() && !pBody->IsAddedToWorld()) {
-            btRigidBody* btBody = pBody->GetdBody();
-
+        if (pBody->GetRigidBody() && !pBody->IsAddedToWorld()) {
+            btRigidBody* btBody = pBody->GetRigidBody();
 
             btBroadphaseProxy::CollisionFilterGroups collisionFilterGroup =
-                btBody->getMass() == 0.0f ? btBroadphaseProxy::DefaultFilter : btBroadphaseProxy::StaticFilter;
+                btBody->getMass() == 0.0f ? btBroadphaseProxy::StaticFilter : btBroadphaseProxy::DefaultFilter;
 
             dynamicsWorld->addRigidBody(btBody, collisionFilterGroup, btBroadphaseProxy::AllFilter);
 
@@ -67,8 +66,8 @@ namespace golias {
             return;
         }
 
-        if (pBody->GetdBody() && pBody->IsAddedToWorld()) {
-            dynamicsWorld->removeRigidBody(pBody->GetdBody());
+        if (pBody->GetRigidBody() && pBody->IsAddedToWorld()) {
+            dynamicsWorld->removeRigidBody(pBody->GetRigidBody());
             pBody->SetAddedToWorld(false);
         }
     }

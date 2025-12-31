@@ -7,7 +7,8 @@
 #include <btBulletDynamicsCommon.h>
 
 namespace golias {
-    KinematicCharacterController::KinematicCharacterController(float height, float radius) : _height(height), _radius(radius) {
+    KinematicCharacterController::KinematicCharacterController(float height, float radius, const glm::vec3& position)
+        : _height(height), _radius(radius) {
 
         const auto physicsWorld = Engine::GetInstance().GetPhysicsManager().GetPhyisicsWorld();
         auto capsule            = new btCapsuleShape(btScalar(radius), btScalar(height));
@@ -15,22 +16,30 @@ namespace golias {
         ghostObject = std::make_unique<btPairCachingGhostObject>();
         btTransform startTransform;
         startTransform.setIdentity();
-        startTransform.setOrigin(btVector3(0, 2, 0));
+        startTransform.setOrigin(btVector3(btScalar(position.x), btScalar(position.y), btScalar(position.z)));
         ghostObject->setWorldTransform(startTransform);
         ghostObject->setCollisionShape(capsule);
-        ghostObject->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
+        ghostObject->setCollisionFlags(ghostObject->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
+
+        // ghostPairCallback = std::make_unique<btGhostPairCallback>();
 
         physicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 
         const btScalar stepHeight = btScalar(0.35f);
         controller                = std::make_unique<btKinematicCharacterController>(ghostObject.get(), capsule, stepHeight);
+
         controller->setMaxSlope(btRadians(maxSlopeDegrees));
         controller->setGravity(physicsWorld->getGravity());
+        controller->setMaxPenetrationDepth(btScalar(0.05f));
+        controller->setJumpSpeed(btScalar(7.0f));
+        controller->setFallSpeed(btScalar(20.0f));
+
+        controller->setStepHeight(stepHeight);
 
         controller->setUpInterpolate(true);
-        controller->setMaxPenetrationDepth(btScalar(0.2f));
+        controller->setUseGhostSweepTest(true);
 
-        physicsWorld->addCollisionObject(ghostObject.get(),btBroadphaseProxy::CharacterFilter,btBroadphaseProxy::AllFilter);
+        physicsWorld->addCollisionObject(ghostObject.get(), btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::AllFilter);
 
         physicsWorld->addAction(controller.get());
     }
@@ -40,16 +49,17 @@ namespace golias {
         if (controller) {
             physicsWorld->removeAction(controller.get());
         }
+
         if (ghostObject) {
             physicsWorld->removeCollisionObject(ghostObject.get());
         }
     }
 
     glm::vec3 KinematicCharacterController::GetPosition() const {
-        const auto& transform  = ghostObject->getWorldTransform();
-        const glm::vec3 offset = {0.0f, _height + 0.5f + _radius, 0.0f};
-        btVector3 origin       = transform.getOrigin();
-        return glm::vec3(origin.getX(), origin.getY(), origin.getZ()) + offset;
+        const auto& transform = ghostObject->getWorldTransform();
+        // const glm::vec3 offset = {0.0f, _height + 0.5f + _radius, 0.0f};
+        btVector3 origin = transform.getOrigin();
+        return glm::vec3(origin.getX(), origin.getY(), origin.getZ());
     }
 
     void KinematicCharacterController::SetPosition(const glm::vec3& pos) {
@@ -71,10 +81,10 @@ namespace golias {
         ghostObject->setWorldTransform(transform);
     }
 
-    void KinematicCharacterController::Move(const glm::vec3& velocity) {
+    void KinematicCharacterController::Move(const glm::vec3& direction) {
 
-        btVector3 vel(btScalar(velocity.x), btScalar(velocity.y), btScalar(velocity.z));
-        controller->setWalkDirection(vel);
+        btVector3 dir(btScalar(direction.x), btScalar(direction.y), btScalar(direction.z));
+        controller->setWalkDirection(dir);
     }
 
     void KinematicCharacterController::Jump(const glm::vec3& force) {
@@ -91,5 +101,27 @@ namespace golias {
     void KinematicCharacterController::SetMaxSlope(float value) {
         maxSlopeDegrees = value;
         controller->setMaxSlope(btRadians(maxSlopeDegrees));
+    }
+
+    void KinematicCharacterController::SetFallSpeed(float value) {
+        fallSpeed = value;
+        controller->setFallSpeed(btScalar(fallSpeed));
+    }
+
+    void KinematicCharacterController::SetJumpSpeed(float value) {
+        jumpSpeed = value;
+        controller->setJumpSpeed(btScalar(jumpSpeed));
+    }
+
+    float KinematicCharacterController::GetMaxSlope() const {
+        return maxSlopeDegrees;
+    }
+
+    float KinematicCharacterController::GetFallSpeed() const {
+        return fallSpeed;
+    }
+
+    float KinematicCharacterController::GetJumpSpeed() const {
+        return jumpSpeed;
     }
 } // namespace golias

@@ -81,9 +81,15 @@ namespace golias {
 
         while (!application->ShouldClose()) {
 
+            Uint64 current_time_point = SDL_GetPerformanceCounter();
+            Uint64 time_delta         = current_time_point - last_time_point;
+            float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
+            last_time_point           = current_time_point;
+
             input_manager.Update();
 
             SDL_Event event;
+
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) {
                     application->Close();
@@ -98,13 +104,10 @@ namespace golias {
             }
 
 
-            Uint64 current_time_point = SDL_GetPerformanceCounter();
-            Uint64 time_delta         = current_time_point - last_time_point;
-            float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
-            last_time_point           = current_time_point;
-
             physics_manager.StepSimulation(delta_time);
+
             application->Update(delta_time);
+
 
             CameraData camera_data;
             if (scene && scene->GetMainCamera()) {
@@ -124,7 +127,7 @@ namespace golias {
             rendering_canvas.Draw(rendering_device, camera_data);
             rendering_device->Present();
 
-            SDL_Delay(16); // HACK for development purposes
+            // SDL_Delay(16); // HACK for development purposes
         }
     }
 
