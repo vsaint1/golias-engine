@@ -95,7 +95,7 @@ namespace golias {
     }
 
     std::string FileSystem::LoadAssetFileText(const std::string_view pPath) const {
-        auto buffer = LoadFile(GetAssetsPath() + std::string(pPath));
+        auto buffer = LoadFile(GetAssetsPath() + pPath.data());
         if (buffer.empty()) {
             return "";
         }
