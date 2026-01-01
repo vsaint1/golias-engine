@@ -24,7 +24,7 @@ uniform int HAS_AO;
 uniform int HAS_EMISSIVE;
 
 // Material properties
-uniform vec4  BASE_COLOR;
+uniform vec4  MODULATE;
 uniform float METALLIC_FACTOR;
 uniform float ROUGHNESS_FACTOR;
 uniform vec3  EMISSIVE_FACTOR;
@@ -39,9 +39,9 @@ uniform float SHININESS;
 void main()
 {
     // --- Material sampling ---
-    vec4 albedo = (HAS_ALBEDO == 1)
-        ? texture(ALBEDO_TEXTURE, v_texcoord)
-        : BASE_COLOR;
+  vec4 albedo = (HAS_ALBEDO == 1)
+    ? texture(ALBEDO_TEXTURE, v_texcoord) * MODULATE  
+    : MODULATE;
 
     albedo.rgb *= v_color;
 

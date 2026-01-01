@@ -15,13 +15,13 @@
         "floats": [],
         "vectors": [
             {
-                "name": "BASE_COLOR",
-                "value": [
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0
-                ],
+                "name": "MODULATE",
+                "value": {
+                    "x": 1.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
                 "type": "vec4"
             }
         ]
