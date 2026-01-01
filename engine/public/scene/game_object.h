@@ -14,6 +14,9 @@ namespace golias {
 
     class GameObject {
     public:
+        virtual void LoadProperties(const nlohmann::json& json);
+
+        virtual void Start();
         virtual void Update(float deltaTime);
         virtual ~GameObject() = default;
 
@@ -41,11 +44,11 @@ namespace golias {
 
         bool IsAlive() const;
 
-        static GameObject* LoadModel(const std::string_view pPath);
+        static GameObject* LoadModel(const std::string_view pPath, Scene* pScene);
 
         glm::vec3 GetWorldPosition() const;
         glm::vec3 GetPosition() const;
-        
+
         void SetWorldPosition(const glm::vec3& pos);
         void SetPosition(const glm::vec3& pos);
 
@@ -55,7 +58,7 @@ namespace golias {
         void SetWorldRotation(const glm::quat& rot);
         void SetRotation(const glm::quat& rot);
 
-        glm::vec3 GetScale()const; 
+        glm::vec3 GetScale() const;
         void SetScale(const glm::vec3& value);
 
         glm::mat4 GetLocalTransform() const;
@@ -69,7 +72,7 @@ namespace golias {
 
         std::string name;
         GameObject* parent = nullptr;
-        bool isAlive      = true;
+        bool isAlive       = true;
 
         friend class Scene;
         Scene* scene = nullptr;
@@ -80,7 +83,6 @@ namespace golias {
         glm::vec3 scale    = glm::vec3(1.0f);
 
         bool isActive = true;
-
     };
 
 
@@ -95,5 +97,52 @@ namespace golias {
         }
 
         return nullptr;
+    }
+
+
+    class ObjectFactoryBase {
+    public:
+        virtual ~ObjectFactoryBase()       = default;
+        virtual GameObject* Create() const = 0;
+    };
+
+    template <typename T>
+    class ObjectFactory : public ObjectFactoryBase {
+    public:
+        virtual GameObject* Create() const override {
+            return new T();
+        }
+    };
+
+
+    class ObjectRegistry {
+    public:
+        static ObjectRegistry& GetInstance() {
+            static ObjectRegistry instance;
+            return instance;
+        }
+
+        template <typename T>
+        void RegisterObject(const std::string_view pName) {
+            creators.emplace(pName.data(), std::make_unique<ObjectFactory<T>>());
+        }
+
+        GameObject* CreateObject(const std::string_view pName) const {
+            auto it = creators.find(pName.data());
+            if (it != creators.end()) {
+                return it->second->Create();
+            }
+
+            return nullptr;
+        }
+
+    private:
+        std::unordered_map<std::string, std::unique_ptr<ObjectFactoryBase>> creators;
+    };
+
+#define GCLASS(Clazz)                                                        \
+public:                                                                      \
+    static void Register() {                                                 \
+        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz); \
     }
 } // namespace golias

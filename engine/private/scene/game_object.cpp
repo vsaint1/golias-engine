@@ -797,7 +797,7 @@ namespace golias {
                 }
             }
 
-            material->SetParameter("BASE_COLOR", base_color);
+            material->SetParameter("MODULATE", base_color);
             material->SetParameter("METALLIC_FACTOR", metallic);
             material->SetParameter("ROUGHNESS_FACTOR", roughness);
             material->SetParameter("EMISSIVE_FACTOR", emissive);
@@ -805,8 +805,8 @@ namespace golias {
             gameObject->AddComponent(new MeshComponent(mesh, material));
 
             if (gltf_material && gltf_material->name) {
-                spdlog::info(
-                    "Created material: {} with {} vertices and {} indices", gltf_material->name, vertices.size() / 11, indices.size());
+                spdlog::debug(
+                    "GLTF Material: {} with {} vertices and {} indices", gltf_material->name, vertices.size() / 11, indices.size());
             }
         }
 
@@ -862,41 +862,43 @@ namespace golias {
                 material->SetParameter("ROUGHNESS_FACTOR", glm::clamp(roughness, 0.0f, 1.0f));
             }
 
-            material->SetParameter("BASE_COLOR", base_color);
+            material->SetParameter("MODULATE", base_color);
             material->SetParameter("METALLIC_FACTOR", 0.0f);
 
             gameObject->AddComponent(new MeshComponent(mesh, material));
         }
 
         // Scene graph parsing
-        void ParseGLTFNode(cgltf_node* node, GameObject* parent, cgltf_data* data, const std::string& base_path) {
-            auto& engine = Engine::GetInstance();
-            auto scene   = engine.GetScene();
+        void ParseGLTFNode(cgltf_node* node, GameObject* parent, cgltf_data* data, const std::string& base_path, Scene* pScene) {
+
 
             std::string node_name  = node->name ? node->name : "Node";
-            GameObject* nodeObject = scene->CreateObject(node_name, parent);
+            GameObject* nodeObject = pScene->CreateObject(node_name, parent);
 
-            // Set transform
-            if (node->has_matrix) {
-                auto mat = glm::make_mat4(node->matrix);
-                glm::vec3 scale, translation, skew;
-                glm::quat rotation;
-                glm::vec4 perspective;
-                glm::decompose(mat, scale, rotation, translation, skew, perspective);
-                nodeObject->SetPosition(translation);
-                nodeObject->SetRotation(rotation);
-                nodeObject->SetScale(scale);
-            } else {
-                if (node->has_translation) {
-                    nodeObject->SetPosition(glm::vec3(node->translation[0], node->translation[1], node->translation[2]));
-                }
-                if (node->has_rotation) {
-                    nodeObject->SetRotation(glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
-                }
-                if (node->has_scale) {
-                    nodeObject->SetScale(glm::vec3(node->scale[0], node->scale[1], node->scale[2]));
-                }
+            glm::vec3 pos(0.0f);
+            glm::quat rot(1.0f, 0.0f, 0.0f, 0.0f);
+            glm::vec3 scl(1.0f);
+
+            if (node->has_translation) {
+                pos = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
             }
+            if (node->has_rotation) {
+                rot = glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]);
+            }
+            if (node->has_scale) {
+                scl = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
+            }
+
+            if (node->has_matrix && !node->has_translation && !node->has_rotation && !node->has_scale) {
+                glm::mat4 mat = glm::make_mat4(node->matrix);
+                glm::vec3 skew;
+                glm::vec4 perspective;
+                glm::decompose(mat, scl, rot, pos, skew, perspective);
+            }
+
+            nodeObject->SetPosition(pos);
+            nodeObject->SetRotation(rot);
+            nodeObject->SetScale(scl);
 
             if (node->mesh) {
                 cgltf_mesh* mesh_data = node->mesh;
@@ -925,7 +927,7 @@ namespace golias {
 
             // Recursively process children
             for (cgltf_size c = 0; c < node->children_count; ++c) {
-                ParseGLTFNode(node->children[c], nodeObject, data, base_path);
+                ParseGLTFNode(node->children[c], nodeObject, data, base_path, pScene);
             }
         }
 
@@ -933,12 +935,13 @@ namespace golias {
                       const std::vector<tinyobj::shape_t>& shapes,
                       const std::vector<tinyobj::material_t>& materials,
                       GameObject* rootObject,
-                      const std::string& base_path) {
+                      const std::string& base_path,
+                      Scene* pScene) {
             auto& engine = Engine::GetInstance();
-            auto scene   = engine.GetScene();
+
 
             for (const auto& shape : shapes) {
-                GameObject* shapeObject = scene->CreateObject(shape.name.empty() ? "Shape" : shape.name, rootObject);
+                GameObject* shapeObject = pScene->CreateObject(shape.name.empty() ? "Shape" : shape.name, rootObject);
                 const auto& mesh        = shape.mesh;
 
                 VertexLayout layout = CreateStandardVertexLayout();
@@ -1034,6 +1037,12 @@ namespace golias {
         spdlog::info("GameObject::AddComponent added Component: {} to GameObject: {}", typeid(*pComponent).name(), typeid(*this).name());
     }
 
+    void GameObject::LoadProperties(const nlohmann::json& json) {
+    }
+
+    void GameObject::Start() {
+    }
+
     void GameObject::Update(float deltaTime) {
         if (!IsActive()) {
             return;
@@ -1089,14 +1098,10 @@ namespace golias {
     }
 
     glm::vec3 GameObject::GetWorldPosition() const {
-        if (parent) {
-            glm::mat4 worldTransform = parent->GetWorldTransform();
-            glm::mat4 inverseWorld   = glm::inverse(worldTransform);
-            glm::vec4 localPos       = inverseWorld * glm::vec4(position, 1.0f);
-            return glm::vec3(localPos) / localPos.w;
-        } else {
-            return position;
-        }
+
+        glm::vec4 hom = GetWorldTransform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+        return glm::vec3(hom) / hom.w;
     }
 
 
@@ -1169,7 +1174,7 @@ namespace golias {
     }
 
 
-    GameObject* GameObject::LoadModel(const std::string_view pPath) {
+    GameObject* GameObject::LoadModel(const std::string_view pPath, Scene* pScene) {
         auto& engine = Engine::GetInstance();
         auto& fs     = engine.GetFileSystem();
 
@@ -1184,7 +1189,12 @@ namespace golias {
             model_name = model_name.substr(last_slash + 1);
         }
 
-        GameObject* rootObject = engine.GetScene()->CreateObject(model_name, nullptr);
+        if (!pScene) {
+            spdlog::error("GameObject::LoadModel failed: Scene is invalid");
+            return nullptr;
+        }
+
+        GameObject* rootObject = pScene->CreateObject(model_name, nullptr);
 
         if (extension == "gltf" || extension == "glb") {
             cgltf_data* data = nullptr;
@@ -1204,7 +1214,7 @@ namespace golias {
 
             cgltf_scene* scene = data->scene ? data->scene : &data->scenes[0];
             for (cgltf_size i = 0; i < scene->nodes_count; ++i) {
-                ParseGLTFNode(scene->nodes[i], rootObject, data, base_path);
+                ParseGLTFNode(scene->nodes[i], rootObject, data, base_path, pScene);
             }
 
             // for (cgltf_size i = 0; i < data->textures_count; ++i) {
@@ -1244,7 +1254,7 @@ namespace golias {
                 return nullptr;
             }
 
-            ParseOBJ(attrib, shapes, materials, rootObject, dir);
+            ParseOBJ(attrib, shapes, materials, rootObject, dir, pScene);
             spdlog::info("Successfully loaded OBJ model: {}", pPath);
 
         } else {
