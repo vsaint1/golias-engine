@@ -1,0 +1,168 @@
+{
+    "name": "Main",
+    "objects": [
+        {
+            "name": "Ground",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/brick.mat"
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 50.0,
+                            "y": 2.0,
+                            "z": 50.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 50.0,
+                            "y": 2.0,
+                            "z": 50.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "static"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "MainPlayer",
+            "type": "Player",
+            "position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "CameraComponent"
+                },
+                {
+                    "type": "FirstPersonControllerComponent"
+                }
+            ],
+            "children": [
+                {
+                    "name": "Gun",
+                    "type": "model",
+                    "path": "models/carbine/scene.gltf",
+                    "position": {
+                        "x": 0.75,
+                        "y": -0.5,
+                        "z": -0.75
+                    },
+                    "rotation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0,
+                        "w": 1.0
+                    },
+                    "scale": {
+                        "x": -1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "DynObject",
+            "position": {
+                "x": 5.0,
+                "y": 20.0,
+                "z": 0.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/brick.mat"
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        }
+    ],
+    "main_camera": "MainPlayer",
+    "version": "0.0.1"
+}
