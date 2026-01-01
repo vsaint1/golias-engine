@@ -1,0 +1,29 @@
+{
+    "parameters": {
+        "textures": [
+            {
+                "name": "ALBEDO_TEXTURE",
+                "path": "textures/checker.png"
+            }
+        ],
+        "bools": [
+            {
+                "name": "HAS_ALBEDO",
+                "value": true
+            }
+        ],
+        "floats": [],
+        "vectors": [
+            {
+                "name": "BASE_COLOR",
+                "value": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "type": "vec4"
+            }
+        ]
+    }
+}

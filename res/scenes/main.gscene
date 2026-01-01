@@ -23,7 +23,7 @@
                 {
                     "type": "MeshComponent",
                     "material": {
-                        "path": "materials/brick.mat"
+                        "path": "materials/checker.mat"
                     },
                     "mesh": {
                         "type": "box",
@@ -161,6 +161,27 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "Godette",
+            "type": "model",
+            "path": "models/godette/godette.gltf",
+            "position": {
+                "x": 0.75,
+                "y": 2.0,
+                "z": -0.75
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            }
         }
     ],
     "main_camera": "MainPlayer",
