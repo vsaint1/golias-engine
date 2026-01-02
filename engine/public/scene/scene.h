@@ -2,6 +2,7 @@
 
 #include "game_object.h"
 #include <spdlog/spdlog.h>
+#include <json.hpp>
 
 
 namespace golias {
@@ -12,8 +13,11 @@ namespace golias {
         Scene()  = default;
         ~Scene() = default;
 
+        static void RegisterTypes();
+
         GameObject* CreateObject(const std::string& name, GameObject* pParent = nullptr);
         GameObject* CreateObject(GameObject* pParent = nullptr);
+        GameObject* CreateObject(const std::string& type,const std::string& name, GameObject* pParent = nullptr);
 
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<GameObject, T>>>
         T* CreateObject(const std::string& name, GameObject* pParent = nullptr);
@@ -29,10 +33,19 @@ namespace golias {
         void SetMainCamera(GameObject* pCamera);
         GameObject* GetMainCamera() const;
 
+        static std::shared_ptr<Scene> Load(const std::string_view pPath);
+
+        void SetName(const std::string_view pName);
+        const std::string& GetName() const;
+
     private:
+        void LoadObject(const nlohmann::json& object, GameObject* pParent);
+
         std::vector<std::unique_ptr<GameObject>> game_objects;
         GameObject* main_camera = nullptr;
         static size_t next_type_id;
+        
+        std::string name;
 
         std::string MakeUniqueName(const std::string& baseName);
     };
