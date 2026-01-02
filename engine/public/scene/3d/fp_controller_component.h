@@ -18,7 +18,11 @@ namespace golias {
         void SetSpeed(float value);
 
         KinematicCharacterController* GetCharacterController() const;
+        
+        void LoadProperties(const nlohmann::json& json) override{
 
+        }
+        
     private:
         float sensitivity = 0.4f;
         float speed       = 10.0f;

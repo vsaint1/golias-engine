@@ -56,6 +56,10 @@ namespace golias {
 
         std::unordered_map<std::string, std::shared_ptr<AnimationClip>>& GetRegisteredClips();
 
+        void LoadProperties(const nlohmann::json& json) override{
+
+        }
+        
     private:
         void BuildBindings();
         glm::vec3 Interpolate(const std::vector<KeyFrameVec3>& keys, float _time);

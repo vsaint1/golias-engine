@@ -20,7 +20,13 @@ namespace golias {
         void Start() override;
         void Update(float deltaTime) override;
 
+        Mesh* GetMesh() const;
+        void SetMesh(const std::shared_ptr<Mesh>& pMesh);
 
+        void SetMaterial(const std::shared_ptr<Material>& pMaterial);
+        Material* GetMaterial() const;
+
+        void LoadProperties(const nlohmann::json& json);
     private:
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<Material> material;

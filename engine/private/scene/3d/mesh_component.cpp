@@ -7,12 +7,11 @@ namespace golias {
 
     MeshComponent::MeshComponent(const std::shared_ptr<Mesh>& pMesh, const std::shared_ptr<Material>& pMaterial)
         : mesh(pMesh), material(pMaterial) {
-            
     }
 
     void MeshComponent::Start() {
     }
-    
+
     void MeshComponent::Update(float deltaTime) {
 
         if (!mesh || !material) {
@@ -23,10 +22,61 @@ namespace golias {
         command.mesh        = mesh.get();
         command.material    = material.get();
         command.modelMatrix = GetOwner()->GetWorldTransform();
-
         auto& rendering_canvas = golias::Engine::GetInstance().GetRenderingCanvas();
         rendering_canvas.Submit(command);
     }
 
+    Mesh* MeshComponent::GetMesh() const {
+        return mesh.get();
+    }
 
-} // namespace golias
+    void MeshComponent::SetMesh(const std::shared_ptr<Mesh>& pMesh) {
+        mesh = pMesh;
+    }
+
+    void MeshComponent::SetMaterial(const std::shared_ptr<Material>& pMaterial) {
+        material = pMaterial;
+    }
+
+    Material* MeshComponent::GetMaterial() const {
+        return material.get();
+    }
+
+
+    void MeshComponent::LoadProperties(const nlohmann::json& json) {
+
+        if (json.contains("material")) {
+            const auto materialObject = json["material"];
+            if (materialObject.contains("path")) {
+                std::string materialPath = materialObject.value("path", "");
+                auto mat                 = Material::Load(materialPath);
+
+                if (mat) {
+                    SetMaterial(mat);
+                }
+            }
+          
+        }
+
+        if (json.contains("mesh")) {
+            const auto& meshObj = json["mesh"];
+
+            const std::string meshType = meshObj.value("type", "box");
+
+            if (meshType == "box") {
+                glm::vec3 extents = glm::vec3(1.0f);
+                if(meshObj.contains("extents")){
+                    const auto& extentsJson = meshObj["extents"];
+                    extents.x               = extentsJson.value("x", 1.0f);
+                    extents.y               = extentsJson.value("y", 1.0f);
+                    extents.z               = extentsJson.value("z", 1.0f);
+                }
+
+                auto boxMesh = Mesh::CreateBox(extents);
+                SetMesh(boxMesh);
+            }
+        }
+
+
+    } // namespace golias
+}

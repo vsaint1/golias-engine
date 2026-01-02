@@ -11,15 +11,18 @@ namespace golias {
     class PhysicsComponent : public Component {
         COMPONENT(PhysicsComponent)
     public:
+        PhysicsComponent()                    = default;
         PhysicsComponent(const std::shared_ptr<RigidBody>& pRigidBody);
 
         RigidBody* GetRigidBody() const;
+        void SetRigidBody(std::shared_ptr<RigidBody> pRigidBody);
 
         void Start() override;
         void Update(float deltaTime) override;
+
+        void LoadProperties(const nlohmann::json& json) override;
     private:
-        PhysicsComponent()                    = default;
-        std::shared_ptr<RigidBody> rigid_body = nullptr;
+        std::shared_ptr<RigidBody> rigidBody = nullptr;
     };
 
 } // namespace golias

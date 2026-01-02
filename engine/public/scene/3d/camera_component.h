@@ -18,7 +18,10 @@ namespace golias {
         glm::mat4 GetViewMatrix() const;
         glm::mat4 GetProjectionMatrix(float aspectRatio) const;
      
+        void LoadProperties(const nlohmann::json& json) override{
 
+        }
+        
         void SetFOV(float newFov);
         float GetFOV() const;
 
