@@ -33,10 +33,10 @@ namespace golias {
     }
 
 
-    std::shared_ptr<Texture2D> TextureManager2D::EnsureTexture(const std::string_view pFilePath) {
-        auto it = textures.find(std::string(pFilePath));
+    std::shared_ptr<Texture2D> TextureManager::EnsureTexture2D(const std::string_view pFilePath) {
+        auto it = textures2D.find(std::string(pFilePath));
 
-        if (it != textures.end()) {
+        if (it != textures2D.end()) {
             return it->second;
         }
 
@@ -45,17 +45,17 @@ namespace golias {
         auto texture = rd->CreateTextureFromFile(pFilePath);
 
         if (texture) {
-            textures[std::string(pFilePath)] = texture;
+            textures2D[std::string(pFilePath)] = texture;
         }
 
         return texture;
     }
 
-    std::shared_ptr<Texture2D> TextureManager2D::EnsureTexture(const std::string_view pFilePath,int width, int height, ETextureFormat format, const Uint8* data) {
+    std::shared_ptr<Texture2D> TextureManager::EnsureTexture2D(const std::string_view pFilePath,int width, int height, ETextureFormat format, const Uint8* data) {
 
-        auto it = textures.find(std::string(pFilePath));
+        auto it = textures2D.find(std::string(pFilePath));
 
-        if (it != textures.end()) {
+        if (it != textures2D.end()) {
             return it->second;
         }
 
@@ -64,7 +64,7 @@ namespace golias {
         auto texture = rd->CreateTextureFromData(width, height, format, data);
 
         if (texture) {
-            textures[std::string(pFilePath)] = texture;
+            textures2D[std::string(pFilePath)] = texture;
         }
 
         return texture;

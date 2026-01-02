@@ -35,7 +35,7 @@ namespace golias {
 
         RenderingCanvas& GetRenderingCanvas();
 
-        TextureManager2D& GetTextureManager2D();
+        TextureManager& GetTextureManager();
 
         PhysicsManager& GetPhysicsManager();
 
@@ -71,7 +71,7 @@ namespace golias {
     private:
         RenderingDevice* rendering_device = nullptr;
         RenderingCanvas rendering_canvas;
-        TextureManager2D texture_manager_2d;
+        TextureManager texture_manager;
     };
 
 }; // namespace golias

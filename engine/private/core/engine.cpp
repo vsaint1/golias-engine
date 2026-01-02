@@ -190,8 +190,8 @@ namespace golias {
         return material_manager;
     }
     
-    TextureManager2D& Engine::GetTextureManager2D() {
-        return texture_manager_2d;
+    TextureManager& Engine::GetTextureManager() {
+        return texture_manager;
     }
 
     PhysicsManager& Engine::GetPhysicsManager() {

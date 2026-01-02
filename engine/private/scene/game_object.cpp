@@ -498,7 +498,7 @@ namespace golias {
                                      const std::string& base_path) {
             auto& engine          = Engine::GetInstance();
             auto rd               = engine.GetRenderingDevice();
-            auto& texture_manager = engine.GetTextureManager2D();
+            auto& texture_manager = engine.GetTextureManager();
 
             std::shared_ptr<Mesh> mesh         = rd->CreateMeshFromData(layout, vertices, indices);
             std::shared_ptr<Material> material = std::make_shared<Material>();
@@ -589,7 +589,7 @@ namespace golias {
                             }
 
                             std::shared_ptr<Texture2D> loaded_texture =
-                                texture_manager.EnsureTexture(embedded_path, width, height, format, image_data);
+                                texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
 
                             if (loaded_texture) {
@@ -611,7 +611,7 @@ namespace golias {
                     } else {
                         std::string tex_path = base_path + image->uri;
                         try {
-                            auto loaded_texture = texture_manager.EnsureTexture(tex_path);
+                            auto loaded_texture = texture_manager.EnsureTexture2D(tex_path);
                             if (loaded_texture) {
                                 spdlog::debug("Loaded external texture: {}", tex_path);
                                 return loaded_texture;
@@ -692,7 +692,7 @@ namespace golias {
                         }
 
                         std::shared_ptr<Texture2D> loaded_texture =
-                            texture_manager.EnsureTexture(embedded_path, width, height, format, image_data);
+                            texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
 
                         if (loaded_texture) {
@@ -841,7 +841,7 @@ namespace golias {
                 // Diffuse texture
                 if (!obj_material->diffuse_texname.empty()) {
                     std::string tex_path = base_path + obj_material->diffuse_texname;
-                    auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
+                    auto texture         = Engine::GetInstance().GetTextureManager().EnsureTexture2D(tex_path);
                     if (texture) {
                         material->SetParameter("ALBEDO_TEXTURE", texture);
                         material->SetParameter("HAS_ALBEDO", 1);
@@ -851,7 +851,7 @@ namespace golias {
                 // Normal map
                 if (!obj_material->normal_texname.empty()) {
                     std::string tex_path = base_path + obj_material->normal_texname;
-                    auto texture         = Engine::GetInstance().GetTextureManager2D().EnsureTexture(tex_path);
+                    auto texture         = Engine::GetInstance().GetTextureManager().EnsureTexture2D(tex_path);
                     if (texture) {
                         material->SetParameter("NORMAL_TEXTURE", texture);
                         material->SetParameter("HAS_NORMAL", 1);
