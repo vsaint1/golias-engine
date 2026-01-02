@@ -2,6 +2,11 @@
 
 
 namespace golias {
+
+    void Application::RegisterTypes() {
+    
+    }
+
     bool Application::ShouldClose() const {
         return !is_running;
     }

@@ -58,7 +58,11 @@ namespace golias {
             return false;
         }
 
+        Scene::RegisterTypes();
+
         if (application) {
+            application->RegisterTypes();
+
             if (!application->Initialize()) {
                 spdlog::error("Engine::Initialize Failed to initialize the Application.");
                 return false;
@@ -111,6 +115,7 @@ namespace golias {
 
             CameraData camera_data;
             if (scene && scene->GetMainCamera()) {
+
                 camera_data.position  = scene->GetMainCamera()->GetWorldPosition();
                 auto camera_component = scene->GetMainCamera()->GetComponent<CameraComponent>();
 
@@ -177,11 +182,14 @@ namespace golias {
         return scene.get();
     }
 
-    void Engine::SetScene(Scene* pScene) {
-        scene.reset(pScene);
+    void Engine::SetScene(const std::shared_ptr<Scene>& pScene) {
+        scene = pScene;
     }
 
-
+    MaterialManager& Engine::GetMaterialManager() {
+        return material_manager;
+    }
+    
     TextureManager2D& Engine::GetTextureManager2D() {
         return texture_manager_2d;
     }

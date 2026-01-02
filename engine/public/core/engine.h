@@ -41,8 +41,10 @@ namespace golias {
 
         FileSystem& GetFileSystem();
 
+        MaterialManager& GetMaterialManager();
+
         Scene* GetScene() const;
-        void SetScene(Scene* pScene);
+        void SetScene(const std::shared_ptr<Scene>& pScene);
 
     private:
         Engine()                         = default;
@@ -55,6 +57,7 @@ namespace golias {
         InputManager input_manager;
         FileSystem file_system;
         PhysicsManager physics_manager;
+        MaterialManager material_manager;
 
     private:
         std::unique_ptr<Application> application;
@@ -63,7 +66,7 @@ namespace golias {
         SDL_Window* window           = nullptr;
         int _width                   = 1280;
         int _height                  = 720;
-        std::unique_ptr<Scene> scene = nullptr;
+        std::shared_ptr<Scene> scene = nullptr;
 
     private:
         RenderingDevice* rendering_device = nullptr;

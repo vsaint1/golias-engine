@@ -1,5 +1,11 @@
 #include "scene/scene.h"
 
+#include "core/engine.h"
+#include "scene/3d/animation_component.h"
+#include "scene/3d/camera_component.h"
+#include "scene/3d/fp_controller_component.h"
+#include "scene/3d/mesh_component.h"
+#include "scene/3d/physics_component.h"
 #include <SDL3/SDL_stdinc.h>
 
 namespace golias {
@@ -20,11 +26,34 @@ namespace golias {
         return CreateObject("GameObject", pParent);
     }
 
+    GameObject* Scene::CreateObject(const std::string& type, const std::string& name, GameObject* pParent) {
+
+        auto obj = ObjectRegistry::GetInstance().CreateObject(type);
+        if (obj) {
+            std::string fname = MakeUniqueName(name);
+            obj->SetName(fname);
+            obj->scene = this;
+            SetParent(obj, pParent);
+
+            spdlog::info("Scene::CreateObject Created GameObject of type {} with Name '{}'", type, fname);
+            return obj;
+        }
+
+        spdlog::error("Scene::CreateObject Failed to create GameObject of unknown type: {}", type);
+
+        return obj;
+    }
+
     const std::vector<std::unique_ptr<GameObject>>& Scene::GetGameObjects() const {
         return game_objects;
     }
 
     void Scene::Update(float deltaTime) {
+        if (game_objects.empty()) {
+            spdlog::warn("Scene::Update No GameObjects to update in the Scene");
+            return;
+        }
+
         for (auto it = game_objects.begin(); it != game_objects.end();) {
             if ((*it)->IsAlive()) {
                 (*it)->Update(deltaTime);
@@ -150,6 +179,11 @@ namespace golias {
         size_t count = 0;
 
         for (const auto& obj : game_objects) {
+            if (!obj) {
+                spdlog::warn("Scene::MakeUniqueName encountered null GameObject pointer");
+                continue;
+            }
+
             const std::string& existing = obj->GetName();
 
             if (existing == baseName) {
@@ -173,5 +207,164 @@ namespace golias {
         return std::format("{}_{}", baseName, count);
     }
 
+    std::shared_ptr<Scene> Scene::Load(const std::string_view pPath) {
+
+        const std::string content = Engine::GetInstance().GetFileSystem().LoadAssetFileText(pPath);
+        if (content.empty()) {
+            spdlog::error("Scene::Load Failed to load Scene file: {}", pPath);
+            return nullptr;
+        }
+
+        nlohmann::json json = nlohmann::json::parse(content);
+
+        if (json.is_null() || json.empty()) {
+            spdlog::error("Scene::Load Failed to parse Scene file: {}", pPath);
+            return nullptr;
+        }
+
+        auto scene                   = std::make_shared<Scene>();
+        const std::string sceneName  = json.value("name", "UnnamedScene");
+        const std::string versionStr = json.value("version", "0.0.0");
+
+        scene->SetName(sceneName);
+
+        spdlog::info("Scene::Load Loading Scene '{}' from file: {}", sceneName, pPath);
+
+        if (json.contains("objects") && json["objects"].is_array()) {
+
+            for (const auto& object : json["objects"]) {
+                scene->LoadObject(object, nullptr);
+            }
+        }
+
+        if (json.contains("main_camera")) {
+            const std::string mainCameraName = json.value("main_camera", "");
+
+            std::string cameraObjName = json.value("main_camera", "");
+            for (const auto& child : scene->game_objects) {
+                if (auto object = child->FindChildByName(cameraObjName)) {
+                    spdlog::info("Scene::Load Setting main camera to '{}'", cameraObjName);
+                    scene->SetMainCamera(object);
+                    break;
+                }
+            }
+        }
+
+        spdlog::info("Scene::Load Successfully loaded Scene '{}' with {} GameObjects", sceneName, scene->GetGameObjects().size());
+        return scene;
+    }
+
+    void Scene::LoadObject(const nlohmann::json& object, GameObject* pParent) {
+
+        const std::string name = object.value("name", "GameObject");
+
+        GameObject* gameObject = nullptr;
+
+        if (object.contains("type")) {
+            const std::string type = object.value("type", "");
+
+            if (type == "model") {
+                const std::string modelPath = object.value("path", "");
+                spdlog::info("Scene::LoadObject Loading Model GameObject '{}' from path '{}'", name, modelPath);
+                gameObject = GameObject::LoadModel(modelPath, this);
+
+                if (gameObject) {
+
+                    gameObject->SetParent(pParent);
+
+                    gameObject->SetName(name);
+                }
+            } else {
+
+                gameObject = CreateObject(type, name, pParent);
+            }
+
+        } else {
+            gameObject = CreateObject(name, pParent);
+        }
+
+        if (!gameObject) {
+            spdlog::warn("Scene::LoadObject Failed to create GameObject of type '{}' with name '{}'", object.value("type", ""), name);
+            return;
+        }
+
+        if (object.contains("position")) {
+            const auto pos     = object["position"];
+            glm::vec3 position = glm::vec3(0.0f);
+            position.x         = pos.value("x", 0.0f);
+            position.y         = pos.value("y", 0.0f);
+            position.z         = pos.value("z", 0.0f);
+            gameObject->SetPosition(position);
+
+            spdlog::warn("LoadObject '{}': Setting position ({},{},{}), parent={}",
+                         name,
+                         position.x,
+                         position.y,
+                         position.z,
+                         gameObject->GetParent() ? gameObject->GetParent()->GetName() : "null");
+        }
+
+        if (object.contains("rotation")) {
+            const auto rot     = object["rotation"];
+            glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+            rotation.x         = rot.value("x", 0.0f);
+            rotation.y         = rot.value("y", 0.0f);
+            rotation.z         = rot.value("z", 0.0f);
+            rotation.w         = rot.value("w", 1.0f);
+            gameObject->SetRotation(rotation);
+        }
+
+        if (object.contains("scale")) {
+            const auto scl  = object["scale"];
+            glm::vec3 scale = glm::vec3(1.0f);
+            scale.x         = scl.value("x", 1.0f);
+            scale.y         = scl.value("y", 1.0f);
+            scale.z         = scl.value("z", 1.0f);
+            gameObject->SetScale(scale);
+        }
+
+        gameObject->LoadProperties(object);
+
+        if (object.contains("components") && object["components"].is_array()) {
+            for (const auto& comp : object["components"]) {
+                const std::string type = comp.value("type", "");
+
+                Component* component = ComponentRegistry::GetInstance().CreateComponent(type);
+                if (component) {
+
+                    spdlog::info("Scene::LoadObject Adding Component of type '{}' to GameObject '{}'", type, name);
+                    component->LoadProperties(comp);
+                    gameObject->AddComponent(component);
+                } else {
+                    spdlog::warn("Scene::LoadObject Failed to create Component of type '{}' for GameObject '{}'", type, name);
+                }
+            }
+        }
+
+        if (object.contains("children") && object["children"].is_array()) {
+            for (const auto& child : object["children"]) {
+                LoadObject(child, gameObject);
+            }
+        }
+
+
+        gameObject->Start();
+    }
+
+    void Scene::SetName(const std::string_view pName) {
+        name = pName;
+    }
+
+    const std::string& Scene::GetName() const {
+        return name;
+    }
+
+    void Scene::RegisterTypes() {
+        MeshComponent::Register();
+        CameraComponent::Register();
+        FirstPersonControllerComponent::Register();
+        AnimationComponent::Register();
+        PhysicsComponent::Register();
+    }
 
 }; // namespace golias
