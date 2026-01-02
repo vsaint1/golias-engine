@@ -26,7 +26,11 @@ namespace golias {
     }
 
 
-    std::shared_ptr<Material> Material::Load(const std::string& pPath) {
+    std::shared_ptr<Material> Material::Load(const std::string_view pPath) {
+
+        if (auto existingMaterial = Engine::GetInstance().GetMaterialManager().GetMaterial(pPath); existingMaterial) {
+            return existingMaterial;
+        }
 
         auto& fs = Engine::GetInstance().GetFileSystem();
 
@@ -97,11 +101,10 @@ namespace golias {
                     } else {
                         spdlog::error("Material::Load: Failed to load Texture2D '{}' for Material: {}", value, pPath);
                     }
-
                 }
             }
 
-            if (paramsObj.contains("bools")){
+            if (paramsObj.contains("bools")) {
                 Json boolsArray = paramsObj["bools"];
 
                 for (const auto& boolEntry : boolsArray) {
@@ -111,7 +114,7 @@ namespace golias {
                     material->SetParameter(name, value);
                 }
             }
-            
+
             if (paramsObj.contains("floats")) {
 
                 Json floatsArray = paramsObj["floats"];
@@ -131,10 +134,11 @@ namespace golias {
                     std::string name = vecEntry.value("name", "");
                     std::string type = vecEntry.value("type", "vec2"); // DEFAULT -> 2D
 
-                    float x = vecEntry.value("x", 0.0f);
-                    float y = vecEntry.value("y", 0.0f);
-                    float z = vecEntry.value("z", 0.0f);
-                    float w = vecEntry.value("w", 0.0f);
+                    const auto& vecObj = vecEntry["value"];
+                    float x            = vecObj.value("x", 0.0f);
+                    float y            = vecObj.value("y", 0.0f);
+                    float z            = vecObj.value("z", 0.0f);
+                    float w            = vecObj.value("w", 0.0f);
 
                     if (type == "vec2") {
                         material->SetParameter<glm::vec2>(name, glm::vec2(x, y));
@@ -151,7 +155,27 @@ namespace golias {
 
         spdlog::info("Material::Load: Successfully loaded Material: {}", pPath);
 
+        Engine::GetInstance().GetMaterialManager().RegisterMaterial(pPath, material);
+
         return material;
     }
 
+
+     MaterialManager& MaterialManager::GetInstance() {
+        static MaterialManager instance;
+        return instance;
+    }
+
+    std::shared_ptr<Material> MaterialManager::GetMaterial(const std::string_view pPath) {
+        auto it = materials.find(pPath.data());
+        if (it != materials.end()) {
+            return it->second;
+        }
+
+        return nullptr;
+    }
+
+    void MaterialManager::RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial) {
+        materials[pPath.data()] = pMaterial;
+    }
 } // namespace golias
