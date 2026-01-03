@@ -81,7 +81,6 @@ namespace golias {
             material->SetShader(rd->GetDefaultShader3D());
         }
 
-        // Initialize all PBR material parameters with defaults to prevent texture bleeding
         material->SetParameter("TEXTURE_FLAGS", 0);  // No textures by default
         material->SetParameter("u_material.modulate", glm::vec4(1.0f));
         material->SetParameter("u_material.metallicFactor", 0.0f);

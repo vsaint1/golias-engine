@@ -37,6 +37,7 @@ namespace golias {
         auto it = textures2D.find(std::string(pFilePath));
 
         if (it != textures2D.end()) {
+            // spdlog::debug("Texture cache HIT: {} (Total cached: {})", pFilePath, textures2D.size());
             return it->second;
         }
 
@@ -46,6 +47,7 @@ namespace golias {
 
         if (texture) {
             textures2D[std::string(pFilePath)] = texture;
+            spdlog::debug("Texture cache MISS, loaded: {} (Total cached: {})", pFilePath, textures2D.size());
         }
 
         return texture;
@@ -56,6 +58,7 @@ namespace golias {
         auto it = textures2D.find(std::string(pFilePath));
 
         if (it != textures2D.end()) {
+            spdlog::debug("Texture cache HIT (embedded): {} (Total cached: {})", pFilePath, textures2D.size());
             return it->second;
         }
 
@@ -65,6 +68,8 @@ namespace golias {
 
         if (texture) {
             textures2D[std::string(pFilePath)] = texture;
+            spdlog::debug("Texture cache MISS (embedded), created: {} {}x{} (Total cached: {})", 
+                         pFilePath, width, height, textures2D.size());
         }
 
         return texture;
