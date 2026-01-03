@@ -15,78 +15,134 @@ uniform sampler2D NORMAL_TEXTURE;
 uniform sampler2D AO_TEXTURE;
 uniform sampler2D EMISSIVE_TEXTURE;
 
-// Texture flags (0 = not present, 1 = present)
-uniform int HAS_ALBEDO;
-uniform int HAS_METALLIC;
-uniform int HAS_ROUGHNESS;
-uniform int HAS_NORMAL;
-uniform int HAS_AO;
-uniform int HAS_EMISSIVE;
+// Texture flags (bitwise)
+const int HAS_ALBEDO_FLAG    = 1;  // 0x01
+const int HAS_METALLIC_FLAG  = 2;  // 0x02
+const int HAS_ROUGHNESS_FLAG = 4;  // 0x04
+const int HAS_NORMAL_FLAG    = 8;  // 0x08
+const int HAS_AO_FLAG        = 16; // 0x10
+const int HAS_EMISSIVE_FLAG  = 32; // 0x20
 
-// Material properties
-uniform vec4  MODULATE;
-uniform float METALLIC_FACTOR;
-uniform float ROUGHNESS_FACTOR;
-uniform vec3  EMISSIVE_FACTOR;
+uniform int TEXTURE_FLAGS;
 
-uniform vec3 VIEW_POSITION;  
-uniform vec3 LIGHT_POSITION;
-uniform vec3 LIGHT_COLOR;
-uniform float AMBIENT_STRENGTH;
-uniform float SPECULAR_STRENGTH;
-uniform float SHININESS;
+
+struct Material {
+    vec4  albedo;
+    float metallic;
+    float roughness;
+    float ao;
+    vec3  emissive;
+    vec3  normal;
+};
+
+// Material properties uniform block
+struct MaterialProperties {
+    vec4  modulate;
+    vec3  emissiveFactor;
+    float metallicFactor;
+    float roughnessFactor;
+    float emissiveStrength;
+};
+
+uniform MaterialProperties u_material;
+
+// Directional light struct
+struct DirectionalLight {
+    vec3  direction;
+    vec3  color;
+    float intensity;
+};
+
+// Lighting configuration
+const int MAX_DIRECTIONAL_LIGHTS = 32;
+uniform DirectionalLight u_directionalLights[MAX_DIRECTIONAL_LIGHTS];
+uniform int u_directionalLightCount;
+
+// Scene properties
+uniform vec3 u_viewPosition;
+uniform float u_ambientStrength;
+uniform float u_specularStrength;
+uniform float u_shininess;
+
+Material SampleMaterial()
+{
+    Material mat;
+    
+    // Albedo
+    mat.albedo = ((TEXTURE_FLAGS & HAS_ALBEDO_FLAG) != 0)
+        ? texture(ALBEDO_TEXTURE, v_texcoord) * u_material.modulate
+        : u_material.modulate;
+    mat.albedo.rgb *= v_color;
+    
+    // Metallic
+    mat.metallic = ((TEXTURE_FLAGS & HAS_METALLIC_FLAG) != 0)
+        ? texture(METALLIC_TEXTURE, v_texcoord).b
+        : u_material.metallicFactor;
+    
+    // Roughness
+    mat.roughness = ((TEXTURE_FLAGS & HAS_ROUGHNESS_FLAG) != 0)
+        ? texture(ROUGHNESS_TEXTURE, v_texcoord).g
+        : u_material.roughnessFactor;
+    
+    // Ambient Occlusion
+    mat.ao = ((TEXTURE_FLAGS & HAS_AO_FLAG) != 0)
+        ? texture(AO_TEXTURE, v_texcoord).r
+        : 1.0;
+    
+    // Emissive
+    mat.emissive = ((TEXTURE_FLAGS & HAS_EMISSIVE_FLAG) != 0)
+        ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * u_material.emissiveFactor * u_material.emissiveStrength
+        : vec3(0.0);
+    
+    // Normal
+    mat.normal = normalize(v_normal);
+    if ((TEXTURE_FLAGS & HAS_NORMAL_FLAG) != 0) {
+        vec3 tangentNormal = texture(NORMAL_TEXTURE, v_texcoord).xyz * 2.0 - 1.0;
+        // TODO: Proper tangent-space to world-space transformation requires tangent/bitangent
+        // For now, blend the normal map with the vertex normal
+        mat.normal = normalize(mat.normal + tangentNormal * 0.5);
+    }
+    
+    return mat;
+}
 
 void main()
 {
     // --- Material sampling ---
-  vec4 albedo = (HAS_ALBEDO == 1)
-    ? texture(ALBEDO_TEXTURE, v_texcoord) * MODULATE  
-    : MODULATE;
-
-    albedo.rgb *= v_color;
-
-    float metallic  = (HAS_METALLIC  == 1) ? texture(METALLIC_TEXTURE,  v_texcoord).b : METALLIC_FACTOR;
-    float roughness = (HAS_ROUGHNESS == 1) ? texture(ROUGHNESS_TEXTURE, v_texcoord).g : ROUGHNESS_FACTOR;
-    float ao        = (HAS_AO        == 1) ? texture(AO_TEXTURE,        v_texcoord).r : 1.0;
-
-    vec3 emissive = (HAS_EMISSIVE == 1)
-        ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * EMISSIVE_FACTOR
-        : vec3(0.0);
-
-    // --- Normal ---
-    vec3 norm = normalize(v_normal);
-
-    if (HAS_NORMAL == 1) {
-        vec3 tangentNormal = texture(NORMAL_TEXTURE, v_texcoord).xyz * 2.0 - 1.0;
-        // TODO: apply TBN matrix
-        norm = normalize(v_normal); // fallback for now
-    }
-
-    vec3 baseColor = albedo.rgb;
+    Material mat = SampleMaterial();
+    vec3 baseColor = mat.albedo.rgb;
 
     // --- Lighting ---
-    vec3 lightDir = normalize(LIGHT_POSITION - v_frag_pos);
-    vec3 viewDir  = normalize(VIEW_POSITION - v_frag_pos);
+    vec3 viewDir = normalize(u_viewPosition - v_frag_pos);
+    
+    // Ambient lighting (AO-affected)
+    vec3 ambient = u_ambientStrength * baseColor * mat.ao;
+    
+    // Accumulate lighting from all directional lights
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+    
+    for (int i = 0; i < u_directionalLightCount && i < MAX_DIRECTIONAL_LIGHTS; ++i) {
+        DirectionalLight light = u_directionalLights[i];
+        vec3 lightDir = normalize(-light.direction);
+        
+        // Diffuse
+        float diff = max(dot(mat.normal, lightDir), 0.0);
+        diffuse += diff * light.color * light.intensity;
+        
+        // Specular (Blinn-Phong, roughness-weighted)
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float adjustedShininess = max(u_shininess * (1.0 - mat.roughness), 1.0);
+        float spec = pow(max(dot(mat.normal, halfwayDir), 0.0), adjustedShininess);
+        specular += u_specularStrength * spec * light.color * light.intensity;
+    }
 
-    // Ambient (AO-affected)
-    vec3 ambient = AMBIENT_STRENGTH * LIGHT_COLOR * ao;
-
-    // Diffuse
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * LIGHT_COLOR;
-
-    // Specular (Blinn-Phong, roughness-weighted)
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float adjustedShininess = max(SHININESS * (1.0 - roughness), 1.0);
-    float spec = pow(max(dot(norm, halfwayDir), 0.0), adjustedShininess);
-    vec3 specular = SPECULAR_STRENGTH * spec * LIGHT_COLOR;
-
-    // Metallic influence
-    vec3 F0 = mix(vec3(0.04), baseColor, metallic);
-    specular = mix(specular, specular * baseColor, metallic);
+    // Metallic influence on specular
+    vec3 F0 = mix(vec3(0.04), baseColor, mat.metallic);
+    specular = mix(specular, specular * baseColor, F0);
 
     // Final color
-    vec3 result = (ambient + diffuse + specular) * baseColor + emissive;
+    vec3 result = (ambient + diffuse + specular) * baseColor + mat.emissive;
 
-    COLOR = vec4(result, albedo.a);
+    COLOR = vec4(result, mat.albedo.a);
 }

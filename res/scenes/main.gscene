@@ -122,6 +122,27 @@
             ]
         },
         {
+            "name":"DmgHelmet",
+            "type":"model",
+            "path":"models/pbr/DamagedHelmet.gltf",
+            "position":{
+                "x":-5.0,
+                "y":2.0,
+                "z":0.0
+            },
+            "rotation":{
+                "x":0.0,
+                "y":0.0,
+                "z":0.0,
+                "w":1.0
+            },
+            "scale":{
+                "x":1.0,
+                "y":1.0,
+                "z":1.0
+            }
+        },
+        {
             "name": "DynObject",
             "position": {
                 "x": 5.0,
@@ -143,7 +164,15 @@
                 {
                     "type": "MeshComponent",
                     "material": {
-                        "path": "materials/brick.mat"
+                        "path": "materials/brick.mat",
+                        "parameters": {
+                            "MODULATE": {
+                                "r": 0.8,
+                                "g": 0.2,
+                                "b": 0.2,
+                                "a": 1.0
+                            }
+                        }
                     },
                     "mesh": {
                         "type": "box",
