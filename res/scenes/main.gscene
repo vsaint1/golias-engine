@@ -81,6 +81,20 @@
                 },
                 {
                     "type": "FirstPersonControllerComponent"
+                },
+                {
+                    "type": "AudioListenerComponent"
+                },
+                {
+                    "type": "AudioComponent",
+                    "audio": [
+                        {
+                            "name": "GunShot",
+                            "path": "audio/FirstPersonTemplateWeaponFire.OGG",
+                            "volume": 0.2,
+                            "spatial": true
+                        }
+                    ]
                 }
             ],
             "children": [

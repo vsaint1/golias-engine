@@ -34,6 +34,9 @@ set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
 set(BUILD_EXTRAS OFF)
 add_subdirectory(bullet3 EXCLUDE_FROM_ALL)
 
+
+add_subdirectory(mini_audio)
+
 add_library(thirdparty INTERFACE)
 
 target_include_directories(${PROJECT_NAME}  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -49,6 +52,8 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         cgltf
         tinyobjloader
         BulletDynamics
+        BulletSoftBody
         BulletCollision
         LinearMath
+        mini_audio
 )
