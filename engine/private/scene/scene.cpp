@@ -6,6 +6,8 @@
 #include "scene/3d/fp_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
+#include "scene/3d/audio_component.h"
+#include "scene/3d/audio_listener_component.h"
 #include <SDL3/SDL_stdinc.h>
 
 namespace golias {
@@ -365,6 +367,8 @@ namespace golias {
         FirstPersonControllerComponent::Register();
         AnimationComponent::Register();
         PhysicsComponent::Register();
+        AudioComponent::Register();
+        AudioListenerComponent::Register();
     }
 
 }; // namespace golias

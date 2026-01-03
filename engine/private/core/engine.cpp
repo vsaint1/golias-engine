@@ -60,6 +60,11 @@ namespace golias {
 
         Scene::RegisterTypes();
 
+        if (!audio_manager.Initialize()) {
+            spdlog::error("Engine::Initialize Failed to initialize Audio Manager.");
+            return false;
+        }
+
         if (application) {
             application->RegisterTypes();
 
@@ -132,7 +137,7 @@ namespace golias {
             rendering_canvas.Draw(rendering_device, camera_data);
             rendering_device->Present();
 
-            // SDL_Delay(16); // HACK for development purposes
+            SDL_Delay(16); // HACK for development purposes
         }
     }
 
@@ -189,7 +194,7 @@ namespace golias {
     MaterialManager& Engine::GetMaterialManager() {
         return material_manager;
     }
-    
+
     TextureManager& Engine::GetTextureManager() {
         return texture_manager;
     }
