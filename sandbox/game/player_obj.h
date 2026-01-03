@@ -5,6 +5,8 @@
 #include "scene/3d/fp_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
+#include "scene/3d/audio_component.h"
+#include "scene/3d/audio_listener_component.h"
 
 class Player : public golias::GameObject {
     GCLASS(Player)
@@ -18,4 +20,7 @@ public:
 private:
     golias::AnimationComponent* animComp                     = nullptr;
     golias::FirstPersonControllerComponent* fpControllerComp = nullptr;
+    golias::AudioComponent* audioComp                        = nullptr;
+    golias::AudioListenerComponent* audioListenerComp        = nullptr;
+
 };

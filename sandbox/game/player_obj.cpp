@@ -12,7 +12,7 @@ void Player::Start() {
     camera->SetPosition({0.0f, 2.0f, 5.0f});
     scene->SetMainCamera(camera);
 
-    auto gun = golias::GameObject::LoadModel("models/carbine/scene.gltf",scene);
+    auto gun = golias::GameObject::LoadModel("models/carbine/scene.gltf", scene);
     gun->SetParent(camera);
     gun->SetPosition({0.75f, -0.5f, -0.75f});
     gun->SetScale({-1.0f, 1.0f, 1.0f});
@@ -31,11 +31,11 @@ void Player::Start() {
 
 #else
 
-  if (auto bullet = FindChildByName("bullet_33")) {
+    if (auto bullet = FindChildByName("bullet_33")) {
         bullet->SetActive(false);
     }
 
-    if (auto fire =  FindChildByName("BOOM_35")) {
+    if (auto fire = FindChildByName("BOOM_35")) {
         fire->SetActive(false);
     }
 
@@ -45,6 +45,8 @@ void Player::Start() {
         }
     }
 
+    audioComp         = GetComponent<golias::AudioComponent>();
+    audioListenerComp = GetComponent<golias::AudioListenerComponent>();
 #endif
 }
 
@@ -57,10 +59,14 @@ void Player::Update(float deltaTime) {
     auto& input = golias::Engine::GetInstance().GetInputManager();
 
     if (input.IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
+        // Just play - the Audio::Play() method handles stopping and restarting
         animComp->Play("shoot", false);
+        audioComp->Play("GunShot", false);
     }
 
     if (input.IsKeyPressed(SDLK_R)) {
-        animComp->Play("reload", false);
+        if (!animComp->IsPlaying()) {
+            animComp->Play("reload", false);
+        }
     }
 }
