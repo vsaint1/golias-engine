@@ -17,9 +17,10 @@ namespace golias {
 
         bool Initialize(SDL_Window* sdl_window) override;
 
-        void BindShader(Shader* shader);
-        void BindMesh(Mesh* mesh);
-        void BindMaterial(Material* material);
+        void BindShader(Shader* shader) override;
+        void BindMesh(Mesh* mesh) override;
+        void UnbindMesh(Mesh* mesh) override;
+        void BindMaterial(Material* material) override;
 
         std::shared_ptr<Shader> GetDefaultShader3D() const;
         

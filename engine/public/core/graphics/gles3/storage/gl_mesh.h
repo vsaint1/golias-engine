@@ -17,6 +17,8 @@ namespace golias {
 
         void Draw() override;
 
+        void Unbind() override;
+        
         virtual ~OpenglMesh() override;
     private:
         GLuint VAO = 0;

@@ -63,6 +63,11 @@ namespace golias {
         glBindVertexArray(VAO);
     }
 
+    void OpenglMesh::Unbind() {
+
+        glBindVertexArray(0);
+    }
+    
     void OpenglMesh::Draw() {
 
         if (GetIndexCount() > 0) {

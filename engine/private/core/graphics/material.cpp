@@ -81,6 +81,14 @@ namespace golias {
             material->SetShader(rd->GetDefaultShader3D());
         }
 
+        // Initialize all PBR material parameters with defaults to prevent texture bleeding
+        material->SetParameter("TEXTURE_FLAGS", 0);  // No textures by default
+        material->SetParameter("u_material.modulate", glm::vec4(1.0f));
+        material->SetParameter("u_material.metallicFactor", 0.0f);
+        material->SetParameter("u_material.roughnessFactor", 1.0f);
+        material->SetParameter("u_material.emissiveFactor", glm::vec3(0.0f));
+        material->SetParameter("u_material.emissiveStrength", 1.0f);
+
 
         if (json.contains("parameters")) {
 
@@ -89,6 +97,7 @@ namespace golias {
             if (paramsObj.contains("textures")) {
 
                 Json texturesArray = paramsObj["textures"];
+                ETextureFlags textureFlags = ETextureFlags::NONE;
 
                 for (const auto& texEntry : texturesArray) {
                     std::string name  = texEntry.value("name", "");
@@ -98,10 +107,26 @@ namespace golias {
 
                     if (texture) {
                         material->SetParameter<std::shared_ptr<Texture2D>>(name, texture);
+                        
+                        if (name == "ALBEDO_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_ALBEDO;
+                        } else if (name == "METALLIC_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_METALLIC;
+                        } else if (name == "ROUGHNESS_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_ROUGHNESS;
+                        } else if (name == "NORMAL_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_NORMAL;
+                        } else if (name == "AO_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_AO;
+                        } else if (name == "EMISSIVE_TEXTURE") {
+                            textureFlags |= ETextureFlags::HAS_EMISSIVE;
+                        }
                     } else {
                         spdlog::error("Material::Load: Failed to load Texture2D '{}' for Material: {}", value, pPath);
                     }
                 }
+                
+                material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
             }
 
             if (paramsObj.contains("bools")) {
@@ -146,6 +171,11 @@ namespace golias {
                         material->SetParameter<glm::vec3>(name, glm::vec3(x, y, z));
                     } else if (type == "vec4") {
                         material->SetParameter<glm::vec4>(name, glm::vec4(x, y, z, w));
+                        
+                        if (name == "MODULATE") {
+                            material->SetParameter("u_material.modulate", glm::vec4(x, y, z, w));
+                        }
+
                     } else {
                         spdlog::warn("Material::Load: Unknown vector type '{}' for '{}'", type, name);
                     }

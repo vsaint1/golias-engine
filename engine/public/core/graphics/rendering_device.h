@@ -25,6 +25,7 @@ namespace golias {
 
         virtual void BindShader(Shader* shader)       = 0;
         virtual void BindMesh(Mesh* mesh)             = 0;
+        virtual void UnbindMesh(Mesh* mesh)             = 0;
         virtual void BindMaterial(Material* material) = 0;
 
         virtual std::shared_ptr<Shader> GetDefaultShader3D() const = 0;

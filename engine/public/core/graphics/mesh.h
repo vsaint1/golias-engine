@@ -18,6 +18,9 @@ namespace golias {
 
         virtual void Draw() = 0;
 
+        virtual void Unbind() = 0;
+
+
         void SetVertexLayout(const VertexLayout& layout);
 
         const VertexLayout& GetVertexLayout() const;

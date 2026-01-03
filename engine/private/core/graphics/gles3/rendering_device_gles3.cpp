@@ -90,6 +90,13 @@ namespace golias {
         }
     }
 
+    void RenderingDeviceGLES3::UnbindMesh(Mesh* mesh) {
+        if(mesh){
+            mesh->Unbind();
+        }
+    }
+
+
     std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromFile(const std::string_view pFilePath) {
 
         auto file_system = golias::Engine::GetInstance().GetFileSystem();

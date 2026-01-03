@@ -45,6 +45,28 @@ enum class ETextureCompressionSettings {
     MAX,
 };
 
+enum class ETextureFlags : int {
+    NONE         = 0,
+    HAS_ALBEDO   = 1 << 0,  // 0x01
+    HAS_METALLIC = 1 << 1,  // 0x02
+    HAS_ROUGHNESS = 1 << 2,  // 0x04
+    HAS_NORMAL   = 1 << 3,  // 0x08
+    HAS_AO       = 1 << 4,  // 0x10
+    HAS_EMISSIVE = 1 << 5   // 0x20
+};
+
+inline ETextureFlags operator|(ETextureFlags a, ETextureFlags b) {
+    return static_cast<ETextureFlags>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline ETextureFlags& operator|=(ETextureFlags& a, ETextureFlags b) {
+    a = a | b;
+    return a;
+}
+
+inline int operator&(ETextureFlags a, ETextureFlags b) {
+    return static_cast<int>(a) & static_cast<int>(b);
+}
 
 enum class EBufferTarget : uint32_t {
     ARRAY_BUFFER         = 0x1, // GL_ARRAY_BUFFER
