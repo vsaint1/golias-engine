@@ -23,7 +23,21 @@
                 {
                     "type": "MeshComponent",
                     "material": {
-                        "path": "materials/checker.mat"
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 1.0,
+                                        "y": 1.0,
+                                        "z": 1.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
                     },
                     "mesh": {
                         "type": "box",
@@ -52,6 +66,663 @@
                         "bounciness": 0.0,
                         "is_kinematic": false,
                         "type": "static"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sphere_Red",
+            "position": {
+                "x": -10.0,
+                "y": 5.0,
+                "z": -10.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 1.0,
+                                        "y": 0.0,
+                                        "z": 0.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "sphere",
+                        "radius": 2.0,
+                        "segments": 32
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "sphere",
+                        "radius": 2.0
+                    },
+                    "rigid_body": {
+                        "mass": 5.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.8,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sphere_Green",
+            "position": {
+                "x": 0.0,
+                "y": 5.0,
+                "z": -10.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 0.0,
+                                        "y": 1.0,
+                                        "z": 0.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "sphere",
+                        "radius": 2.0,
+                        "segments": 32
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "sphere",
+                        "radius": 2.0
+                    },
+                    "rigid_body": {
+                        "mass": 5.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.8,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sphere_Blue",
+            "position": {
+                "x": 10.0,
+                "y": 5.0,
+                "z": -10.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 1.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "sphere",
+                        "radius": 2.0,
+                        "segments": 32
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "sphere",
+                        "radius": 2.0
+                    },
+                    "rigid_body": {
+                        "mass": 5.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.8,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Mountain_Base",
+            "position": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 20.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/brick.mat",
+                        "parameters": {}
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 10.0,
+                            "y": 2.0,
+                            "z": 10.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 10.0,
+                            "y": 2.0,
+                            "z": 10.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "static"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_Ice",
+            "position": {
+                "x": -1.5,
+                "y": 4.0,
+                "z": 20.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.6,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.1,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_Cyan",
+            "position": {
+                "x": 1.5,
+                "y": 4.0,
+                "z": 20.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 0.0,
+                                        "y": 1.0,
+                                        "z": 1.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_Magenta",
+            "position": {
+                "x": 0.0,
+                "y": 6.0,
+                "z": 20.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 1.0,
+                                        "y": 0.0,
+                                        "z": 1.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_Orange",
+            "position": {
+                "x": -1.5,
+                "y": 6.0,
+                "z": 18.5
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 1.0,
+                                        "y": 0.5,
+                                        "z": 0.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_Purple",
+            "position": {
+                "x": 1.5,
+                "y": 6.0,
+                "z": 18.5
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 0.5,
+                                        "y": 0.0,
+                                        "z": 0.5,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cube_White",
+            "position": {
+                "x": 0.0,
+                "y": 8.0,
+                "z": 20.0
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "components": [
+                {
+                    "type": "MeshComponent",
+                    "material": {
+                        "path": "materials/checker.mat",
+                        "parameters": {
+                            "vectors": [
+                                {
+                                    "name": "MODULATE",
+                                    "value": {
+                                        "x": 1.0,
+                                        "y": 1.0,
+                                        "z": 1.0,
+                                        "w": 1.0
+                                    },
+                                    "type": "vec4"
+                                }
+                            ]
+                        }
+                    },
+                    "mesh": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "collider": {
+                        "type": "box",
+                        "extents": {
+                            "x": 1.0,
+                            "y": 1.0,
+                            "z": 1.0
+                        }
+                    },
+                    "rigid_body": {
+                        "mass": 10.0,
+                        "friction": 0.5,
+                        "drag": 0.1,
+                        "angular_drag": 0.1,
+                        "bounciness": 0.0,
+                        "is_kinematic": false,
+                        "type": "dynamic"
                     }
                 }
             ]
@@ -122,97 +793,13 @@
             ]
         },
         {
-            "name":"DmgHelmet",
-            "type":"model",
-            "path":"models/pbr/DamagedHelmet.gltf",
-            "position":{
-                "x":-5.0,
-                "y":2.0,
-                "z":0.0
-            },
-            "rotation":{
-                "x":0.0,
-                "y":0.0,
-                "z":0.0,
-                "w":1.0
-            },
-            "scale":{
-                "x":1.0,
-                "y":1.0,
-                "z":1.0
-            }
-        },
-        {
-            "name": "DynObject",
-            "position": {
-                "x": 5.0,
-                "y": 20.0,
-                "z": 0.0
-            },
-            "rotation": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0,
-                "w": 1.0
-            },
-            "scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "components": [
-                {
-                    "type": "MeshComponent",
-                    "material": {
-                        "path": "materials/brick.mat",
-                        "parameters": {
-                            "MODULATE": {
-                                "r": 0.8,
-                                "g": 0.2,
-                                "b": 0.2,
-                                "a": 1.0
-                            }
-                        }
-                    },
-                    "mesh": {
-                        "type": "box",
-                        "extents": {
-                            "x": 1.0,
-                            "y": 1.0,
-                            "z": 1.0
-                        }
-                    }
-                },
-                {
-                    "type": "PhysicsComponent",
-                    "collider": {
-                        "type": "box",
-                        "extents": {
-                            "x": 1.0,
-                            "y": 1.0,
-                            "z": 1.0
-                        }
-                    },
-                    "rigid_body": {
-                        "mass": 10.0,
-                        "friction": 0.5,
-                        "drag": 0.1,
-                        "angular_drag": 0.1,
-                        "bounciness": 0.0,
-                        "is_kinematic": false,
-                        "type": "dynamic"
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Godette",
+            "name": "DmgHelmet",
             "type": "model",
-            "path": "models/godette/godette.gltf",
+            "path": "models/pbr/DamagedHelmet.gltf",
             "position": {
-                "x": 0.75,
+                "x": -5.0,
                 "y": 2.0,
-                "z": -0.75
+                "z": 0.0
             },
             "rotation": {
                 "x": 0.0,
