@@ -1,5 +1,7 @@
 #include "player_obj.h"
 
+#include "bullet.h"
+
 void Player::Start() {
 
 #if defined(SCENE_LOAD_FROM_FILE)
@@ -58,11 +60,30 @@ void Player::Update(float deltaTime) {
 
     auto& input = golias::Engine::GetInstance().GetInputManager();
 
-    if (input.IsMouseButtonPressed(SDL_BUTTON_LEFT)) {
-        // Just play - the Audio::Play() method handles stopping and restarting
+    bool isMousePressed = input.IsMouseButtonPressed(SDL_BUTTON_LEFT);
+    
+    if (isMousePressed && !wasMousePressed) {
         animComp->Play("shoot", false);
         audioComp->Play("GunShot", false);
+
+        auto bullet = golias::Engine::GetInstance().GetScene()->CreateObject<Bullet>("Bullet");
+        auto mesh   = golias::Mesh::CreateSphere(0.2f, 32, 32);
+        auto mat    = golias::Material::Load("materials/checker.mat");
+        bullet->AddComponent(new golias::MeshComponent(mesh, mat));
+
+        auto pos = FindChildByName("BOOM_35")->GetWorldPosition();
+        bullet->SetPosition(pos + GetRotation() * glm::vec3(-0.2f, 0.2, -1.7f));
+
+        auto collider = std::make_shared<golias::SphereCollider>(0.2f);
+        auto rb       = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 10.0f);
+
+        bullet->AddComponent(new golias::PhysicsComponent(rb));
+
+        glm::vec3 front = GetRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
+        rb->ApplyImpulse(front * 500.0f);
     }
+    
+    wasMousePressed = isMousePressed;
 
     if (input.IsKeyPressed(SDLK_R)) {
         if (!animComp->IsPlaying()) {

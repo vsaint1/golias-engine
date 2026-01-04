@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shader.h"
+#include <json.hpp>
 
 namespace golias {
 
@@ -17,7 +18,9 @@ namespace golias {
             parameters[std::string(pName)] = value;
         }
 
-        static std::shared_ptr<Material> Load(const std::string_view pPath);
+        static std::shared_ptr<Material> Load(const std::string_view pPath, const nlohmann::json* paramOverrides = nullptr);
+
+        static void ParseParameters(std::shared_ptr<Material>& material, const nlohmann::json& json);
 
     private:
         std::shared_ptr<Shader> shader;

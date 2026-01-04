@@ -23,4 +23,6 @@ private:
     golias::AudioComponent* audioComp                        = nullptr;
     golias::AudioListenerComponent* audioListenerComp        = nullptr;
 
+    bool wasMousePressed = false;
+
 };

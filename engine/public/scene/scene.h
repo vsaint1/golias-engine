@@ -2,6 +2,7 @@
 
 #include "game_object.h"
 #include <spdlog/spdlog.h>
+
 #include <json.hpp>
 
 
@@ -17,7 +18,7 @@ namespace golias {
 
         GameObject* CreateObject(const std::string& name, GameObject* pParent = nullptr);
         GameObject* CreateObject(GameObject* pParent = nullptr);
-        GameObject* CreateObject(const std::string& type,const std::string& name, GameObject* pParent = nullptr);
+        GameObject* CreateObject(const std::string& type, const std::string& name, GameObject* pParent = nullptr);
 
         template <typename T, typename = typename std::enable_if_t<std::is_base_of_v<GameObject, T>>>
         T* CreateObject(const std::string& name, GameObject* pParent = nullptr);
@@ -42,9 +43,12 @@ namespace golias {
         void LoadObject(const nlohmann::json& object, GameObject* pParent);
 
         std::vector<std::unique_ptr<GameObject>> game_objects;
+        std::vector<std::pair<GameObject*, GameObject*>> pending_objects;
+        bool isUpdating = false;
+
         GameObject* main_camera = nullptr;
         static size_t next_type_id;
-        
+
         std::string name;
 
         std::string MakeUniqueName(const std::string& baseName);
@@ -58,7 +62,13 @@ namespace golias {
 
         obj->SetName(fname);
         obj->scene = this;
-        SetParent(obj, pParent);
+
+        if (isUpdating) {
+
+            pending_objects.push_back({obj, pParent});
+        } else {
+            SetParent(obj, pParent);
+        }
 
         spdlog::info("Created GameObject of type {} with Name '{}'", typeid(T).name(), fname);
         return obj;

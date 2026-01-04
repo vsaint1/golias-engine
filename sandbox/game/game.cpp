@@ -15,7 +15,7 @@ void SpawnBox(const glm::vec3& position) {
     obj->AddComponent(new golias::MeshComponent(mesh, mat));
 
     auto collider = std::make_shared<golias::BoxCollider>(boxExtents);
-    auto body     = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 0.0f);
+    auto body     = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 50.0f);
 
     // body->SetFriction(0.6f);
     // body->SetRestitution(0.0f);

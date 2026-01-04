@@ -90,6 +90,8 @@ namespace golias {
         void SetAddedToWorld(bool added);
         bool IsAddedToWorld() const;
 
+        void ApplyImpulse(const glm::vec3& impulse);
+
     private:
         void ApplyConstraints();
         void UpdatePhysicsProperties();
