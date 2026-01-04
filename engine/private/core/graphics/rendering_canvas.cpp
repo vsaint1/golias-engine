@@ -17,24 +17,28 @@ namespace golias {
             shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
             shader->SetUniform("VIEW_MATRIX", camera.viewMatrix);
             shader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
-            
+
             // Scene properties
             shader->SetUniform("u_viewPosition", camera.position);
             shader->SetUniform("u_ambientStrength", 0.3f);
             shader->SetUniform("u_specularStrength", 0.5f);
             shader->SetUniform("u_shininess", 32.0f);
-            
+
             // Directional lights
             shader->SetUniform("u_directionalLightCount", 1);
             shader->SetUniform("u_directionalLights[0].direction", glm::vec3(0.5f, -1.0f, 0.3f));
             shader->SetUniform("u_directionalLights[0].color", glm::vec3(1.0f, 1.0f, 1.0f));
             shader->SetUniform("u_directionalLights[0].intensity", 1.0f);
 
-            rd->BindMesh(command.mesh);
+            if (command.mesh) {
 
-            rd->DrawMesh(command.mesh);
+                rd->BindMesh(command.mesh);
 
-            rd->UnbindMesh(command.mesh);
+                rd->DrawMesh(command.mesh);
+
+                rd->UnbindMesh(command.mesh);
+                
+            }
         }
 
 

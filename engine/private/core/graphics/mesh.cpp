@@ -22,7 +22,83 @@ namespace golias {
         index_type               = EDataType::UNSIGNED_INT;
     }
 
-    
+     std::shared_ptr<Mesh> Mesh::CreateSphere(float radius, uint32_t segments, uint32_t rings) {
+
+        if (segments < 3) {
+            segments = 3;
+        }
+        if (rings < 2) {
+            rings = 2;
+        }
+
+        std::vector<float> vertices;
+        std::vector<uint32_t> indices;
+
+        vertices.reserve((segments + 1) * (rings + 1) * 8);
+
+        for (uint32_t y = 0; y <= rings; ++y) {
+            float v   = (float) y / (float) rings;
+            float phi = v * glm::pi<float>(); 
+
+            for (uint32_t x = 0; x <= segments; ++x) {
+                float u     = (float) x / (float) segments;
+                float theta = u * glm::two_pi<float>(); 
+
+                float sx = std::sin(phi) * std::cos(theta);
+                float sy = std::cos(phi);
+                float sz = std::sin(phi) * std::sin(theta);
+
+                glm::vec3 pos = glm::vec3(sx, sy, sz) * radius;
+
+                vertices.push_back(pos.x);
+                vertices.push_back(pos.y);
+                vertices.push_back(pos.z);
+
+                // constant color 
+                vertices.push_back(1.0f);
+                vertices.push_back(1.0f);
+                vertices.push_back(1.0f);
+
+                // uv
+                vertices.push_back(u);
+                vertices.push_back(1.0f - v);
+            }
+        }
+
+        uint32_t stride = segments + 1;
+
+        for (uint32_t y = 0; y < rings; ++y) {
+            for (uint32_t x = 0; x < segments; ++x) {
+                uint32_t i0 = y * stride + x;
+                uint32_t i1 = y * stride + x + 1;
+                uint32_t i2 = (y + 1) * stride + x;
+                uint32_t i3 = (y + 1) * stride + x + 1;
+
+                // two triangles
+                indices.push_back(i0);
+                indices.push_back(i2);
+                indices.push_back(i1);
+
+                indices.push_back(i1);
+                indices.push_back(i2);
+                indices.push_back(i3);
+            }
+        }
+
+
+        golias::VertexLayout layout;
+        layout.elements = {
+            {0, 3, EDataType::FLOAT, false, 0},
+            {1, 3, EDataType::FLOAT, false, 3 * sizeof(float)},
+            {2, 2, EDataType::FLOAT, false, 6 * sizeof(float)}
+        };
+        layout.stride = 8 * sizeof(float);
+
+        auto rd = Engine::GetInstance().GetRenderingDevice();
+        return rd->CreateMeshFromData(layout, vertices, indices);
+
+    }
+
     std::shared_ptr<Mesh> Mesh::CreateBox(const glm::vec3& extents) {
         const auto half_extents = extents * 0.5f;
 

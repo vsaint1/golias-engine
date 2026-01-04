@@ -165,7 +165,7 @@ namespace golias {
     float RigidBody::GetMass() const {
         return _mass;
     }
-    
+
     float RigidBody::GetAngularDragging() const {
         return angularDrag;
     }
@@ -199,11 +199,11 @@ namespace golias {
             rigidBody->setMassProps(0.0f, inertia);
             rigidBody->updateInertiaTensor();
 
-            type        = EBodyType::KINEMATIC;
+            type       = EBodyType::KINEMATIC;
             useGravity = false;
         } else if (!value && type == EBodyType::KINEMATIC) {
             rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() & ~btCollisionObject::CF_KINEMATIC_OBJECT);
-            type        = EBodyType::DYNAMIC;
+            type       = EBodyType::DYNAMIC;
             useGravity = true;
 
             SetMass(_mass);
@@ -332,5 +332,8 @@ namespace golias {
         return addedToWorld;
     }
 
-
+    void RigidBody::ApplyImpulse(const glm::vec3& impulse) {
+        rigidBody->applyCentralImpulse(btVector3(btScalar(impulse.x), btScalar(impulse.y), btScalar(impulse.z)));
+    }
+    
 } // namespace golias

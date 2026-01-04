@@ -2,12 +2,12 @@
 
 #include "core/engine.h"
 #include "scene/3d/animation_component.h"
+#include "scene/3d/audio_component.h"
+#include "scene/3d/audio_listener_component.h"
 #include "scene/3d/camera_component.h"
 #include "scene/3d/fp_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
-#include "scene/3d/audio_component.h"
-#include "scene/3d/audio_listener_component.h"
 #include <SDL3/SDL_stdinc.h>
 
 namespace golias {
@@ -18,7 +18,14 @@ namespace golias {
         std::string fname = MakeUniqueName(name);
         obj->SetName(fname);
         obj->scene = this;
-        SetParent(obj, pParent);
+
+        if (isUpdating) {
+
+            pending_objects.push_back({obj, pParent});
+        } else {
+            SetParent(obj, pParent);
+        }
+
 
         spdlog::info("Scene::CreateObject Created GameObject with Name '{}'", fname);
         return obj;
@@ -35,7 +42,13 @@ namespace golias {
             std::string fname = MakeUniqueName(name);
             obj->SetName(fname);
             obj->scene = this;
-            SetParent(obj, pParent);
+
+            if (isUpdating) {
+
+                pending_objects.push_back({obj, pParent});
+            } else {
+                SetParent(obj, pParent);
+            }
 
             spdlog::info("Scene::CreateObject Created GameObject of type {} with Name '{}'", type, fname);
             return obj;
@@ -51,11 +64,20 @@ namespace golias {
     }
 
     void Scene::Update(float deltaTime) {
-        if (game_objects.empty()) {
-            spdlog::warn("Scene::Update No GameObjects to update in the Scene");
-            return;
+
+        game_objects.erase(std::remove_if(game_objects.begin(),
+                                          game_objects.end(),
+                                          [](const std::unique_ptr<GameObject>& obj) { return !obj->IsAlive(); }),
+                           game_objects.end());
+
+
+        for (auto& [obj, parent] : pending_objects) {
+            SetParent(obj, parent);
         }
 
+        pending_objects.clear();
+
+        isUpdating = true;
         for (auto it = game_objects.begin(); it != game_objects.end();) {
             if ((*it)->IsAlive()) {
                 (*it)->Update(deltaTime);
@@ -64,6 +86,7 @@ namespace golias {
                 it = game_objects.erase(it);
             }
         }
+        isUpdating = false;
     }
 
     void Scene::Clear() {
@@ -371,4 +394,4 @@ namespace golias {
         AudioListenerComponent::Register();
     }
 
-}; // namespace golias
+} // namespace golias

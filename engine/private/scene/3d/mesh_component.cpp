@@ -49,8 +49,10 @@ namespace golias {
             const auto materialObject = json["material"];
             if (materialObject.contains("path")) {
                 std::string materialPath = materialObject.value("path", "");
-                auto mat                 = Material::Load(materialPath);
-
+                
+                const nlohmann::json* params = materialObject.contains("parameters") ? &materialObject["parameters"] : nullptr;
+                auto mat = Material::Load(materialPath, params);
+                
                 if (mat) {
                     SetMaterial(mat);
                 }
@@ -74,6 +76,25 @@ namespace golias {
 
                 auto boxMesh = Mesh::CreateBox(extents);
                 SetMesh(boxMesh);
+            }
+
+            if (meshType == "sphere") {
+                float radius = 1.0f;
+                uint32_t segments = 32;
+                uint32_t rings = 32;
+
+                if(meshObj.contains("radius")){
+                    radius = meshObj.value("radius", 1.0f);
+                }
+                if(meshObj.contains("segments")){
+                    segments = meshObj.value("segments", 32);
+                }
+                if(meshObj.contains("rings")){
+                    rings = meshObj.value("rings", 32);
+                }
+
+                auto sphereMesh = Mesh::CreateSphere(radius, segments, rings);
+                SetMesh(sphereMesh);
             }
         }
 
