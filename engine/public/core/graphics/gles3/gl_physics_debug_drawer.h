@@ -2,7 +2,10 @@
 
 #include "physics/3d/physics_debug_drawer.h"
 
+
 namespace golias {
+
+    class Shader;
 
     class PhysicsDebugDrawerGLES3 : public PhysicsDebugDrawer {
     public:
@@ -37,7 +40,9 @@ namespace golias {
 
         unsigned int VAO;
         unsigned int VBO;
-        unsigned int shaderProgram;
+        // unsigned int shaderProgram;
+
+        Shader* debugShader = nullptr;
 
         void Cleanup();
         glm::vec3 btToGlm(const btVector3& vec) const;

@@ -1,6 +1,7 @@
 #include "core/graphics/gles3/gl_physics_debug_drawer.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <spdlog/spdlog.h>
+#include "core/graphics/gles3/shaders/gl_shader.h"
 #include "core/graphics/gles3/gl_common.h"
 
 namespace golias {
@@ -31,8 +32,7 @@ void main()
 )";
 
     PhysicsDebugDrawerGLES3::PhysicsDebugDrawerGLES3()
-        : debugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints), VAO(0), VBO(0),
-          shaderProgram(0) {
+        : debugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints), VAO(0), VBO(0) {
 
     }
 
@@ -41,43 +41,16 @@ void main()
     }
 
     void PhysicsDebugDrawerGLES3::Initialize() {
-        unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        const GLchar* debugVertexShaderSourceCStr = debugVertexShaderSource.c_str();
-        glShaderSource(vertexShader, 1, &debugVertexShaderSourceCStr, nullptr);
-        glCompileShader(vertexShader);
+    
 
-        int success;
-        char infoLog[512];
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
-            spdlog::error("PhysicsDebugDrawerGLES3::Initialize Vertex Shader compilation failed: {}", infoLog);
+        debugShader = new OpenglShader(debugVertexShaderSource, debugFragmentShaderSource);
+
+
+        if(!debugShader){
+            spdlog::error("PhysicsDebugDrawerGLES3::Initialize Failed to create debug shader.");
+            return;
         }
 
-        unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        const GLchar* debugFragmentShaderSourceCStr = debugFragmentShaderSource.c_str();
-        glShaderSource(fragmentShader, 1, &debugFragmentShaderSourceCStr, nullptr);
-        glCompileShader(fragmentShader);
-
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-            spdlog::error("PhysicsDebugDrawerGLES3::Initialize Fragment Shader compilation failed: {}", infoLog);
-        }
-
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-            spdlog::error("PhysicsDebugDrawerGLES3::Initialize Shader Program linking failed: {}", infoLog);
-        }
-
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
 
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -104,13 +77,15 @@ void main()
             glDeleteVertexArrays(1, &VAO);
             VAO = 0;
         }
+
         if (VBO != 0) {
             glDeleteBuffers(1, &VBO);
             VBO = 0;
         }
-        if (shaderProgram != 0) {
-            glDeleteProgram(shaderProgram);
-            shaderProgram = 0;
+        
+        if (debugShader) {
+            delete debugShader;
+            debugShader = nullptr;
         }
     }
 
@@ -195,10 +170,9 @@ void main()
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_DYNAMIC_DRAW);
 
-        glUseProgram(shaderProgram);
+        debugShader->Bind();
 
-        int vpLoc = glGetUniformLocation(shaderProgram, "VIEW_PROJECTION");
-        glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(viewProjection));
+        debugShader->SetUniform("VIEW_PROJECTION", viewProjection);
 
         GLboolean depthTestEnabled;
         glGetBooleanv(GL_DEPTH_TEST, &depthTestEnabled);
@@ -212,7 +186,7 @@ void main()
             glEnable(GL_DEPTH_TEST);
         }
 
-        glUseProgram(0);
+        debugShader->Unbind();
     }
 
     void PhysicsDebugDrawerGLES3::Clear() {
