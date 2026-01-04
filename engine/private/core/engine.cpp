@@ -53,7 +53,7 @@ namespace golias {
             return false;
         }
 
-        if (!physics_manager.Initialize()) {
+        if (!physics_manager.Initialize(rendering_device->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
             return false;
         }
@@ -135,6 +135,11 @@ namespace golias {
             rendering_device->Clear();
 
             rendering_canvas.Draw(rendering_device, camera_data);
+
+            if (GetPhysicsManager().IsDebugDrawEnabled()) {
+                GetPhysicsManager().RenderDebug(camera_data.projectionMatrix * camera_data.viewMatrix);
+            }
+
             rendering_device->Present();
 
             SDL_Delay(16); // HACK for development purposes

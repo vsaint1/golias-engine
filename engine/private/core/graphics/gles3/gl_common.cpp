@@ -110,3 +110,13 @@ GLenum ToGLTextureFormatFromChannels(int num_channels) {
         return GL_RGBA;
     }
 }
+
+
+
+std::string GetShaderHeaderVersion() {
+#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
+        return "#version 300 es\n";
+#else
+        return "#version 330 core\n";
+#endif
+    }

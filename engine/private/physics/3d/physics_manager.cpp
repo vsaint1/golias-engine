@@ -1,5 +1,6 @@
 #include "physics/3d/physics_manager.h"
 
+#include "core/engine.h"
 #include "physics/3d/rigid_body.h"
 #include <btBulletCollisionCommon.h>
 #include <btBulletDynamicsCommon.h>
@@ -10,7 +11,7 @@ namespace golias {
     PhysicsManager::PhysicsManager()  = default;
     PhysicsManager::~PhysicsManager() = default;
 
-    bool PhysicsManager::Initialize() {
+    bool PhysicsManager::Initialize(PhysicsDebugDrawer* pDebugDrawer) {
 
         broadphase = std::make_unique<btDbvtBroadphase>();
 
@@ -30,6 +31,14 @@ namespace golias {
         constexpr float DEFAULT_GRAVITY = -9.81f;
         dynamicsWorld->setGravity(btVector3(0, DEFAULT_GRAVITY, 0));
 
+        debugDrawer = pDebugDrawer;
+
+        if (debugDrawer) {
+            debugDrawer->Initialize();
+            dynamicsWorld->setDebugDrawer(debugDrawer);
+            debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawContactPoints);
+            SetDebugDrawEnabled(true);
+        }
 
         return true;
     }
@@ -74,6 +83,29 @@ namespace golias {
 
     btDiscreteDynamicsWorld* PhysicsManager::GetPhyisicsWorld() const {
         return dynamicsWorld.get();
+    }
+
+    void PhysicsManager::SetDebugDrawEnabled(bool enabled) {
+        debugDrawEnabled = enabled;
+    }
+
+    bool PhysicsManager::IsDebugDrawEnabled() const {
+        return debugDrawEnabled;
+    }
+
+    void PhysicsManager::RenderDebug(const glm::mat4& viewProjection) {
+        if (!debugDrawEnabled || !dynamicsWorld || !debugDrawer) {
+            return;
+        }
+
+        debugDrawer->Begin();
+        dynamicsWorld->debugDrawWorld();
+        debugDrawer->End();
+        debugDrawer->Render(viewProjection);
+    }
+
+    PhysicsDebugDrawer* PhysicsManager::GetDebugDrawer() const {
+        return debugDrawer;
     }
 
 } // namespace golias

@@ -109,6 +109,11 @@ void SandboxApplication::Update(float deltaTime) {
         spdlog::info("Spawned box at {}, {}, {}", x, 8.0f, z);
     }
 
+    if(input.IsKeyJustPressed(SDLK_T)){
+        auto& physicsDebugDrawer = golias::Engine::GetInstance().GetPhysicsManager();
+        physicsDebugDrawer.SetDebugDrawEnabled(!physicsDebugDrawer.IsDebugDrawEnabled());
+        spdlog::info("Toggled Physics Debug Draw: {}", physicsDebugDrawer.IsDebugDrawEnabled() ? "ON" : "OFF");
+    }
 
     if (auto scene = golias::Engine::GetInstance().GetScene()) {
         scene->Update(deltaTime);

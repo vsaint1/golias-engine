@@ -3,16 +3,10 @@
 #include "core/engine.h"
 #include "core/graphics/gles3/gl_common.h"
 #include "core/graphics/rendering_device.h"
+#include "core/graphics/gles3/gl_physics_debug_drawer.h"
 
 namespace golias {
 
-    std::string GetShaderHeaderVersion() {
-#if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-        return "#version 300 es\n";
-#else
-        return "#version 330 core\n";
-#endif
-    }
 
     bool RenderingDeviceGLES3::Initialize(SDL_Window* sdl_window) {
         window = sdl_window;
@@ -61,6 +55,8 @@ namespace golias {
 
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
 
+        physicsDebug3D = std::make_unique<PhysicsDebugDrawerGLES3>();
+
         glEnable(GL_DEPTH_TEST);
         return true;
     }
@@ -91,11 +87,14 @@ namespace golias {
     }
 
     void RenderingDeviceGLES3::UnbindMesh(Mesh* mesh) {
-        if(mesh){
+        if (mesh) {
             mesh->Unbind();
         }
     }
 
+    PhysicsDebugDrawer* RenderingDeviceGLES3::GetPhysicsDebugDrawer() {
+        return physicsDebug3D.get();
+    }
 
     std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromFile(const std::string_view pFilePath) {
 

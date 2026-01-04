@@ -37,6 +37,8 @@ namespace golias {
 
         Buffer CreateGPUBuffer(size_t size, const void* data, EBufferUsageFlags bufferFlags, EBufferTarget bufferTarget) override;
 
+        PhysicsDebugDrawer* GetPhysicsDebugDrawer() override;
+        
         void Clear(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) override;
 
         void DrawMesh(Mesh* mesh);

@@ -10,3 +10,5 @@ GLenum ToGLTextureWrapMode(ETextureWrapMode mode);
 GLenum ToGLTextureFilterMode(ETextureFilterMode mode);
 GLenum ToGLTextureFormat(ETextureFormat format);
 GLenum ToGLTextureFormatFromChannels(int num_channels);
+
+std::string GetShaderHeaderVersion();
