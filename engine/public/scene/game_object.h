@@ -48,21 +48,32 @@ namespace golias {
 
         glm::vec3 GetWorldPosition() const;
         glm::vec3 GetPosition() const;
+        glm::vec2 GetPosition2D() const;
+        glm::vec2 GetWorldPosition2D() const;
 
         void SetWorldPosition(const glm::vec3& pos);
         void SetPosition(const glm::vec3& pos);
+        void SetPosition2D(const glm::vec2& pos);
 
         glm::quat GetWorldRotation() const;
         glm::quat GetRotation() const;
+        float GetRotation2D() const;
+
 
         void SetWorldRotation(const glm::quat& rot);
         void SetRotation(const glm::quat& rot);
+        void SetRotation2D(float degrees);
 
+        glm::vec2 GetScale2D() const;
         glm::vec3 GetScale() const;
+
         void SetScale(const glm::vec3& value);
+        void SetScale2D(const glm::vec2& value);
 
         glm::mat4 GetLocalTransform() const;
         glm::mat4 GetWorldTransform() const;
+        glm::mat4 GetLocalTransform2D() const;
+        glm::mat4 GetWorldTransform2D() const;
 
     protected:
         GameObject() = default;

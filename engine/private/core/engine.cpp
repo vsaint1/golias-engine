@@ -53,6 +53,11 @@ namespace golias {
             return false;
         }
 
+        if(!rendering_canvas.Initialize()){
+            spdlog::error("Engine::Initialize Failed to initialize Rendering Canvas.");
+            return false;
+        }
+        
         if (!physics_manager.Initialize(rendering_device->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
             return false;

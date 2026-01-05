@@ -5,6 +5,9 @@ namespace golias {
         command_queue.push_back(command);
     }
 
+    void RenderingCanvas::Submit(const DrawCommand2D& command) {
+        command_queue_2d.push_back(command);
+    }
 
     void RenderingCanvas::Draw(RenderingDevice* rd, const CameraData& camera) {
 
@@ -37,11 +40,25 @@ namespace golias {
                 rd->DrawMesh(command.mesh);
 
                 rd->UnbindMesh(command.mesh);
-                
             }
         }
 
-
         command_queue.clear();
+
+        quad->Bind();
+        for (const auto& command : command_queue_2d) {
+
+            quad->Draw();
+            
+        }
+        quad->Unbind();
+
+        command_queue_2d.clear();
     }
+
+    bool RenderingCanvas::Initialize() {
+        quad = Mesh::CreateQuad(1.0f, 1.0f);
+        return quad != nullptr;
+    }
+
 }; // namespace golias

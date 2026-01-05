@@ -14,6 +14,7 @@ namespace golias {
 
         static std::shared_ptr<Mesh> CreateBox(const glm::vec3& extents = glm::vec3(1.0f));
         static std::shared_ptr<Mesh> CreateSphere(float radius = 1.0f, uint32_t segments = 16, uint32_t rings = 16);
+        static std::shared_ptr<Mesh> CreateQuad(float width = 1.0f, float height = 1.0f);
 
         virtual void Bind() = 0;
 

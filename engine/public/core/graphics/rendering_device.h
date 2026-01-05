@@ -30,6 +30,8 @@ namespace golias {
         virtual void BindMaterial(Material* material) = 0;
 
         virtual std::shared_ptr<Shader> GetDefaultShader3D() const                                                       = 0;
+        virtual std::shared_ptr<Shader> GetDefaultShader2D() const                                                       = 0;
+        
         virtual std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath)                       = 0;
         virtual std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) = 0;
 
@@ -51,8 +53,8 @@ namespace golias {
         virtual void Present() = 0;
 
     protected:
-        glm::vec4 clear_color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
-        SDL_Window* window    = nullptr;
+        glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
+        SDL_Window* window                                 = nullptr;
         std::unique_ptr<PhysicsDebugDrawer> physicsDebug3D = nullptr;
     };
 }; // namespace golias

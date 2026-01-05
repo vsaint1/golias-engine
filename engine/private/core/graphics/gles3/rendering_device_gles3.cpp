@@ -2,8 +2,8 @@
 
 #include "core/engine.h"
 #include "core/graphics/gles3/gl_common.h"
-#include "core/graphics/rendering_device.h"
 #include "core/graphics/gles3/gl_physics_debug_drawer.h"
+#include "core/graphics/rendering_device.h"
 
 namespace golias {
 
@@ -188,6 +188,9 @@ namespace golias {
         return default_shader_3d;
     }
 
+    std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultShader2D() const {
+        return default_shader_2d;
+    }
 
     RenderingDeviceGLES3::~RenderingDeviceGLES3() {
         if (gl_context) {

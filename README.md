@@ -70,7 +70,7 @@ powerful**.
 
 ### General Features
 
-- [ ] **Audio System**
+- [x] **Audio System**
 - [ ] **Particle System** (CPU & GPU)
 - [x] Cross-Platform **Unified Rendering Pipeline** by Design
 - [ ] **Custom Shader Language** based on `GLSL`
@@ -86,7 +86,7 @@ powerful**.
 
 | Asset Type | Supported Formats                              |
 |------------|------------------------------------------------|
-| 3D Models  | See https://www.assimp.org/ supported formats. |
+| 3D Models  | OBJ, GLTF, FBX, GLB                            |
 | Images     | PNG, JPEG, BMP, TGA, DDS, ETC.                 |
 | Fonts      | TTF & OTF.                                     |
 | Audio      | OGG, WAV, FLAC, MP3, ETC.                      |

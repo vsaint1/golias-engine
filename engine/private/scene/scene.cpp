@@ -1,6 +1,9 @@
 #include "scene/scene.h"
 
 #include "core/engine.h"
+#include <SDL3/SDL_stdinc.h>
+
+#pragma region COMPONENTS_3D
 #include "scene/3d/animation_component.h"
 #include "scene/3d/audio_component.h"
 #include "scene/3d/audio_listener_component.h"
@@ -8,7 +11,12 @@
 #include "scene/3d/fp_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
-#include <SDL3/SDL_stdinc.h>
+#pragma endregion
+
+#pragma region 2D_COMPONENTS
+#include "scene/2d/sprite_component_2d.h"
+#pragma endregion
+
 
 namespace golias {
     size_t Scene::next_type_id = 0;
@@ -392,6 +400,8 @@ namespace golias {
         PhysicsComponent::Register();
         AudioComponent::Register();
         AudioListenerComponent::Register();
+
+        SpriteComponent2D::Register();
     }
 
 } // namespace golias

@@ -505,7 +505,7 @@ namespace golias {
 
             // Always create a new material instance for each mesh to avoid sharing state
             std::shared_ptr<Material> material = std::make_shared<Material>();
-            std::shared_ptr<Shader> shader = rd->GetDefaultShader3D();
+            std::shared_ptr<Shader> shader     = rd->GetDefaultShader3D();
             material->SetShader(shader);
 
             // Default material parameters
@@ -518,145 +518,49 @@ namespace golias {
             ETextureFlags textureFlags = ETextureFlags::NONE;
 
 
-                auto LoadGLTFTexture = [&](cgltf_texture* texture, const std::string& fallback_name = "") -> std::shared_ptr<Texture2D> {
-                    if (!texture || !texture->image) {
-                        return nullptr;
-                    }
+            auto LoadGLTFTexture = [&](cgltf_texture* texture, const std::string& fallback_name = "") -> std::shared_ptr<Texture2D> {
+                if (!texture || !texture->image) {
+                    return nullptr;
+                }
 
-                    cgltf_image* image = texture->image;
+                cgltf_image* image = texture->image;
 
-                    if (image->uri) {
-                        std::string uri_str(image->uri);
+                if (image->uri) {
+                    std::string uri_str(image->uri);
 
-                        if (uri_str.find("data:") == 0) {
-                            spdlog::info("Found data URI texture: {}", fallback_name.empty() ? "unnamed" : fallback_name);
+                    if (uri_str.find("data:") == 0) {
+                        spdlog::info("Found data URI texture: {}", fallback_name.empty() ? "unnamed" : fallback_name);
 
-                            size_t comma_pos = uri_str.find(',');
-                            if (comma_pos == std::string::npos) {
-                                spdlog::warn("Invalid data URI format for {}", fallback_name);
-                                return nullptr;
-                            }
-
-                            std::string base64_data      = uri_str.substr(comma_pos + 1);
-                            std::vector<uint8_t> decoded = Base64Decode(base64_data);
-
-                            if (decoded.empty()) {
-                                spdlog::warn("Failed to decode base64 data for {}", fallback_name);
-                                return nullptr;
-                            }
-
-                            int width, height, channels;
-                            unsigned char* image_data =
-                                stbi_load_from_memory(decoded.data(), static_cast<int>(decoded.size()), &width, &height, &channels, 0);
-
-                            if (!image_data) {
-                                spdlog::warn("Failed to decode data URI texture {}: {}", fallback_name, stbi_failure_reason());
-                                return nullptr;
-                            }
-
-                            std::string embedded_path;
-                            if (!fallback_name.empty()) {
-                                embedded_path = "datauri://" + fallback_name;
-                            } else {
-                                embedded_path = "datauri://unnamed_texture";
-                                spdlog::warn("Data URI texture without fallback name, using generic ID");
-                            }
-
-                            try {
-                                ETextureFormat format;
-                                if (channels == 1) {
-                                    format = ETextureFormat::RED;
-                                } else if (channels == 2) {
-                                    format = ETextureFormat::RG;
-                                } else if (channels == 3) {
-                                    format = ETextureFormat::RGB;
-                                } else if (channels == 4) {
-                                    format = ETextureFormat::RGBA;
-                                } else {
-                                    stbi_image_free(image_data);
-                                    spdlog::warn("Unsupported channel count {} for {}", channels, fallback_name);
-                                    return nullptr;
-                                }
-
-                                std::shared_ptr<Texture2D> loaded_texture =
-                                    texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
-
-
-                                if (loaded_texture) {
-                                    spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)",
-                                                  embedded_path,
-                                                  width,
-                                                  height,
-                                                  channels);
-                                    return loaded_texture;
-                                } else {
-                                    spdlog::warn("Texture manager returned null for data URI texture: {}", fallback_name);
-                                }
-                            } catch (const std::exception& e) {
-                                stbi_image_free(image_data);
-                                spdlog::warn("Failed to create texture from data URI {}: {}", fallback_name, e.what());
-                            }
-
-                            return nullptr;
-                        } else {
-                            std::string tex_path = base_path + image->uri;
-                            try {
-                                auto loaded_texture = texture_manager.EnsureTexture2D(tex_path);
-                                if (loaded_texture) {
-                                    spdlog::debug("Loaded external texture: {}", tex_path);
-                                    return loaded_texture;
-                                }
-                            } catch (const std::exception& e) {
-                                spdlog::warn("Failed to load external texture {}: {}", tex_path, e.what());
-                            }
+                        size_t comma_pos = uri_str.find(',');
+                        if (comma_pos == std::string::npos) {
+                            spdlog::warn("Invalid data URI format for {}", fallback_name);
                             return nullptr;
                         }
-                    }
 
-                    if (image->buffer_view) {
-                        spdlog::info("Loading embedded texture from buffer view: {} ({} bytes)",
-                                     fallback_name.empty() ? "unnamed" : fallback_name,
-                                     image->buffer_view->size);
+                        std::string base64_data      = uri_str.substr(comma_pos + 1);
+                        std::vector<uint8_t> decoded = Base64Decode(base64_data);
 
-                        const uint8_t* data = static_cast<const uint8_t*>(image->buffer_view->buffer->data) + image->buffer_view->offset;
-                        size_t size         = image->buffer_view->size;
+                        if (decoded.empty()) {
+                            spdlog::warn("Failed to decode base64 data for {}", fallback_name);
+                            return nullptr;
+                        }
 
                         int width, height, channels;
-
-                        if (!stbi_info_from_memory(data, static_cast<int>(size), &width, &height, &channels)) {
-                            spdlog::warn("STBI cannot identify embedded image format for {}", fallback_name);
-                            return nullptr;
-                        }
-
-                        unsigned char* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
+                        unsigned char* image_data =
+                            stbi_load_from_memory(decoded.data(), static_cast<int>(decoded.size()), &width, &height, &channels, 0);
 
                         if (!image_data) {
-                            spdlog::warn("Failed to decode embedded texture {}: {}", fallback_name, stbi_failure_reason());
+                            spdlog::warn("Failed to decode data URI texture {}: {}", fallback_name, stbi_failure_reason());
                             return nullptr;
                         }
 
-                        std::string embedded_path = "embedded://";
-
-                        if (!base_path.empty()) {
-                            size_t last_slash = base_path.find_last_of("/\\");
-                            if (last_slash != std::string::npos && last_slash + 1 < base_path.length()) {
-                                std::string model_name = base_path.substr(last_slash + 1);
-                                size_t dot_pos         = model_name.find_last_of('.');
-                                if (dot_pos != std::string::npos) {
-                                    model_name = model_name.substr(0, dot_pos);
-                                }
-                                embedded_path += model_name + "/";
-                            }
-                        }
-
+                        std::string embedded_path;
                         if (!fallback_name.empty()) {
-                            embedded_path += fallback_name;
+                            embedded_path = "datauri://" + fallback_name;
                         } else {
-                            embedded_path += "unnamed_texture";
-                            spdlog::warn("Embedded texture without fallback name for model: {}", base_path);
+                            embedded_path = "datauri://unnamed_texture";
+                            spdlog::warn("Data URI texture without fallback name, using generic ID");
                         }
-
-                        spdlog::debug("Embedded texture ID: {}", embedded_path);
 
                         try {
                             ETextureFormat format;
@@ -679,91 +583,184 @@ namespace golias {
 
 
                             if (loaded_texture) {
-                                spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)",
+                                spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)",
                                               embedded_path,
                                               width,
                                               height,
                                               channels);
                                 return loaded_texture;
                             } else {
-                                spdlog::warn("Texture manager returned null for embedded texture: {}", fallback_name);
+                                spdlog::warn("Texture manager returned null for data URI texture: {}", fallback_name);
                             }
                         } catch (const std::exception& e) {
                             stbi_image_free(image_data);
-                            spdlog::warn("Failed to create texture from embedded data {}: {}", fallback_name, e.what());
+                            spdlog::warn("Failed to create texture from data URI {}: {}", fallback_name, e.what());
                         }
 
                         return nullptr;
+                    } else {
+                        std::string tex_path = base_path + image->uri;
+                        try {
+                            auto loaded_texture = texture_manager.EnsureTexture2D(tex_path);
+                            if (loaded_texture) {
+                                spdlog::debug("Loaded external texture: {}", tex_path);
+                                return loaded_texture;
+                            }
+                        } catch (const std::exception& e) {
+                            spdlog::warn("Failed to load external texture {}: {}", tex_path, e.what());
+                        }
+                        return nullptr;
+                    }
+                }
+
+                if (image->buffer_view) {
+                    spdlog::info("Loading embedded texture from buffer view: {} ({} bytes)",
+                                 fallback_name.empty() ? "unnamed" : fallback_name,
+                                 image->buffer_view->size);
+
+                    const uint8_t* data = static_cast<const uint8_t*>(image->buffer_view->buffer->data) + image->buffer_view->offset;
+                    size_t size         = image->buffer_view->size;
+
+                    int width, height, channels;
+
+                    if (!stbi_info_from_memory(data, static_cast<int>(size), &width, &height, &channels)) {
+                        spdlog::warn("STBI cannot identify embedded image format for {}", fallback_name);
+                        return nullptr;
                     }
 
-                    spdlog::warn("Texture has neither URI nor buffer_view: {}", fallback_name);
+                    unsigned char* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
+
+                    if (!image_data) {
+                        spdlog::warn("Failed to decode embedded texture {}: {}", fallback_name, stbi_failure_reason());
+                        return nullptr;
+                    }
+
+                    std::string embedded_path = "embedded://";
+
+                    if (!base_path.empty()) {
+                        size_t last_slash = base_path.find_last_of("/\\");
+                        if (last_slash != std::string::npos && last_slash + 1 < base_path.length()) {
+                            std::string model_name = base_path.substr(last_slash + 1);
+                            size_t dot_pos         = model_name.find_last_of('.');
+                            if (dot_pos != std::string::npos) {
+                                model_name = model_name.substr(0, dot_pos);
+                            }
+                            embedded_path += model_name + "/";
+                        }
+                    }
+
+                    if (!fallback_name.empty()) {
+                        embedded_path += fallback_name;
+                    } else {
+                        embedded_path += "unnamed_texture";
+                        spdlog::warn("Embedded texture without fallback name for model: {}", base_path);
+                    }
+
+                    spdlog::debug("Embedded texture ID: {}", embedded_path);
+
+                    try {
+                        ETextureFormat format;
+                        if (channels == 1) {
+                            format = ETextureFormat::RED;
+                        } else if (channels == 2) {
+                            format = ETextureFormat::RG;
+                        } else if (channels == 3) {
+                            format = ETextureFormat::RGB;
+                        } else if (channels == 4) {
+                            format = ETextureFormat::RGBA;
+                        } else {
+                            stbi_image_free(image_data);
+                            spdlog::warn("Unsupported channel count {} for {}", channels, fallback_name);
+                            return nullptr;
+                        }
+
+                        std::shared_ptr<Texture2D> loaded_texture =
+                            texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+
+
+                        if (loaded_texture) {
+                            spdlog::debug(
+                                "Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
+                            return loaded_texture;
+                        } else {
+                            spdlog::warn("Texture manager returned null for embedded texture: {}", fallback_name);
+                        }
+                    } catch (const std::exception& e) {
+                        stbi_image_free(image_data);
+                        spdlog::warn("Failed to create texture from embedded data {}: {}", fallback_name, e.what());
+                    }
+
                     return nullptr;
-                };
-
-
-                if (gltf_material && gltf_material->has_pbr_metallic_roughness) {
-                    auto& pbr = gltf_material->pbr_metallic_roughness;
-                    base_color =
-                        glm::vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
-                    metallic  = pbr.metallic_factor;
-                    roughness = pbr.roughness_factor;
-
-                    // Albedo texture
-                    if (pbr.base_color_texture.texture) {
-                        std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
-                        auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, tex_name);
-                        if (texture) {
-                            material->SetParameter("ALBEDO_TEXTURE", texture);
-                            textureFlags |= ETextureFlags::HAS_ALBEDO;
-                            spdlog::debug("Set albedo texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
-                        } else if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image) {
-                            spdlog::debug("Albedo texture found but not loaded");
-                        }
-                    }
-
-                    // Metallic-Roughness texture
-                    if (pbr.metallic_roughness_texture.texture) {
-                        std::string tex_name =
-                            gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
-                        auto texture = LoadGLTFTexture(pbr.metallic_roughness_texture.texture, tex_name);
-                        if (texture) {
-                            material->SetParameter("METALLIC_TEXTURE", texture);
-                            material->SetParameter("ROUGHNESS_TEXTURE", texture);
-                            textureFlags |= ETextureFlags::HAS_METALLIC;
-                            textureFlags |= ETextureFlags::HAS_ROUGHNESS;
-                            spdlog::debug("Set metallic-roughness texture for material: {}",
-                                          gltf_material->name ? gltf_material->name : "unnamed");
-                        } else if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image) {
-                            spdlog::debug("Metallic-roughness texture found but not loaded");
-                        }
-                    }
                 }
 
-                // Normal map
-                if (gltf_material && gltf_material->normal_texture.texture) {
-                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
-                    auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, tex_name);
+                spdlog::warn("Texture has neither URI nor buffer_view: {}", fallback_name);
+                return nullptr;
+            };
+
+
+            if (gltf_material && gltf_material->has_pbr_metallic_roughness) {
+                auto& pbr = gltf_material->pbr_metallic_roughness;
+                base_color =
+                    glm::vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
+                metallic  = pbr.metallic_factor;
+                roughness = pbr.roughness_factor;
+
+                // Albedo texture
+                if (pbr.base_color_texture.texture) {
+                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
+                    auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, tex_name);
                     if (texture) {
-                        material->SetParameter("NORMAL_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_NORMAL;
-                        spdlog::debug("Set normal texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
-                    } else if (gltf_material->normal_texture.texture && gltf_material->normal_texture.texture->image) {
-                        spdlog::debug("Normal texture found but not loaded");
+                        material->SetParameter("ALBEDO_TEXTURE", texture);
+                        textureFlags |= ETextureFlags::HAS_ALBEDO;
+                        spdlog::debug("Set albedo texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
+                    } else if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image) {
+                        spdlog::debug("Albedo texture found but not loaded");
                     }
                 }
 
-                // Occlusion map
-                if (gltf_material && gltf_material->occlusion_texture.texture) {
-                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
-                    auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, tex_name);
+                // Metallic-Roughness texture
+                if (pbr.metallic_roughness_texture.texture) {
+                    std::string tex_name =
+                        gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
+                    auto texture = LoadGLTFTexture(pbr.metallic_roughness_texture.texture, tex_name);
                     if (texture) {
-                        material->SetParameter("AO_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_AO;
-                        spdlog::debug("Set occlusion texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
-                    } else if (gltf_material->occlusion_texture.texture && gltf_material->occlusion_texture.texture->image) {
-                        spdlog::debug("Occlusion texture found but not loaded");
+                        material->SetParameter("METALLIC_TEXTURE", texture);
+                        material->SetParameter("ROUGHNESS_TEXTURE", texture);
+                        textureFlags |= ETextureFlags::HAS_METALLIC;
+                        textureFlags |= ETextureFlags::HAS_ROUGHNESS;
+                        spdlog::debug("Set metallic-roughness texture for material: {}",
+                                      gltf_material->name ? gltf_material->name : "unnamed");
+                    } else if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image) {
+                        spdlog::debug("Metallic-roughness texture found but not loaded");
                     }
                 }
+            }
+
+            // Normal map
+            if (gltf_material && gltf_material->normal_texture.texture) {
+                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
+                auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, tex_name);
+                if (texture) {
+                    material->SetParameter("NORMAL_TEXTURE", texture);
+                    textureFlags |= ETextureFlags::HAS_NORMAL;
+                    spdlog::debug("Set normal texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
+                } else if (gltf_material->normal_texture.texture && gltf_material->normal_texture.texture->image) {
+                    spdlog::debug("Normal texture found but not loaded");
+                }
+            }
+
+            // Occlusion map
+            if (gltf_material && gltf_material->occlusion_texture.texture) {
+                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
+                auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, tex_name);
+                if (texture) {
+                    material->SetParameter("AO_TEXTURE", texture);
+                    textureFlags |= ETextureFlags::HAS_AO;
+                    spdlog::debug("Set occlusion texture for material: {}", gltf_material->name ? gltf_material->name : "unnamed");
+                } else if (gltf_material->occlusion_texture.texture && gltf_material->occlusion_texture.texture->image) {
+                    spdlog::debug("Occlusion texture found but not loaded");
+                }
+            }
 
             // Emissive
             if (gltf_material) {
@@ -1169,6 +1166,56 @@ namespace golias {
         }
     }
 
+    glm::vec2 GameObject::GetWorldPosition2D() const {
+        glm::vec4 hom = GetWorldTransform2D() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+        return glm::vec2(hom) / hom.w;
+    }
+    
+    glm::vec2 GameObject::GetPosition2D() const {
+
+        return glm::vec2(position.x, position.y);
+    }
+
+    void GameObject::SetPosition2D(const glm::vec2& pos) {
+        position = glm::vec3(pos, 0.0f);
+    }
+
+    float GameObject::GetRotation2D() const {
+        return glm::angle(rotation);
+    }
+
+    void GameObject::SetRotation2D(float degrees) {
+        rotation = glm::angleAxis(glm::radians(degrees), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
+
+    glm::vec2 GameObject::GetScale2D() const {
+        return glm::vec2(scale.x, scale.y);
+    }
+
+    void GameObject::SetScale2D(const glm::vec2& value) {
+        scale = glm::vec3(value, 1.0f);
+    }
+
+    glm::mat4 GameObject::GetLocalTransform2D() const {
+        glm::mat4 mat = glm::mat4(1.0f);
+
+        mat = glm::translate(mat, glm::vec3(position.x, position.y, 0.0f));
+        mat = glm::rotate(mat, glm::radians(GetRotation2D()), glm::vec3(0.0f, 0.0f, 1.0f));
+        mat = glm::scale(mat, glm::vec3(scale.x, scale.y, 1.0f));
+
+        return mat;
+    }
+
+    glm::mat4 GameObject::GetWorldTransform2D() const {
+
+        if(parent){
+            return parent->GetWorldTransform2D() * GetLocalTransform2D();
+        }
+
+        return GetLocalTransform2D();
+    }
+
 
     GameObject* GameObject::LoadModel(const std::string_view pPath, Scene* pScene) {
         auto& engine = Engine::GetInstance();
@@ -1222,10 +1269,7 @@ namespace golias {
             LoadGLTFAnimations(data, rootObject);
             FreeGLTF(data);
 
-            spdlog::info("Successfully loaded {} model: {} (Material cache: {} materials)",
-                         extension == "glb" ? "GLB" : "GLTF",
-                         pPath,
-                         0);
+            spdlog::info("Successfully loaded {} model: {} (Material cache: {} materials)", extension == "glb" ? "GLB" : "GLTF", pPath, 0);
 
         } else if (extension == "obj") {
             tinyobj::attrib_t attrib;
