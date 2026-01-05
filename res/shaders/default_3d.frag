@@ -5,7 +5,7 @@ in vec2 v_texcoord;
 in vec3 v_normal;
 in vec3 v_frag_pos;
 
-out vec4 COLOR;
+out vec4 FRAG_COLOR;
 
 // PBR Textures
 uniform sampler2D ALBEDO_TEXTURE;
@@ -144,5 +144,5 @@ void main()
     // Final color
     vec3 result = (ambient + diffuse + specular) * baseColor + mat.emissive;
 
-    COLOR = vec4(result, mat.albedo.a);
+    FRAG_COLOR = vec4(result, mat.albedo.a);
 }
