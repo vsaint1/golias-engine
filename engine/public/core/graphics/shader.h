@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 
-using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>>;
+using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>,golias::Texture2D*>;
 
 enum class EShaderStage { VERTEX = 0x1, FRAGMENT = 0x2, COMPUTE = 0x4 };
 

@@ -24,6 +24,7 @@ namespace golias {
     struct CameraData {
         glm::mat4 viewMatrix;
         glm::mat4 projectionMatrix;
+        glm::mat4 orthographicMatrix;
         glm::vec3 position;
     };
 

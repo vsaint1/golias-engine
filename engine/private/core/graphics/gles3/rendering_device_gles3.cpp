@@ -180,6 +180,17 @@ namespace golias {
             return false;
         }
 
+        vertexSource = GetShaderHeaderVersion() + fs.LoadAssetFileText("shaders/default_2d.vert");
+
+        fragmentSource = GetShaderHeaderVersion() + fs.LoadAssetFileText("shaders/default_2d.frag");
+
+        default_shader_2d = std::make_shared<OpenglShader>(vertexSource, fragmentSource);
+
+        if (!default_shader_2d) {
+            spdlog::error("RenderingDeviceGLES3::CreateDefaultShaders Failed to create default 2D shader.");
+            return false;
+        }
+
 
         return true;
     }

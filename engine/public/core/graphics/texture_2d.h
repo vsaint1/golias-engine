@@ -24,6 +24,8 @@ namespace golias {
         const std::string& GetFilePath() const;
 
         bool IsValid() const;
+        
+        static std::shared_ptr<Texture2D> Load(const std::string_view pFilePath);
 
     protected:
         Uint32 handle   = 0;
@@ -48,6 +50,7 @@ namespace golias {
         }
 
         Texture2D(int w, int h, ETextureFormat fmt, Uint8* data) : width(w), height(h), format(fmt){}
+
     };
 
     // TODO: create other file for TextureManager

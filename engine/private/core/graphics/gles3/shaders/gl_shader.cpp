@@ -74,6 +74,15 @@ namespace golias {
                         glUniform1i(location, current_texture_unit);
                         ++current_texture_unit;
                     }
+                } else if constexpr (std::is_same_v<T, Texture2D*>) {
+                    if (v) {
+                        glActiveTexture(GL_TEXTURE0 + current_texture_unit);
+                        glBindTexture(GL_TEXTURE_2D, v->GetNativeHandle());
+                        glUniform1i(location, current_texture_unit);
+                        ++current_texture_unit;
+                    }
+                } else {
+                    spdlog::debug("OpenglShader::SetUniform: Unsupported uniform type for '{}'.", pName);
                 }
             },
             value);

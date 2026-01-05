@@ -123,26 +123,29 @@ namespace golias {
             application->Update(delta_time);
 
 
-            CameraData camera_data;
+            CameraData cameraData;
             if (scene && scene->GetMainCamera()) {
 
-                camera_data.position  = scene->GetMainCamera()->GetWorldPosition();
-                auto camera_component = scene->GetMainCamera()->GetComponent<CameraComponent>();
+                auto pCameraComponent = scene->GetMainCamera()->GetComponent<CameraComponent>();
 
-                if (camera_component) {
-                    camera_data.viewMatrix = camera_component->GetViewMatrix();
+                if (pCameraComponent) {
+                    cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
 
                     float aspect                 = static_cast<float>(_width) / static_cast<float>(_height);
-                    camera_data.projectionMatrix = camera_component->GetProjectionMatrix(aspect);
+                    cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
+                    cameraData.orthographicMatrix = glm::ortho(0.0f,static_cast<float>(_width), 0.0f,  static_cast<float>(_height));
+                    
+                    cameraData.position  = scene->GetMainCamera()->GetWorldPosition();
+                
                 }
             }
 
             rendering_device->Clear();
 
-            rendering_canvas.Draw(rendering_device, camera_data);
+            rendering_canvas.Draw(rendering_device, cameraData);
 
             if (GetPhysicsManager().IsDebugDrawEnabled()) {
-                GetPhysicsManager().RenderDebug(camera_data.projectionMatrix * camera_data.viewMatrix);
+                GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
             }
 
             rendering_device->Present();

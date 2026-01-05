@@ -11,6 +11,9 @@ namespace golias {
     class SpriteComponent2D : public Component {
         COMPONENT(SpriteComponent2D)
     public:
+        SpriteComponent2D() = default;
+        SpriteComponent2D(const std::shared_ptr<Texture2D>& pTexture) : texture(pTexture) {}
+
         void SetTexture(const std::shared_ptr<Texture2D>& tex);
         std::shared_ptr<Texture2D> GetTexture() const;
 
@@ -37,7 +40,7 @@ namespace golias {
         void LoadProperties(const nlohmann::json& json) override;
 
     private:
-        std::shared_ptr<Texture2D> texture;
+        std::shared_ptr<Texture2D> texture = nullptr;
         glm::vec4 color = glm::vec4(1.0f);
         glm::vec2 size  = glm::vec2(32.0f, 32.0f);
         glm::vec2 lowerLeftUV  = glm::vec2(0.0f, 0.0f);

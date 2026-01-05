@@ -3,7 +3,8 @@
 #include <glad.h>
 
 namespace golias {
-    class OpenglShader : public golias::Shader {
+
+    class OpenglShader : public Shader {
     public:
         OpenglShader(const std::string& vertex, const std::string& fragment);
         ~OpenglShader() override;

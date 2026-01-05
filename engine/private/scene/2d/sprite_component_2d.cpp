@@ -115,7 +115,18 @@ namespace golias {
             return;
         }
 
+        auto& rendering_canvas = golias::Engine::GetInstance().GetRenderingCanvas();
 
+
+        DrawCommand2D command;
+        command.modelMatrix = GetOwner()->GetWorldTransform2D();
+        command.texture     = texture.get();
+        command.color       = color;
+        command.size        = size;
+        command.lowerLeftUV  = lowerLeftUV;
+        command.upperRightUV = upperRightUV;
+        command.pivot       = pivot;
+        rendering_canvas.Submit(command);   
     }
 
 } // namespace golias

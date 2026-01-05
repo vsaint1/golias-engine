@@ -23,11 +23,11 @@ void main()
 
     static std::string debugFragmentShaderSource = GetShaderHeaderVersion() + R"(
 in vec3 v_color;
-out vec4 COLOR;
+out vec4 FRAG_COLOR;
 
 void main()
 {
-    COLOR = vec4(v_color, 1.0);
+    FRAG_COLOR = vec4(v_color, 1.0);
 }
 )";
 
