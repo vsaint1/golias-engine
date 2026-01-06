@@ -410,7 +410,7 @@ namespace golias {
 
         WidgetComponent::Register();
         CanvasComponent::Register();
-        TextComponent::Register();
+        TextWidgetComponent::Register();
     }
 
 } // namespace golias

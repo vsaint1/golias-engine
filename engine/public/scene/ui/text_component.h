@@ -3,8 +3,8 @@
 
 namespace golias {
 
-    class TextComponent : public WidgetComponent {
-        COMPONENT_DERIVED(TextComponent, WidgetComponent)
+    class TextWidgetComponent : public WidgetComponent {
+        COMPONENT_DERIVED(TextWidgetComponent, WidgetComponent)
 
     public:
         const std::string& GetText() const;
