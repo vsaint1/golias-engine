@@ -3,19 +3,6 @@
 #include "core/application.h"
 #include "scene/3d/camera_component.h"
 
-bool create_renderer_internal(golias::ERenderingDeviceType deviceType, golias::RenderingDevice** pOutDevice) {
-    switch (deviceType) {
-    case golias::ERenderingDeviceType::COMPATIBILITY:
-        *pOutDevice = new golias::RenderingDeviceGLES3();
-        return true;
-    case golias::ERenderingDeviceType::FORWARD_PLUS:
-        spdlog::error("FORWARD_PLUS rendering device not implemented yet.");
-        return false;
-    default:
-        spdlog::error("Unknown rendering device type.");
-        return false;
-    }
-}
 
 namespace golias {
 
@@ -43,29 +30,20 @@ namespace golias {
 
         SDL_SetWindowRelativeMouseMode(window, true);
 
-        if (!create_renderer_internal(deviceType, &rendering_device)) {
-            spdlog::error("Engine::Initialize Failed to create Rendering Device.");
-            return false;
-        }
-
-        if (!rendering_device->Initialize(window)) {
-            spdlog::error("Engine::InitializeFailed to initialize Rendering Device.");
-            return false;
-        }
-
-        if(!rendering_canvas.Initialize()){
+        if (!sceneRenderer.Initialize(window, deviceType)) {
             spdlog::error("Engine::Initialize Failed to initialize Rendering Canvas.");
             return false;
         }
-        
-        if (!physics_manager.Initialize(rendering_device->GetPhysicsDebugDrawer())) {
+
+
+        if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
             return false;
         }
 
         Scene::RegisterTypes();
 
-        if (!audio_manager.Initialize()) {
+        if (!audioManager.Initialize()) {
             spdlog::error("Engine::Initialize Failed to initialize Audio Manager.");
             return false;
         }
@@ -100,7 +78,7 @@ namespace golias {
             float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
             last_time_point           = current_time_point;
 
-            input_manager.Update();
+            inputManager.Update();
 
             SDL_Event event;
 
@@ -114,16 +92,16 @@ namespace golias {
                     _height = event.window.data2;
                 }
 
-                input_manager.ProcessEvent(event);
+                inputManager.ProcessEvent(event);
             }
 
 
-            physics_manager.StepSimulation(delta_time);
+            physicsManager.StepSimulation(delta_time);
 
             application->Update(delta_time);
 
 
-            CameraData cameraData;
+            CameraCommand cameraData;
             if (scene && scene->GetMainCamera()) {
 
                 auto pCameraComponent = scene->GetMainCamera()->GetComponent<CameraComponent>();
@@ -131,24 +109,23 @@ namespace golias {
                 if (pCameraComponent) {
                     cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
 
-                    float aspect                 = static_cast<float>(_width) / static_cast<float>(_height);
-                    cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
-                    cameraData.orthographicMatrix = glm::ortho(0.0f,static_cast<float>(_width), 0.0f,  static_cast<float>(_height));
-                    
-                    cameraData.position  = scene->GetMainCamera()->GetWorldPosition();
-                
+                    float aspect                  = static_cast<float>(_width) / static_cast<float>(_height);
+                    cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
+                    cameraData.orthographicMatrix = glm::ortho(0.0f, static_cast<float>(_width), 0.0f, static_cast<float>(_height));
+
+                    cameraData.position = scene->GetMainCamera()->GetWorldPosition();
                 }
             }
 
-            rendering_device->Clear();
+            sceneRenderer.Clear();
 
-            rendering_canvas.Draw(rendering_device, cameraData);
+            sceneRenderer.Draw(cameraData);
 
             if (GetPhysicsManager().IsDebugDrawEnabled()) {
                 GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
             }
 
-            rendering_device->Present();
+            sceneRenderer.Present();
 
             SDL_Delay(16); // HACK for development purposes
         }
@@ -161,58 +138,61 @@ namespace golias {
             application.reset();
         }
 
-        delete rendering_device;
-        rendering_device = nullptr;
-
         SDL_DestroyWindow(window);
         SDL_Quit();
 
-        spdlog::info("Engine::Destroy Golias Engine Destroyed successfully.");
+        spdlog::info("Engine::Destroy Cleanup phase completed, Engine systems destroyed.");
     }
 
     void Engine::SetApplication(Application* pApplication) {
         spdlog::info("Engine::SetApplication Setting Application for the Engine.");
+       
+        if (application) {
+            spdlog::warn("Engine::SetApplication Overwriting existing Application instance.");
+            application->Destroy();
+        }
+
         application.reset(pApplication);
-    }
-
-    Application* Engine::GetApplication() const {
-        return application.get();
-    }
-
-    InputManager& Engine::GetInputManager() {
-        return input_manager;
-    }
-
-    RenderingDevice* Engine::GetRenderingDevice() {
-        return rendering_device;
-    }
-
-
-    RenderingCanvas& Engine::GetRenderingCanvas() {
-        return rendering_canvas;
-    }
-
-    FileSystem& Engine::GetFileSystem() {
-        return file_system;
-    }
-
-    Scene* Engine::GetScene() const {
-        return scene.get();
     }
 
     void Engine::SetScene(const std::shared_ptr<Scene>& pScene) {
         scene = pScene;
     }
 
+
+    Application* Engine::GetApplication() const {
+        return application.get();
+    }
+
+    InputManager& Engine::GetInputManager() {
+        return inputManager;
+    }
+
+    AudioManager& Engine::GetAudioManager() {
+        return audioManager;
+    }
+
+    SceneRenderer& Engine::GetSceneRenderer() {
+        return sceneRenderer;
+    }
+
+    FileSystem& Engine::GetFileSystem() {
+        return fileSystem;
+    }
+
+    Scene* Engine::GetScene() const {
+        return scene.get();
+    }
+
     MaterialManager& Engine::GetMaterialManager() {
-        return material_manager;
+        return materialManager;
     }
 
     TextureManager& Engine::GetTextureManager() {
-        return texture_manager;
+        return textureManager;
     }
 
     PhysicsManager& Engine::GetPhysicsManager() {
-        return physics_manager;
+        return physicsManager;
     }
 } // namespace golias

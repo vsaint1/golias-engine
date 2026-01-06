@@ -44,7 +44,7 @@ namespace golias {
 
         void DrawMesh(Mesh* mesh);
 
-        void Present() override;
+        void SwapChain() override;
 
     private:
         SDL_GLContext gl_context = nullptr;

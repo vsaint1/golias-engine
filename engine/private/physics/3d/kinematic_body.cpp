@@ -46,6 +46,11 @@ namespace golias {
 
     KinematicCharacterController::~KinematicCharacterController() {
         const auto physicsWorld = Engine::GetInstance().GetPhysicsManager().GetPhyisicsWorld();
+        
+        if (!physicsWorld) {
+            return;
+        }
+        
         if (controller) {
             physicsWorld->removeAction(controller.get());
         }

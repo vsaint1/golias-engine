@@ -46,7 +46,7 @@ namespace golias {
             return it->second;
         }
 
-        auto rd = golias::Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
 
         auto texture = rd->CreateTextureFromFile(pFilePath);
 
@@ -67,7 +67,7 @@ namespace golias {
             return it->second;
         }
 
-        auto rd = golias::Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
 
         auto texture = rd->CreateTextureFromData(width, height, format, data);
 

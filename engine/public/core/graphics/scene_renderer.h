@@ -1,0 +1,57 @@
+#pragma once
+
+
+#include "core/graphics/gles3/rendering_device_gles3.h"
+
+namespace golias {
+
+    struct DrawCommand {
+        Mesh* mesh         = nullptr;
+        Material* material = nullptr;
+        glm::mat4 modelMatrix;
+    };
+
+    struct DrawCommand2D {
+        glm::mat4 modelMatrix;
+        Texture2D* texture     = nullptr;
+        glm::vec4 color        = glm::vec4(1.0f);
+        glm::vec2 size         = glm::vec2(32.0f, 32.0f);
+        glm::vec2 lowerLeftUV  = glm::vec2(0.0f, 0.0f);
+        glm::vec2 upperRightUV = glm::vec2(1.0f, 1.0f);
+        glm::vec2 pivot        = glm::vec2(0.5f, 0.5f);
+    };
+
+    struct CameraCommand {
+        glm::mat4 viewMatrix;
+        glm::mat4 projectionMatrix;
+        glm::mat4 orthographicMatrix;
+        glm::vec3 position;
+    };
+
+
+    
+    class SceneRenderer {
+    public:
+        bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
+        void Submit(const DrawCommand& command);
+        void Submit(const DrawCommand2D& command);
+
+        void Clear(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
+        
+        void Draw(const CameraCommand& camera);
+
+        void Present();
+
+        RenderingDevice* GetRenderingDevice() const;
+
+        ~SceneRenderer();
+
+    private:
+        std::vector<DrawCommand> command_queue;
+        std::vector<DrawCommand2D> command_queue_2d;
+        std::vector<CameraCommand> camera_commands;
+        std::shared_ptr<Mesh> quad = nullptr;
+        RenderingDevice* rendering_device = nullptr;
+    };
+
+}; // namespace golias

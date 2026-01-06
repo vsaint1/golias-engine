@@ -10,7 +10,7 @@ namespace golias {
 
     OpenglMesh::OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<uint32_t>& indices)
         : Mesh(layout, vertices, indices) {
-        auto rd = Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
 
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
@@ -38,7 +38,7 @@ namespace golias {
 
 
     OpenglMesh::OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices) : Mesh(layout, vertices) {
-        auto rd = Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
 
         glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);

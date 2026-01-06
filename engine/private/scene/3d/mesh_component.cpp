@@ -1,7 +1,6 @@
 #include "scene/3d/mesh_component.h"
 
 #include "core/engine.h"
-#include "core/graphics/rendering_canvas.h"
 
 namespace golias {
 
@@ -22,8 +21,8 @@ namespace golias {
         command.mesh        = mesh.get();
         command.material    = material.get();
         command.modelMatrix = GetOwner()->GetWorldTransform();
-        auto& rendering_canvas = golias::Engine::GetInstance().GetRenderingCanvas();
-        rendering_canvas.Submit(command);
+        auto& renderer = golias::Engine::GetInstance().GetSceneRenderer();
+        renderer.Submit(command);
     }
 
     Mesh* MeshComponent::GetMesh() const {

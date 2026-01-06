@@ -50,7 +50,7 @@ namespace golias {
 
         virtual void DrawMesh(Mesh* mesh) = 0;
 
-        virtual void Present() = 0;
+        virtual void SwapChain() = 0;
 
     protected:
         glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);

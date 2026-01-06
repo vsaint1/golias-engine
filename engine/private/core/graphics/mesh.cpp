@@ -45,7 +45,7 @@ namespace golias {
         };
         layout.stride = 2 * sizeof(float);
 
-        auto rd = Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, quad_vertices, quad_indices);
     }
 
@@ -122,7 +122,7 @@ namespace golias {
         };
         layout.stride = 8 * sizeof(float);
 
-        auto rd = Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, vertices, indices);
 
     }
@@ -186,7 +186,7 @@ namespace golias {
         };
         layout.stride = 8 * sizeof(float);
 
-        auto rd = Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, box_vertices, box_indices);
     }
 

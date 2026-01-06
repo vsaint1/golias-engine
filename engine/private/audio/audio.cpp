@@ -5,12 +5,13 @@
 
 namespace golias {
     Audio::~Audio() {
-        if (maSound) {
-            ma_sound_uninit(maSound.get());
-        }
-        if (maDecoder) {
-            ma_decoder_uninit(maDecoder.get());
-        }
+        // if (maSound) {
+        //     ma_sound_uninit(maSound.get());
+        // }
+        
+        // if (maDecoder) {
+        //     ma_decoder_uninit(maDecoder.get());
+        // }
     }
 
     void Audio::SetPosition(float x, float y, float z) {

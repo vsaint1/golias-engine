@@ -161,7 +161,7 @@ namespace golias {
         return nullptr;
     }
 
-    void RenderingDeviceGLES3::Present() {
+    void RenderingDeviceGLES3::SwapChain() {
         SDL_GL_SwapWindow(window);
     }
 
@@ -209,7 +209,6 @@ namespace golias {
             gl_context = nullptr;
         }
 
-        spdlog::info("RenderingDeviceGLES3::~RenderingDeviceGLES3 GLES3 Rendering Device destroyed.");
     }
 
 

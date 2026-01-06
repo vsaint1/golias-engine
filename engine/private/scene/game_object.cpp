@@ -498,7 +498,7 @@ namespace golias {
                                      cgltf_material* gltf_material,
                                      const std::string& base_path) {
             auto& engine          = Engine::GetInstance();
-            auto rd               = engine.GetRenderingDevice();
+            auto rd               = engine.GetSceneRenderer().GetRenderingDevice();
             auto& texture_manager = engine.GetTextureManager();
 
             std::shared_ptr<Mesh> mesh = rd->CreateMeshFromData(layout, vertices, indices);
@@ -810,7 +810,7 @@ namespace golias {
                                     const tinyobj::material_t* obj_material,
                                     const std::string& base_path) {
             auto& engine = Engine::GetInstance();
-            auto rd      = engine.GetRenderingDevice();
+            auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
 
             std::shared_ptr<Mesh> mesh         = rd->CreateMeshFromData(layout, vertices, indices);
             std::shared_ptr<Material> material = std::make_shared<Material>();

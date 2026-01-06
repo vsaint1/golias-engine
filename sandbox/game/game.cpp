@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include "scene/2d/sprite_component_2d.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
 
@@ -36,12 +37,30 @@ bool SandboxApplication::Initialize() {
 
 #if defined(SCENE_LOAD_FROM_FILE)
 
-    auto Tscene = golias::Scene::Load("scenes/main.gscene");
+    auto Tscene   = golias::Scene::Load("scenes/main.gscene");
     auto material = golias::Material::Load("materials/brick.mat");
-    mat = material;
-    // auto avocado = golias::GameObject::LoadModel("models/avocado/Avocado.gltf",Tscene.get());
-    // avocado->SetPosition({-2.0f, 2.0f, -2.0f});
-    // avocado->SetScale({25.0f, 25.0f, 25.0f});
+    mat           = material;
+    // // auto avocado = golias::GameObject::LoadModel("models/avocado/Avocado.gltf",Tscene.get());
+    // // avocado->SetPosition({-2.0f, 2.0f, -2.0f});
+    // // avocado->SetScale({25.0f, 25.0f, 25.0f});
+
+    // auto Tscene = std::make_shared<golias::Scene>();
+
+    // auto spriteObj = Tscene->CreateObject("Sprite");
+    // spriteObj->SetPosition2D({500.0f, 500.0f});
+    // spriteObj->SetRotation2D(45.0f);
+
+    // auto brickTex   = golias::Texture2D::Load("textures/brick.png");
+
+    // auto spriteComp = new golias::SpriteComponent2D();
+    // spriteComp->SetTexture(brickTex);
+    // spriteComp->SetSize({100.0f,100.0f});
+
+    // spriteObj->AddComponent(spriteComp);
+
+    // auto camera = Tscene->CreateObject("Camera");
+    // camera->AddComponent(new golias::CameraComponent());
+    // Tscene->SetMainCamera(camera);
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
@@ -92,6 +111,7 @@ bool SandboxApplication::Initialize() {
 
 #endif
 
+
     spdlog::info("GameApplication Initialized successfully.");
     return true;
 }
@@ -109,7 +129,7 @@ void SandboxApplication::Update(float deltaTime) {
         spdlog::info("Spawned box at {}, {}, {}", x, 8.0f, z);
     }
 
-    if(input.IsKeyJustPressed(SDLK_T)){
+    if (input.IsKeyJustPressed(SDLK_T)) {
         auto& physicsDebugDrawer = golias::Engine::GetInstance().GetPhysicsManager();
         physicsDebugDrawer.SetDebugDrawEnabled(!physicsDebugDrawer.IsDebugDrawEnabled());
         spdlog::info("Toggled Physics Debug Draw: {}", physicsDebugDrawer.IsDebugDrawEnabled() ? "ON" : "OFF");

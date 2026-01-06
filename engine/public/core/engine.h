@@ -1,5 +1,5 @@
 #pragma once
-#include "core/graphics/rendering_canvas.h"
+#include "core/graphics/scene_renderer.h"
 #include "core/graphics/rendering_device.h"
 #include "core/input/input_manager.h"
 #include "core/io/file_system.h"
@@ -32,9 +32,7 @@ namespace golias {
 
         InputManager& GetInputManager();
 
-        RenderingDevice* GetRenderingDevice();
-
-        RenderingCanvas& GetRenderingCanvas();
+        SceneRenderer& GetSceneRenderer();
 
         TextureManager& GetTextureManager();
 
@@ -44,9 +42,7 @@ namespace golias {
 
         MaterialManager& GetMaterialManager();
 
-        AudioManager& GetAudioManager(){
-            return audio_manager;
-        }
+        AudioManager& GetAudioManager();
 
         Scene* GetScene() const;
         void SetScene(const std::shared_ptr<Scene>& pScene);
@@ -57,13 +53,7 @@ namespace golias {
         Engine& operator=(const Engine&) = delete;
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
-
-    private:
-        InputManager input_manager;
-        FileSystem file_system;
-        PhysicsManager physics_manager;
-        MaterialManager material_manager;
-        AudioManager audio_manager;
+     
 
     private:
         std::unique_ptr<Application> application;
@@ -75,9 +65,14 @@ namespace golias {
         std::shared_ptr<Scene> scene = nullptr;
 
     private:
-        RenderingDevice* rendering_device = nullptr;
-        RenderingCanvas rendering_canvas;
-        TextureManager texture_manager;
+        SceneRenderer sceneRenderer;
+
+        TextureManager textureManager;
+        InputManager inputManager;
+        FileSystem fileSystem;
+        PhysicsManager physicsManager;
+        MaterialManager materialManager;
+        AudioManager audioManager;
     };
 
 }; // namespace golias

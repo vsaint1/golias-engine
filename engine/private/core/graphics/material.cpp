@@ -61,7 +61,7 @@ namespace golias {
 
         auto material = std::make_shared<Material>();
 
-        auto rd = golias::Engine::GetInstance().GetRenderingDevice();
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
 
         if (json.contains("shader")) {
 
@@ -138,7 +138,7 @@ namespace golias {
                     std::string name  = texEntry.value("name", "");
                     std::string value = texEntry.value("path", "");
 
-                    auto rd      = golias::Engine::GetInstance().GetRenderingDevice();
+                    auto rd      = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
                     auto texture = rd->CreateTextureFromFile(value);
 
                     if (texture) {

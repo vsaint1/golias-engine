@@ -9,7 +9,26 @@
 namespace golias {
 
     PhysicsManager::PhysicsManager()  = default;
-    PhysicsManager::~PhysicsManager() = default;
+    
+    PhysicsManager::~PhysicsManager() {
+        
+        if (dynamicsWorld) {
+            int numCollisionObjects = dynamicsWorld->getNumCollisionObjects();
+            for (int i = numCollisionObjects - 1; i >= 0; --i) {
+                btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
+                btRigidBody* body = btRigidBody::upcast(obj);
+                if (body) {
+                    dynamicsWorld->removeRigidBody(body);
+                }
+            }
+        }
+        
+        dynamicsWorld.reset();
+        solver.reset();
+        dispatcher.reset();
+        broadphase.reset();
+        collisionConfiguration.reset();
+    }
 
     bool PhysicsManager::Initialize(PhysicsDebugDrawer* pDebugDrawer) {
 

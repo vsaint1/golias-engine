@@ -115,7 +115,7 @@ namespace golias {
             return;
         }
 
-        auto& rendering_canvas = golias::Engine::GetInstance().GetRenderingCanvas();
+        auto& renderer = golias::Engine::GetInstance().GetSceneRenderer();
 
 
         DrawCommand2D command;
@@ -126,7 +126,7 @@ namespace golias {
         command.lowerLeftUV  = lowerLeftUV;
         command.upperRightUV = upperRightUV;
         command.pivot       = pivot;
-        rendering_canvas.Submit(command);   
+        renderer.Submit(command);   
     }
 
 } // namespace golias
