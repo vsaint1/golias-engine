@@ -34,8 +34,9 @@ set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
 set(BUILD_EXTRAS OFF)
 add_subdirectory(bullet3 EXCLUDE_FROM_ALL)
 
-
 add_subdirectory(mini_audio)
+
+add_subdirectory(freetype)
 
 add_library(thirdparty INTERFACE)
 
@@ -56,4 +57,5 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         BulletCollision
         LinearMath
         mini_audio
+        freetype
 )
