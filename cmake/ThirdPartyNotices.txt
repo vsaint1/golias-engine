@@ -39,3 +39,8 @@ https://github.com/nlohmann/json
 spdlog
 License: Public Domain / MIT
 https://github.com/gabime/spdlog
+
+------------------------------------------------------------
+freetype
+License: FreeType License (BSD-style)
+https://github.com/freetype/freetype
