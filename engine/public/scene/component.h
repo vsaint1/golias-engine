@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+
 #include <json.hpp>
 
 namespace golias {
@@ -17,16 +18,16 @@ namespace golias {
         GameObject* GetOwner() const;
         void SetOwner(GameObject* pOwner);
 
-        virtual void Start()                 = 0;
-        virtual void Update(float deltaTime) = 0;
-
         template <typename T>
         static size_t StaticTypeId() {
             static size_t type_id = next_type_id++;
             return type_id;
         }
 
-        virtual void LoadProperties(const nlohmann::json& json) = 0;
+        virtual void Start();
+        virtual void Update(float deltaTime);
+        virtual void LoadProperties(const nlohmann::json& json);
+
     protected:
         GameObject* owner = nullptr;
         friend class GameObject;
@@ -61,6 +62,13 @@ namespace golias {
         template <typename T>
         void RegisterComponent(const std::string_view pName) {
             creators.emplace(pName.data(), std::make_unique<ComponentFactory<T>>());
+            parents[T::TypeId()].push_back(Component::StaticTypeId<Component>());
+        }
+
+        template <typename T, typename ParentType>
+        void RegisterComponent(const std::string_view pName) {
+            creators.emplace(pName.data(), std::make_unique<ComponentFactory<T>>());
+            parents[T::TypeId()].push_back(Component::StaticTypeId<ParentType>());
         }
 
         Component* CreateComponent(const std::string_view pName) const {
@@ -72,20 +80,56 @@ namespace golias {
             return nullptr;
         }
 
+        bool HasComponent(size_t objTypeId, size_t parentTypeId) const {
+            
+            auto record = parents.find(objTypeId);
+            if (record == parents.end()) {
+              
+                return false;
+            }
+
+            auto& parents = record->second;
+
+            if(std::find(parents.begin(), parents.end(), parentTypeId) != parents.end()) {
+                return true;
+            }
+
+            for (const auto& parent : parents) {
+                if(HasComponent(parent, parentTypeId)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
     private:
         std::unordered_map<std::string, std::unique_ptr<ComponentFactoryBase>> creators;
+        std::unordered_map<size_t, std::vector<size_t>> parents;
     };
 
-#define COMPONENT(Clazz)                                                  \
-public:                                                                   \
-    static size_t TypeId() {                                              \
-        return Component::StaticTypeId<Clazz>();                          \
-    }                                                                     \
-    size_t GetTypeId() const override {                                   \
-        return TypeId();                                                  \
-    }                                                                     \
-    static void Register() {                                              \
+#define COMPONENT(Clazz)                                                   \
+public:                                                                    \
+    static size_t TypeId() {                                               \
+        return Component::StaticTypeId<Clazz>();                           \
+    }                                                                      \
+    size_t GetTypeId() const override {                                    \
+        return TypeId();                                                   \
+    }                                                                      \
+    static void Register() {                                               \
         ComponentRegistry::GetInstance().RegisterComponent<Clazz>(#Clazz); \
+    }
+
+#define COMPONENT_DERIVED(Clazz, ParentType)                                 \
+public:                                                                    \
+    static size_t TypeId() {                                               \
+        return Component::StaticTypeId<Clazz>();                           \
+    }                                                                      \
+    size_t GetTypeId() const override {                                    \
+        return TypeId();                                                   \
+    }                                                                      \
+    static void Register() {                                               \
+        ComponentRegistry::GetInstance().RegisterComponent<Clazz, ParentType>(#Clazz); \
     }
 
 }; // namespace golias

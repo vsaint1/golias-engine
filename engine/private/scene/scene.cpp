@@ -17,6 +17,10 @@
 #include "scene/2d/sprite_component_2d.h"
 #pragma endregion
 
+#pragma region UI_COMPONENTS
+#include "scene/ui/canvas_component.h"
+#include "scene/ui/text_component.h"
+#pragma endregion
 
 namespace golias {
     size_t Scene::next_type_id = 0;
@@ -402,6 +406,11 @@ namespace golias {
         AudioListenerComponent::Register();
 
         SpriteComponent2D::Register();
+
+
+        WidgetComponent::Register();
+        CanvasComponent::Register();
+        TextComponent::Register();
     }
 
 } // namespace golias

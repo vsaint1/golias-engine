@@ -11,5 +11,13 @@ namespace golias {
         owner = pOwner;
     }
 
+    void Component::Start() {
+    }
+
+    void Component::Update(float deltaTime) {
+    }
+
+    void Component::LoadProperties(const nlohmann::json& json) {
+    }
 
 } // namespace golias
