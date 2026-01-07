@@ -36,6 +36,10 @@ namespace golias {
         command_queue_2d.push_back(command);
     }
 
+    void SceneRenderer::Submit(const CanvasCommand& command) {
+        canvas_commands.push_back(command);
+    }
+
     void SceneRenderer::Draw(const CameraCommand& camera) {
 
         for (const auto& command : command_queue) {
@@ -98,10 +102,44 @@ namespace golias {
             quad->Draw();
         }
         quad->Unbind();
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
+
 
         command_queue_2d.clear();
+
+        auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
+        shader_canvas->Bind();
+        for (const auto& command : canvas_commands) {
+            if (!command.mesh) {
+                continue;
+            }
+
+            rendering_device->BindMesh(command.mesh);
+
+            Uint32 indexOffset = 0;
+            for (const auto& batch : command.batches) {
+
+                if (batch.texture) {
+                    shader_canvas->SetUniform("HAS_TEXTURE", 1);
+                    shader_canvas->SetUniform("TEXTURE", batch.texture);
+
+                } else {
+                    shader_canvas->SetUniform("HAS_TEXTURE", 0);
+                }
+
+                shader_canvas->Bind();
+                shader_canvas->SetUniform("PROJECTION_MATRIX", camera.orthographicMatrix);
+
+                command.mesh->DrawIndexed(indexOffset, batch.indexCount);
+
+                indexOffset += batch.indexCount;
+            }
+
+            command.mesh->Unbind();
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+        canvas_commands.clear();
     }
 
     bool SceneRenderer::Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType) {
@@ -127,7 +165,7 @@ namespace golias {
     }
 
     void SceneRenderer::Present() {
-       rendering_device->SwapChain();
+        rendering_device->SwapChain();
     }
 
 }; // namespace golias

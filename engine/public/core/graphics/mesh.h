@@ -17,11 +17,11 @@ namespace golias {
         static std::shared_ptr<Mesh> CreateQuad(float width = 1.0f, float height = 1.0f);
 
         virtual void Bind() = 0;
-
         virtual void Draw() = 0;
-
+        virtual void DrawIndexed(uint32_t startIndex, uint32_t indexCount) = 0;
         virtual void Unbind() = 0;
-
+        virtual void Update(const std::vector<float>& vertices, const std::vector<Uint32>& indices) = 0;
+        virtual void Update(const std::vector<float>& vertices) = 0;
 
         void SetVertexLayout(const VertexLayout& layout);
 

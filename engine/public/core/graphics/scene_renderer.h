@@ -28,16 +28,26 @@ namespace golias {
         glm::vec3 position;
     };
 
+   struct CanvasBatch {
+        Texture2D* texture = nullptr;
+        Uint32 indexCount  = 0;
+    };
 
-    
+    struct CanvasCommand {
+        Mesh* mesh         = nullptr;
+        std::vector<CanvasBatch> batches;
+    };
+
+
     class SceneRenderer {
     public:
         bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
         void Submit(const DrawCommand& command);
         void Submit(const DrawCommand2D& command);
+        void Submit(const CanvasCommand& command);
 
         void Clear(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
-        
+
         void Draw(const CameraCommand& camera);
 
         void Present();
@@ -49,8 +59,9 @@ namespace golias {
     private:
         std::vector<DrawCommand> command_queue;
         std::vector<DrawCommand2D> command_queue_2d;
-        std::vector<CameraCommand> camera_commands;
-        std::shared_ptr<Mesh> quad = nullptr;
+        std::vector<CanvasCommand> canvas_commands;
+
+        std::shared_ptr<Mesh> quad        = nullptr;
         RenderingDevice* rendering_device = nullptr;
     };
 

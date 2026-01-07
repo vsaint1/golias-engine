@@ -5,13 +5,16 @@
 
 namespace golias {
     Audio::~Audio() {
-        // if (maSound) {
-        //     ma_sound_uninit(maSound.get());
-        // }
-        
-        // if (maDecoder) {
-        //     ma_decoder_uninit(maDecoder.get());
-        // }
+        // TODO: we need to fix FireAndForget from Memory instead of using `ma_engine_play_sound`
+#if defined(MA_NO_RESOURCE_MANAGER)
+        if (maSound) {
+            ma_sound_uninit(maSound.get());
+        }
+
+        if (maDecoder) {
+            ma_decoder_uninit(maDecoder.get());
+        }
+#endif
     }
 
     void Audio::SetPosition(float x, float y, float z) {

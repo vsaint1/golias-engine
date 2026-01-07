@@ -191,8 +191,22 @@ namespace golias {
             return false;
         }
 
+        vertexSource   = GetShaderHeaderVersion() + fs.LoadAssetFileText("shaders/default_canvas.vert");
+        fragmentSource = GetShaderHeaderVersion() + fs.LoadAssetFileText("shaders/default_canvas.frag");
+
+        default_shader_canvas = std::make_shared<OpenglShader>(vertexSource, fragmentSource);
+
+        if (!default_shader_canvas) {
+            spdlog::error("RenderingDeviceGLES3::CreateDefaultShaders Failed to create default canvas shader.");
+            return false;
+        }
 
         return true;
+    }
+
+    void RenderingDeviceGLES3::SetViewport(const Rect& vp)  {
+        viewport = vp;
+        glViewport(vp.x, vp.y, vp.width, vp.height);
     }
 
     std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultShader3D() const {
@@ -202,13 +216,15 @@ namespace golias {
     std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultShader2D() const {
         return default_shader_2d;
     }
+    std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultShaderCanvas() const {
+        return default_shader_canvas;
+    }
 
     RenderingDeviceGLES3::~RenderingDeviceGLES3() {
         if (gl_context) {
             SDL_GL_DestroyContext(gl_context);
             gl_context = nullptr;
         }
-
     }
 
 

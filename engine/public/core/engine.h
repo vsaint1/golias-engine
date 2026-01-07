@@ -6,6 +6,7 @@
 #include "physics/3d/physics_manager.h"
 #include "scene/scene.h"
 #include "audio/audio_manager.h"
+#include "font/font_manager.h"
 
 namespace golias {
 
@@ -43,7 +44,9 @@ namespace golias {
         MaterialManager& GetMaterialManager();
 
         AudioManager& GetAudioManager();
-
+        
+        FontManager& GetFontManager();
+        
         Scene* GetScene() const;
         void SetScene(const std::shared_ptr<Scene>& pScene);
 
@@ -73,6 +76,7 @@ namespace golias {
         PhysicsManager physicsManager;
         MaterialManager materialManager;
         AudioManager audioManager;
+        FontManager fontManager;
     };
 
 }; // namespace golias

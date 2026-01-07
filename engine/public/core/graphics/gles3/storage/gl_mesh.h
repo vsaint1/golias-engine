@@ -14,10 +14,11 @@ namespace golias {
         OpenglMesh(const VertexLayout& layout, const std::vector<float>& vertices);
 
         void Bind() override;
-
         void Draw() override;
-
+        void DrawIndexed(Uint32 startIndex, Uint32 indexCount) override;
         void Unbind() override;
+        void Update(const std::vector<float>& vertices, const std::vector<Uint32>& indices) override;
+        void Update(const std::vector<float>& vertices) override;
         
         virtual ~OpenglMesh() override;
     private:

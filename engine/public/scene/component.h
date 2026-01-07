@@ -80,7 +80,7 @@ namespace golias {
             return nullptr;
         }
 
-        bool HasComponent(size_t objTypeId, size_t parentTypeId) const {
+        bool HasParent(size_t objTypeId, size_t parentTypeId) const {
             
             auto record = parents.find(objTypeId);
             if (record == parents.end()) {
@@ -88,14 +88,18 @@ namespace golias {
                 return false;
             }
 
-            auto& parents = record->second;
+            const auto& parentList = record->second;
 
-            if(std::find(parents.begin(), parents.end(), parentTypeId) != parents.end()) {
+            if(std::find(parentList.begin(), parentList.end(), parentTypeId) != parentList.end()) {
                 return true;
             }
 
-            for (const auto& parent : parents) {
-                if(HasComponent(parent, parentTypeId)) {
+            for (const auto& parent : parentList) {
+                if(parent == objTypeId) {
+                    continue;
+                }
+                
+                if(HasParent(parent, parentTypeId)) {
                     return true;
                 }
             }

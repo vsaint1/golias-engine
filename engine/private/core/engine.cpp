@@ -27,6 +27,10 @@ namespace golias {
             return false;
         }
 
+        if(!fontManager.Initialize()) {
+            spdlog::error("Engine::Initialize Failed to initialize Font Manager.");
+            return false;
+        }
 
         SDL_SetWindowRelativeMouseMode(window, true);
 
@@ -35,6 +39,7 @@ namespace golias {
             return false;
         }
 
+        sceneRenderer.GetRenderingDevice()->SetViewport({0, 0, width, height});
 
         if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
@@ -90,6 +95,7 @@ namespace golias {
                 if (event.type == SDL_EVENT_WINDOW_RESIZED) {
                     _width  = event.window.data1;
                     _height = event.window.data2;
+                    GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, _width, _height});
                 }
 
                 inputManager.ProcessEvent(event);
@@ -164,6 +170,10 @@ namespace golias {
         return application.get();
     }
 
+    FontManager& Engine::GetFontManager() {
+        return fontManager;
+    }
+    
     InputManager& Engine::GetInputManager() {
         return inputManager;
     }

@@ -1,6 +1,8 @@
 #include "game.h"
 
 #include "scene/2d/sprite_component_2d.h"
+#include "scene/ui/canvas_component.h"
+#include "scene/ui/text_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
 
@@ -46,21 +48,33 @@ bool SandboxApplication::Initialize() {
 
     // auto Tscene = std::make_shared<golias::Scene>();
 
-    // auto spriteObj = Tscene->CreateObject("Sprite");
-    // spriteObj->SetPosition2D({500.0f, 500.0f});
-    // spriteObj->SetRotation2D(45.0f);
+    auto spriteObj = Tscene->CreateObject("Sprite");
+    spriteObj->SetPosition2D({500.0f, 500.0f});
+    spriteObj->SetRotation2D(45.0f);
 
-    // auto brickTex   = golias::Texture2D::Load("textures/brick.png");
+    auto brickTex   = golias::Texture2D::Load("textures/brick.png");
 
-    // auto spriteComp = new golias::SpriteComponent2D();
-    // spriteComp->SetTexture(brickTex);
-    // spriteComp->SetSize({100.0f,100.0f});
+    auto spriteComp = new golias::SpriteComponent2D();
+    spriteComp->SetTexture(brickTex);
+    spriteComp->SetSize({100.0f,100.0f});
 
-    // spriteObj->AddComponent(spriteComp);
+    spriteObj->AddComponent(spriteComp);
 
     // auto camera = Tscene->CreateObject("Camera");
     // camera->AddComponent(new golias::CameraComponent());
     // Tscene->SetMainCamera(camera);
+
+    // auto canvas     = Tscene->CreateObject("Canvas");
+    // auto canvasComp = new golias::CanvasComponent();
+    // canvas->AddComponent(canvasComp);
+
+    // auto text     = Tscene->CreateObject("Text", canvas);
+    // auto textComp = new golias::TextWidgetComponent();
+    // textComp->SetText("Hello, Golias Engine!");
+    // textComp->SetFont("fonts/Minecraft.ttf", 32);
+    // text->AddComponent(textComp);
+
+    // text->SetPosition2D({400.0f, 300.0f});
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else

@@ -102,9 +102,10 @@ namespace golias {
         size_t typeId = Component::StaticTypeId<T>();
 
         for (const auto& comp : components) {
-            if (comp->GetTypeId() == typeId || ComponentRegistry::GetInstance().HasComponent(comp->GetTypeId(), typeId)) {
+            if (comp->GetTypeId() == typeId || ComponentRegistry::GetInstance().HasParent(comp->GetTypeId(), typeId)) {
                 return static_cast<T*>(comp.get());
             }
+            
         }
 
         return nullptr;

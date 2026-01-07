@@ -82,8 +82,16 @@ namespace golias {
     }
 
     std::vector<char> FileSystem::LoadAssetFile(const std::string_view pFileName) const {
-        return LoadFile(GetAssetsPath() + std::string(pFileName));
+        std::string fullPath = GetAssetsPath() + std::string(pFileName);
+
+        if (!FileExists(fullPath)) {
+            spdlog::error("Font file does not exist: {}", fullPath);
+            return {};
+        }
+
+        return LoadFile(fullPath);
     }
+
 
     std::string FileSystem::LoadFileText(const std::string_view pPath) const {
         auto buffer = LoadFile(pPath);

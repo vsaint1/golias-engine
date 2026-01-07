@@ -6,19 +6,9 @@
 #include <glm/glm.hpp>
 
 
-enum class ETextureFormat {
-    RGB,
-    RGBA,
-    RED,
-    RG
-};
+enum class ETextureFormat { RGB, RGBA, RED, RG };
 
-enum class ETextureWrapMode {
-    REPEAT,
-    CLAMP_TO_EDGE,
-    MIRRORED_REPEAT,
-    CLAMP_TO_BORDER
-};
+enum class ETextureWrapMode { REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT, CLAMP_TO_BORDER };
 
 enum class ETextureFilterMode {
     NEAREST,
@@ -46,13 +36,13 @@ enum class ETextureCompressionSettings {
 };
 
 enum class ETextureFlags : int {
-    NONE         = 0,
-    HAS_ALBEDO   = 1 << 0,  // 0x01
-    HAS_METALLIC = 1 << 1,  // 0x02
-    HAS_ROUGHNESS = 1 << 2,  // 0x04
-    HAS_NORMAL   = 1 << 3,  // 0x08
-    HAS_AO       = 1 << 4,  // 0x10
-    HAS_EMISSIVE = 1 << 5   // 0x20
+    NONE          = 0,
+    HAS_ALBEDO    = 1 << 0, // 0x01
+    HAS_METALLIC  = 1 << 1, // 0x02
+    HAS_ROUGHNESS = 1 << 2, // 0x04
+    HAS_NORMAL    = 1 << 3, // 0x08
+    HAS_AO        = 1 << 4, // 0x10
+    HAS_EMISSIVE  = 1 << 5 // 0x20
 };
 
 inline ETextureFlags operator|(ETextureFlags a, ETextureFlags b) {
@@ -98,6 +88,16 @@ enum class EDataType : uint32_t {
 
 };
 
+enum class EBlendMode { DISABLED, ALPHA, ADDITIVE, MULTIPLY };
+
+struct Rect {
+    int x      = 0;
+    int y      = 0;
+    int width  = 0;
+    int height = 0;
+};
+
+
 namespace golias {
 
     struct VertexElement {
@@ -107,10 +107,10 @@ namespace golias {
         bool normalized; // GL_TRUE / GL_FALSE
         Uint32 offset; // Byte offset in vertex
 
-        static constexpr int POSITION_INDEX = 0;
-        static constexpr int COLOR_INDEX   = 1;
-        static constexpr int TEXCOORD_INDEX = 2; 
-        static constexpr int NORMAL_INDEX   = 3;
+        static constexpr Uint32 POSITION_INDEX = 0;
+        static constexpr Uint32 COLOR_INDEX    = 1;
+        static constexpr Uint32 TEXCOORD_INDEX = 2;
+        static constexpr Uint32 NORMAL_INDEX   = 3;
     };
 
     struct VertexLayout {
