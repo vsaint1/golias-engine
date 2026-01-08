@@ -115,7 +115,7 @@ GLenum ToGLTextureFormatFromChannels(int num_channels) {
 
 std::string GetShaderHeaderVersion() {
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
-        return "#version 300 es\n";
+        return "#version 300 es\n precision mediump float;\n";
 #else
         return "#version 330 core\n";
 #endif

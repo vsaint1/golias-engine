@@ -3,6 +3,9 @@
 #include "core/application.h"
 #include "scene/3d/camera_component.h"
 
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+#include <emscripten/emscripten.h>
+#endif
 
 namespace golias {
 
@@ -41,6 +44,7 @@ namespace golias {
 
         sceneRenderer.GetRenderingDevice()->SetViewport({0, 0, width, height});
 
+       
         if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
             return false;
@@ -67,6 +71,61 @@ namespace golias {
         return true;
     }
 
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+    void engine_core_loop() {
+        Engine& engine = Engine::GetInstance();
+        
+        Uint64 current_time_point = SDL_GetPerformanceCounter();
+        Uint64 time_delta         = current_time_point - engine.GetLastTimePoint();
+        float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
+        engine.SetLastTimePoint(current_time_point);
+
+        engine.GetInputManager().Update();
+
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_EVENT_QUIT) {
+                engine.GetApplication()->Close();
+            }
+
+            if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+                engine.SetWidth(event.window.data1);
+                engine.SetHeight(event.window.data2);
+                engine.GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, engine.GetWidth(), engine.GetHeight()});
+            }
+
+            engine.GetInputManager().ProcessEvent(event);
+        }
+
+        engine.GetPhysicsManager().StepSimulation(delta_time);
+
+        engine.GetApplication()->Update(delta_time);
+
+        CameraCommand cameraData;
+        if (engine.GetScene() && engine.GetScene()->GetMainCamera()) {
+            auto pCameraComponent = engine.GetScene()->GetMainCamera()->GetComponent<CameraComponent>();
+
+            if (pCameraComponent) {
+                cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
+
+                float aspect                  = static_cast<float>(engine.GetWidth()) / static_cast<float>(engine.GetHeight());
+                cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
+                cameraData.orthographicMatrix = glm::ortho(0.0f, static_cast<float>(engine.GetWidth()), 0.0f, static_cast<float>(engine.GetHeight()));
+
+                cameraData.position = engine.GetScene()->GetMainCamera()->GetWorldPosition();
+            }
+        }
+
+        engine.GetSceneRenderer().Clear();
+        engine.GetSceneRenderer().Draw(cameraData);
+
+        if (engine.GetPhysicsManager().IsDebugDrawEnabled()) {
+            engine.GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
+        }
+
+        engine.GetSceneRenderer().Present();
+    }
+#endif
 
     void Engine::Run() {
 
@@ -76,6 +135,9 @@ namespace golias {
 
         last_time_point = SDL_GetPerformanceCounter();
 
+#if defined(SDL_PLATFORM_EMSCRIPTEN)
+        emscripten_set_main_loop(engine_core_loop, 0, 1);
+#else
         while (!application->ShouldClose()) {
 
             Uint64 current_time_point = SDL_GetPerformanceCounter();
@@ -135,6 +197,7 @@ namespace golias {
 
             SDL_Delay(16); // HACK for development purposes
         }
+#endif
     }
 
     void Engine::Destroy() {
