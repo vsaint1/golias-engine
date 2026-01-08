@@ -4,7 +4,7 @@
 #include "scene/3d/camera_component.h"
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
-#include <emscripten/emscripten.h>
+    #include <emscripten/emscripten.h>
 #endif
 
 namespace golias {
@@ -30,7 +30,7 @@ namespace golias {
             return false;
         }
 
-        if(!fontManager.Initialize()) {
+        if (!fontManager.Initialize()) {
             spdlog::error("Engine::Initialize Failed to initialize Font Manager.");
             return false;
         }
@@ -42,9 +42,15 @@ namespace golias {
             return false;
         }
 
+        fontManager.SetFallbackFonts({
+            "fonts/NotoSans.ttf", 
+            "fonts/NotoSansCJK.otf",
+            // "fonts/Twemoji.ttf" // needs plutosvg
+        });
+
         sceneRenderer.GetRenderingDevice()->SetViewport({0, 0, width, height});
 
-       
+
         if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
             spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
             return false;
@@ -74,7 +80,7 @@ namespace golias {
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     void engine_core_loop() {
         Engine& engine = Engine::GetInstance();
-        
+
         Uint64 current_time_point = SDL_GetPerformanceCounter();
         Uint64 time_delta         = current_time_point - engine.GetLastTimePoint();
         float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
@@ -108,9 +114,10 @@ namespace golias {
             if (pCameraComponent) {
                 cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
 
-                float aspect                  = static_cast<float>(engine.GetWidth()) / static_cast<float>(engine.GetHeight());
-                cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
-                cameraData.orthographicMatrix = glm::ortho(0.0f, static_cast<float>(engine.GetWidth()), 0.0f, static_cast<float>(engine.GetHeight()));
+                float aspect                = static_cast<float>(engine.GetWidth()) / static_cast<float>(engine.GetHeight());
+                cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
+                cameraData.orthographicMatrix =
+                    glm::ortho(0.0f, static_cast<float>(engine.GetWidth()), 0.0f, static_cast<float>(engine.GetHeight()));
 
                 cameraData.position = engine.GetScene()->GetMainCamera()->GetWorldPosition();
             }
@@ -215,7 +222,7 @@ namespace golias {
 
     void Engine::SetApplication(Application* pApplication) {
         spdlog::info("Engine::SetApplication Setting Application for the Engine.");
-       
+
         if (application) {
             spdlog::warn("Engine::SetApplication Overwriting existing Application instance.");
             application->Destroy();
@@ -236,7 +243,7 @@ namespace golias {
     FontManager& Engine::GetFontManager() {
         return fontManager;
     }
-    
+
     InputManager& Engine::GetInputManager() {
         return inputManager;
     }

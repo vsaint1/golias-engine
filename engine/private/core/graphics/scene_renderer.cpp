@@ -109,7 +109,7 @@ namespace golias {
         auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
         shader_canvas->Bind();
         for (const auto& command : canvas_commands) {
-            if (!command.mesh) {
+            if (!command.mesh || command.batches.empty()) {
                 continue;
             }
 

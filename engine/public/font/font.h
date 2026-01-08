@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 namespace golias {
 
@@ -14,6 +15,8 @@ namespace golias {
         int height;
 
         int advance; // bearing to advance to next glyph
+        int xOffset = 0;
+        int yOffset = 0;
     };
 
 
@@ -22,18 +25,36 @@ namespace golias {
 
         int GetSize() const;
 
-        const Glyph& GetGlyph(char code) const;
+        const Glyph* GetGlyph(uint32_t codepoint) const;
+        bool HasGlyph(uint32_t codepoint) const;
+        void SetGlyphDescription(uint32_t codepoint, const Glyph& glyph);
 
         const std::shared_ptr<Texture2D>& GetTexture() const;
 
         void SetSize(int size);
 
-        void SetGlyphDescription(char code, const Glyph& glyph);
+        void SetTexture(const std::shared_ptr<Texture2D>& tex);
 
-        void SetTexture(const std::shared_ptr<Texture2D>& tex) ;
+        int GetAscender() const{
+            return ascender;
+        }
+
+        int GetDescender() const{
+            return descender;
+        }
+
+        void SetAscender(int asc){
+            ascender = asc;
+        }
+
+        void SetDescender(int desc){
+            descender = desc;
+        }
     private:
         int fontSize = 0;
-        Glyph glyphs[128] = {};
+        int ascender  = 0;
+        int descender = 0;
+        std::unordered_map<uint32_t, Glyph> glyphs;
 
         std::shared_ptr<Texture2D> texture;
     };

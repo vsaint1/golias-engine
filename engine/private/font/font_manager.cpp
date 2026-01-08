@@ -4,6 +4,7 @@
 #include FT_FREETYPE_H
 
 #include "core/engine.h"
+#include <set>
 
 namespace golias {
 
@@ -25,123 +26,237 @@ namespace golias {
         return true;
     }
 
-    std::shared_ptr<Font> FontManager::GetFont(const std::string_view pPath, int size) {
-     
-        auto it = fonts.find(pPath.data());
-        if (it != fonts.end()) {
-            auto fontFamilyIt = it->second.find(size);
+    void FontManager::SetFallbackFonts(const std::vector<std::string>& fallbackPaths) {
+        fallbackFonts = fallbackPaths;
+    }
 
-            if (fontFamilyIt != it->second.end()) {
-                return fontFamilyIt->second;
+    const Glyph*
+        FontManager::GetGlyphWithFallback(const std::shared_ptr<Font>& primaryFont, uint32_t codepoint, std::shared_ptr<Font>& outFont) {
+        if (!primaryFont) {
+            return nullptr;
+        }
+
+        const Glyph* glyph = primaryFont->GetGlyph(codepoint);
+        if (glyph) {
+            outFont = primaryFont;
+            return glyph;
+        }
+
+        for (const auto& fallbackPath : fallbackFonts) {
+            auto fallbackFont = GetFont(fallbackPath, primaryFont->GetSize());
+            if (fallbackFont) {
+                glyph = fallbackFont->GetGlyph(codepoint);
+                if (glyph) {
+                    outFont = fallbackFont;
+                    spdlog::debug("FontManager: Using fallback font '{}' for codepoint U+{:04X}", fallbackPath, codepoint);
+                    return glyph;
+                }
             }
         }
 
-        auto ftBuffer = Engine::GetInstance().GetFileSystem().LoadAssetFile(pPath);
-        if (ftBuffer.empty()) {
-            spdlog::error("FontManager::GetFont Failed to load font file: {}", pPath);
+        return nullptr;
+    }
+
+    std::shared_ptr<Font> FontManager::GetFont(const std::string_view path, int size) {
+        auto fontFamilyIt = fonts.find(path.data());
+        if (fontFamilyIt != fonts.end()) {
+            auto fontIt = fontFamilyIt->second.find(size);
+            if (fontIt != fontFamilyIt->second.end()) {
+                return fontIt->second;
+            }
+        }
+
+        std::vector<uint32_t> codepoints;
+
+        // Basic Latin (ASCII)
+        for (uint32_t c = 0x0020; c <= 0x007F; ++c) {
+            codepoints.push_back(c);
+        }
+
+        // Latin-1 Supplement
+        for (uint32_t c = 0x00A0; c <= 0x00FF; ++c) {
+            codepoints.push_back(c);
+        }
+
+        // Latin Extended-A
+        for (uint32_t c = 0x0100; c <= 0x017F; ++c) {
+            codepoints.push_back(c);
+        }
+
+        // Latin Extended-B
+        for (uint32_t c = 0x0180; c <= 0x024F; ++c) {
+            codepoints.push_back(c);
+        }
+
+        // Greek and Coptic
+        for (uint32_t c = 0x0370; c <= 0x03FF; ++c) {
+            codepoints.push_back(c);
+        }
+
+        // Cyrillic
+        for (uint32_t c = 0x0400; c <= 0x04FF; ++c) {
+            codepoints.push_back(c);
+        }
+
+        std::string pathStr(path);
+        bool isCJKFont = (pathStr.find("CJK") != std::string::npos) || (pathStr.find("JP") != std::string::npos)
+                      || (pathStr.find("KR") != std::string::npos) || (pathStr.find("SC") != std::string::npos)
+                      || (pathStr.find("TC") != std::string::npos) || (pathStr.find("Japanese") != std::string::npos)
+                      || (pathStr.find("Korean") != std::string::npos) || (pathStr.find("Chinese") != std::string::npos);
+
+        if (isCJKFont) {
+            // Hiragana
+            for (uint32_t c = 0x3040; c <= 0x309F; ++c) {
+                codepoints.push_back(c);
+            }
+
+            // Katakana
+            for (uint32_t c = 0x30A0; c <= 0x30FF; ++c) {
+                codepoints.push_back(c);
+            }
+
+            // CJK Unified Ideographs (Common Kanji/Hanzi) - most frequently used
+            // Loading all 20k+ would be too much, so we load the most common ranges
+            for (uint32_t c = 0x4E00; c <= 0x9FFF; ++c) {
+                codepoints.push_back(c);
+            }
+
+            // Hangul Syllables (Korean)
+            for (uint32_t c = 0xAC00; c <= 0xD7A3; ++c) {
+                codepoints.push_back(c);
+            }
+
+            // Hangul Jamo
+            for (uint32_t c = 0x1100; c <= 0x11FF; ++c) {
+                codepoints.push_back(c);
+            }
+
+            // CJK Symbols and Punctuation
+            for (uint32_t c = 0x3000; c <= 0x303F; ++c) {
+                codepoints.push_back(c);
+            }
+
+            spdlog::info("FontManager::GetFont Loading CJK font '{}' with {} codepoints", path, codepoints.size());
+        }
+
+        return LoadFont(path, size, codepoints);
+    }
+
+    std::shared_ptr<Font> FontManager::LoadFont(const std::string_view path, int size, const std::vector<uint32_t>& codepoints) {
+        auto buffer = Engine::GetInstance().GetFileSystem().LoadAssetFile(path);
+        if (buffer.empty()) {
+            spdlog::error("FontManager::LoadFont Failed to load font file: {}", path);
             return nullptr;
         }
 
         FT_Face face;
-        FT_Error error = FT_New_Memory_Face(
-            ftLibrary, reinterpret_cast<const FT_Byte*>(ftBuffer.data()), static_cast<FT_Long>(ftBuffer.size()), 0, &face);
-
-        if (error != FT_Err_Ok) {
-            spdlog::error("FontManager::GetFont Failed to create FreeType Face from memory.");
+        FT_Error result = FT_New_Memory_Face(ftLibrary, reinterpret_cast<FT_Byte*>(buffer.data()), buffer.size(), 0, &face);
+        if (result != FT_Err_Ok) {
+            spdlog::error("FontManager::LoadFont Failed to create face for font: {}", path);
             return nullptr;
         }
 
-        FT_Set_Pixel_Sizes(face, 0, static_cast<FT_UInt>(size));
+        FT_Set_Pixel_Sizes(face, 0, size);
 
-        const int lineHeight = face->size->metrics.height >> 6; // Convert from 26.6 fixed point to integer
-        int maxDimension = static_cast<int>(std::sqrt(128.0f) * (lineHeight + 1));
+        const int lineHeight = face->size->metrics.height >> 6;
 
+        int estimatedSize = static_cast<int>(std::sqrt(static_cast<float>(codepoints.size())) * (lineHeight + 1));
+        int textureWidth  = 1024;
 
-        int textureWidth = 1;
-        while (textureWidth < maxDimension) {
+        int maxSize = (codepoints.size() > 10000) ? 8192 : 4096;
+
+        while (textureWidth < estimatedSize && textureWidth < maxSize) {
             textureWidth <<= 1;
         }
 
         int textureHeight = textureWidth;
 
-        constexpr int NUM_CHANNELS = 4; // RGBA
-        const size_t stride        = textureWidth * NUM_CHANNELS;
-        const size_t totalBytes    = static_cast<size_t>(textureWidth * textureHeight * NUM_CHANNELS);
+        const size_t stride     = textureWidth * 4;
+        const size_t totalBytes = static_cast<size_t>(textureWidth * textureHeight * 4);
+        auto atlas              = new unsigned char[totalBytes];
 
-        Uint8* atlas = new Uint8[totalBytes];
         SDL_memset(atlas, 0, totalBytes);
 
         int penX = 0;
         int penY = 0;
 
-        auto font = std::make_shared<Font>();
-        for (char c = 0; c < 128; ++c) {
+        auto font        = std::make_shared<Font>();
+        int loadedGlyphs = 0;
 
-            if (FT_Load_Char(face, c, FT_LOAD_RENDER) != FT_Err_Ok) {
-                Glyph glyph = {0, 0, 0, 0, 0, 0, 0};
-                font->SetGlyphDescription(c, glyph);
+        for (uint32_t codepoint : codepoints) {
+            FT_UInt glyph_index = FT_Get_Char_Index(face, codepoint);
+            if (glyph_index == 0) {
                 continue;
             }
 
-            FT_Bitmap& bitmap = face->glyph->bitmap;
+            if (FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER) != FT_Err_Ok) {
+                continue;
+            }
 
-            if (penX + static_cast<int>(bitmap.width) >= textureWidth) {
+            FT_Bitmap& bmp = face->glyph->bitmap;
+
+          
+            if (penX + static_cast<int>(bmp.width) >= textureWidth)
+            {
                 penX = 0;
                 penY += lineHeight + 1;
             }
-
-            for (unsigned int row = 0; row < bitmap.rows; ++row) {
-                for (unsigned int col = 0; col < bitmap.width; ++col) {
-
+            
+            for (uint32_t row = 0; row < bmp.rows; ++row) {
+                for (uint32_t col = 0; col < bmp.width; ++col) {
                     int x = penX + static_cast<int>(col);
-                    int y = penY + static_cast<int>(row);
+                    int y = penY + static_cast<int>(row); 
 
-                    bool isInvalid = (x < 0 || x >= textureWidth || y < 0 || y >= textureHeight) ? true : false;
-
-                    if (isInvalid) {
-                        spdlog::debug("FontManager::GetFont Skipping glyph pixel for char '{}' at ({},{}) - out of bounds", c, x, y);
+                    if (x < 0 || x >= textureWidth || y < 0 || y >= textureHeight) {
                         continue;
                     }
 
-                    Uint8 value = bitmap.buffer[row * bitmap.pitch + col];
+                    const unsigned char value = bmp.buffer[row * bmp.pitch + col];
+                    const size_t idx          = static_cast<size_t>(y) * stride + x * 4;
 
-                    const size_t index = static_cast<size_t>(y * stride + x * NUM_CHANNELS);
-
-                    atlas[index + 0] = 255; // R
-                    atlas[index + 1] = 255; // G
-                    atlas[index + 2] = 255; // B
-                    atlas[index + 3] = value; // A
+                    atlas[idx + 0] = value;
+                    atlas[idx + 1] = value;
+                    atlas[idx + 2] = value;
+                    atlas[idx + 3] = value;
                 }
             }
 
-            Glyph glyph;
-            glyph.x0      = penX;
-            glyph.y0      = penY;
-            glyph.x1      = penX + static_cast<int>(bitmap.width);
-            glyph.y1      = penY + static_cast<int>(bitmap.rows);
-            glyph.width   = static_cast<int>(bitmap.width);
-            glyph.height  = static_cast<int>(bitmap.rows);
-            glyph.advance = static_cast<int>(face->glyph->advance.x >> 6);
+            Glyph  gd;
+            gd.x0 = penX;
+            gd.y0 = penY;
+            gd.x1 = penX + static_cast<int>(bmp.width);
+            gd.y1 = penY + static_cast<int>(bmp.rows);
+            gd.width = static_cast<int>(bmp.width);
+            gd.height = static_cast<int>(bmp.rows);
+            gd.advance = (face->glyph->advance.x >> 6);
+            gd.xOffset = static_cast<int>(face->glyph->bitmap_left);
+            gd.yOffset = static_cast<int>(face->glyph->bitmap_top);
 
-            font->SetGlyphDescription(c, glyph);
+            font->SetGlyphDescription(codepoint, gd);
 
-            penX += static_cast<int>(bitmap.width) + 1;
+            penX += static_cast<int>(bmp.width + 1);
+            loadedGlyphs++;
         }
 
         auto texture =
-            Engine::GetInstance().GetTextureManager().EnsureTexture2D(pPath, textureWidth, textureHeight, ETextureFormat::RGBA, atlas);
+            Engine::GetInstance().GetTextureManager().EnsureTexture2D(path, textureWidth, textureHeight, ETextureFormat::RGBA, atlas);
 
         font->SetTexture(texture);
         font->SetSize(size);
+        font->SetAscender(face->size->metrics.ascender >> 6);
+        font->SetDescender(face->size->metrics.descender >> 6);
 
-        fonts[std::string(pPath)][size] = font;
+        fonts[path.data()][size] = font;
 
-
-        delete[] atlas;
-        
         FT_Done_Face(face);
 
-        spdlog::info("FontManager::GetFont Loaded font '{}' with size {} successfully.", pPath, size);
+        spdlog::info("FontManager::LoadFont Loaded font '{}' (size: {}) with {} glyphs in {}x{} atlas",
+                     path,
+                     size,
+                     loadedGlyphs,
+                     textureWidth,
+                     textureHeight);
+
         return font;
     }
 

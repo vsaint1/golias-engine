@@ -114,15 +114,20 @@ namespace golias {
 
     void OpenglMesh::Update(const std::vector<float>& vertices, const std::vector<Uint32>& indices) {
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.handle);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         vertex_count = vertices.size() / (vertex_layout.stride / sizeof(float));
 
         if (index_buffer.handle == 0) {
+            glBindVertexArray(VAO);
+            
             auto rd      = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
             index_buffer = rd->CreateGPUBuffer(
                 indices.size() * sizeof(uint32_t), indices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::ELEMENT_ARRAY_BUFFER);
+            
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer.handle);
+            glBindVertexArray(0);
         } else {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer.handle);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(Uint32), indices.data(), GL_DYNAMIC_DRAW);

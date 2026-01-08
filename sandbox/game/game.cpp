@@ -8,6 +8,12 @@ std::shared_ptr<golias::Material> mat = nullptr;
 
 void SpawnBox(const glm::vec3& position) {
 
+    if(!mat)
+    {
+        return;
+
+    }
+
     auto boxExtents = glm::vec3(1.f);
     auto mesh       = golias::Mesh::CreateBox(boxExtents);
 
@@ -37,6 +43,8 @@ bool SandboxApplication::Initialize() {
 
     std::srand((unsigned) std::time(nullptr));
 
+
+
 #if defined(SCENE_LOAD_FROM_FILE)
 
     auto Tscene   = golias::Scene::Load("scenes/main.gscene");
@@ -64,17 +72,20 @@ bool SandboxApplication::Initialize() {
     // camera->AddComponent(new golias::CameraComponent());
     // Tscene->SetMainCamera(camera);
 
-    // auto canvas     = Tscene->CreateObject("Canvas");
-    // auto canvasComp = new golias::CanvasComponent();
-    // canvas->AddComponent(canvasComp);
+    auto canvas     = Tscene->CreateObject("Canvas");
+    auto canvasComp = new golias::CanvasComponent();
+    canvas->AddComponent(canvasComp);
 
-    // auto text     = Tscene->CreateObject("Text", canvas);
-    // auto textComp = new golias::TextWidgetComponent();
-    // textComp->SetText("Hello, Golias Engine!");
-    // textComp->SetFont("fonts/Minecraft.ttf", 32);
-    // text->AddComponent(textComp);
+    auto text     = Tscene->CreateObject("Text", canvas);
+    auto textComp = new golias::TextWidgetComponent();
+    textComp->SetText("Hello, Golias Engine! é こんにちは 안녕하세요 привет");
+    // textComp->SetFont("fonts/Minecraft.ttf", 32);  
+    textComp->SetShadowEnabled(true);
+   
+    
+    text->AddComponent(textComp);
 
-    // text->SetPosition2D({400.0f, 300.0f});
+    text->SetPosition2D({400.0f, 300.0f});
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else

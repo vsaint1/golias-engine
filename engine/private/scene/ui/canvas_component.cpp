@@ -41,13 +41,15 @@ namespace golias {
             }
         }
 
-        mesh->Update(vertices, indices);
-        
-        CanvasCommand command;
-        command.mesh  = mesh.get();
-        command.batches = batches;
+        if (!vertices.empty() && !indices.empty() && !batches.empty()) {
+            mesh->Update(vertices, indices);
+            
+            CanvasCommand command;
+            command.mesh  = mesh.get();
+            command.batches = batches;
 
-        Engine::GetInstance().GetSceneRenderer().Submit(command);
+            Engine::GetInstance().GetSceneRenderer().Submit(command);
+        }
     }
 
     void CanvasComponent::Draw(WidgetComponent* pWidget) {

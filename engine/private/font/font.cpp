@@ -7,8 +7,16 @@ namespace golias {
         return fontSize;
     }
 
-    const Glyph& Font::GetGlyph(char code) const {
-        return glyphs[static_cast<unsigned char>(code)];
+    const Glyph* Font::GetGlyph(uint32_t codepoint) const {
+        auto it = glyphs.find(codepoint);
+        if (it != glyphs.end()) {
+            return &it->second;
+        }
+        return nullptr;
+    }
+
+    bool Font::HasGlyph(uint32_t codepoint) const {
+        return glyphs.find(codepoint) != glyphs.end();
     }
 
     const std::shared_ptr<Texture2D>& Font::GetTexture() const {
@@ -19,8 +27,8 @@ namespace golias {
         fontSize = size;
     }
 
-    void Font::SetGlyphDescription(char code, const Glyph& glyph) {
-        glyphs[static_cast<unsigned char>(code)] = glyph;
+    void Font::SetGlyphDescription(uint32_t codepoint, const Glyph& glyph) {
+        glyphs[codepoint] = glyph;
     }
 
     void Font::SetTexture(const std::shared_ptr<Texture2D>& tex) {
