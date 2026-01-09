@@ -60,7 +60,6 @@ namespace golias {
         return font;
     }
 
-    // Outline methods
     void TextWidgetComponent::SetOutlineEnabled(bool enabled) {
         outlineEnabled = enabled;
     }
@@ -166,8 +165,9 @@ namespace golias {
 
         auto pos          = GetPivotPos();
         auto& fontManager = Engine::GetInstance().GetFontManager();
+        float lineHeight  = static_cast<float>(font->GetSize());
 
-        auto draw_text_internal = [&](const glm::vec2& basePos, const glm::vec4& color) {
+        auto draw_text_internal = [&](const glm::vec2& basePos, const glm::vec4& color, float zOffset) {
             float cursorX   = basePos.x;
             float cursorY   = basePos.y;
             const char* ptr = text.c_str();
@@ -175,6 +175,17 @@ namespace golias {
 
             while (ptr < end) {
                 uint32_t codepoint = DecodeUTF8(ptr);
+
+                if (codepoint == '\n') {
+                    cursorX = basePos.x;
+                    cursorY -= lineHeight;
+                    continue;
+                }
+
+                if (codepoint == '\r') {
+                    cursorX = basePos.x;
+                    continue;
+                }
 
                 std::shared_ptr<Font> glyphFont;
                 const Glyph* glyph = fontManager.GetGlyphWithFallback(font, codepoint, glyphFont);
@@ -199,12 +210,12 @@ namespace golias {
                 cursorX += static_cast<float>(glyph->advance);
 
                 pCanvas->DrawTexture2D(
-                    glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v2), glm::vec2(u2, v1), glyphFont->GetTexture().get(), color);
+                    glm::vec3(x1, y1, zOffset), glm::vec3(x2, y2, zOffset), glm::vec2(u1, v2), glm::vec2(u2, v1), glyphFont->GetTexture().get(), color);
             }
         };
 
         if (shadowEnabled) {
-            draw_text_internal(pos + shadowOffset, shadowColor);
+            draw_text_internal(pos + shadowOffset, shadowColor, -0.002f);
         }
 
         if (outlineEnabled) {
@@ -220,17 +231,20 @@ namespace golias {
             };
 
             for (const auto& offset : offsets) {
-                draw_text_internal(pos + offset, outlineColor);
+                draw_text_internal(pos + offset, outlineColor, -0.001f);
             }
         }
 
-        draw_text_internal(pos, textColor);
+        draw_text_internal(pos, textColor, 0.0f);
     }
 
     glm::vec2 TextWidgetComponent::GetPivotPos() const {
         auto pos = GetOwner()->GetWorldPosition2D();
 
         glm::vec2 rect(0.0f);
+        float currentLineWidth = 0.0f;
+        float lineHeight = font ? static_cast<float>(font->GetSize()) : 0.0f;
+        int lineCount = 1;
 
         const char* ptr = text.c_str();
         const char* end = ptr + text.length();
@@ -240,14 +254,30 @@ namespace golias {
         while (ptr < end) {
             uint32_t codepoint = DecodeUTF8(ptr);
 
+            if (codepoint == '\n') {
+                rect.x = glm::max(rect.x, currentLineWidth);
+                currentLineWidth = 0.0f;
+                lineCount++;
+                continue;
+            }
+
+            if (codepoint == '\r') {
+                rect.x = glm::max(rect.x, currentLineWidth);
+                currentLineWidth = 0.0f;
+                continue;
+            }
+
             std::shared_ptr<Font> glyphFont;
             const Glyph* glyph = fontManager.GetGlyphWithFallback(font, codepoint, glyphFont);
 
             if (glyph) {
-                rect.x += static_cast<float>(glyph->advance);
-                rect.y = glm::max(rect.y, static_cast<float>(glyph->height));
+                currentLineWidth += static_cast<float>(glyph->advance);
             }
         }
+
+  
+        rect.x = glm::max(rect.x, currentLineWidth);
+        rect.y = lineHeight * lineCount;
 
         pos.x -= SDL_roundf(rect.x * pivot.x);
         pos.y -= SDL_roundf(rect.y * pivot.y);

@@ -202,7 +202,6 @@ namespace golias {
 
             sceneRenderer.Present();
 
-            SDL_Delay(16); // HACK for development purposes
         }
 #endif
     }

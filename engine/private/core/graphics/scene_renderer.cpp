@@ -1,5 +1,7 @@
 #include "core/graphics/scene_renderer.h"
 
+#include <glm/ext/matrix_transform.hpp>
+
 namespace golias {
 
     bool create_renderer_internal(golias::ERenderingDeviceType deviceType, golias::RenderingDevice** pOutDevice) {
@@ -36,8 +38,12 @@ namespace golias {
         command_queue_2d.push_back(command);
     }
 
-    void SceneRenderer::Submit(const CanvasCommand& command) {
+    void SceneRenderer::Submit(const ScreenCanvasCommand& command) {
         canvas_commands.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const WorldCanvasCommand& command) {
+        world_canvas_commands.push_back(command);
     }
 
     void SceneRenderer::Draw(const CameraCommand& camera) {
@@ -76,11 +82,51 @@ namespace golias {
 
         command_queue.clear();
 
-
-        // TODO: refactor
-        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
+        shader_canvas->Bind();
+
+        for (const auto& command : world_canvas_commands) {
+            if (!command.mesh || command.batches.empty()) {
+                continue;
+            }
+
+            rendering_device->BindMesh(command.mesh);
+
+            Uint32 indexOffset = 0;
+            for (const auto& batch : command.batches) {
+
+                if (batch.texture) {
+                    shader_canvas->SetUniform("HAS_TEXTURE", 1);
+                    shader_canvas->SetUniform("TEXTURE", batch.texture);
+                } else {
+                    shader_canvas->SetUniform("HAS_TEXTURE", 0);
+                }
+
+                glm::mat4 scaleMatrix      = glm::scale(glm::mat4(1.0f), glm::vec3(command.scale, command.scale, 1.0f));
+                glm::mat4 finalModelMatrix = command.modelMatrix * scaleMatrix;
+
+                shader_canvas->SetUniform("MODEL_MATRIX", finalModelMatrix);
+                shader_canvas->SetUniform("VIEW_MATRIX", camera.viewMatrix);
+                shader_canvas->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
+                shader_canvas->SetUniform("CAMERA_POSITION", camera.position);
+                shader_canvas->SetUniform("USE_BILLBOARDING", true);
+
+                command.mesh->DrawIndexed(indexOffset, batch.indexCount);
+
+                indexOffset += batch.indexCount;
+            }
+
+            command.mesh->Unbind();
+        }
+
+        world_canvas_commands.clear();
+
+
+        glDisable(GL_DEPTH_TEST);
         const auto shader_2d = rendering_device->GetDefaultShader2D();
 
         shader_2d->Bind();
@@ -106,37 +152,44 @@ namespace golias {
 
         command_queue_2d.clear();
 
-        auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
-        shader_canvas->Bind();
-        for (const auto& command : canvas_commands) {
-            if (!command.mesh || command.batches.empty()) {
-                continue;
-            }
+        if (!canvas_commands.empty()) {
+            shader_canvas = rendering_device->GetDefaultShaderCanvas();
+            shader_canvas->Bind();
 
-            rendering_device->BindMesh(command.mesh);
-
-            Uint32 indexOffset = 0;
-            for (const auto& batch : command.batches) {
-
-                if (batch.texture) {
-                    shader_canvas->SetUniform("HAS_TEXTURE", 1);
-                    shader_canvas->SetUniform("TEXTURE", batch.texture);
-
-                } else {
-                    shader_canvas->SetUniform("HAS_TEXTURE", 0);
+            for (const auto& command : canvas_commands) {
+                if (!command.mesh || command.batches.empty()) {
+                    continue;
                 }
 
-                shader_canvas->Bind();
-                shader_canvas->SetUniform("PROJECTION_MATRIX", camera.orthographicMatrix);
+                rendering_device->BindMesh(command.mesh);
 
-                command.mesh->DrawIndexed(indexOffset, batch.indexCount);
+                Uint32 indexOffset = 0;
+                for (const auto& batch : command.batches) {
 
-                indexOffset += batch.indexCount;
+                    if (batch.texture) {
+                        shader_canvas->SetUniform("HAS_TEXTURE", 1);
+                        shader_canvas->SetUniform("TEXTURE", batch.texture);
+
+                    } else {
+                        shader_canvas->SetUniform("HAS_TEXTURE", 0);
+                    }
+
+                    shader_canvas->SetUniform("USE_BILLBOARDING", false);
+                    shader_canvas->SetUniform("MODEL_MATRIX", glm::mat4(1.0f));
+                    shader_canvas->SetUniform("VIEW_MATRIX", glm::mat4(1.0f));
+                    shader_canvas->SetUniform("PROJECTION_MATRIX", camera.orthographicMatrix);
+                    shader_canvas->SetUniform("CAMERA_POSITION", camera.position);
+
+                    command.mesh->DrawIndexed(indexOffset, batch.indexCount);
+
+                    indexOffset += batch.indexCount;
+                }
+
+                command.mesh->Unbind();
             }
-
-            command.mesh->Unbind();
         }
 
+        glDepthMask(GL_TRUE);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         canvas_commands.clear();

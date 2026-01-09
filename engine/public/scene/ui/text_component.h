@@ -45,7 +45,7 @@ namespace golias {
         
         bool outlineEnabled = false;
         glm::vec4 outlineColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        float outlineThickness = 2.0f;
+        float outlineThickness = 1.0f;
         
         bool shadowEnabled = false;
         glm::vec4 shadowColor = glm::vec4(0.0f, 0.0f, 0.0f, 0.5f);

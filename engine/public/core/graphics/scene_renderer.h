@@ -28,23 +28,32 @@ namespace golias {
         glm::vec3 position;
     };
 
-   struct CanvasBatch {
+    struct CanvasBatch {
         Texture2D* texture = nullptr;
         Uint32 indexCount  = 0;
     };
 
-    struct CanvasCommand {
-        Mesh* mesh         = nullptr;
+    struct ScreenCanvasCommand {
+        Mesh* mesh = nullptr;
         std::vector<CanvasBatch> batches;
+    };
+
+    struct WorldCanvasCommand {
+        Mesh* mesh = nullptr;
+        std::vector<CanvasBatch> batches;
+        glm::mat4 modelMatrix;
+        float scale = 0.01f; // Pixels -> World units
     };
 
 
     class SceneRenderer {
     public:
         bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
+        
         void Submit(const DrawCommand& command);
         void Submit(const DrawCommand2D& command);
-        void Submit(const CanvasCommand& command);
+        void Submit(const ScreenCanvasCommand& command);
+        void Submit(const WorldCanvasCommand& command);
 
         void Clear(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
 
@@ -59,7 +68,8 @@ namespace golias {
     private:
         std::vector<DrawCommand> command_queue;
         std::vector<DrawCommand2D> command_queue_2d;
-        std::vector<CanvasCommand> canvas_commands;
+        std::vector<ScreenCanvasCommand> canvas_commands;
+        std::vector<WorldCanvasCommand> world_canvas_commands;
 
         std::shared_ptr<Mesh> quad        = nullptr;
         RenderingDevice* rendering_device = nullptr;
