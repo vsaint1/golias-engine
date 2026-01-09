@@ -1,11 +1,14 @@
 #include "game.h"
 
 #include "scene/2d/sprite_component_2d.h"
+#include "scene/3d/skeleton_animation_component.h"
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
-golias::GameObject* porsche = nullptr;
+golias::GameObject* porsche           = nullptr;
+golias::GameObject* godette           = nullptr;
+
 
 void SpawnBox(const glm::vec3& position) {
 
@@ -49,23 +52,38 @@ bool SandboxApplication::Initialize() {
     auto material = golias::Material::Load("materials/brick.mat");
     mat           = material;
     // auto Tscene = std::make_shared<golias::Scene>();
-    porsche = golias::Model::Load("models/pbr/porsche/scene.gltf",Tscene.get());
+    porsche = golias::Model::Load("models/pbr/porsche/scene.gltf", Tscene.get());
     porsche->SetPosition({10.0f, 1.0f, 0.0f});
-    
     porsche->SetScale({100.0f, 100.0f, 100.0f});
 
+    godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+    godette->SetPosition({0.0f, 1.0f, -1.0f});
+    godette->SetUseIBL(false);
 
-    auto spriteObj = Tscene->CreateObject("Sprite");
-    spriteObj->SetPosition2D({500.0f, 500.0f});
-    spriteObj->SetRotation2D(45.0f);
 
-    auto brickTex = golias::Texture2D::Load("textures/brick.png");
+    if (godette) {
 
-    auto spriteComp = new golias::SpriteComponent2D();
-    spriteComp->SetTexture(brickTex);
-    spriteComp->SetSize({100.0f, 100.0f});
+        if (auto skeleton = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
 
-    spriteObj->AddComponent(spriteComp);
+            skeleton->Play("Cheer", true);
+        }
+    }
+
+
+    // auto sponza = golias::Model::Load("models/pbr/sponza/Sponza.gltf", Tscene.get());
+    // sponza->SetPosition({10.0f, 1.0f, 10.0f});
+
+    // auto spriteObj = Tscene->CreateObject("Sprite");
+    // spriteObj->SetPosition2D({500.0f, 500.0f});
+    // spriteObj->SetRotation2D(45.0f);
+
+    // auto brickTex = golias::Texture2D::Load("textures/brick.png");
+
+    // auto spriteComp = new golias::SpriteComponent2D();
+    // spriteComp->SetTexture(brickTex);
+    // spriteComp->SetSize({100.0f, 100.0f});
+
+    // spriteObj->AddComponent(spriteComp);
 
     // auto camera = Tscene->CreateObject("Camera");
     // camera->AddComponent(new golias::CameraComponent());
@@ -175,7 +193,7 @@ void SandboxApplication::Update(float deltaTime) {
 
     static float rotation = 0.0f;
     rotation += glm::radians(15.0f) * deltaTime;
-    if(porsche){
+    if (porsche) {
         porsche->SetRotation(glm::quat(glm::vec3(0.0f, rotation, 0.0f)));
     }
 

@@ -44,6 +44,7 @@ namespace golias {
 
         bool IsAlive() const;
 
+        void SetUseIBL(bool value);
 
         glm::vec3 GetWorldPosition() const;
         glm::vec3 GetPosition() const;
@@ -104,7 +105,6 @@ namespace golias {
             if (comp->GetTypeId() == typeId || ComponentRegistry::GetInstance().HasParent(comp->GetTypeId(), typeId)) {
                 return static_cast<T*>(comp.get());
             }
-            
         }
 
         return nullptr;

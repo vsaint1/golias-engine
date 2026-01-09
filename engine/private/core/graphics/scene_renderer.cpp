@@ -3,6 +3,7 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include "scene/3d/skeleton_animation_component.h"
 
 namespace golias {
 
@@ -97,7 +98,7 @@ namespace golias {
             for (int i = 0; i < lightCount; ++i) {
                 if (!lights[i].castShadows) {
                     continue;
-                }
+            }
 
                 shadowShader->SetUniform("LIGHT_SPACE_MATRIX", lights[i].lightSpaceMatrix);
 
@@ -107,6 +108,15 @@ namespace golias {
                     }
 
                     shadowShader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+                    
+                    if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+                        shadowShader->SetUniform("USE_SKINNING", 1);
+                        const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+                        shadowShader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
+                    } else {
+                        shadowShader->SetUniform("USE_SKINNING", 0);
+                    }
+                    
                     rendering_device->BindMesh(command.mesh);
                     rendering_device->DrawMesh(command.mesh);
                 }
@@ -139,11 +149,19 @@ namespace golias {
             shader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
             shader->SetUniform("u_viewPosition", camera.position);
 
-            shader->SetUniform("u_ambientStrength", 0.3f);
+            if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+                shader->SetUniform("USE_SKINNING", 1);
+                const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+                shader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
+                
+              
+            } else {
+                shader->SetUniform("USE_SKINNING", 0);
+            }
+
             shader->SetUniform("u_specularStrength", 0.5f);
             shader->SetUniform("u_shininess", 32.0f);
 
-            // Lights
             shader->SetUniform("u_directionalLightCount", lightCount);
             for (int i = 0; i < lightCount; ++i) {
                 std::string p = "u_directionalLights[" + std::to_string(i) + "].";
@@ -153,7 +171,6 @@ namespace golias {
                 shader->SetUniform(p + "castShadows", lights[i].castShadows);
             }
 
-            // Shadow map
             if (anyShadowCaster) {
                 glActiveTexture(GL_TEXTURE15);
                 glBindTexture(GL_TEXTURE_2D, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachmentHandle());
@@ -162,9 +179,10 @@ namespace golias {
                 shader->SetUniform("LIGHT_SPACE_MATRIX", lights[0].lightSpaceMatrix);
             }
 
-            // IBL
+            
+            bool useIBL = command.material->UseImageBasedLighting();
             Uint32 skyboxCubemap = rendering_device->GetDefaultSkyboxCubemap();
-            if (skyboxCubemap) {
+            if (useIBL && skyboxCubemap) {
                 glActiveTexture(GL_TEXTURE13);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemap);
                 shader->SetUniform("IRRADIANCE_MAP", 13);
@@ -174,9 +192,14 @@ namespace golias {
                 shader->SetUniform("PREFILTER_MAP", 14);
 
                 shader->SetUniform("USE_IBL", 1);
+                shader->SetUniform("u_ambientStrength", 0.3f);
             } else {
                 shader->SetUniform("USE_IBL", 0);
+                // Higher ambient when no IBL to ensure visibility
+                shader->SetUniform("u_ambientStrength", 0.8f);
             }
+            
+            glActiveTexture(GL_TEXTURE0);
 
             rendering_device->BindMesh(command.mesh);
             rendering_device->DrawMesh(command.mesh);

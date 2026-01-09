@@ -5,10 +5,14 @@
 
 namespace golias {
 
+    class SkeletonAnimationComponent;
+
     struct DrawCommand {
         Mesh* mesh         = nullptr;
         Material* material = nullptr;
         glm::mat4 modelMatrix;
+        SkeletonAnimationComponent* skeletonAnimation = nullptr;
+        bool useIBL = true;  // Enable/disable IBL for this draw command
     };
 
     struct DrawCommand2D {
