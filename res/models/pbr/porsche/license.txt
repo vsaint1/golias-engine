@@ -1,0 +1,11 @@
+Model Information:
+* title:	1992 Porsche 911 (964) Turbo S 3.6
+* source:	https://sketchfab.com/3d-models/1992-porsche-911-964-turbo-s-36-27240ad1a825434f99e980d7c904c3d0
+* author:	Ddiaz Design (https://sketchfab.com/ddiaz-design)
+
+Model License:
+* license type:	CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions must have the same license.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "1992 Porsche 911 (964) Turbo S 3.6" (https://sketchfab.com/3d-models/1992-porsche-911-964-turbo-s-36-27240ad1a825434f99e980d7c904c3d0) by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
