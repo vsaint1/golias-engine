@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/graphics/framebuffer.h"
 #include "core/graphics/material.h"
 #include "core/graphics/mesh.h"
 #include "core/graphics/shader.h"
@@ -29,10 +30,10 @@ namespace golias {
         virtual void UnbindMesh(Mesh* mesh)           = 0;
         virtual void BindMaterial(Material* material) = 0;
 
-        virtual std::shared_ptr<Shader> GetDefaultShader3D() const                                                       = 0;
-        virtual std::shared_ptr<Shader> GetDefaultShader2D() const                                                       = 0;
-        virtual std::shared_ptr<Shader> GetDefaultShaderCanvas() const                                                    = 0;
-        
+        virtual std::shared_ptr<Shader> GetDefaultShader3D() const     = 0;
+        virtual std::shared_ptr<Shader> GetDefaultShader2D() const     = 0;
+        virtual std::shared_ptr<Shader> GetDefaultShaderCanvas() const = 0;
+
         virtual std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath)                       = 0;
         virtual std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) = 0;
 
@@ -53,15 +54,33 @@ namespace golias {
 
         virtual void SwapChain() = 0;
 
+        virtual std::shared_ptr<Framebuffer> CreateFramebuffer(const FramebufferSpec& specification) = 0;
+
+        virtual std::shared_ptr<Shader> GetDefaultShadowMapShader() const = 0;
+        virtual void BeginShadowPass()                                    = 0;
+        virtual void EndShadowPass()                                      = 0;
+
         const Rect& GetViewport() const {
             return viewport;
         }
 
         virtual void SetViewport(const Rect& vp) = 0;
+
+        virtual std::shared_ptr<Framebuffer> GetDefaultFramebuffer() = 0;
+
+        virtual std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() = 0;
+
+        // Skybox and IBL
+        virtual Uint32 CreateCubemapFromFiles(const std::array<std::string, 6>& faces) = 0;
+        virtual Uint32 CreateCubemapFromCross(const std::string& crossPath) = 0;
+        virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const = 0;
+        virtual std::shared_ptr<Mesh> GetSkyboxMesh() = 0;
+        virtual Uint32 GetDefaultSkyboxCubemap() const = 0;
+
     protected:
         glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
         SDL_Window* window                                 = nullptr;
         std::unique_ptr<PhysicsDebugDrawer> physicsDebug3D = nullptr;
-        Rect viewport                                     = Rect();
+        Rect viewport                                      = Rect();
     };
 }; // namespace golias

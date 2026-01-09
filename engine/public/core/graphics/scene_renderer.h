@@ -28,6 +28,12 @@ namespace golias {
         glm::vec3 position;
     };
 
+    struct DirectionalLightCommand {
+        glm::vec3 direction = glm::vec3(0.5f, -1.0f, 0.3f);
+        glm::vec3 color     = glm::vec3(1.0f, 1.0f, 1.0f);
+        float intensity     = 1.0f;        bool castShadows = true;        glm::mat4 lightSpaceMatrix;
+    };
+
     struct CanvasBatch {
         Texture2D* texture = nullptr;
         Uint32 indexCount  = 0;
@@ -49,7 +55,7 @@ namespace golias {
     class SceneRenderer {
     public:
         bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
-        
+
         void Submit(const DrawCommand& command);
         void Submit(const DrawCommand2D& command);
         void Submit(const ScreenCanvasCommand& command);
@@ -62,6 +68,7 @@ namespace golias {
         void Present();
 
         RenderingDevice* GetRenderingDevice() const;
+      
 
         ~SceneRenderer();
 
@@ -70,6 +77,7 @@ namespace golias {
         std::vector<DrawCommand2D> command_queue_2d;
         std::vector<ScreenCanvasCommand> canvas_commands;
         std::vector<WorldCanvasCommand> world_canvas_commands;
+
 
         std::shared_ptr<Mesh> quad        = nullptr;
         RenderingDevice* rendering_device = nullptr;
