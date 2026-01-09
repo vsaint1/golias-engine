@@ -5,6 +5,7 @@
 #include "scene/ui/text_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
+golias::GameObject* porsche = nullptr;
 
 void SpawnBox(const glm::vec3& position) {
 
@@ -47,11 +48,12 @@ bool SandboxApplication::Initialize() {
     auto Tscene   = golias::Scene::Load("scenes/main.gscene");
     auto material = golias::Material::Load("materials/brick.mat");
     mat           = material;
-    auto avocado = golias::Model::Load("models/avocado/Avocado.gltf",Tscene.get());
-    avocado->SetPosition({-2.0f, 2.0f, -2.0f});
-    avocado->SetScale({25.0f, 25.0f, 25.0f});
-
     // auto Tscene = std::make_shared<golias::Scene>();
+    porsche = golias::Model::Load("models/pbr/porsche/scene.gltf",Tscene.get());
+    porsche->SetPosition({10.0f, 1.0f, 0.0f});
+    
+    porsche->SetScale({100.0f, 100.0f, 100.0f});
+
 
     auto spriteObj = Tscene->CreateObject("Sprite");
     spriteObj->SetPosition2D({500.0f, 500.0f});
@@ -169,6 +171,12 @@ void SandboxApplication::Update(float deltaTime) {
         SpawnBox({x, 8.0f, z});
 
         spdlog::info("Spawned box at {}, {}, {}", x, 8.0f, z);
+    }
+
+    static float rotation = 0.0f;
+    rotation += glm::radians(15.0f) * deltaTime;
+    if(porsche){
+        porsche->SetRotation(glm::quat(glm::vec3(0.0f, rotation, 0.0f)));
     }
 
     if (input.IsKeyJustPressed(SDLK_T)) {

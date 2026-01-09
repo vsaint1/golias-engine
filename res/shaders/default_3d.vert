@@ -9,10 +9,12 @@ out vec3 v_color;
 out vec2 v_texcoord;
 out vec3 v_normal;
 out vec3 v_frag_pos;
+out vec4 v_frag_pos_light_space;
 
 uniform mat4 MODEL_MATRIX;
 uniform mat4 VIEW_MATRIX;
 uniform mat4 PROJECTION_MATRIX;
+uniform mat4 LIGHT_SPACE_MATRIX;
 
 void main() {
     v_color = a_color;
@@ -20,6 +22,7 @@ void main() {
     
     vec4 worldPos = MODEL_MATRIX * vec4(a_pos, 1.0);
     v_frag_pos = worldPos.xyz;
+    v_frag_pos_light_space = LIGHT_SPACE_MATRIX * worldPos;
     
     if (length(a_normal) > 0.01) {
         mat3 normalMatrix = transpose(inverse(mat3(MODEL_MATRIX)));
