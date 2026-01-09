@@ -54,5 +54,6 @@ if(MSVC)
     # target_link_libraries(${PROJECT_NAME} PRIVATE DirectxShaderCompiler)
 endif()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE GLM_ENABLE_EXPERIMENTAL)
 # PCXX
 # target_precompile_headers(${PROJECT_NAME} PRIVATE "public/stdafx.h")

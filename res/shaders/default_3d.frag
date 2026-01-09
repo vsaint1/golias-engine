@@ -283,7 +283,7 @@ void main()
     if (USE_IBL == 1) {
         ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao);
     } else {
-        ambient = u_ambientStrength * mat.albedo.rgb * mat.ao;
+        ambient = u_ambientStrength * mat.albedo.rgb * max(mat.ao, 0.1);
     }
 
     vec3 color = ambient + Lo + mat.emissive;

@@ -4,6 +4,8 @@ layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec3 a_color;
 layout(location = 2) in vec2 a_texcoord;
 layout(location = 3) in vec3 a_normal;
+layout(location = 4) in vec4 a_bone_indices;
+layout(location = 5) in vec4 a_bone_weights;
 
 out vec3 v_color;
 out vec2 v_texcoord;
@@ -16,17 +18,45 @@ uniform mat4 VIEW_MATRIX;
 uniform mat4 PROJECTION_MATRIX;
 uniform mat4 LIGHT_SPACE_MATRIX;
 
+// Skeletal animation
+uniform int USE_SKINNING;
+const int MAX_BONES = 128;
+uniform mat4 BONE_MATRICES[MAX_BONES];
+
 void main() {
     v_color = a_color;
     v_texcoord = a_texcoord;
     
-    vec4 worldPos = MODEL_MATRIX * vec4(a_pos, 1.0);
+    vec4 localPos = vec4(a_pos, 1.0);
+    vec3 localNormal = a_normal;
+    
+    // Apply skeletal skinning if enabled
+    if (USE_SKINNING > 0) {
+        mat4 boneTransform = mat4(0.0);
+        
+        for (int i = 0; i < 4; i++) {
+            int boneIndex = int(a_bone_indices[i]);
+            float boneWeight = a_bone_weights[i];
+            
+            if (boneWeight > 0.0 && boneIndex >= 0 && boneIndex < MAX_BONES) {
+                boneTransform += BONE_MATRICES[boneIndex] * boneWeight;
+            }
+        }
+        
+        // If all weights are zero, use identity
+        if (dot(a_bone_weights, vec4(1.0)) > 0.01) {
+            localPos = boneTransform * localPos;
+            localNormal = mat3(boneTransform) * localNormal;
+        }
+    }
+    
+    vec4 worldPos = MODEL_MATRIX * localPos;
     v_frag_pos = worldPos.xyz;
     v_frag_pos_light_space = LIGHT_SPACE_MATRIX * worldPos;
     
-    if (length(a_normal) > 0.01) {
+    if (length(localNormal) > 0.01) {
         mat3 normalMatrix = transpose(inverse(mat3(MODEL_MATRIX)));
-        v_normal = normalize(normalMatrix * a_normal);
+        v_normal = normalize(normalMatrix * localNormal);
     } else {
         v_normal = vec3(0.0, 1.0, 0.0);
     }
