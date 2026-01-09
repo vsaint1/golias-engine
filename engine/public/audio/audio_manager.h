@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
 
-struct ma_engine;
+struct ma_device;
+struct ma_context;
+struct rAudioBuffer;
 
 namespace golias {
 
@@ -12,14 +14,35 @@ namespace golias {
 
         bool Initialize();
 
-        ma_engine* GetNativeHandle();
-
-        void SetListenerPosition(float x, float y, float z);
+        ma_device* GetDevice();
+        ma_context* GetContext();
+        void* GetLock();
 
         void SetMasterVolume(float volume);
+        float GetMasterVolume() const;
+
+        // STUB for 3D audio listener position
+        void SetListenerPosition(float x, float y, float z);
+
+        void TrackAudioBuffer(rAudioBuffer* buffer);
+        void UntrackAudioBuffer(rAudioBuffer* buffer);
+
+        rAudioBuffer* GetFirstBuffer() { return firstBuffer; }
 
     private:
-        std::unique_ptr<ma_engine> maEngine = nullptr;
+        std::unique_ptr<ma_device> maDevice = nullptr;
+        std::unique_ptr<ma_context> maContext = nullptr;
+        
+        void* maMutex = nullptr;  // Opaque pointer (ma_mutex*)
+        
+        bool isReady = false;
         float masterVolume = 1.0f;
+
+        float listenerPosX = 0.0f;
+        float listenerPosY = 0.0f;
+        float listenerPosZ = 0.0f;
+
+        rAudioBuffer* firstBuffer = nullptr;
+        rAudioBuffer* lastBuffer = nullptr;
     };
 }; // namespace golias
