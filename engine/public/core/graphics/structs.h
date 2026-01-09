@@ -111,6 +111,8 @@ namespace golias {
         static constexpr Uint32 COLOR_INDEX    = 1;
         static constexpr Uint32 TEXCOORD_INDEX = 2;
         static constexpr Uint32 NORMAL_INDEX   = 3;
+        static constexpr Uint32 BONE_INDICES_INDEX = 4;
+        static constexpr Uint32 BONE_WEIGHTS_INDEX = 5;
     };
 
     struct VertexLayout {

@@ -39,7 +39,7 @@ namespace golias {
         return -1;
     }
 
-    void OpenglShader::SetUniform(const std::string_view pName, const UniformValue& value) {
+    void OpenglShader::SetUniform(const std::string_view pName, const UniformValue& value,int count) {
 
         GLint location = GetUniformLocation(pName);
 
@@ -81,12 +81,16 @@ namespace golias {
                         glUniform1i(location, current_texture_unit);
                         ++current_texture_unit;
                     }
+                } else if constexpr (std::is_same_v<T, const glm::mat4*>) {
+                    glUniformMatrix4fv(location, count, GL_FALSE, &v[0][0][0]);
+
                 } else {
                     spdlog::debug("OpenglShader::SetUniform: Unsupported uniform type for '{}'.", pName);
                 }
             },
             value);
     }
+
 
     GLuint OpenglShader::CompileShader(GLenum type, const std::string& source) {
         GLuint shader   = glCreateShader(type);

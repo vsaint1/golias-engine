@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 
-using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>,golias::Texture2D*>;
+using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>,golias::Texture2D*, const glm::mat4*>;
 
 enum class EShaderStage { VERTEX = 0x1, FRAGMENT = 0x2, COMPUTE = 0x4 };
 
@@ -24,7 +24,7 @@ namespace golias {
 
         virtual int32_t GetUniformLocation(const std::string_view pName) = 0;
 
-        virtual void SetUniform(const std::string_view pName, const UniformValue& value) = 0;
+        virtual void SetUniform(const std::string_view pName, const UniformValue& value,int count = 0) = 0;
 
         int32_t GetNativeHandle() const;
 

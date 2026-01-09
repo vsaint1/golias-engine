@@ -5,10 +5,10 @@
 #include "core/graphics/material.h"
 #include "core/graphics/structs.h"
 #include "scene/3d/animation_component.h"
+#include "scene/3d/skeleton_animation_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/game_object.h"
 #include <spdlog/spdlog.h>
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -19,6 +19,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
+#include <unordered_set>
 
 namespace golias {
 
@@ -186,17 +187,54 @@ namespace golias {
             return layout;
         }
 
+        VertexLayout CreateSkinnedVertexLayout() {
+            VertexLayout layout;
+            Uint32 offset = 0;
+
+            // Position
+            layout.elements.push_back({0, 3, EDataType::FLOAT, false, offset});
+            offset += 12;
+
+            // Color
+            layout.elements.push_back({1, 3, EDataType::FLOAT, false, offset});
+            offset += 12;
+
+            // TexCoord
+            layout.elements.push_back({2, 2, EDataType::FLOAT, false, offset});
+            offset += 8;
+
+            // Normal
+            layout.elements.push_back({3, 3, EDataType::FLOAT, false, offset});
+            offset += 12;
+
+            // Bone Indices (4 ints)
+            layout.elements.push_back({4, 4, EDataType::FLOAT, false, offset});
+            offset += 16;
+
+            // Bone Weights (4 floats)
+            layout.elements.push_back({5, 4, EDataType::FLOAT, false, offset});
+            offset += 16;
+
+            layout.stride = offset;
+            return layout;
+        }
+
         struct VertexAttributeData {
             std::vector<float> positions;
             std::vector<float> colors;
             std::vector<float> texcoords;
             std::vector<float> normals;
+            std::vector<float> boneIndices;
+            std::vector<float> boneWeights;
             size_t vertexCount = 0;
+            bool hasSkinning = false;
 
             const cgltf_accessor* positionAccessor = nullptr;
             const cgltf_accessor* colorAccessor    = nullptr;
             const cgltf_accessor* texcoordAccessor = nullptr;
             const cgltf_accessor* normalAccessor   = nullptr;
+            const cgltf_accessor* jointsAccessor   = nullptr;
+            const cgltf_accessor* weightsAccessor  = nullptr;
         };
 
         bool ExtractGLTFVertexData(const cgltf_primitive* prim, VertexAttributeData& data) {
@@ -224,6 +262,18 @@ namespace golias {
                         data.colorAccessor = a.data;
                     }
                     break;
+                case cgltf_attribute_type_joints:
+                    if (!data.jointsAccessor) {
+                        data.jointsAccessor = a.data;
+                        data.hasSkinning = true;
+                    }
+                    break;
+                case cgltf_attribute_type_weights:
+                    if (!data.weightsAccessor) {
+                        data.weightsAccessor = a.data;
+                        data.hasSkinning = true;
+                    }
+                    break;
                 default:
                     break;
                 }
@@ -245,13 +295,20 @@ namespace golias {
             if (data.colorAccessor) {
                 ExtractFloatData(data.colorAccessor, data.colors);
             }
+            if (data.jointsAccessor) {
+                ExtractFloatData(data.jointsAccessor, data.boneIndices);
+            }
+            if (data.weightsAccessor) {
+                ExtractFloatData(data.weightsAccessor, data.boneWeights);
+            }
 
             return true;
         }
 
         std::vector<float> InterleaveVertexData(const VertexAttributeData& data) {
             std::vector<float> vertices;
-            vertices.reserve(data.vertexCount * 11);
+            size_t floatsPerVertex = data.hasSkinning ? 19 : 11; // 3+3+2+3 = 11, +4+4 = 19 for skinned
+            vertices.reserve(data.vertexCount * floatsPerVertex);
 
             for (size_t v = 0; v < data.vertexCount; ++v) {
                 // Position (3 floats)
@@ -304,6 +361,36 @@ namespace golias {
                     vertices.push_back(data.normals[v * 3 + 2]);
                 } else {
                     vertices.insert(vertices.end(), {0.0f, 1.0f, 0.0f});
+                }
+
+                // Bone Indices (4 floats - will be interpreted as ints in shader)
+                if (data.hasSkinning && !data.boneIndices.empty()) {
+                    size_t jointComps = GetComponentCount(data.jointsAccessor->type);
+                    if (jointComps == 4 && v * 4 + 3 < data.boneIndices.size()) {
+                        vertices.push_back(data.boneIndices[v * 4]);
+                        vertices.push_back(data.boneIndices[v * 4 + 1]);
+                        vertices.push_back(data.boneIndices[v * 4 + 2]);
+                        vertices.push_back(data.boneIndices[v * 4 + 3]);
+                    } else {
+                        vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
+                    }
+                } else if (data.hasSkinning) {
+                    vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
+                }
+
+                // Bone Weights (4 floats)
+                if (data.hasSkinning && !data.boneWeights.empty()) {
+                    size_t weightComps = GetComponentCount(data.weightsAccessor->type);
+                    if (weightComps == 4 && v * 4 + 3 < data.boneWeights.size()) {
+                        vertices.push_back(data.boneWeights[v * 4]);
+                        vertices.push_back(data.boneWeights[v * 4 + 1]);
+                        vertices.push_back(data.boneWeights[v * 4 + 2]);
+                        vertices.push_back(data.boneWeights[v * 4 + 3]);
+                    } else {
+                        vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
+                    }
+                } else if (data.hasSkinning) {
+                    vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
                 }
             }
 
@@ -779,6 +866,207 @@ namespace golias {
         }
 
         // ============================================================================
+        // GLTF Skeleton Loading
+        // ============================================================================
+
+        void LoadGLTFSkeleton(cgltf_data* data, GameObject* rootObject) {
+            // Check if the model has any skins (skeletal data)
+            if (data->skins_count == 0) {
+                return;
+            }
+
+            std::vector<std::shared_ptr<Skeleton>> skeletons;
+            std::vector<std::shared_ptr<SkeletonAnimationClip>> skeletonClips;
+            
+            // Build a set of all joint nodes for fast lookup
+            std::unordered_set<cgltf_node*> jointNodes;
+
+            // Load skeletons from skins
+            for (cgltf_size si = 0; si < data->skins_count; ++si) {
+                auto& skin = data->skins[si];
+                auto skeleton = std::make_shared<Skeleton>();
+                skeleton->name = skin.name ? skin.name : "Skeleton";
+                
+                spdlog::info("Processing GLTF Skin/Skeleton: {} with {} joints", skeleton->name, skin.joints_count);
+
+                // Build joint hierarchy
+                std::unordered_map<cgltf_node*, int> nodeToJointIndex;
+                
+                for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
+                    cgltf_node* jointNode = skin.joints[ji];
+                    nodeToJointIndex[jointNode] = static_cast<int>(ji);
+                    jointNodes.insert(jointNode);  // Track all joint nodes
+
+                    SkeletonJoint joint;
+                    joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
+
+                    // Get local transform
+                    if (jointNode->has_translation) {
+                        joint.position = glm::vec3(jointNode->translation[0], jointNode->translation[1], jointNode->translation[2]);
+                    }
+                    if (jointNode->has_rotation) {
+                        joint.rotation = glm::quat(jointNode->rotation[3], jointNode->rotation[0], jointNode->rotation[1], jointNode->rotation[2]);
+                    }
+                    if (jointNode->has_scale) {
+                        joint.scale = glm::vec3(jointNode->scale[0], jointNode->scale[1], jointNode->scale[2]);
+                    }
+
+                    // Extract inverse bind matrix
+                    if (skin.inverse_bind_matrices) {
+                        float mat[16];
+                        cgltf_accessor_read_float(skin.inverse_bind_matrices, ji, mat, 16);
+                        joint.inverseBindMatrix = glm::make_mat4(mat);
+                    }
+
+                    skeleton->joints.push_back(joint);
+                }
+
+                // Build parent hierarchy
+                for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
+                    cgltf_node* jointNode = skin.joints[ji];
+                    if (jointNode->parent) {
+                        auto parentIt = nodeToJointIndex.find(jointNode->parent);
+                        if (parentIt != nodeToJointIndex.end()) {
+                            skeleton->joints[ji].parentIndex = parentIt->second;
+                        }
+                    }
+                }
+
+                skeletons.push_back(skeleton);
+            }
+
+            // Load skeleton animations - check all animations for channels targeting joints
+            for (cgltf_size ai = 0; ai < data->animations_count; ++ai) {
+                auto& anim = data->animations[ai];
+                auto clip = std::make_shared<SkeletonAnimationClip>();
+                clip->name = anim.name ? anim.name : "SkeletonAnimation";
+                clip->duration = 0.0f;
+
+                std::unordered_map<cgltf_node*, size_t> trackIndexOf;
+
+                auto ensureTrack = [&](cgltf_node* node) -> SkeletonAnimationTrack& {
+                    auto it = trackIndexOf.find(node);
+                    if (it != trackIndexOf.end()) {
+                        return clip->tracks[it->second];
+                    }
+
+                    SkeletonAnimationTrack track;
+                    track.targetJointName = node->name ? node->name : "";
+                    clip->tracks.push_back(track);
+                    size_t idx = clip->tracks.size() - 1;
+                    trackIndexOf[node] = idx;
+                    return clip->tracks[idx];
+                };
+
+                bool hasSkeletonAnimation = false;
+
+                for (cgltf_size ci = 0; ci < anim.channels_count; ++ci) {
+                    auto& channel = anim.channels[ci];
+                    auto sampler = channel.sampler;
+
+                    if (!channel.target_node || !sampler || !sampler->input || !sampler->output) {
+                        continue;
+                    }
+
+                    // Check if this channel targets a joint node (check against the set)
+                    bool isJoint = jointNodes.find(channel.target_node) != jointNodes.end();
+
+                    if (!isJoint) {
+                        continue;
+                    }
+
+                    hasSkeletonAnimation = true;
+
+                    std::vector<float> times;
+                    if (!ExtractScalarData(sampler->input, times)) {
+                        spdlog::warn("Failed to extract skeleton animation times for clip: {} channel: {}", clip->name, ci);
+                        continue;
+                    }
+
+                    auto& track = ensureTrack(channel.target_node);
+
+                    switch (channel.target_path) {
+                    case cgltf_animation_path_type_translation:
+                    {
+                        std::vector<glm::vec3> values;
+                        ExtractVec3Data(sampler->output, values);
+
+                        if (!values.empty()) {
+                            track.positions.resize(times.size());
+                            for (size_t i = 0; i < times.size(); ++i) {
+                                track.positions[i].time = times[i];
+                                track.positions[i].value = values[i];
+                            }
+                        }
+                    }
+                    break;
+
+                    case cgltf_animation_path_type_rotation:
+                    {
+                        std::vector<glm::quat> values;
+                        ExtractQuatData(sampler->output, values);
+
+                        if (!values.empty()) {
+                            track.rotations.resize(times.size());
+                            for (size_t i = 0; i < times.size(); ++i) {
+                                track.rotations[i].time = times[i];
+                                track.rotations[i].value = values[i];
+                            }
+                        }
+                    }
+                    break;
+
+                    case cgltf_animation_path_type_scale:
+                    {
+                        std::vector<glm::vec3> values;
+                        ExtractVec3Data(sampler->output, values);
+
+                        if (!values.empty()) {
+                            track.scales.resize(times.size());
+                            for (size_t i = 0; i < times.size(); ++i) {
+                                track.scales[i].time = times[i];
+                                track.scales[i].value = values[i];
+                            }
+                        }
+                    }
+                    break;
+
+                    default:
+                        break;
+                    }
+
+                    clip->duration = SDL_max(clip->duration, times.back());
+                }
+
+                if (hasSkeletonAnimation) {
+                    skeletonClips.push_back(std::move(clip));
+                }
+            }
+
+            // Create skeleton animation component if we have skeleton data and animations
+            if (!skeletons.empty() && !skeletonClips.empty()) {
+                auto skelAnimComp = new SkeletonAnimationComponent();
+                rootObject->AddComponent(skelAnimComp);
+
+                // Use the first skeleton (most models have one skeleton)
+                skelAnimComp->SetSkeleton(skeletons[0]);
+
+                for (auto& clip : skeletonClips) {
+                    skelAnimComp->RegisterClip(clip->name, clip);
+                    spdlog::info("Registered skeleton animation clip: {} with {} tracks, duration: {}", clip->name, clip->tracks.size(), clip->duration);
+                }
+
+                spdlog::info("Loaded {} Skeleton animation clips from GLTF file", skeletonClips.size());
+            } else if (!skeletons.empty()) {
+                // Have skeleton but no animation - still create component
+                auto skelAnimComp = new SkeletonAnimationComponent();
+                rootObject->AddComponent(skelAnimComp);
+                skelAnimComp->SetSkeleton(skeletons[0]);
+                spdlog::info("Loaded Skeleton with {} joints (no animations)", skeletons[0]->joints.size());
+            }
+        }
+
+        // ============================================================================
         // GLTF Scene Graph Parsing
         // ============================================================================
 
@@ -823,7 +1111,7 @@ namespace golias {
                     }
 
                     std::vector<float> vertices = InterleaveVertexData(vertexData);
-                    VertexLayout layout         = CreateStandardVertexLayout();
+                    VertexLayout layout = vertexData.hasSkinning ? CreateSkinnedVertexLayout() : CreateStandardVertexLayout();
 
                     std::vector<Uint32> indices;
                     EDataType index_type;
@@ -951,7 +1239,6 @@ namespace golias {
             model_name = model_name.substr(last_slash + 1);
         }
 
-        // Load GLTF file
         cgltf_options options = {};
         memset(&options, 0, sizeof(cgltf_options));
 
@@ -973,14 +1260,12 @@ namespace golias {
             spdlog::warn("GLTF/GLB validation warning: {}", fullPath);
         }
 
-        // Validate mesh data
         if (data->meshes_count == 0 || data->meshes[0].primitives_count == 0) {
             spdlog::error("No mesh data found in GLTF/GLB: {}", path);
             cgltf_free(data);
             return nullptr;
         }
 
-        // Create root object
         GameObject* rootObject = scene->CreateObject(model_name, nullptr);
 
         // Parse scene graph
@@ -989,8 +1274,11 @@ namespace golias {
             ParseGLTFNode(gltf_scene->nodes[i], rootObject, data, basePath, scene);
         }
 
-        // Load animations
+        // Load animations (hierarchy animations)
         LoadGLTFAnimations(data, rootObject);
+
+        // Load animations (skeletal animations)
+        LoadGLTFSkeleton(data, rootObject);
 
         cgltf_free(data);
 
