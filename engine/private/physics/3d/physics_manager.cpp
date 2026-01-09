@@ -63,7 +63,7 @@ namespace golias {
     }
 
     void PhysicsManager::StepSimulation(float deltaTime) {
-        constexpr btScalar FIXED_TIME_STEP = 1 / 60.0f;
+        constexpr btScalar FIXED_TIME_STEP = 1 / 120.0f;
         constexpr int MAX_SUB_STEPS        = 4;
 
         if (dynamicsWorld) {
