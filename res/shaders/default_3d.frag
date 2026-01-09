@@ -293,6 +293,9 @@ void main()
 
     // /* Gamma correction */
     // color = pow(color, vec3(1.0 / 2.2));
+    if (mat.albedo.a < 0.1) {
+        discard;
+    }
 
     FRAG_COLOR = vec4(color, mat.albedo.a);
 }
