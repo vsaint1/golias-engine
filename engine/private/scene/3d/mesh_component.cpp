@@ -1,6 +1,7 @@
 #include "scene/3d/mesh_component.h"
 
 #include "core/engine.h"
+#include "scene/3d/skeleton_animation_component.h"
 
 namespace golias {
 
@@ -21,6 +22,18 @@ namespace golias {
         command.mesh        = mesh.get();
         command.material    = material.get();
         command.modelMatrix = GetOwner()->GetWorldTransform();
+        
+        command.skeletonAnimation = nullptr;
+        GameObject* current = GetOwner();
+        while (current) {
+            auto skelAnim = current->GetComponent<SkeletonAnimationComponent>();
+            if (skelAnim) {
+                command.skeletonAnimation = skelAnim;
+                break;
+            }
+            current = current->GetParent();
+        }
+        
         auto& renderer = golias::Engine::GetInstance().GetSceneRenderer();
         renderer.Submit(command);
     }

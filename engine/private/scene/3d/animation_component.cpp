@@ -115,7 +115,9 @@ namespace golias {
         }
     }
 
-    glm::vec3 AnimationComponent::Interpolate(const std::vector<KeyFrameVec3>& keys, float _time) {
+
+    
+    glm::vec3 Interpolate(const std::vector<KeyFrameVec3>& keys, float time) {
         if (keys.empty()) {
             return glm::vec3(0.0f);
         }
@@ -124,11 +126,11 @@ namespace golias {
             return keys[0].value;
         }
 
-        if (_time <= keys.front().time) {
+        if (time <= keys.front().time) {
             return keys.front().value;
         }
 
-        if (_time >= keys.back().time) {
+        if (time >= keys.back().time) {
             return keys.back().value;
         }
 
@@ -145,14 +147,14 @@ namespace golias {
 
         float deltaTime = keys[i1].time - keys[i0].time;
         if (deltaTime > 0.0f) {
-            float k = (_time - keys[i0].time) / deltaTime;
+            float k = (time - keys[i0].time) / deltaTime;
             return glm::mix(keys[i0].value, keys[i1].value, k);
         }
 
         return keys[i0].value;
     }
 
-    glm::quat AnimationComponent::Interpolate(const std::vector<KeyFrameQuat>& keys, float _time) {
+    glm::quat Interpolate(const std::vector<KeyFrameQuat>& keys, float time) {
         if (keys.empty()) {
             return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         }
@@ -161,11 +163,11 @@ namespace golias {
             return keys[0].value;
         }
 
-        if (_time <= keys.front().time) {
+        if (time <= keys.front().time) {
             return keys.front().value;
         }
 
-        if (_time >= keys.back().time) {
+        if (time >= keys.back().time) {
             return keys.back().value;
         }
 
@@ -182,7 +184,7 @@ namespace golias {
 
         float deltaTime = keys[i1].time - keys[i0].time;
         if (deltaTime > 0.0f) {
-            float k = (_time - keys[i0].time) / deltaTime;
+            float k = (time - keys[i0].time) / deltaTime;
             return glm::slerp(keys[i0].value, keys[i1].value, k);
         }
 

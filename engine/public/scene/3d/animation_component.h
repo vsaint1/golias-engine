@@ -39,6 +39,9 @@ namespace golias {
         std::vector<size_t> trackIndices;
     };
 
+    glm::vec3 Interpolate(const std::vector<KeyFrameVec3>& keys, float time);
+    glm::quat Interpolate(const std::vector<KeyFrameQuat>& keys, float time);
+
     class AnimationComponent : public Component {
         COMPONENT(AnimationComponent)
     public:
@@ -62,8 +65,7 @@ namespace golias {
         
     private:
         void BuildBindings();
-        glm::vec3 Interpolate(const std::vector<KeyFrameVec3>& keys, float _time);
-        glm::quat Interpolate(const std::vector<KeyFrameQuat>& keys, float _time);
+
     private:
         AnimationClip* animationClip = nullptr;
         float time                    = 0.0f;

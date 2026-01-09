@@ -1,12 +1,12 @@
 #include "scene/game_object.h"
 
 #include "core/engine.h"
-#include <spdlog/spdlog.h>
 #include "core/model.h"
+#include <spdlog/spdlog.h>
+#include <scene/3d/mesh_component.h>
 
 namespace golias {
 
-  
 
     void GameObject::AddComponent(Component* pComponent) {
         if (!pComponent) {
@@ -16,9 +16,7 @@ namespace golias {
         components.emplace_back(pComponent);
         pComponent->SetOwner(this);
         pComponent->Start();
-        spdlog::info("GameObject::AddComponent added Component: {} to GameObject: {}",
-                     typeid(*pComponent).name(),
-                     typeid(*this).name());
+        spdlog::info("GameObject::AddComponent added Component: {} to GameObject: {}", typeid(*pComponent).name(), typeid(*this).name());
     }
 
     void GameObject::LoadProperties(const nlohmann::json& json) {
@@ -48,7 +46,6 @@ namespace golias {
         }
     }
 
- 
 
     const std::string& GameObject::GetName() const {
         return name;
@@ -113,7 +110,6 @@ namespace golias {
         return nullptr;
     }
 
-    
 
     glm::vec3 GameObject::GetPosition() const {
         return position;
@@ -139,7 +135,7 @@ namespace golias {
         }
     }
 
-  
+
     glm::quat GameObject::GetRotation() const {
         return rotation;
     }
@@ -165,7 +161,6 @@ namespace golias {
         }
     }
 
-    
 
     glm::vec3 GameObject::GetScale() const {
         return scale;
@@ -175,7 +170,6 @@ namespace golias {
         scale = value;
     }
 
-  
 
     glm::mat4 GameObject::GetLocalTransform() const {
         glm::mat4 mat = glm::mat4(1.0f);
@@ -193,7 +187,6 @@ namespace golias {
         }
     }
 
-    
 
     glm::vec2 GameObject::GetPosition2D() const {
         return glm::vec2(position.x, position.y);
@@ -208,7 +201,6 @@ namespace golias {
         return glm::vec2(hom) / hom.w;
     }
 
-   
 
     float GameObject::GetRotation2D() const {
         return glm::angle(rotation);
@@ -218,7 +210,6 @@ namespace golias {
         rotation = glm::angleAxis(glm::radians(degrees), glm::vec3(0.0f, 0.0f, 1.0f));
     }
 
-   
 
     glm::vec2 GameObject::GetScale2D() const {
         return glm::vec2(scale.x, scale.y);
@@ -227,7 +218,6 @@ namespace golias {
     void GameObject::SetScale2D(const glm::vec2& value) {
         scale = glm::vec3(value, 1.0f);
     }
-
 
 
     glm::mat4 GameObject::GetLocalTransform2D() const {
@@ -243,6 +233,22 @@ namespace golias {
             return parent->GetWorldTransform2D() * GetLocalTransform2D();
         }
         return GetLocalTransform2D();
+    }
+
+    void GameObject::SetUseIBL(bool value) {
+        if (!this) {
+            return;
+        }
+
+        if (auto meshComp = GetComponent<golias::MeshComponent>()) {
+            if (auto material = meshComp->GetMaterial()) {
+                material->SetUseIBL(value);
+            }
+        }
+
+        for (const auto& child : GetChildren()) {
+            child->SetUseIBL(value);
+        }
     }
 
 } // namespace golias

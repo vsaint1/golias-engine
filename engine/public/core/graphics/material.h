@@ -13,6 +13,9 @@ namespace golias {
         void SetShader(const std::shared_ptr<Shader>& pShader);
         std::shared_ptr<Shader> GetShader() const;
 
+        void SetUseIBL(bool value) { this->useIBL = value; }
+        bool UseImageBasedLighting() const;
+
         template<typename T>
         void SetParameter(const std::string_view pName, const T& value) {
             parameters[std::string(pName)] = value;
@@ -24,6 +27,7 @@ namespace golias {
 
     private:
         std::shared_ptr<Shader> shader;
+        bool useIBL = true; // Use IBL by default, can be disabled per-material
 
         std::unordered_map<std::string, UniformValue> parameters;
     };

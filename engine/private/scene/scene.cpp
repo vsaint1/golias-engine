@@ -5,6 +5,7 @@
 
 #pragma region COMPONENTS_3D
 #include "scene/3d/animation_component.h"
+#include "scene/3d/skeleton_animation_component.h"
 #include "scene/3d/audio_component.h"
 #include "scene/3d/audio_listener_component.h"
 #include "scene/3d/camera_component.h"
@@ -404,6 +405,7 @@ namespace golias {
         PhysicsComponent::Register();
         AudioComponent::Register();
         AudioListenerComponent::Register();
+        SkeletonAnimationComponent::Register();
 
         SpriteComponent2D::Register();
 

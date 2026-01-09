@@ -11,10 +11,10 @@ namespace golias {
         }
 
         std::string key = std::string(pPath) + ":";
-        
+
         std::string paramStr = paramOverrides->dump();
         key += std::to_string(std::hash<std::string>{}(paramStr));
-        
+
         return key;
     }
 
@@ -36,6 +36,10 @@ namespace golias {
 
     std::shared_ptr<Shader> Material::GetShader() const {
         return shader;
+    }
+
+    bool Material::UseImageBasedLighting() const {
+        return useIBL;
     }
 
 
@@ -104,12 +108,15 @@ namespace golias {
         material->SetParameter("u_material.emissiveFactor", glm::vec3(0.0f));
         material->SetParameter("u_material.emissiveStrength", 1.0f);
 
+        if (json.contains("use_ibl")) {
+            material->SetUseIBL(json["use_ibl"].get<bool>());
+        }
 
         ParseParameters(material, json);
 
         if (paramOverrides && !paramOverrides->empty()) {
             spdlog::debug("Material::Load: Applying parameter overrides: {}", paramOverrides->dump());
-            
+
             Json j;
             j["parameters"] = *paramOverrides;
             ParseParameters(material, j);
@@ -237,4 +244,6 @@ namespace golias {
     void MaterialManager::RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial) {
         materials[pPath.data()] = pMaterial;
     }
+
+
 } // namespace golias
