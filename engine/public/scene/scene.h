@@ -3,7 +3,7 @@
 #include "game_object.h"
 #include <spdlog/spdlog.h>
 
-#include <json.hpp>
+#include "core/model.h"
 
 
 namespace golias {

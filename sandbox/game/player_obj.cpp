@@ -14,7 +14,7 @@ void Player::Start() {
     camera->SetPosition({0.0f, 2.0f, 5.0f});
     scene->SetMainCamera(camera);
 
-    auto gun = golias::GameObject::LoadModel("models/carbine/scene.gltf", scene);
+    auto gun = golias::Model::Load("models/carbine/scene.gltf", scene);
     gun->SetParent(camera);
     gun->SetPosition({0.75f, -0.5f, -0.75f});
     gun->SetScale({-1.0f, 1.0f, 1.0f});

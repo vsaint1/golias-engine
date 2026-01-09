@@ -303,7 +303,7 @@ namespace golias {
             if (type == "model") {
                 const std::string modelPath = object.value("path", "");
                 spdlog::info("Scene::LoadObject Loading Model GameObject '{}' from path '{}'", name, modelPath);
-                gameObject = GameObject::LoadModel(modelPath, this);
+                gameObject = Model::Load(modelPath, this);
 
                 if (gameObject) {
 

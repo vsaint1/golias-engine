@@ -47,9 +47,9 @@ bool SandboxApplication::Initialize() {
     auto Tscene   = golias::Scene::Load("scenes/main.gscene");
     auto material = golias::Material::Load("materials/brick.mat");
     mat           = material;
-    // // auto avocado = golias::GameObject::LoadModel("models/avocado/Avocado.gltf",Tscene.get());
-    // // avocado->SetPosition({-2.0f, 2.0f, -2.0f});
-    // // avocado->SetScale({25.0f, 25.0f, 25.0f});
+    auto avocado = golias::Model::Load("models/avocado/Avocado.gltf",Tscene.get());
+    avocado->SetPosition({-2.0f, 2.0f, -2.0f});
+    avocado->SetScale({25.0f, 25.0f, 25.0f});
 
     // auto Tscene = std::make_shared<golias::Scene>();
 
@@ -119,22 +119,22 @@ WASD to move, Mouse to look around)";
     auto player = scene->CreateObject<Player>("Player");
     player->Start();
 
-    auto monkey = golias::GameObject::LoadModel("models/suzanne/Suzanne.gltf", scene.get());
+    auto monkey = golias::Model::Load("models/suzanne/Suzanne.gltf", scene.get());
     monkey->SetPosition({0.0f, 2.0f, -2.0f});
 
-    auto avocado = golias::GameObject::LoadModel("models/avocado/Avocado.gltf", scene.get());
+    auto avocado = golias::Model::Load("models/avocado/Avocado.gltf", scene.get());
     avocado->SetPosition({-2.0f, 2.0f, -2.0f});
     avocado->SetScale({25.0f, 25.0f, 25.0f});
 
-    auto torus = golias::GameObject::LoadModel("models/torus.obj", scene.get());
+    auto torus = golias::Model::Load("models/torus.obj", scene.get());
     torus->SetPosition({5.0f, 2.0f, -2.0f});
 
     mat = material;
 
-    auto godette = golias::GameObject::LoadModel("models/godette/godette.gltf", scene.get());
+    auto godette = golias::Model::Load("models/godette/godette.gltf", scene.get());
     godette->SetPosition({-5.0f, 2.0f, -6.0f});
 
-    auto nagonford = golias::GameObject::LoadModel("models/nagonford/Nagonford_Animated.glb", scene.get());
+    auto nagonford = golias::Model::Load("models/nagonford/Nagonford_Animated.glb", scene.get());
     nagonford->SetPosition({0.0f, 2.0f, -6.0f});
 
     auto ground = scene->CreateObject("Ground");

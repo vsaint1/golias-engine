@@ -44,7 +44,6 @@ namespace golias {
 
         bool IsAlive() const;
 
-        static GameObject* LoadModel(const std::string_view pPath, Scene* pScene);
 
         glm::vec3 GetWorldPosition() const;
         glm::vec3 GetPosition() const;
