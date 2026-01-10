@@ -1,9 +1,9 @@
 #include "core/graphics/scene_renderer.h"
 
+#include "scene/3d/skeleton_animation_component.h"
+
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
-
-#include "scene/3d/skeleton_animation_component.h"
 
 namespace golias {
 
@@ -49,33 +49,39 @@ namespace golias {
         world_canvas_commands.push_back(command);
     }
 
+    void SceneRenderer::Submit(const DirectionalLightCommand& command) {
+        directional_lights.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const PointLightCommand& command) {
+        point_lights.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const SpotLightCommand& command) {
+        spot_lights.push_back(command);
+    }
+
     void SceneRenderer::Draw(const CameraCommand& camera) {
 
         // =========================================================
-        // Setup lights (unchanged logic)
+        // Calculate light space matrices for shadow casting
         // =========================================================
-        static DirectionalLightCommand lights[3] = {
-            {glm::vec3(0.5f, -1.0f, 0.3f), glm::vec3(1.0f), 1.0f, true, glm::mat4(1.0f)},
-            {glm::vec3(-0.3f, -0.5f, 0.5f), glm::vec3(1.0f, 0.0f, 0.0f), 0.4f, false, glm::mat4(1.0f)},
-            {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.2f, false, glm::mat4(1.0f)}
-        };
-
-        constexpr int lightCount = 3;
-
         bool anyShadowCaster = false;
-        for (int i = 0; i < lightCount; ++i) {
-            if (lights[i].castShadows) {
+        for (int i = 0; i < directional_lights.size(); ++i) {
+            if (directional_lights[i].castShadows) {
                 anyShadowCaster = true;
 
-                float near_plane = 1.0f, far_plane = 100.0f;
-                float orthoSize = 20.0f;
+                float orthoSize  = 30.0f;
+                float near_plane = -50.0f;
+                float far_plane  = 100.0f;
 
                 glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, near_plane, far_plane);
 
-                glm::mat4 lightView =
-                    glm::lookAt(-glm::normalize(lights[i].direction) * 20.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::vec3 lightDir = glm::normalize(-directional_lights[i].direction);
 
-                lights[i].lightSpaceMatrix = lightProjection * lightView;
+                glm::mat4 lightView = glm::lookAt(camera.position + lightDir * 50.0f, camera.position, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                directional_lights[i].lightSpaceMatrix = lightProjection * lightView;
                 break;
             }
         }
@@ -95,12 +101,12 @@ namespace golias {
             auto shadowShader = rendering_device->GetDefaultShadowMapShader();
             shadowShader->Bind();
 
-            for (int i = 0; i < lightCount; ++i) {
-                if (!lights[i].castShadows) {
+            for (size_t i = 0; i < directional_lights.size(); ++i) {
+                if (!directional_lights[i].castShadows) {
                     continue;
-            }
+                }
 
-                shadowShader->SetUniform("LIGHT_SPACE_MATRIX", lights[i].lightSpaceMatrix);
+                shadowShader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[i].lightSpaceMatrix);
 
                 for (const auto& command : command_queue) {
                     if (!command.mesh) {
@@ -108,7 +114,6 @@ namespace golias {
                     }
 
                     shadowShader->SetUniform("MODEL_MATRIX", command.modelMatrix);
-                    
                     if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
                         shadowShader->SetUniform("USE_SKINNING", 1);
                         const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
@@ -116,7 +121,7 @@ namespace golias {
                     } else {
                         shadowShader->SetUniform("USE_SKINNING", 0);
                     }
-                    
+
                     rendering_device->BindMesh(command.mesh);
                     rendering_device->DrawMesh(command.mesh);
                 }
@@ -153,8 +158,8 @@ namespace golias {
                 shader->SetUniform("USE_SKINNING", 1);
                 const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
                 shader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
-                
-              
+
+
             } else {
                 shader->SetUniform("USE_SKINNING", 0);
             }
@@ -162,13 +167,46 @@ namespace golias {
             shader->SetUniform("u_specularStrength", 0.5f);
             shader->SetUniform("u_shininess", 32.0f);
 
-            shader->SetUniform("u_directionalLightCount", lightCount);
-            for (int i = 0; i < lightCount; ++i) {
+            // Set directional lights
+            int directionalLightCount = static_cast<int>(directional_lights.size());
+            shader->SetUniform("u_directionalLightCount", directionalLightCount);
+            for (int i = 0; i < directionalLightCount; ++i) {
                 std::string p = "u_directionalLights[" + std::to_string(i) + "].";
-                shader->SetUniform(p + "direction", lights[i].direction);
-                shader->SetUniform(p + "color", lights[i].color);
-                shader->SetUniform(p + "intensity", lights[i].intensity);
-                shader->SetUniform(p + "castShadows", lights[i].castShadows);
+                shader->SetUniform(p + "direction", directional_lights[i].direction);
+                shader->SetUniform(p + "color", directional_lights[i].color);
+                shader->SetUniform(p + "intensity", directional_lights[i].intensity);
+                shader->SetUniform(p + "castShadows", directional_lights[i].castShadows);
+            }
+
+            // Set point lights
+            int pointLightCount = static_cast<int>(point_lights.size());
+            shader->SetUniform("u_pointLightCount", pointLightCount);
+            for (int i = 0; i < pointLightCount; ++i) {
+                std::string p = "u_pointLights[" + std::to_string(i) + "].";
+                shader->SetUniform(p + "position", point_lights[i].position);
+                shader->SetUniform(p + "color", point_lights[i].color);
+                shader->SetUniform(p + "intensity", point_lights[i].intensity);
+                shader->SetUniform(p + "range", point_lights[i].range);
+                shader->SetUniform(p + "constant", point_lights[i].constant);
+                shader->SetUniform(p + "linear", point_lights[i].linear);
+                shader->SetUniform(p + "quadratic", point_lights[i].quadratic);
+            }
+
+            int spotLightCount = static_cast<int>(spot_lights.size());
+            shader->SetUniform("u_spotLightCount", spotLightCount);
+            for (int i = 0; i < spotLightCount; ++i) {
+                std::string p = "u_spotLights[" + std::to_string(i) + "].";
+                shader->SetUniform(p + "position", spot_lights[i].position);
+                shader->SetUniform(p + "direction", spot_lights[i].direction);
+                shader->SetUniform(p + "color", spot_lights[i].color);
+                shader->SetUniform(p + "intensity", spot_lights[i].intensity);
+                shader->SetUniform(p + "range", spot_lights[i].range);
+
+                shader->SetUniform(p + "innerConeAngle", glm::cos(glm::radians(spot_lights[i].innerConeAngle)));
+                shader->SetUniform(p + "outerConeAngle", glm::cos(glm::radians(spot_lights[i].outerConeAngle)));
+                shader->SetUniform(p + "constant", spot_lights[i].constant);
+                shader->SetUniform(p + "linear", spot_lights[i].linear);
+                shader->SetUniform(p + "quadratic", spot_lights[i].quadratic);
             }
 
             if (anyShadowCaster) {
@@ -176,11 +214,11 @@ namespace golias {
                 glBindTexture(GL_TEXTURE_2D, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachmentHandle());
 
                 shader->SetUniform("SHADOW_MAP", 15);
-                shader->SetUniform("LIGHT_SPACE_MATRIX", lights[0].lightSpaceMatrix);
+                shader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[0].lightSpaceMatrix);
             }
 
-            
-            bool useIBL = command.material->UseImageBasedLighting();
+
+            bool useIBL          = command.material->UseImageBasedLighting();
             Uint32 skyboxCubemap = rendering_device->GetDefaultSkyboxCubemap();
             if (useIBL && skyboxCubemap) {
                 glActiveTexture(GL_TEXTURE13);
@@ -198,7 +236,7 @@ namespace golias {
                 // Higher ambient when no IBL to ensure visibility
                 shader->SetUniform("u_ambientStrength", 0.8f);
             }
-            
+
             glActiveTexture(GL_TEXTURE0);
 
             rendering_device->BindMesh(command.mesh);
@@ -207,6 +245,9 @@ namespace golias {
 
         command_queue.clear();
 
+        directional_lights.clear();
+        point_lights.clear();
+        spot_lights.clear();
         // =========================================================
         // SKYBOX PASS
         // =========================================================
@@ -225,7 +266,7 @@ namespace golias {
 
             skyboxShader->SetUniform("VIEW_MATRIX", viewNoTranslation);
             skyboxShader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
-            skyboxShader->SetUniform("EXPOSURE", 1.0f);
+            skyboxShader->SetUniform("EXPOSURE", 0.5f);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
@@ -276,11 +317,9 @@ namespace golias {
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
 
-        
-
 
         // =========================================================
-        // MAIN 2D PASS 
+        // MAIN 2D PASS
         // =========================================================
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -352,6 +391,11 @@ namespace golias {
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         canvas_commands.clear();
+
+        // Clear light arrays for next frame
+        directional_lights.clear();
+        point_lights.clear();
+        spot_lights.clear();
     }
 
 

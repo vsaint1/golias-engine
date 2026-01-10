@@ -124,6 +124,14 @@ WASD to move, Mouse to look around)";
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
 
+    auto textAmmo = Tscene->CreateObject("TextAmmo", canvas_2d);
+    auto textCompAmmo = new golias::TextWidgetComponent();
+    textCompAmmo->SetText("9/10");
+    textCompAmmo->SetFont("fonts/Minecraft.ttf", 32);
+    textCompAmmo->SetShadowEnabled(true);
+    textAmmo->SetPosition2D({1000.0f, 100.0f}); 
+    textAmmo->AddComponent(textCompAmmo); 
+
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
     auto& fs = golias::Engine::GetInstance().GetFileSystem();

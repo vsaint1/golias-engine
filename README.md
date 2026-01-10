@@ -42,34 +42,34 @@ powerful**.
 ### 3D Features
 
 - [x] **Model Loading** 
-- [ ] **PBR (Physically Based Rendering)** `SIMPLIFIED`
+- [x] **PBR (Physically Based Rendering)** `SIMPLIFIED`
 - [x] **Blinn-Phong Shading Model**
-- [ ] **Skybox Reflections** IBL (Image Based Lighting)
+- [x] **Skybox Reflections** IBL (Image Based Lighting)
 - [ ] Frustum Culling
-- [ ] **Normal mapping** (TBN calculated per fragment)
+- [x] **Normal mapping** (TBN calculated per fragment)
 - [x] **3D Physics** (Bullet Physics)
 - [x] **Lighting System**
     - [x] **Directional Light**
     - [ ] **Point Light**
     - [ ] **Spotlight**
-- [ ] **Shadow Mapping**
+- [x] **Shadow Mapping**
     - [ ] **CSM** (Cascaded Shadow Maps) for Directional Lights
 - [ ] **Post-Processing Effects** (Bloom, HDR, SSAO, Motion Blur, etc.)
-- [ ] **Animation System** (Animation)
-    - [ ] Skeletal Animation **CPU** & **GPU** Skinning
-    - [ ] Hierarchical Animation
+- [x] **Animation System** (Animation)
+    - [x] Skeletal Animation **CPU** & **GPU** Skinning
+    - [x] Hierarchical Animation
 - [ ] **Level of Detail (LOD) Support**
-- [ ] **Skybox Support** (Cubemap -> 6 faces & Equirectangular)
+- [x] **Skybox Support** (Cubemap -> 6 faces & Equirectangular)
 
 ### 2D Features
 
-- [ ] **2D Sprite Rendering**
-- [ ] **Text/Shaping Rendering** (TrueType fonts and Emojis)
 - [ ] **Tilemap Support** (Orthogonal, Isometric)
 - [ ] **2D Physics** (Box2D)
 
 ### General Features
 
+- [x] **Sprite Rendering**
+- [x] **Text/Shaping Rendering** (TrueType fonts and Emojis)
 - [x] **Audio System**
 - [ ] **Particle System** (CPU & GPU)
 - [x] Cross-Platform **Unified Rendering Pipeline** by Design

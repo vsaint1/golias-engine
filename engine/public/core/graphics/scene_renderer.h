@@ -35,7 +35,34 @@ namespace golias {
     struct DirectionalLightCommand {
         glm::vec3 direction = glm::vec3(0.5f, -1.0f, 0.3f);
         glm::vec3 color     = glm::vec3(1.0f, 1.0f, 1.0f);
-        float intensity     = 1.0f;        bool castShadows = true;        glm::mat4 lightSpaceMatrix;
+        float intensity     = 1.0f;
+        bool castShadows = true;
+        glm::mat4 lightSpaceMatrix;
+    };
+
+    struct PointLightCommand {
+        glm::vec3 position  = glm::vec3(0.0f, 2.0f, 0.0f);
+        glm::vec3 color     = glm::vec3(1.0f, 1.0f, 1.0f);
+        float intensity     = 1.0f;
+        float range         = 10.0f;  // Maximum distance of light influence
+        float constant      = 1.0f;   // Constant attenuation term
+        float linear        = 0.09f;  // Linear attenuation term
+        float quadratic     = 0.032f; // Quadratic attenuation term
+        bool castShadows = false;
+    };
+
+    struct SpotLightCommand {
+        glm::vec3 position    = glm::vec3(0.0f, 2.0f, 0.0f);
+        glm::vec3 direction   = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 color       = glm::vec3(1.0f, 1.0f, 1.0f);
+        float intensity       = 1.0f;
+        float range           = 10.0f;   // Maximum distance of light influence
+        float innerConeAngle  = 12.5f;   // Inner cone angle in degrees
+        float outerConeAngle  = 17.5f;   // Outer cone angle in degrees
+        float constant        = 1.0f;    // Constant attenuation term
+        float linear          = 0.09f;   // Linear attenuation term
+        float quadratic       = 0.032f;  // Quadratic attenuation term
+        bool castShadows = false;
     };
 
     struct CanvasBatch {
@@ -64,6 +91,9 @@ namespace golias {
         void Submit(const DrawCommand2D& command);
         void Submit(const ScreenCanvasCommand& command);
         void Submit(const WorldCanvasCommand& command);
+        void Submit(const DirectionalLightCommand& command);
+        void Submit(const PointLightCommand& command);
+        void Submit(const SpotLightCommand& command);
 
         void Clear(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
 
@@ -79,6 +109,12 @@ namespace golias {
     private:
         std::vector<DrawCommand> command_queue;
         std::vector<DrawCommand2D> command_queue_2d;
+
+        std::vector<DirectionalLightCommand> directional_lights;
+        std::vector<PointLightCommand> point_lights;
+        std::vector<SpotLightCommand> spot_lights;
+
+
         std::vector<ScreenCanvasCommand> canvas_commands;
         std::vector<WorldCanvasCommand> world_canvas_commands;
 

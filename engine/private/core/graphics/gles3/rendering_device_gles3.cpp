@@ -342,12 +342,15 @@ namespace golias {
         return textureID;
     }
 
+   
+
     Uint32 RenderingDeviceGLES3::CreateCubemapFromCross(const std::string& crossPath) {
         const auto& fs = Engine::GetInstance().GetFileSystem();
         auto imagePath = fs.GetAssetFile(crossPath);
+        
+        auto extension = Engine::GetInstance().GetFileSystem().GetFileExtension(imagePath);
 
-        // Check if HDR based on extension
-        bool isHDR = imagePath.ends_with(".hdr") || imagePath.ends_with(".HDR");
+        bool isHDR = extension == "hdr" ? true : false;
 
         int width, height, nrChannels;
         void* data = nullptr;
@@ -356,7 +359,6 @@ namespace golias {
         GLenum format;
 
         if (isHDR) {
-            // Load HDR image as float
             float* hdrData = stbi_loadf(imagePath.c_str(), &width, &height, &nrChannels, 0);
             if (!hdrData) {
                 spdlog::error("RenderingDeviceGLES3::CreateCubemapFromCross Failed to load HDR cross cubemap: {}", crossPath);
@@ -367,7 +369,6 @@ namespace golias {
             internalFormat = (nrChannels == 3) ? GL_RGB16F : GL_RGBA16F;
             format         = (nrChannels == 3) ? GL_RGB : GL_RGBA;
         } else {
-            // Load LDR image as unsigned byte
             unsigned char* ldrData = stbi_load(imagePath.c_str(), &width, &height, &nrChannels, 0);
             if (!ldrData) {
                 spdlog::error("RenderingDeviceGLES3::CreateCubemapFromCross Failed to load cross cubemap: {}", crossPath);
@@ -383,58 +384,71 @@ namespace golias {
         int faceSize         = 0;
         bool isVerticalCross = false;
 
-        if (width == height * 3 / 4) {
+        if (width * 4 == height * 3) {
             // Vertical cross: width = 3 * faceSize, height = 4 * faceSize
             faceSize        = width / 3;
             isVerticalCross = true;
-        } else if (height == width * 3 / 4) {
+            spdlog::info("Detected vertical cross layout: {}x{}, faceSize: {}", width, height, faceSize);
+            
+            if (faceSize < 512) {
+                spdlog::warn("Face size is small ({}x{}), quality may be reduced. Consider using higher resolution source image.", faceSize, faceSize);
+            }
+        } else if (height * 4 == width * 3) {
             // Horizontal cross: width = 4 * faceSize, height = 3 * faceSize
             faceSize        = height / 3;
             isVerticalCross = false;
+            spdlog::info("Detected horizontal cross layout: {}x{}, faceSize: {}", width, height, faceSize);
+            
+            if (faceSize < 512) {
+                spdlog::warn("Face size is small ({}x{}), quality may be reduced. Consider using higher resolution source image.", faceSize, faceSize);
+            }
         } else {
             spdlog::error("RenderingDeviceGLES3::CreateCubemapFromCross Invalid cross cubemap dimensions: {}x{}", width, height);
             stbi_image_free(data);
             return 0;
         }
 
-        // Create cubemap texture
         Uint32 textureID;
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-        // Extract faces from cross layout
-        // Vertical cross layout:
-        //       [+Y]
-        //   [-X][+Z][+X][-Z]
-        //       [-Y]
-        //
-        // Face positions (x, y) in grid coordinates:
+        // Face positions in cross layout
         struct FacePos {
             int x, y;
+            bool flipVertical;
+            bool flipHorizontal;
         };
         FacePos facePositions[6];
 
         if (isVerticalCross) {
-            facePositions[0] = {2, 1}; // +X (right)
-            facePositions[1] = {0, 1}; // -X (left)
-            facePositions[2] = {1, 0}; // +Y (top)
-            facePositions[3] = {1, 2}; // -Y (bottom)
-            facePositions[4] = {1, 1}; // +Z (front)
-            facePositions[5] = {3, 1}; // -Z (back) - wraps or use position 3,1 if 4-wide
-        } else {
-            // Horizontal cross:
+            // Vertical: 3x4 layout
             //       [+Y]
-            // [-X]  [+Z]  [+X]  [-Z]
+            //   [-X][+Z][+X]
             //       [-Y]
-            facePositions[0] = {2, 1}; // +X (right)
-            facePositions[1] = {0, 1}; // -X (left)
-            facePositions[2] = {1, 0}; // +Y (top)
-            facePositions[3] = {1, 2}; // -Y (bottom)
-            facePositions[4] = {1, 1}; // +Z (front)
-            facePositions[5] = {3, 1}; // -Z (back)
+            //       [-Z]
+            facePositions[0] = {2, 1, false, false}; // +X (right)
+            facePositions[1] = {0, 1, false, false}; // -X (left)
+            facePositions[2] = {1, 0, false, false}; // +Y (top)
+            facePositions[3] = {1, 2, false, false}; // -Y (bottom)
+            facePositions[4] = {1, 1, false, false}; // +Z (front/center)
+            facePositions[5] = {1, 3, true, true};   // -Z (back) - rotate 180
+        } else {
+            // Horizontal: 4x3 layout
+            //   [+Y]
+            //   [+Z][+X][-Z]
+            //   [-Y][-X]
+            // OR standard horizontal:
+            //        [+Y]
+            //  [-X]  [+Z]  [+X]  [-Z]
+            //        [-Y]
+            facePositions[0] = {2, 1, false, false}; // +X (position 2,1)
+            facePositions[1] = {0, 1, false, false}; // -X (position 0,1)
+            facePositions[2] = {1, 0, false, false}; // +Y (position 1,0)
+            facePositions[3] = {1, 2, false, false}; // -Y (position 1,2)
+            facePositions[4] = {1, 1, false, false}; // +Z (position 1,1)
+            facePositions[5] = {3, 1, false, false}; // -Z (position 3,1)
         }
 
-        // Allocate buffer for face data
         size_t faceDataSize = faceSize * faceSize * nrChannels;
         if (isHDR) {
             faceDataSize *= sizeof(float);
@@ -445,13 +459,14 @@ namespace golias {
             int startX = facePositions[face].x * faceSize;
             int startY = facePositions[face].y * faceSize;
 
-            // Extract face from cross image
             if (isHDR) {
                 float* src = (float*) data;
                 float* dst = (float*) faceData;
                 for (int y = 0; y < faceSize; y++) {
                     for (int x = 0; x < faceSize; x++) {
-                        int srcIdx = ((startY + y) * width + (startX + x)) * nrChannels;
+                        int srcY = startY + (facePositions[face].flipVertical ? (faceSize - 1 - y) : y);
+                        int srcX = startX + (facePositions[face].flipHorizontal ? (faceSize - 1 - x) : x);
+                        int srcIdx = (srcY * width + srcX) * nrChannels;
                         int dstIdx = (y * faceSize + x) * nrChannels;
                         for (int c = 0; c < nrChannels; c++) {
                             dst[dstIdx + c] = src[srcIdx + c];
@@ -463,7 +478,9 @@ namespace golias {
                 unsigned char* dst = (unsigned char*) faceData;
                 for (int y = 0; y < faceSize; y++) {
                     for (int x = 0; x < faceSize; x++) {
-                        int srcIdx = ((startY + y) * width + (startX + x)) * nrChannels;
+                        int srcY = startY + (facePositions[face].flipVertical ? (faceSize - 1 - y) : y);
+                        int srcX = startX + (facePositions[face].flipHorizontal ? (faceSize - 1 - x) : x);
+                        int srcIdx = (srcY * width + srcX) * nrChannels;
                         int dstIdx = (y * faceSize + x) * nrChannels;
                         for (int c = 0; c < nrChannels; c++) {
                             dst[dstIdx + c] = src[srcIdx + c];
@@ -483,23 +500,33 @@ namespace golias {
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+        
+        if (GLAD_GL_EXT_texture_filter_anisotropic) {
+            GLfloat maxAnisotropy = 1.0f;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+            glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(maxAnisotropy, 4.0f));
+            spdlog::info("Anisotropic filtering enabled: {}x", std::min(maxAnisotropy, 4.0f));
+        } else {
+            spdlog::warn("Anisotropic filtering not supported");
+        }
 
         spdlog::info("RenderingDeviceGLES3::CreateCubemapFromCross Loaded {} cross cubemap: {} ({}x{}, face size: {})",
-                     isHDR ? "HDR" : "LDR",
-                     crossPath,
-                     width,
-                     height,
-                     faceSize);
+                    isHDR ? "HDR" : "LDR",
+                    crossPath,
+                    width,
+                    height,
+                    faceSize);
 
         return textureID;
     }
 
     bool RenderingDeviceGLES3::CreateDefaultSkybox() {
-        default_skybox_cubemap = CreateCubemapFromCross("textures/sky.png");
+        default_skybox_cubemap = CreateCubemapFromCross("textures/stpeters_cross.hdr");
 
         if (default_skybox_cubemap == 0) {
-            spdlog::warn("RenderingDeviceGLES3::CreateDefaultSkybox Failed to load textures/sky.png, creating procedural skybox");
+            spdlog::warn("RenderingDeviceGLES3::CreateDefaultSkybox Failed to load, creating procedural skybox");
 
             glGenTextures(1, &default_skybox_cubemap);
             glBindTexture(GL_TEXTURE_CUBE_MAP, default_skybox_cubemap);
@@ -508,13 +535,11 @@ namespace golias {
             std::vector<unsigned char> data(size * size * 3);
 
             for (int face = 0; face < 6; face++) {
-                // Simple gradient skybox
                 for (int y = 0; y < size; y++) {
                     for (int x = 0; x < size; x++) {
                         int idx = (y * size + x) * 3;
                         float t = (float) y / size;
 
-                        // Sky blue to horizon gradient
                         data[idx + 0] = (unsigned char) (135 * (1.0f - t) + 200 * t); // R
                         data[idx + 1] = (unsigned char) (206 * (1.0f - t) + 220 * t); // G
                         data[idx + 2] = (unsigned char) (235 * (1.0f - t) + 240 * t); // B
@@ -535,9 +560,9 @@ namespace golias {
         std::vector<float> vertices = {
             -1.0f,  1.0f, -1.0f,
             -1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
             -1.0f,  1.0f, -1.0f,
 
             -1.0f, -1.0f,  1.0f,
@@ -547,42 +572,43 @@ namespace golias {
             -1.0f,  1.0f,  1.0f,
             -1.0f, -1.0f,  1.0f,
 
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
 
             -1.0f, -1.0f,  1.0f,
             -1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
             -1.0f, -1.0f,  1.0f,
 
             -1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f, -1.0f,
-             1.0f,  1.0f,  1.0f,
-             1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
             -1.0f,  1.0f,  1.0f,
             -1.0f,  1.0f, -1.0f,
 
             -1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
             -1.0f, -1.0f,  1.0f,
-             1.0f, -1.0f,  1.0f
+            1.0f, -1.0f,  1.0f
         };
-std::vector<unsigned int> indices = {
-     0,  1,  2,  3,  4,  5,      // -Z
-     6,  7,  8,  9, 10, 11,      // -X
-    12, 13, 14, 15, 16, 17,      // +X
-    18, 19, 20, 21, 22, 23,      // +Z
-    24, 25, 26, 27, 28, 29,      // +Y
-    30, 31, 32, 33, 34, 35       // -Y
-};
+        
+        std::vector<unsigned int> indices = {
+            0,  1,  2,  3,  4,  5,      // -Z
+            6,  7,  8,  9, 10, 11,      // -X
+            12, 13, 14, 15, 16, 17,      // +X
+            18, 19, 20, 21, 22, 23,      // +Z
+            24, 25, 26, 27, 28, 29,      // +Y
+            30, 31, 32, 33, 34, 35       // -Y
+        };
 
         VertexLayout layout;
         layout.elements = {
@@ -593,6 +619,8 @@ std::vector<unsigned int> indices = {
 
         return true;
     }
+
+
 
     std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultSkyboxShader() const {
         return skybox_shader;

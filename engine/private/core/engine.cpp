@@ -142,6 +142,7 @@ namespace golias {
 
         last_time_point = SDL_GetPerformanceCounter();
 
+        
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
         emscripten_set_main_loop(engine_core_loop, 0, 1);
 #else
@@ -169,6 +170,13 @@ namespace golias {
 
                 inputManager.ProcessEvent(event);
             }
+
+            DirectionalLightCommand dirLight;
+            dirLight.direction = glm::vec3(0.5f, -1.0f, 0.3f);
+            dirLight.color = glm::vec3(1.0f, 1.0f, 1.0f);
+            dirLight.intensity = 1.0f;
+            dirLight.castShadows = true;
+            sceneRenderer.Submit(dirLight);
 
 
             physicsManager.StepSimulation(delta_time);
