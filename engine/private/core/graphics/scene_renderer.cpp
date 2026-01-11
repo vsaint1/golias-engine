@@ -229,12 +229,11 @@ namespace golias {
                 glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemap);
                 shader->SetUniform("PREFILTER_MAP", 14);
 
-                shader->SetUniform("USE_IBL", 1);
+                shader->SetUniform("USE_IBL", true);
                 shader->SetUniform("u_ambientStrength", 0.3f);
             } else {
-                shader->SetUniform("USE_IBL", 0);
-                // Higher ambient when no IBL to ensure visibility
-                shader->SetUniform("u_ambientStrength", 0.8f);
+                shader->SetUniform("USE_IBL", false);
+                shader->SetUniform("u_ambientStrength", 0.5f);
             }
 
             glActiveTexture(GL_TEXTURE0);
