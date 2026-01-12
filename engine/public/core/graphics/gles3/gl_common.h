@@ -11,4 +11,12 @@ GLenum ToGLTextureFilterMode(ETextureFilterMode mode);
 GLenum ToGLTextureFormat(ETextureFormat format);
 GLenum ToGLTextureFormatFromChannels(int num_channels);
 
+GLenum ToGLBlendFactor(EBlendFactor factor);
+GLenum ToGLBlendOp(EBlendOp op);
+
+GLenum ToGLCullMode(ECullMode mode);
+GLenum ToGLComparisonFunc(EComparisonFunc func);
+
+GLenum ToGLStencilOp(EStencilOp op);
+
 std::string GetShaderHeaderVersion();

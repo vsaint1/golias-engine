@@ -60,11 +60,10 @@ namespace golias {
         virtual void BeginShadowPass()                                    = 0;
         virtual void EndShadowPass()                                      = 0;
 
-        const Rect& GetViewport() const {
-            return viewport;
-        }
 
-        virtual void SetViewport(const Rect& vp) = 0;
+        const Viewport& GetViewport() const;
+
+        virtual void SetViewport(const Viewport& vp) = 0;
 
         virtual std::shared_ptr<Framebuffer> GetDefaultFramebuffer() = 0;
 
@@ -81,6 +80,7 @@ namespace golias {
         glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
         SDL_Window* window                                 = nullptr;
         std::unique_ptr<PhysicsDebugDrawer> physicsDebug3D = nullptr;
-        Rect viewport                                      = Rect();
+        Viewport viewport                                      = Viewport();
+        Scissor scissor = Scissor();
     };
 }; // namespace golias

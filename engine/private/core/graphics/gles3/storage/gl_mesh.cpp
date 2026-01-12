@@ -14,12 +14,12 @@ namespace golias {
         glBindVertexArray(VAO);
 
         vertex_buffer = rd->CreateGPUBuffer(
-            vertices.size() * sizeof(float), vertices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::ARRAY_BUFFER);
+            vertices.size() * sizeof(float), vertices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::BUFFER_USAGE_VERTEX);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.handle);
 
         if (!indices.empty()) {
             index_buffer = rd->CreateGPUBuffer(
-                indices.size() * sizeof(uint32_t), indices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::ELEMENT_ARRAY_BUFFER);
+                indices.size() * sizeof(uint32_t), indices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::BUFFER_USAGE_INDEX);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer.handle);
         }
 
@@ -46,7 +46,7 @@ namespace golias {
         glBindVertexArray(VAO);
 
         vertex_buffer = rd->CreateGPUBuffer(
-            vertices.size() * sizeof(float), vertices.data(), EBufferUsageFlags::STATIC_DRAW, EBufferTarget::ARRAY_BUFFER);
+            vertices.size() * sizeof(float), vertices.data(), EBufferUsageFlags::STATIC_DRAW, EBufferTarget::BUFFER_USAGE_VERTEX);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer.handle);
 
         for (const auto& e : layout.elements) {
@@ -124,7 +124,7 @@ namespace golias {
             
             auto rd      = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
             index_buffer = rd->CreateGPUBuffer(
-                indices.size() * sizeof(uint32_t), indices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::ELEMENT_ARRAY_BUFFER);
+                indices.size() * sizeof(uint32_t), indices.data(), EBufferUsageFlags::DYNAMIC_DRAW, EBufferTarget::BUFFER_USAGE_INDEX);
             
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer.handle);
             glBindVertexArray(0);
