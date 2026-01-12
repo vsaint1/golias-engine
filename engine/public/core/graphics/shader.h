@@ -11,8 +11,6 @@
 
 using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>,golias::Texture2D*, const glm::mat4*>;
 
-enum class EShaderStage { VERTEX = 0x1, FRAGMENT = 0x2, COMPUTE = 0x4 };
-
 namespace golias {
 
     class Shader {

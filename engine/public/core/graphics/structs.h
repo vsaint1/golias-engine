@@ -58,9 +58,49 @@ inline int operator&(ETextureFlags a, ETextureFlags b) {
     return static_cast<int>(a) & static_cast<int>(b);
 }
 
-enum class EBufferTarget : uint32_t {
-    ARRAY_BUFFER         = 0x1, // GL_ARRAY_BUFFER
-    ELEMENT_ARRAY_BUFFER = 0x2 // GL_ELEMENT_ARRAY_BUFFER
+
+enum class ETextureType { TEXTURE_TYPE_2D, TEXTURE_TYPE_2D_ARRAY, TEXTURE_TYPE_3D, TEXTURE_TYPE_CUBEMAP, TEXTURE_TYPE_CUBEMAP_ARRAY };
+
+enum class ETextureFilter { NEAREST, LINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR };
+
+enum class ETextureWrap { REPEAT, MIRRORED_REPEAT, CLAMP_TO_EDGE, CLAMP_TO_BORDER };
+
+enum class ECompareOp { NEVER, LESS, EQUAL, LESS_OR_EQUAL, GREATER, NOT_EQUAL, GREATER_OR_EQUAL, ALWAYS };
+
+enum class EStencilOp { KEEP, ZERO, REPLACE, INCREMENT_AND_CLAMP, DECREMENT_AND_CLAMP, INVERT, INCREMENT_AND_WRAP, DECREMENT_AND_WRAP };
+
+enum class EBlendFactor {
+    ZERO,
+    ONE,
+    SRC_COLOR,
+    ONE_MINUS_SRC_COLOR,
+    DST_COLOR,
+    ONE_MINUS_DST_COLOR,
+    SRC_ALPHA,
+    ONE_MINUS_SRC_ALPHA,
+    DST_ALPHA,
+    ONE_MINUS_DST_ALPHA
+};
+
+enum class EBlendOp { ADD, SUBTRACT, REVERSE_SUBTRACT, MIN, MAX };
+
+enum class ECullMode { NONE, FRONT, BACK, FRONT_AND_BACK };
+
+enum class EPolygonMode { FILL, LINE, POINT };
+
+enum class EPrimitiveTopology { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN };
+
+enum class EShaderStage { VERTEX = 1 << 0, FRAGMENT = 1 << 1, COMPUTE = 1 << 2 };
+
+enum class EBlendMode { DISABLED, ALPHA, ADDITIVE, MULTIPLY };
+
+enum class EBufferTarget {
+    BUFFER_USAGE_VERTEX       = 1 << 0,
+    BUFFER_USAGE_INDEX        = 1 << 1,
+    BUFFER_USAGE_UNIFORM      = 1 << 2,
+    BUFFER_USAGE_STORAGE      = 1 << 3,
+    BUFFER_USAGE_TRANSFER_SRC = 1 << 4,
+    BUFFER_USAGE_TRANSFER_DST = 1 << 5
 };
 
 enum class EBufferUsageFlags : uint32_t {
@@ -73,7 +113,7 @@ struct Buffer {
     uint32_t handle = 0;
     size_t size     = 0;
     EBufferUsageFlags usage_flags;
-    EBufferTarget target = EBufferTarget::ARRAY_BUFFER;
+    EBufferTarget target = EBufferTarget::BUFFER_USAGE_UNIFORM;
 };
 
 
@@ -88,17 +128,21 @@ enum class EDataType : uint32_t {
 
 };
 
-enum class EBlendMode { DISABLED, ALPHA, ADDITIVE, MULTIPLY };
 
-struct Rect {
-    int x      = 0;
-    int y      = 0;
-    int width  = 0;
-    int height = 0;
+struct Viewport {
+    int32_t x = 0, y = 0, width = 800, height = 600;
+    float min_depth = 0.0f, max_depth = 1.0f;
+};
+
+struct Scissor {
+    int32_t x = 0, y = 0;
+    uint32_t width = 800, height = 600;
 };
 
 
 namespace golias {
+
+    class Framebuffer;
 
     struct VertexElement {
         Uint32 location; // Shader layout(location = X)
@@ -107,10 +151,10 @@ namespace golias {
         bool normalized; // GL_TRUE / GL_FALSE
         Uint32 offset; // Byte offset in vertex
 
-        static constexpr Uint32 POSITION_INDEX = 0;
-        static constexpr Uint32 COLOR_INDEX    = 1;
-        static constexpr Uint32 TEXCOORD_INDEX = 2;
-        static constexpr Uint32 NORMAL_INDEX   = 3;
+        static constexpr Uint32 POSITION_INDEX     = 0;
+        static constexpr Uint32 COLOR_INDEX        = 1;
+        static constexpr Uint32 TEXCOORD_INDEX     = 2;
+        static constexpr Uint32 NORMAL_INDEX       = 3;
         static constexpr Uint32 BONE_INDICES_INDEX = 4;
         static constexpr Uint32 BONE_WEIGHTS_INDEX = 5;
     };
@@ -120,4 +164,6 @@ namespace golias {
         Uint32 stride = 0; // Total vertex size in bytes
     };
 
+
+   
 }; // namespace golias
