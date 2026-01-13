@@ -1,6 +1,8 @@
 #include "core/graphics/scene_renderer.h"
 
 #include "scene/3d/skeleton_animation_component.h"
+#include "scene/3d/world_environment_component.h"
+#include <algorithm>
 
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -26,7 +28,6 @@ namespace golias {
     }
 
     SceneRenderer::~SceneRenderer() {
-
         if (rendering_device) {
             delete rendering_device;
             rendering_device = nullptr;
@@ -61,7 +62,206 @@ namespace golias {
         spot_lights.push_back(command);
     }
 
+    void SceneRenderer::Submit(const WorldEnvironmentCommand& command) {
+        world_environment_command = command;
+    }
+
+    GLenum SceneRenderer::ConvertDepthFunc(EComparisonFunc func) {
+        switch (func) {
+        case EComparisonFunc::COMPARISON_NEVER:
+            return GL_NEVER;
+        case EComparisonFunc::COMPARISON_LESS:
+            return GL_LESS;
+        case EComparisonFunc::COMPARISON_EQUAL:
+            return GL_EQUAL;
+        case EComparisonFunc::COMPARISON_LESS_EQUAL:
+            return GL_LEQUAL;
+        case EComparisonFunc::COMPARISON_GREATER:
+            return GL_GREATER;
+        case EComparisonFunc::COMPARISON_NOT_EQUAL:
+            return GL_NOTEQUAL;
+        case EComparisonFunc::COMPARISON_GREATER_EQUAL:
+            return GL_GEQUAL;
+        case EComparisonFunc::COMPARISON_ALWAYS:
+            return GL_ALWAYS;
+        default:
+            return GL_LESS;
+        }
+    }
+
+    void SceneRenderer::ApplyBlendMode(EBlendMode mode) {
+        switch (mode) {
+        case EBlendMode::BLEND_MODE_OPAQUE:
+            glDisable(GL_BLEND);
+            break;
+        case EBlendMode::BLEND_MODE_ALPHA:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        case EBlendMode::BLEND_MODE_ADDITIVE:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            break;
+        case EBlendMode::BLEND_MODE_MULTIPLY:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+        }
+    }
+
+    void SceneRenderer::ApplyMaterialState(Material* material) {
+
+        if (!material) {
+            return;
+        }
+
+        // Depth test
+        if (material->IsDepthTestEnabled()) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(ConvertDepthFunc(material->GetDepthFunc()));
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+
+        // Depth write
+        glDepthMask(material->IsDepthWriteEnabled() ? GL_TRUE : GL_FALSE);
+
+        // Blend mode
+        ApplyBlendMode(material->GetBlendMode());
+
+        // Cull mode
+        switch (material->GetCullMode()) {
+        case ECullMode::CULL_NONE:
+            glDisable(GL_CULL_FACE);
+            break;
+        case ECullMode::CULL_FRONT:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+            break;
+        case ECullMode::CULL_BACK:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            break;
+        default:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            break;
+        }
+    }
+
+    void SceneRenderer::RenderObject(const DrawCommand& command, const CameraCommand& camera, bool shadowsEnabled) {
+        rendering_device->BindMaterial(command.material);
+
+        auto shader = command.material->GetShader();
+        shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+        shader->SetUniform("VIEW_MATRIX", camera.viewMatrix);
+        shader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
+        shader->SetUniform("CAMERA_POSITION", camera.position);
+
+        // Set alpha clip threshold
+        shader->SetUniform("ALPHA_CLIP_THRESHOLD", command.material->GetAlphaClipThreshold());
+
+        if (world_environment_command.environmentComponent) {
+            shader->SetUniform("u_tonemap", static_cast<int>(world_environment_command.environmentComponent->GetToneMappingMode()));
+            shader->SetUniform("u_exposure", world_environment_command.environmentComponent->GetExposure());
+        } else {
+            shader->SetUniform("u_tonemap", static_cast<int>(EToneMappingMode::TONE_MAPPING_LINEAR));
+            shader->SetUniform("u_exposure", 1.0f);
+        }
+
+        if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+            shader->SetUniform("USE_SKINNING", true);
+            const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+            shader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
+        } else {
+            shader->SetUniform("USE_SKINNING", false);
+        }
+
+        shader->SetUniform("u_specularStrength", 0.5f);
+        shader->SetUniform("u_shininess", 32.0f);
+
+        // Set directional lights
+        int directionalLightCount = static_cast<int>(directional_lights.size());
+        shader->SetUniform("u_directionalLightCount", directionalLightCount);
+        for (int i = 0; i < directionalLightCount; ++i) {
+            std::string p = "u_directionalLights[" + std::to_string(i) + "].";
+            shader->SetUniform(p + "direction", directional_lights[i].direction);
+            shader->SetUniform(p + "color", directional_lights[i].color);
+            shader->SetUniform(p + "intensity", directional_lights[i].intensity);
+            shader->SetUniform(p + "castShadows", directional_lights[i].castShadows);
+        }
+
+        // Set point lights
+        int pointLightCount = static_cast<int>(point_lights.size());
+        shader->SetUniform("u_pointLightCount", pointLightCount);
+        for (int i = 0; i < pointLightCount; ++i) {
+            std::string p = "u_pointLights[" + std::to_string(i) + "].";
+            shader->SetUniform(p + "position", point_lights[i].position);
+            shader->SetUniform(p + "color", point_lights[i].color);
+            shader->SetUniform(p + "intensity", point_lights[i].intensity);
+            shader->SetUniform(p + "range", point_lights[i].range);
+            shader->SetUniform(p + "constant", point_lights[i].constant);
+            shader->SetUniform(p + "linear", point_lights[i].linear);
+            shader->SetUniform(p + "quadratic", point_lights[i].quadratic);
+        }
+
+        int spotLightCount = static_cast<int>(spot_lights.size());
+        shader->SetUniform("u_spotLightCount", spotLightCount);
+        for (int i = 0; i < spotLightCount; ++i) {
+            std::string p = "u_spotLights[" + std::to_string(i) + "].";
+            shader->SetUniform(p + "position", spot_lights[i].position);
+            shader->SetUniform(p + "direction", spot_lights[i].direction);
+            shader->SetUniform(p + "color", spot_lights[i].color);
+            shader->SetUniform(p + "intensity", spot_lights[i].intensity);
+            shader->SetUniform(p + "range", spot_lights[i].range);
+            shader->SetUniform(p + "innerConeAngle", glm::cos(glm::radians(spot_lights[i].innerConeAngle)));
+            shader->SetUniform(p + "outerConeAngle", glm::cos(glm::radians(spot_lights[i].outerConeAngle)));
+            shader->SetUniform(p + "constant", spot_lights[i].constant);
+            shader->SetUniform(p + "linear", spot_lights[i].linear);
+            shader->SetUniform(p + "quadratic", spot_lights[i].quadratic);
+        }
+
+        if (shadowsEnabled && !directional_lights.empty()) {
+            glActiveTexture(GL_TEXTURE15);
+            glBindTexture(GL_TEXTURE_2D, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachmentHandle());
+            shader->SetUniform("SHADOW_MAP", 15);
+            shader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[0].lightSpaceMatrix);
+        }
+
+        bool useIBL =
+            command.material->UseImageBasedLighting() && world_environment_command.environmentComponent
+            && world_environment_command.environmentComponent->GetTextureCubemap()
+            && world_environment_command.environmentComponent->GetEnvironmentMode() == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX;
+
+        if (useIBL) {
+            glActiveTexture(GL_TEXTURE13);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, world_environment_command.environmentComponent->GetTextureCubemap()->GetNativeHandle());
+            shader->SetUniform("IRRADIANCE_MAP", 13);
+
+            glActiveTexture(GL_TEXTURE14);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, world_environment_command.environmentComponent->GetTextureCubemap()->GetNativeHandle());
+            shader->SetUniform("PREFILTER_MAP", 14);
+
+            shader->SetUniform("USE_IBL", true);
+            shader->SetUniform("AMBIENT_STRENGTH", 0.3f);
+        } else {
+            shader->SetUniform("USE_IBL", false);
+            shader->SetUniform("AMBIENT_STRENGTH", 0.5f);
+
+        }
+
+        glActiveTexture(GL_TEXTURE0);
+
+        rendering_device->BindMesh(command.mesh);
+        rendering_device->DrawMesh(command.mesh);
+    }
+
     void SceneRenderer::Draw(const CameraCommand& camera) {
+
+        glFrontFace(GL_CCW);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
 
         // =========================================================
         // Calculate light space matrices for shadow casting
@@ -87,14 +287,14 @@ namespace golias {
         }
 
         // =========================================================
-        // SHADOW PASS (depth-only)
+        // SHADOW PASS (depth-only) - Only render opaque objects
         // =========================================================
         if (anyShadowCaster) {
-
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
             glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            
 
             rendering_device->BeginShadowPass();
 
@@ -109,17 +309,22 @@ namespace golias {
                 shadowShader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[i].lightSpaceMatrix);
 
                 for (const auto& command : command_queue) {
-                    if (!command.mesh) {
+                    if (!command.mesh || !command.material) {
+                        continue;
+                    }
+
+
+                    if (command.material->IsTransparent()) {
                         continue;
                     }
 
                     shadowShader->SetUniform("MODEL_MATRIX", command.modelMatrix);
                     if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
-                        shadowShader->SetUniform("USE_SKINNING", 1);
+                        shadowShader->SetUniform("USE_SKINNING", true);
                         const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
                         shadowShader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
                     } else {
-                        shadowShader->SetUniform("USE_SKINNING", 0);
+                        shadowShader->SetUniform("USE_SKINNING", false);
                     }
 
                     rendering_device->BindMesh(command.mesh);
@@ -130,150 +335,104 @@ namespace golias {
 
             rendering_device->EndShadowPass();
 
+            
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         }
 
         // =========================================================
-        // MAIN 3D PASS (PBR)
+        // Separate opaque and transparent objects
         // =========================================================
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glDepthMask(GL_TRUE);
-        glDisable(GL_BLEND);
+        std::vector<DrawCommand> opaqueCommands;
+        std::vector<DrawCommand> transparentCommands;
 
         for (const auto& command : command_queue) {
             if (!command.mesh || !command.material) {
                 continue;
             }
 
-            rendering_device->BindMaterial(command.material);
-
-            auto shader = command.material->GetShader();
-            shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
-            shader->SetUniform("VIEW_MATRIX", camera.viewMatrix);
-            shader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
-            shader->SetUniform("u_viewPosition", camera.position);
-
-            if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
-                shader->SetUniform("USE_SKINNING", 1);
-                const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
-                shader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
-
-
+            if (command.material->IsTransparent()) {
+                transparentCommands.push_back(command);
             } else {
-                shader->SetUniform("USE_SKINNING", 0);
+                opaqueCommands.push_back(command);
             }
-
-            shader->SetUniform("u_specularStrength", 0.5f);
-            shader->SetUniform("u_shininess", 32.0f);
-
-            // Set directional lights
-            int directionalLightCount = static_cast<int>(directional_lights.size());
-            shader->SetUniform("u_directionalLightCount", directionalLightCount);
-            for (int i = 0; i < directionalLightCount; ++i) {
-                std::string p = "u_directionalLights[" + std::to_string(i) + "].";
-                shader->SetUniform(p + "direction", directional_lights[i].direction);
-                shader->SetUniform(p + "color", directional_lights[i].color);
-                shader->SetUniform(p + "intensity", directional_lights[i].intensity);
-                shader->SetUniform(p + "castShadows", directional_lights[i].castShadows);
-            }
-
-            // Set point lights
-            int pointLightCount = static_cast<int>(point_lights.size());
-            shader->SetUniform("u_pointLightCount", pointLightCount);
-            for (int i = 0; i < pointLightCount; ++i) {
-                std::string p = "u_pointLights[" + std::to_string(i) + "].";
-                shader->SetUniform(p + "position", point_lights[i].position);
-                shader->SetUniform(p + "color", point_lights[i].color);
-                shader->SetUniform(p + "intensity", point_lights[i].intensity);
-                shader->SetUniform(p + "range", point_lights[i].range);
-                shader->SetUniform(p + "constant", point_lights[i].constant);
-                shader->SetUniform(p + "linear", point_lights[i].linear);
-                shader->SetUniform(p + "quadratic", point_lights[i].quadratic);
-            }
-
-            int spotLightCount = static_cast<int>(spot_lights.size());
-            shader->SetUniform("u_spotLightCount", spotLightCount);
-            for (int i = 0; i < spotLightCount; ++i) {
-                std::string p = "u_spotLights[" + std::to_string(i) + "].";
-                shader->SetUniform(p + "position", spot_lights[i].position);
-                shader->SetUniform(p + "direction", spot_lights[i].direction);
-                shader->SetUniform(p + "color", spot_lights[i].color);
-                shader->SetUniform(p + "intensity", spot_lights[i].intensity);
-                shader->SetUniform(p + "range", spot_lights[i].range);
-
-                shader->SetUniform(p + "innerConeAngle", glm::cos(glm::radians(spot_lights[i].innerConeAngle)));
-                shader->SetUniform(p + "outerConeAngle", glm::cos(glm::radians(spot_lights[i].outerConeAngle)));
-                shader->SetUniform(p + "constant", spot_lights[i].constant);
-                shader->SetUniform(p + "linear", spot_lights[i].linear);
-                shader->SetUniform(p + "quadratic", spot_lights[i].quadratic);
-            }
-
-            if (anyShadowCaster) {
-                glActiveTexture(GL_TEXTURE15);
-                glBindTexture(GL_TEXTURE_2D, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachmentHandle());
-
-                shader->SetUniform("SHADOW_MAP", 15);
-                shader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[0].lightSpaceMatrix);
-            }
-
-
-            bool useIBL          = command.material->UseImageBasedLighting();
-            Uint32 skyboxCubemap = rendering_device->GetDefaultSkyboxCubemap();
-            if (useIBL && skyboxCubemap) {
-                glActiveTexture(GL_TEXTURE13);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemap);
-                shader->SetUniform("IRRADIANCE_MAP", 13);
-
-                glActiveTexture(GL_TEXTURE14);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxCubemap);
-                shader->SetUniform("PREFILTER_MAP", 14);
-
-                shader->SetUniform("USE_IBL", true);
-                shader->SetUniform("u_ambientStrength", 0.3f);
-            } else {
-                shader->SetUniform("USE_IBL", false);
-                shader->SetUniform("u_ambientStrength", 0.5f);
-            }
-
-            glActiveTexture(GL_TEXTURE0);
-
-            rendering_device->BindMesh(command.mesh);
-            rendering_device->DrawMesh(command.mesh);
         }
 
-        command_queue.clear();
+        // =========================================================
+        // OPAQUE PASS
+        // =========================================================
+        for (const auto& command : opaqueCommands) {
+            ApplyMaterialState(command.material);
+            RenderObject(command, camera, anyShadowCaster);
+        }
 
-        directional_lights.clear();
-        point_lights.clear();
-        spot_lights.clear();
         // =========================================================
         // SKYBOX PASS
         // =========================================================
-        glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);
-        glDisable(GL_BLEND);
+        if (world_environment_command.environmentComponent
+            && world_environment_command.environmentComponent->GetEnvironmentMode()
+                   == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX) {
 
-        auto skyboxShader = rendering_device->GetDefaultSkyboxShader();
-        auto skyboxMesh   = rendering_device->GetSkyboxMesh();
-        Uint32 cubemap    = rendering_device->GetDefaultSkyboxCubemap();
+            auto skyboxMesh    = world_environment_command.environmentComponent->GetSkyboxMesh();
+            auto skyboxTexture = world_environment_command.environmentComponent->GetTextureCubemap();
+            auto skyboxShader  = rendering_device->GetDefaultSkyboxShader();
 
-        if (skyboxShader && skyboxMesh && cubemap) {
-            skyboxShader->Bind();
+            if (skyboxShader && skyboxMesh && skyboxTexture) {
+                glDepthFunc(GL_LEQUAL);
+                glDepthMask(GL_FALSE);
+                glDisable(GL_BLEND);
+                glDisable(GL_CULL_FACE);
 
-            glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(camera.viewMatrix));
+                skyboxShader->Bind();
 
-            skyboxShader->SetUniform("VIEW_MATRIX", viewNoTranslation);
-            skyboxShader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
-            skyboxShader->SetUniform("EXPOSURE", 0.5f);
+                glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(camera.viewMatrix));
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-            skyboxShader->SetUniform("SKYBOX", 0);
+                skyboxShader->SetUniform("VIEW_MATRIX", viewNoTranslation);
+                skyboxShader->SetUniform("PROJECTION_MATRIX", camera.projectionMatrix);
+                skyboxShader->SetUniform("EXPOSURE", world_environment_command.environmentComponent->GetExposure());
 
-            rendering_device->BindMesh(skyboxMesh.get());
-            rendering_device->DrawMesh(skyboxMesh.get());
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture->GetNativeHandle());
+                skyboxShader->SetUniform("SKYBOX", 0);
+
+                rendering_device->BindMesh(skyboxMesh.get());
+                rendering_device->DrawMesh(skyboxMesh.get());
+
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glDepthMask(GL_TRUE);
+                glDepthFunc(GL_LESS);
+            }
         }
+
+        // =========================================================
+        // TRANSPARENT PASS - Back to front sorting
+        // =========================================================
+        if (!transparentCommands.empty()) {
+            // Sort transparent objects back-to-front based on distance from camera
+            std::sort(transparentCommands.begin(), transparentCommands.end(), [&camera](const DrawCommand& a, const DrawCommand& b) {
+                // Extract position from model matrix (4th column)
+                glm::vec3 posA = glm::vec3(a.modelMatrix[3]);
+                glm::vec3 posB = glm::vec3(b.modelMatrix[3]);
+
+                float distA = glm::distance(camera.position, posA);
+                float distB = glm::distance(camera.position, posB);
+
+                // Sort far to near (back to front)
+                return distA > distB;
+            });
+
+            for (const auto& command : transparentCommands) {
+                ApplyMaterialState(command.material);
+                RenderObject(command, camera, anyShadowCaster);
+            }
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
 
         // =========================================================
         // WORLD CANVAS (billboards / decals)
@@ -312,10 +471,8 @@ namespace golias {
             }
         }
 
-        world_canvas_commands.clear();
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
-
 
         // =========================================================
         // MAIN 2D PASS
@@ -329,8 +486,6 @@ namespace golias {
 
         quad->Bind();
         for (const auto& command : command_queue_2d) {
-
-
             shader_2d->SetUniform("MODEL_MATRIX", command.modelMatrix);
             shader_2d->SetUniform("VIEW_MATRIX", camera.viewMatrix);
             shader_2d->SetUniform("PROJECTION_MATRIX", camera.orthographicMatrix);
@@ -344,7 +499,6 @@ namespace golias {
             quad->Draw();
         }
         quad->Unbind();
-        command_queue_2d.clear();
 
         // =========================================================
         // SCREEN CANVAS PASS
@@ -366,7 +520,6 @@ namespace golias {
                     if (batch.texture) {
                         shader_canvas->SetUniform("HAS_TEXTURE", 1);
                         shader_canvas->SetUniform("TEXTURE", batch.texture);
-
                     } else {
                         shader_canvas->SetUniform("HAS_TEXTURE", 0);
                     }
@@ -386,17 +539,14 @@ namespace golias {
             }
         }
 
-        glDepthMask(GL_TRUE);
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
-        canvas_commands.clear();
-
-        // Clear light arrays for next frame
-        directional_lights.clear();
-        point_lights.clear();
-        spot_lights.clear();
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW); // Ensure consistent winding
     }
-
 
     bool SceneRenderer::Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType) {
 
@@ -412,7 +562,6 @@ namespace golias {
 
         quad = Mesh::CreateQuad(1.0f, 1.0f);
 
-
         spdlog::info("SceneRenderer::Initialize Scene Renderer initialized successfully.");
         return true;
     }
@@ -423,6 +572,34 @@ namespace golias {
 
     void SceneRenderer::Present() {
         rendering_device->SwapChain();
+    }
+
+    void SceneRenderer::BeginFrame(const glm::vec4& color) {
+        if (world_environment_command.environmentComponent) {
+            EWorldEnvironmentMode envMode = world_environment_command.environmentComponent->GetEnvironmentMode();
+
+            if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR) {
+                rendering_device->Clear(world_environment_command.environmentComponent->GetClearColor());
+            } else if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
+                rendering_device->Clear(world_environment_command.environmentComponent->GetClearColor());
+            } else if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX) {
+                rendering_device->Clear(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            }
+        } else {
+            rendering_device->Clear(color);
+        }
+    }
+
+    void SceneRenderer::EndFrame() {
+        command_queue.clear();
+        command_queue_2d.clear();
+
+        world_canvas_commands.clear();
+        canvas_commands.clear();
+
+        directional_lights.clear();
+        point_lights.clear();
+        spot_lights.clear();
     }
 
 }; // namespace golias

@@ -51,7 +51,6 @@ namespace golias {
 
     
     std::shared_ptr<Mesh> Mesh::CreateSphere(float radius, uint32_t segments, uint32_t rings) {
-
         if (segments < 3) {
             segments = 3;
         }
@@ -73,7 +72,7 @@ namespace golias {
                 float theta = u * glm::two_pi<float>(); 
 
                 float sx = std::sin(phi) * std::cos(theta);
-                float sy = std::cos(phi);
+                float sy = std::cos(phi);  
                 float sz = std::sin(phi) * std::sin(theta);
 
                 glm::vec3 pos = glm::vec3(sx, sy, sz) * radius;
@@ -102,17 +101,16 @@ namespace golias {
                 uint32_t i2 = (y + 1) * stride + x;
                 uint32_t i3 = (y + 1) * stride + x + 1;
 
-                // two triangles
+               
                 indices.push_back(i0);
-                indices.push_back(i2);
                 indices.push_back(i1);
+                indices.push_back(i2);
 
                 indices.push_back(i1);
-                indices.push_back(i2);
                 indices.push_back(i3);
+                indices.push_back(i2);
             }
         }
-
 
         golias::VertexLayout layout;
         layout.elements = {
@@ -124,7 +122,6 @@ namespace golias {
 
         auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, vertices, indices);
-
     }
 
     std::shared_ptr<Mesh> Mesh::CreateBox(const glm::vec3& extents) {
@@ -171,10 +168,10 @@ namespace golias {
 
         std::vector<uint32_t> box_indices = {
             0,1,2, 2,3,0,
-            4,5,6, 6,7,4,
+            5,4,7, 7,6,5,
             8,9,10, 10,11,8,
-            12,13,14, 14,15,12,
-            16,17,18, 18,19,16,
+            13,12,15, 15,14,13,
+            19,18,17, 17,16,19,
             20,21,22, 22,23,20
         };
 

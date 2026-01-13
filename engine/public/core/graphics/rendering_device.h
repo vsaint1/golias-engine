@@ -5,6 +5,7 @@
 #include "core/graphics/mesh.h"
 #include "core/graphics/shader.h"
 #include "core/graphics/texture_2d.h"
+#include "core/graphics/textuce_cubemap.h"
 #include "physics/3d/physics_debug_drawer.h"
 #include <SDL3/SDL.h>
 
@@ -60,7 +61,6 @@ namespace golias {
         virtual void BeginShadowPass()                                    = 0;
         virtual void EndShadowPass()                                      = 0;
 
-
         const Viewport& GetViewport() const;
 
         virtual void SetViewport(const Viewport& vp) = 0;
@@ -69,12 +69,9 @@ namespace golias {
 
         virtual std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() = 0;
 
-        // Skybox and IBL
-        virtual Uint32 CreateCubemapFromFiles(const std::array<std::string, 6>& faces) = 0;
-        virtual Uint32 CreateCubemapFromCross(const std::string& crossPath) = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromFiles(const std::array<std::string, 6>& faces) = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) = 0;
         virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const = 0;
-        virtual std::shared_ptr<Mesh> GetSkyboxMesh() = 0;
-        virtual Uint32 GetDefaultSkyboxCubemap() const = 0;
 
     protected:
         glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);

@@ -26,6 +26,7 @@ namespace golias {
         EBlendMode GetBlendMode() const {
             return blendMode;
         }
+        
         void SetBlendMode(EBlendMode mode) {
             blendMode = mode;
         }
