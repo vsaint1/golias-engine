@@ -5,10 +5,11 @@
 #include "core/graphics/material.h"
 #include "core/graphics/structs.h"
 #include "scene/3d/animation_component.h"
-#include "scene/3d/skeleton_animation_component.h"
 #include "scene/3d/mesh_component.h"
+#include "scene/3d/skeleton_animation_component.h"
 #include "scene/game_object.h"
 #include <spdlog/spdlog.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -227,7 +228,7 @@ namespace golias {
             std::vector<float> boneIndices;
             std::vector<float> boneWeights;
             size_t vertexCount = 0;
-            bool hasSkinning = false;
+            bool hasSkinning   = false;
 
             const cgltf_accessor* positionAccessor = nullptr;
             const cgltf_accessor* colorAccessor    = nullptr;
@@ -265,13 +266,13 @@ namespace golias {
                 case cgltf_attribute_type_joints:
                     if (!data.jointsAccessor) {
                         data.jointsAccessor = a.data;
-                        data.hasSkinning = true;
+                        data.hasSkinning    = true;
                     }
                     break;
                 case cgltf_attribute_type_weights:
                     if (!data.weightsAccessor) {
                         data.weightsAccessor = a.data;
-                        data.hasSkinning = true;
+                        data.hasSkinning     = true;
                     }
                     break;
                 default:
@@ -616,59 +617,109 @@ namespace golias {
             float emissiveStrength     = 1.0f;
             ETextureFlags textureFlags = ETextureFlags::NONE;
 
-            if (gltf_material && gltf_material->has_pbr_metallic_roughness) {
-                auto& pbr = gltf_material->pbr_metallic_roughness;
-                base_color =
-                    glm::vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
-                metallic  = pbr.metallic_factor;
-                roughness = pbr.roughness_factor;
+            // Default material state
+            EBlendMode blendMode     = EBlendMode::BLEND_MODE_OPAQUE;
+            bool depthWrite          = true;
+            ECullMode cullMode       = ECullMode::CULL_BACK;
+            float alphaClipThreshold = 0.5f;
 
-                // Albedo texture
-                if (pbr.base_color_texture.texture) {
-                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
-                    auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, base_path, tex_name);
-                    if (texture) {
-                        material->SetParameter("ALBEDO_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_ALBEDO;
-                    }
-                }
-
-                // Metallic-Roughness texture
-                if (pbr.metallic_roughness_texture.texture) {
-                    std::string tex_name =
-                        gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
-                    auto texture = LoadGLTFTexture(pbr.metallic_roughness_texture.texture, base_path, tex_name);
-                    if (texture) {
-                        material->SetParameter("METALLIC_TEXTURE", texture);
-                        material->SetParameter("ROUGHNESS_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_METALLIC;
-                        textureFlags |= ETextureFlags::HAS_ROUGHNESS;
-                    }
-                }
-            }
-
-            // Normal map
-            if (gltf_material && gltf_material->normal_texture.texture) {
-                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
-                auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, base_path, tex_name);
-                if (texture) {
-                    material->SetParameter("NORMAL_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_NORMAL;
-                }
-            }
-
-            // Occlusion map
-            if (gltf_material && gltf_material->occlusion_texture.texture) {
-                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
-                auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, base_path, tex_name);
-                if (texture) {
-                    material->SetParameter("AO_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_AO;
-                }
-            }
-
-            // Emissive
             if (gltf_material) {
+                // Parse alpha mode from GLTF material
+                if (gltf_material->alpha_mode == cgltf_alpha_mode_blend) {
+                    blendMode  = EBlendMode::BLEND_MODE_ALPHA;
+                    depthWrite = false;
+                    spdlog::debug("Material '{}' uses BLEND mode", gltf_material->name ? gltf_material->name : "unnamed");
+                } else if (gltf_material->alpha_mode == cgltf_alpha_mode_mask) {
+                    // Alpha clip/cutout mode
+                    blendMode          = EBlendMode::BLEND_MODE_OPAQUE;
+                    depthWrite         = true;
+                    alphaClipThreshold = gltf_material->alpha_cutoff;
+                    spdlog::debug("Material '{}' uses MASK mode with cutoff: {}",
+                                  gltf_material->name ? gltf_material->name : "unnamed",
+                                  alphaClipThreshold);
+                } else {
+                    // cgltf_alpha_mode_opaque (default)
+                    blendMode  = EBlendMode::BLEND_MODE_OPAQUE;
+                    depthWrite = true;
+                }
+
+                // Check if material is double-sided
+                if (gltf_material->double_sided) {
+                    cullMode = ECullMode::CULL_NONE;
+                    spdlog::debug("Material '{}' is double-sided", gltf_material->name ? gltf_material->name : "unnamed");
+                }
+
+                // Parse PBR properties
+                if (gltf_material->has_pbr_metallic_roughness) {
+                    auto& pbr = gltf_material->pbr_metallic_roughness;
+                    base_color =
+                        glm::vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
+                    metallic  = pbr.metallic_factor;
+                    roughness = pbr.roughness_factor;
+
+                    // If base color has alpha < 1.0 and mode is opaque, suggest blend mode
+                    if (base_color.a < 1.0f && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
+                        spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. Consider using BLEND mode.",
+                                     gltf_material->name ? gltf_material->name : "unnamed");
+                        // Optionally auto-correct:
+                        // blendMode = EBlendMode::BLEND_MODE_ALPHA;
+                        // depthWrite = false;
+                    }
+
+                    // Albedo texture
+                    if (pbr.base_color_texture.texture) {
+                        std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
+                        auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, base_path, tex_name);
+                        if (texture) {
+                            material->SetParameter("ALBEDO_TEXTURE", texture);
+                            textureFlags |= ETextureFlags::HAS_ALBEDO;
+
+                            // If texture has alpha channel and mode is opaque, warn
+                            // if (texture->HasAlphaChannel() && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
+                            //     spdlog::warn("Material '{}' has albedo texture with alpha channel but alpha_mode is OPAQUE",
+                            //                  gltf_material->name ? gltf_material->name : "unnamed");
+                            //     // Optionally auto-correct for blend mode:
+                            //     // blendMode = EBlendMode::BLEND_MODE_ALPHA;
+                            //     // depthWrite = false;
+                            // }
+                        }
+                    }
+
+                    // Metallic-Roughness texture
+                    if (pbr.metallic_roughness_texture.texture) {
+                        std::string tex_name =
+                            gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
+                        auto texture = LoadGLTFTexture(pbr.metallic_roughness_texture.texture, base_path, tex_name);
+                        if (texture) {
+                            material->SetParameter("METALLIC_TEXTURE", texture);
+                            material->SetParameter("ROUGHNESS_TEXTURE", texture);
+                            textureFlags |= ETextureFlags::HAS_METALLIC;
+                            textureFlags |= ETextureFlags::HAS_ROUGHNESS;
+                        }
+                    }
+                }
+
+                // Normal map
+                if (gltf_material->normal_texture.texture) {
+                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
+                    auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, base_path, tex_name);
+                    if (texture) {
+                        material->SetParameter("NORMAL_TEXTURE", texture);
+                        textureFlags |= ETextureFlags::HAS_NORMAL;
+                    }
+                }
+
+                // Occlusion map
+                if (gltf_material->occlusion_texture.texture) {
+                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
+                    auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, base_path, tex_name);
+                    if (texture) {
+                        material->SetParameter("AO_TEXTURE", texture);
+                        textureFlags |= ETextureFlags::HAS_AO;
+                    }
+                }
+
+                // Emissive
                 emissive =
                     glm::vec3(gltf_material->emissive_factor[0], gltf_material->emissive_factor[1], gltf_material->emissive_factor[2]);
 
@@ -686,6 +737,7 @@ namespace golias {
                 }
             }
 
+            // Set material parameters
             material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
             material->SetParameter("u_material.modulate", base_color);
             material->SetParameter("u_material.metallicFactor", metallic);
@@ -693,8 +745,22 @@ namespace golias {
             material->SetParameter("u_material.emissiveFactor", emissive);
             material->SetParameter("u_material.emissiveStrength", emissiveStrength);
 
+            // Set material rendering state
+            material->SetBlendMode(blendMode);
+            material->SetDepthWriteEnabled(depthWrite);
+            material->SetCullMode(cullMode);
+            material->SetAlphaClipThreshold(alphaClipThreshold);
+
+            // Set depth test (usually always enabled)
+            material->SetDepthTestEnabled(true);
+            material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
+
             gameObject->AddComponent(new MeshComponent(mesh, material));
         }
+
+        // ============================================================================
+        // Also add transparency support to OBJ loader
+        // ============================================================================
 
         void CreateMeshComponentOBJ(GameObject* gameObject,
                                     const VertexLayout& layout,
@@ -714,16 +780,36 @@ namespace golias {
             glm::vec4 base_color(1.0f);
             float roughness = 1.0f;
 
-            if (obj_material) {
-                base_color = glm::vec4(obj_material->diffuse[0], obj_material->diffuse[1], obj_material->diffuse[2], 1.0f);
+            // Default material state
+            EBlendMode blendMode = EBlendMode::BLEND_MODE_OPAQUE;
+            bool depthWrite      = true;
+            ECullMode cullMode   = ECullMode::CULL_BACK;
 
-                // Diffuse texture
+            if (obj_material) {
+                // OBJ materials support transparency via 'd' (dissolve) or 'Tr' (transparency)
+                float alpha = obj_material->dissolve; // 'd' parameter (1.0 = opaque, 0.0 = transparent)
+
+                base_color = glm::vec4(obj_material->diffuse[0], obj_material->diffuse[1], obj_material->diffuse[2], alpha);
+
+                // If alpha is less than 1.0, enable blending
+                if (alpha < 1.0f) {
+                    blendMode  = EBlendMode::BLEND_MODE_ALPHA;
+                    depthWrite = false;
+                    spdlog::debug("OBJ material has transparency: alpha = {}", alpha);
+                }
+
                 if (!obj_material->diffuse_texname.empty()) {
                     std::string tex_path = base_path + obj_material->diffuse_texname;
                     auto texture         = Engine::GetInstance().GetTextureManager().EnsureTexture2D(tex_path);
                     if (texture) {
                         material->SetParameter("ALBEDO_TEXTURE", texture);
                         textureFlags |= ETextureFlags::HAS_ALBEDO;
+
+                        // if (texture->HasAlphaChannel() && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
+                        //     spdlog::info("OBJ material has texture with alpha channel, enabling alpha blending");
+                        //     blendMode  = EBlendMode::BLEND_MODE_ALPHA;
+                        //     depthWrite = false;
+                        // }
                     }
                 }
 
@@ -737,6 +823,18 @@ namespace golias {
                     }
                 }
 
+                // Alpha texture (if available)
+                if (!obj_material->alpha_texname.empty()) {
+                    std::string tex_path = base_path + obj_material->alpha_texname;
+                    auto texture         = Engine::GetInstance().GetTextureManager().EnsureTexture2D(tex_path);
+                    if (texture) {
+                        // OBJ alpha maps could be used as a separate texture or combined with albedo
+                        spdlog::info("Found alpha texture in OBJ: {}", obj_material->alpha_texname);
+                        blendMode  = EBlendMode::BLEND_MODE_ALPHA;
+                        depthWrite = false;
+                    }
+                }
+
                 roughness = 1.0f - (obj_material->shininess / 1000.0f);
             }
 
@@ -747,8 +845,17 @@ namespace golias {
             material->SetParameter("u_material.emissiveFactor", glm::vec3(0.0f));
             material->SetParameter("u_material.emissiveStrength", 1.0f);
 
+            // Set material rendering state
+            material->SetBlendMode(blendMode);
+            material->SetDepthWriteEnabled(depthWrite);
+            material->SetCullMode(cullMode);
+            material->SetDepthTestEnabled(true);
+            material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
+            material->SetAlphaClipThreshold(0.5f);
+
             gameObject->AddComponent(new MeshComponent(mesh, material));
         }
+
 
         // ============================================================================
         // GLTF Animation Loading
@@ -877,25 +984,25 @@ namespace golias {
 
             std::vector<std::shared_ptr<Skeleton>> skeletons;
             std::vector<std::shared_ptr<SkeletonAnimationClip>> skeletonClips;
-            
+
             // Build a set of all joint nodes for fast lookup
             std::unordered_set<cgltf_node*> jointNodes;
 
             // Load skeletons from skins
             for (cgltf_size si = 0; si < data->skins_count; ++si) {
-                auto& skin = data->skins[si];
-                auto skeleton = std::make_shared<Skeleton>();
+                auto& skin     = data->skins[si];
+                auto skeleton  = std::make_shared<Skeleton>();
                 skeleton->name = skin.name ? skin.name : "Skeleton";
-                
+
                 spdlog::info("Processing GLTF Skin/Skeleton: {} with {} joints", skeleton->name, skin.joints_count);
 
                 // Build joint hierarchy
                 std::unordered_map<cgltf_node*, int> nodeToJointIndex;
-                
+
                 for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
-                    cgltf_node* jointNode = skin.joints[ji];
+                    cgltf_node* jointNode       = skin.joints[ji];
                     nodeToJointIndex[jointNode] = static_cast<int>(ji);
-                    jointNodes.insert(jointNode);  // Track all joint nodes
+                    jointNodes.insert(jointNode); // Track all joint nodes
 
                     SkeletonJoint joint;
                     joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
@@ -905,7 +1012,8 @@ namespace golias {
                         joint.position = glm::vec3(jointNode->translation[0], jointNode->translation[1], jointNode->translation[2]);
                     }
                     if (jointNode->has_rotation) {
-                        joint.rotation = glm::quat(jointNode->rotation[3], jointNode->rotation[0], jointNode->rotation[1], jointNode->rotation[2]);
+                        joint.rotation =
+                            glm::quat(jointNode->rotation[3], jointNode->rotation[0], jointNode->rotation[1], jointNode->rotation[2]);
                     }
                     if (jointNode->has_scale) {
                         joint.scale = glm::vec3(jointNode->scale[0], jointNode->scale[1], jointNode->scale[2]);
@@ -937,9 +1045,9 @@ namespace golias {
 
             // Load skeleton animations - check all animations for channels targeting joints
             for (cgltf_size ai = 0; ai < data->animations_count; ++ai) {
-                auto& anim = data->animations[ai];
-                auto clip = std::make_shared<SkeletonAnimationClip>();
-                clip->name = anim.name ? anim.name : "SkeletonAnimation";
+                auto& anim     = data->animations[ai];
+                auto clip      = std::make_shared<SkeletonAnimationClip>();
+                clip->name     = anim.name ? anim.name : "SkeletonAnimation";
                 clip->duration = 0.0f;
 
                 std::unordered_map<cgltf_node*, size_t> trackIndexOf;
@@ -953,7 +1061,7 @@ namespace golias {
                     SkeletonAnimationTrack track;
                     track.targetJointName = node->name ? node->name : "";
                     clip->tracks.push_back(track);
-                    size_t idx = clip->tracks.size() - 1;
+                    size_t idx         = clip->tracks.size() - 1;
                     trackIndexOf[node] = idx;
                     return clip->tracks[idx];
                 };
@@ -962,7 +1070,7 @@ namespace golias {
 
                 for (cgltf_size ci = 0; ci < anim.channels_count; ++ci) {
                     auto& channel = anim.channels[ci];
-                    auto sampler = channel.sampler;
+                    auto sampler  = channel.sampler;
 
                     if (!channel.target_node || !sampler || !sampler->input || !sampler->output) {
                         continue;
@@ -987,49 +1095,49 @@ namespace golias {
 
                     switch (channel.target_path) {
                     case cgltf_animation_path_type_translation:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
+                        {
+                            std::vector<glm::vec3> values;
+                            ExtractVec3Data(sampler->output, values);
 
-                        if (!values.empty()) {
-                            track.positions.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.positions[i].time = times[i];
-                                track.positions[i].value = values[i];
+                            if (!values.empty()) {
+                                track.positions.resize(times.size());
+                                for (size_t i = 0; i < times.size(); ++i) {
+                                    track.positions[i].time  = times[i];
+                                    track.positions[i].value = values[i];
+                                }
                             }
                         }
-                    }
-                    break;
+                        break;
 
                     case cgltf_animation_path_type_rotation:
-                    {
-                        std::vector<glm::quat> values;
-                        ExtractQuatData(sampler->output, values);
+                        {
+                            std::vector<glm::quat> values;
+                            ExtractQuatData(sampler->output, values);
 
-                        if (!values.empty()) {
-                            track.rotations.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.rotations[i].time = times[i];
-                                track.rotations[i].value = values[i];
+                            if (!values.empty()) {
+                                track.rotations.resize(times.size());
+                                for (size_t i = 0; i < times.size(); ++i) {
+                                    track.rotations[i].time  = times[i];
+                                    track.rotations[i].value = values[i];
+                                }
                             }
                         }
-                    }
-                    break;
+                        break;
 
                     case cgltf_animation_path_type_scale:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
+                        {
+                            std::vector<glm::vec3> values;
+                            ExtractVec3Data(sampler->output, values);
 
-                        if (!values.empty()) {
-                            track.scales.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.scales[i].time = times[i];
-                                track.scales[i].value = values[i];
+                            if (!values.empty()) {
+                                track.scales.resize(times.size());
+                                for (size_t i = 0; i < times.size(); ++i) {
+                                    track.scales[i].time  = times[i];
+                                    track.scales[i].value = values[i];
+                                }
                             }
                         }
-                    }
-                    break;
+                        break;
 
                     default:
                         break;
@@ -1053,7 +1161,10 @@ namespace golias {
 
                 for (auto& clip : skeletonClips) {
                     skelAnimComp->RegisterClip(clip->name, clip);
-                    spdlog::info("Registered skeleton animation clip: {} with {} tracks, duration: {}", clip->name, clip->tracks.size(), clip->duration);
+                    spdlog::info("Registered skeleton animation clip: {} with {} tracks, duration: {}",
+                                 clip->name,
+                                 clip->tracks.size(),
+                                 clip->duration);
                 }
 
                 spdlog::info("Loaded {} Skeleton animation clips from GLTF file", skeletonClips.size());
@@ -1111,7 +1222,7 @@ namespace golias {
                     }
 
                     std::vector<float> vertices = InterleaveVertexData(vertexData);
-                    VertexLayout layout = vertexData.hasSkinning ? CreateSkinnedVertexLayout() : CreateStandardVertexLayout();
+                    VertexLayout layout         = vertexData.hasSkinning ? CreateSkinnedVertexLayout() : CreateStandardVertexLayout();
 
                     std::vector<Uint32> indices;
                     EDataType index_type;

@@ -334,20 +334,9 @@
                 {
                     "type": "MeshComponent",
                     "material": {
-                        "path": "materials/checker.mat",
+                        "path": "materials/glass.mat",
                         "parameters": {
-                            "vectors": [
-                                {
-                                    "name": "MODULATE",
-                                    "value": {
-                                        "x": 0.0,
-                                        "y": 0.0,
-                                        "z": 0.6,
-                                        "w": 1.0
-                                    },
-                                    "type": "vec4"
-                                }
-                            ]
+                            
                         }
                     },
                     "mesh": {
@@ -382,7 +371,7 @@
             ]
         },
         {
-            "name": "Cube_Cyan",
+            "name": "Cube_Mirror",
             "position": {
                 "x": 1.5,
                 "y": 4.0,
@@ -403,20 +392,9 @@
                 {
                     "type": "MeshComponent",
                     "material": {
-                        "path": "materials/checker.mat",
+                        "path": "materials/mirror.mat",
                         "parameters": {
-                            "vectors": [
-                                {
-                                    "name": "MODULATE",
-                                    "value": {
-                                        "x": 0.0,
-                                        "y": 1.0,
-                                        "z": 1.0,
-                                        "w": 1.0
-                                    },
-                                    "type": "vec4"
-                                }
-                            ]
+                            
                         }
                     },
                     "mesh": {

@@ -1,0 +1,30 @@
+{
+    "blend_mode": "alpha",
+    "cull_mode": "none",
+    "depth_write": false,
+    "use_ibl": true,
+    "parameters": {
+        "floats": [
+            {
+                "name": "u_material.metallicFactor",
+                "value": 0.0
+            },
+            {
+                "name": "u_material.roughnessFactor",
+                "value": 0.05
+            }
+        ],
+        "vectors": [
+            {
+                "name": "MODULATE",
+                "type": "vec4",
+                "value": {
+                    "x": 0.9,
+                    "y": 0.95,
+                    "z": 1.0,
+                    "w": 0.25
+                }
+            }
+        ]
+    }
+}
