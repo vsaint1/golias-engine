@@ -200,7 +200,7 @@ namespace golias {
                 }
             }
 
-            sceneRenderer.Clear();
+            sceneRenderer.BeginFrame();
 
             sceneRenderer.Draw(cameraData);
 
@@ -208,7 +208,9 @@ namespace golias {
                 GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
             }
 
+            sceneRenderer.EndFrame();
             sceneRenderer.Present();
+
 
         }
 #endif

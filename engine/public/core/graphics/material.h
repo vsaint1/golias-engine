@@ -1,22 +1,72 @@
 #pragma once
 
 #include "shader.h"
+
 #include <json.hpp>
 
 namespace golias {
 
     class Material {
     public:
-
         void Activate();
 
         void SetShader(const std::shared_ptr<Shader>& pShader);
         std::shared_ptr<Shader> GetShader() const;
 
-        void SetUseIBL(bool value) { this->useIBL = value; }
+        void SetUseIBL(bool value) {
+            this->useIBL = value;
+        }
+
         bool UseImageBasedLighting() const;
 
-        template<typename T>
+        bool IsTransparent() const{
+            return blendMode != EBlendMode::BLEND_MODE_OPAQUE;
+        }
+
+        EBlendMode GetBlendMode() const {
+            return blendMode;
+        }
+        void SetBlendMode(EBlendMode mode) {
+            blendMode = mode;
+        }
+
+        float GetAlphaClipThreshold() const {
+            return alphaClipThreshold;
+        }
+        void SetAlphaClipThreshold(float threshold) {
+            alphaClipThreshold = threshold;
+        }
+
+        // Depth testing
+        bool IsDepthTestEnabled() const {
+            return depthTestEnabled;
+        }
+        void SetDepthTestEnabled(bool enabled) {
+            depthTestEnabled = enabled;
+        }
+
+        bool IsDepthWriteEnabled() const {
+            return depthWriteEnabled;
+        }
+        void SetDepthWriteEnabled(bool enabled) {
+            depthWriteEnabled = enabled;
+        }
+
+        EComparisonFunc GetDepthFunc() const {
+            return depthFunc;
+        }
+        void SetDepthFunc(EComparisonFunc func) {
+            depthFunc = func;
+        }
+
+        ECullMode GetCullMode() const {
+            return cullMode;
+        }
+        void SetCullMode(ECullMode mode) {
+            cullMode = mode;
+        }
+
+        template <typename T>
         void SetParameter(const std::string_view pName, const T& value) {
             parameters[std::string(pName)] = value;
         }
@@ -27,18 +77,26 @@ namespace golias {
 
     private:
         std::shared_ptr<Shader> shader;
-        bool useIBL = true; // Use IBL by default, can be disabled per-material
+
+        EBlendMode blendMode      = EBlendMode::BLEND_MODE_OPAQUE;
+        float alphaClipThreshold  = 0.5f;
+        bool depthTestEnabled     = true;
+        bool depthWriteEnabled    = true;
+        EComparisonFunc depthFunc = EComparisonFunc::COMPARISON_LESS;
+        ECullMode cullMode        = ECullMode::CULL_BACK;
+        bool useIBL               = true; // Use IBL by default, can be disabled per-material
 
         std::unordered_map<std::string, UniformValue> parameters;
     };
-    
-    class MaterialManager {
-        public:
-            static MaterialManager& GetInstance();
-            
-            std::shared_ptr<Material> GetMaterial(const std::string_view pPath);
 
-            void RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial);
+    class MaterialManager {
+    public:
+        static MaterialManager& GetInstance();
+
+        std::shared_ptr<Material> GetMaterial(const std::string_view pPath);
+
+        void RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial);
+
     private:
         std::unordered_map<std::string, std::shared_ptr<Material>> materials;
     };

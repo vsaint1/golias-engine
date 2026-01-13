@@ -108,6 +108,76 @@ namespace golias {
         material->SetParameter("u_material.emissiveFactor", glm::vec3(0.0f));
         material->SetParameter("u_material.emissiveStrength", 1.0f);
 
+        material->SetBlendMode(EBlendMode::BLEND_MODE_OPAQUE);
+        material->SetDepthTestEnabled(true);
+        material->SetDepthWriteEnabled(true);
+        material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
+        material->SetCullMode(ECullMode::CULL_BACK);
+        material->SetAlphaClipThreshold(0.5f);
+
+        if (json.contains("blend_mode")) {
+            std::string blendModeStr = json["blend_mode"].get<std::string>();
+
+            if (blendModeStr == "opaque") {
+                material->SetBlendMode(EBlendMode::BLEND_MODE_OPAQUE);
+                material->SetDepthWriteEnabled(true);
+            } else if (blendModeStr == "alpha" || blendModeStr == "alpha_blend") {
+                material->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
+                material->SetDepthWriteEnabled(false);
+            } else if (blendModeStr == "additive") {
+                material->SetBlendMode(EBlendMode::BLEND_MODE_ADDITIVE);
+                material->SetDepthWriteEnabled(false);
+            } else if (blendModeStr == "multiply") {
+                material->SetBlendMode(EBlendMode::BLEND_MODE_MULTIPLY);
+                material->SetDepthWriteEnabled(false);
+            }
+        }
+
+        if (json.contains("alpha_clip_threshold")) {
+            material->SetAlphaClipThreshold(json["alpha_clip_threshold"].get<float>());
+        }
+
+        if (json.contains("depth_test")) {
+            material->SetDepthTestEnabled(json["depth_test"].get<bool>());
+        }
+
+        if (json.contains("depth_write")) {
+            material->SetDepthWriteEnabled(json["depth_write"].get<bool>());
+        }
+
+        if (json.contains("depth_func")) {
+            std::string depthFuncStr = json["depth_func"].get<std::string>();
+            if (depthFuncStr == "never") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_NEVER);
+            } else if (depthFuncStr == "less") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
+            } else if (depthFuncStr == "equal") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_EQUAL);
+            } else if (depthFuncStr == "less_equal") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS_EQUAL);
+            } else if (depthFuncStr == "greater") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_GREATER);
+            } else if (depthFuncStr == "not_equal") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_NOT_EQUAL);
+            } else if (depthFuncStr == "greater_equal") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_GREATER_EQUAL);
+            } else if (depthFuncStr == "always") {
+                material->SetDepthFunc(EComparisonFunc::COMPARISON_ALWAYS);
+            }
+        }
+
+       
+        if (json.contains("cull_mode")) {
+            std::string cullModeStr = json["cull_mode"].get<std::string>();
+            if (cullModeStr == "none") {
+                material->SetCullMode(ECullMode::CULL_NONE);
+            } else if (cullModeStr == "front") {
+                material->SetCullMode(ECullMode::CULL_FRONT);
+            } else if (cullModeStr == "back") {
+                material->SetCullMode(ECullMode::CULL_BACK);
+            }
+        }
+
         if (json.contains("use_ibl")) {
             material->SetUseIBL(json["use_ibl"].get<bool>());
         }

@@ -33,9 +33,18 @@ const int HAS_NORMAL_FLAG = 8;
 const int HAS_AO_FLAG = 16;
 const int HAS_EMISSIVE_FLAG = 32;
 
+const float PI = 3.14159265359;
+
 uniform int TEXTURE_FLAGS;
 
-const float PI = 3.14159265359;
+#define TONEMAP_LINEAR   0
+#define TONEMAP_REINHARD 1
+#define TONEMAP_FILMIC   2
+#define TONEMAP_ACES     3
+#define TONEMAP_UNCHARTED2 4
+
+uniform int u_tonemap;
+uniform float u_exposure;
 
 /* ============================================================================
    Material & Light Structures
@@ -91,8 +100,8 @@ struct SpotLight {
 };
 
 uniform MaterialProperties u_material;
-uniform vec3 u_viewPosition;
-uniform float u_ambientStrength;
+uniform vec3 CAMERA_POSITION;
+uniform float AMBIENT_STRENGTH;
 
 const int MAX_DIRECTIONAL_LIGHTS = 32;
 const int MAX_POINT_LIGHTS = 32;
@@ -106,7 +115,67 @@ uniform SpotLight u_spotLights[MAX_SPOT_LIGHTS];
 uniform int u_spotLightCount;
 
 /* ============================================================================
-   PBR Functions - 3D Viewer Quality
+      Tonemapping & Gamma Correction Functions
+   ============================================================================ */
+vec3 Tonemap_Linear(vec3 c) {
+    return c;
+}
+
+vec3 Tonemap_Reinhard(vec3 c) {
+    return c / (c + vec3(1.0));
+}
+
+// Filmic (Hable / Uncharted 2)
+vec3 Tonemap_Uncharted2(vec3 x) {
+    const float A = 0.15;
+    const float B = 0.50;
+    const float C = 0.10;
+    const float D = 0.20;
+    const float E = 0.02;
+    const float F = 0.30;
+
+    return ((x * (A * x + C * B) + D * E) /
+        (x * (A * x + B) + D * F)) - E / F;
+}
+
+// Filmic approximation (fast)
+vec3 Tonemap_Filmic(vec3 c) {
+    c = max(vec3(0.0), c - 0.004);
+    return (c * (6.2 * c + 0.5)) / (c * (6.2 * c + 1.7) + 0.06);
+}
+
+vec3 Tonemap_ACES(vec3 x) {
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+vec3 ApplyTonemap(vec3 color) {
+    color *= u_exposure;
+
+    if(u_tonemap == TONEMAP_REINHARD)
+        color = Tonemap_Reinhard(color);
+    else if(u_tonemap == TONEMAP_FILMIC)
+        color = Tonemap_Filmic(color);
+    else if(u_tonemap == TONEMAP_ACES)
+        color = Tonemap_ACES(color);
+    else if(u_tonemap == TONEMAP_UNCHARTED2)
+        color = Tonemap_Uncharted2(color);
+    else
+        color = Tonemap_Linear(color);
+
+    return color;
+}
+
+vec3 ApplyGamma(vec3 color) {
+    return pow(color, vec3(1.0 / 2.2));
+}
+
+/* ============================================================================
+   PBR Functions 
    ============================================================================ */
 
 float D_GGX(float NdotH, float roughness) {
@@ -147,20 +216,20 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
         return 1.0;
 
     float currentDepth = proj.z;
-    
+
     // Calculate proper bias based on surface angle to light
     float NdotL = max(dot(N, L), 0.0);
-    
+
     // Use a more aggressive bias strategy to prevent self-shadowing
     float bias = max(0.005 * (1.0 - NdotL), 0.001);
-    
+
     // Additional depth-based bias for far surfaces
     bias += currentDepth * 0.0001;
-    
+
     vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
     float shadow = 0.0;
     int count = 0;
-    
+
     // 3x3 PCF for softer shadows
     for(int x = -1; x <= 1; x++) {
         for(int y = -1; y <= 1; y++) {
@@ -170,7 +239,7 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
             count++;
         }
     }
-    
+
     return shadow / float(count);
 }
 
@@ -181,29 +250,19 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
 Material SampleMaterial() {
     Material mat;
 
-    mat.albedo = ((TEXTURE_FLAGS & HAS_ALBEDO_FLAG) != 0) 
-        ? texture(ALBEDO_TEXTURE, v_texcoord) * u_material.modulate 
-        : u_material.modulate;
-    
+    mat.albedo = ((TEXTURE_FLAGS & HAS_ALBEDO_FLAG) != 0) ? texture(ALBEDO_TEXTURE, v_texcoord) * u_material.modulate : u_material.modulate;
+
     mat.albedo.rgb *= v_color;
 
-    mat.metallic = ((TEXTURE_FLAGS & HAS_METALLIC_FLAG) != 0) 
-        ? texture(METALLIC_TEXTURE, v_texcoord).b * u_material.metallicFactor 
-        : u_material.metallicFactor;
+    mat.metallic = ((TEXTURE_FLAGS & HAS_METALLIC_FLAG) != 0) ? texture(METALLIC_TEXTURE, v_texcoord).b * u_material.metallicFactor : u_material.metallicFactor;
     mat.metallic = clamp(mat.metallic, 0.0, 1.0);
 
-    mat.roughness = ((TEXTURE_FLAGS & HAS_ROUGHNESS_FLAG) != 0) 
-        ? texture(ROUGHNESS_TEXTURE, v_texcoord).g * u_material.roughnessFactor 
-        : u_material.roughnessFactor;
+    mat.roughness = ((TEXTURE_FLAGS & HAS_ROUGHNESS_FLAG) != 0) ? texture(ROUGHNESS_TEXTURE, v_texcoord).g * u_material.roughnessFactor : u_material.roughnessFactor;
     mat.roughness = clamp(mat.roughness, 0.04, 1.0);
 
-    mat.ao = ((TEXTURE_FLAGS & HAS_AO_FLAG) != 0) 
-        ? texture(AO_TEXTURE, v_texcoord).r 
-        : 1.0;
+    mat.ao = ((TEXTURE_FLAGS & HAS_AO_FLAG) != 0) ? texture(AO_TEXTURE, v_texcoord).r : 1.0;
 
-    mat.emissive = ((TEXTURE_FLAGS & HAS_EMISSIVE_FLAG) != 0) 
-        ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * u_material.emissiveFactor * u_material.emissiveStrength 
-        : vec3(0.0);
+    mat.emissive = ((TEXTURE_FLAGS & HAS_EMISSIVE_FLAG) != 0) ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * u_material.emissiveFactor * u_material.emissiveStrength : vec3(0.0);
 
     mat.normal = normalize(v_normal);
     if((TEXTURE_FLAGS & HAS_NORMAL_FLAG) != 0) {
@@ -218,11 +277,19 @@ Material SampleMaterial() {
    Direct Lighting
    ============================================================================ */
 
-vec3 CalculateDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 F0, 
-                                vec3 albedo, float metallic, float roughness, float shadow) {
+vec3 CalculateDirectionalLight(
+    DirectionalLight light,
+    vec3 N,
+    vec3 V,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    float shadow
+) {
     vec3 L = normalize(-light.direction);
     vec3 H = normalize(V + L);
-    
+
     float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
@@ -240,23 +307,32 @@ vec3 CalculateDirectionalLight(DirectionalLight light, vec3 N, vec3 V, vec3 F0,
     return (diffuse + specular) * radiance * NdotL * shadow;
 }
 
-vec3 CalculatePointLight(PointLight light, vec3 fragPos, vec3 N, vec3 V, vec3 F0,
-                         vec3 albedo, float metallic, float roughness) {
+vec3 CalculatePointLight(
+    PointLight light,
+    vec3 fragPos,
+    vec3 N,
+    vec3 V,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness
+) {
     vec3 L = light.position - fragPos;
     float distance = length(L);
-    
-    if(distance > light.range) return vec3(0.0);
-    
+
+    if(distance > light.range)
+        return vec3(0.0);
+
     L = normalize(L);
     vec3 H = normalize(V + L);
-    
+
     float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
 
-    float attenuation = 1.0 / (light.constant + light.linear * distance + 
-                               light.quadratic * distance * distance);
+    float attenuation = 1.0 / (light.constant + light.linear * distance +
+        light.quadratic * distance * distance);
     float rangeFalloff = pow(1.0 - pow(distance / light.range, 4.0), 2.0);
     rangeFalloff = max(rangeFalloff, 0.0);
     attenuation *= rangeFalloff;
@@ -273,31 +349,41 @@ vec3 CalculatePointLight(PointLight light, vec3 fragPos, vec3 N, vec3 V, vec3 F0
     return (diffuse + specular) * radiance * NdotL;
 }
 
-vec3 CalculateSpotLight(SpotLight light, vec3 fragPos, vec3 N, vec3 V, vec3 F0,
-                        vec3 albedo, float metallic, float roughness) {
+vec3 CalculateSpotLight(
+    SpotLight light,
+    vec3 fragPos,
+    vec3 N,
+    vec3 V,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness
+) {
     vec3 L = light.position - fragPos;
     float distance = length(L);
-    
-    if(distance > light.range) return vec3(0.0);
-    
+
+    if(distance > light.range)
+        return vec3(0.0);
+
     L = normalize(L);
-    
+
     float theta = dot(L, normalize(-light.direction));
     float epsilon = light.innerConeAngle - light.outerConeAngle;
     float spotIntensity = clamp((theta - light.outerConeAngle) / epsilon, 0.0, 1.0);
     spotIntensity = smoothstep(0.0, 1.0, spotIntensity);
-    
-    if(spotIntensity <= 0.0) return vec3(0.0);
-    
+
+    if(spotIntensity <= 0.0)
+        return vec3(0.0);
+
     vec3 H = normalize(V + L);
-    
+
     float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
 
-    float attenuation = 1.0 / (light.constant + light.linear * distance + 
-                               light.quadratic * distance * distance);
+    float attenuation = 1.0 / (light.constant + light.linear * distance +
+        light.quadratic * distance * distance);
     float rangeFalloff = pow(1.0 - pow(distance / light.range, 4.0), 2.0);
     rangeFalloff = max(rangeFalloff, 0.0);
     attenuation *= rangeFalloff;
@@ -313,10 +399,6 @@ vec3 CalculateSpotLight(SpotLight light, vec3 fragPos, vec3 N, vec3 V, vec3 F0,
     vec3 radiance = light.color * light.intensity * attenuation * spotIntensity;
     return (diffuse + specular) * radiance * NdotL;
 }
-
-/* ============================================================================
-   Studio-Quality IBL
-   ============================================================================ */
 
 vec3 CalculateIBL(vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float roughness, float ao) {
     if(USE_IBL == 0) {
@@ -345,39 +427,38 @@ vec3 CalculateIBL(vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float ro
 
 vec3 StudioLighting(vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float roughness) {
     vec3 totalLight = vec3(0.0);
-    
+
     // Key light (main light, slightly warm)
     vec3 keyDir = normalize(vec3(0.5, 0.8, 0.6));
     vec3 keyColor = vec3(1.0, 0.98, 0.95) * 2.2;
-    
+
     vec3 H = normalize(V + keyDir);
     float NdotL = max(dot(N, keyDir), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float NdotV = max(dot(N, V), 0.001);
     float HdotV = max(dot(H, V), 0.0);
-    
+
     float D = D_GGX(NdotH, roughness);
     float G = G_Smith(NdotV, NdotL, roughness);
     vec3 F = F_Schlick(HdotV, F0);
-    
+
     vec3 specular = (D * G * F) / (4.0 * NdotV * NdotL + 0.001);
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
     vec3 diffuse = kD * albedo / PI;
-    
+
     totalLight += (diffuse + specular) * keyColor * NdotL;
-    
+
     // Fill light (softer, cooler, from opposite side)
     vec3 fillDir = normalize(vec3(-0.3, 0.3, -0.4));
     vec3 fillColor = vec3(0.7, 0.8, 1.0) * 0.6;
     NdotL = max(dot(N, fillDir), 0.0);
     totalLight += albedo * fillColor * NdotL * (1.0 - metallic);
-    
+
     // Rim light (edge highlight for depth)
-    vec3 rimDir = normalize(vec3(0.0, 0.2, -1.0));
     float rimPower = 1.0 - max(dot(N, V), 0.0);
     rimPower = pow(rimPower, 3.0);
     totalLight += vec3(0.9, 0.95, 1.0) * rimPower * 0.8;
-    
+
     return totalLight;
 }
 
@@ -385,8 +466,8 @@ void main() {
     Material mat = SampleMaterial();
 
     vec3 N = mat.normal;
-    vec3 V = normalize(u_viewPosition - v_frag_pos);
-    
+    vec3 V = normalize(CAMERA_POSITION - v_frag_pos);
+
     vec3 F0 = mix(vec3(0.04), mat.albedo.rgb, mat.metallic);
 
     vec3 Lo = vec3(0.0);
@@ -397,27 +478,25 @@ void main() {
         hasLights = true;
         DirectionalLight light = u_directionalLights[i];
         float shadow = 1.0;
-        
+
         if(light.castShadows && i == 0) {
             vec3 L = normalize(-light.direction);
             shadow = CalculateShadow(v_frag_pos_light_space, N, L);
         }
-        
+
         Lo += CalculateDirectionalLight(light, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, shadow);
     }
 
     // Point lights
     for(int i = 0; i < u_pointLightCount; i++) {
         hasLights = true;
-        Lo += CalculatePointLight(u_pointLights[i], v_frag_pos, N, V, F0, 
-                                   mat.albedo.rgb, mat.metallic, mat.roughness);
+        Lo += CalculatePointLight(u_pointLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
     }
 
     // Spot lights
     for(int i = 0; i < u_spotLightCount; i++) {
         hasLights = true;
-        Lo += CalculateSpotLight(u_spotLights[i], v_frag_pos, N, V, F0, 
-                                  mat.albedo.rgb, mat.metallic, mat.roughness);
+        Lo += CalculateSpotLight(u_spotLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
     }
 
     // Ambient/IBL
@@ -425,28 +504,22 @@ void main() {
     if(USE_IBL == 1) {
         ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao);
     } else if(!hasLights) {
-        // Studio lighting fallback when no lights present
+
         Lo = StudioLighting(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
-        ambient = vec3(0.15, 0.16, 0.18) * mat.albedo.rgb * mat.ao; // Subtle ambient
+        ambient = vec3(0.15, 0.16, 0.18) * mat.albedo.rgb * mat.ao;
     } else {
-        // Gradient ambient for better depth perception
+
         float upDot = dot(N, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
         vec3 skyColor = vec3(0.5, 0.6, 0.7);
         vec3 groundColor = vec3(0.2, 0.22, 0.25);
-        vec3 ambientColor = mix(groundColor, skyColor, upDot) * u_ambientStrength;
+        vec3 ambientColor = mix(groundColor, skyColor, upDot) * AMBIENT_STRENGTH;
         ambient = ambientColor * mat.albedo.rgb * mat.ao;
     }
 
     vec3 color = ambient + Lo + mat.emissive;
 
-    // Neutral tone mapping for material accuracy
-    color = color / (color + vec3(1.0));
-    
-    // Add subtle contrast boost for 3D viewer look
-    color = pow(color, vec3(0.95));
-    
-    // Gamma correction
-    color = pow(color, vec3(1.0 / 2.2));
+    color = ApplyTonemap(color);
+    color = ApplyGamma(color);
 
     if(mat.albedo.a < 0.1) {
         discard;

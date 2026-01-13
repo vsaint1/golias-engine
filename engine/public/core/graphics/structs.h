@@ -116,7 +116,7 @@ enum class EPrimitiveTopology { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_S
 
 enum class EShaderStage { VERTEX = 1 << 0, FRAGMENT = 1 << 1, COMPUTE = 1 << 2 };
 
-enum class EBlendMode { DISABLED, ALPHA, ADDITIVE, MULTIPLY };
+enum class EBlendMode { BLEND_MODE_OPAQUE, BLEND_MODE_ALPHA, BLEND_MODE_ADDITIVE, BLEND_MODE_MULTIPLY };
 
 enum class EBufferTarget {
     BUFFER_USAGE_VERTEX       = 1 << 0,

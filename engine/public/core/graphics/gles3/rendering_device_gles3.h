@@ -3,6 +3,7 @@
 #include "core/graphics/gles3/shaders/gl_shader.h"
 #include "core/graphics/gles3/storage/gl_mesh.h"
 #include "core/graphics/gles3/storage/gl_texture_2d.h"
+#include "core/graphics/gles3/storage/gl_texture_cubemap.h"
 #include "core/graphics/rendering_device.h"
 
 
@@ -64,12 +65,9 @@ namespace golias {
             return shadowFBO;
         }
 
-        // Skybox and IBL
-        Uint32 CreateCubemapFromFiles(const std::array<std::string, 6>& faces) override;
-        Uint32 CreateCubemapFromCross(const std::string& crossPath) override;
+        std::shared_ptr<TextureCubemap>  CreateCubemapFromFiles(const std::array<std::string, 6>& faces) override;
+        std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
         std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
-        std::shared_ptr<Mesh> GetSkyboxMesh() override;
-        Uint32 GetDefaultSkyboxCubemap() const override;
 
     private:
         SDL_GLContext gl_context = nullptr;
@@ -82,12 +80,9 @@ namespace golias {
 
 
         std::shared_ptr<Framebuffer> shadowFBO = nullptr;
-        std::shared_ptr<Mesh> skybox_mesh      = nullptr;
-        Uint32 default_skybox_cubemap          = 0;
 
         bool CreateDefaultShaders();
         bool CreateDefaultFramebuffers();
         bool CreateSkyboxShader();
-        bool CreateDefaultSkybox();
     };
 }; // namespace golias
