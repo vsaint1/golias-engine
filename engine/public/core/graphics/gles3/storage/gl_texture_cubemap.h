@@ -1,5 +1,5 @@
 #pragma once
-#include "core/graphics/textuce_cubemap.h"
+#include "core/graphics/texture_cubemap.h"
 #include <string>
 #include <array>
 #include <glad.h>

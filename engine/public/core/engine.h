@@ -7,6 +7,7 @@
 #include "scene/scene.h"
 #include "audio/audio_manager.h"
 #include "font/font_manager.h"
+#include "core/graphics/texture_manager.h"
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
 void engine_core_loop();
@@ -25,6 +26,7 @@ namespace golias {
         void Run();
         void Destroy();
         void SetApplication(Application* pApplication);
+        
         Application* GetApplication() const;
         InputManager& GetInputManager();
         SceneRenderer& GetSceneRenderer();
@@ -33,7 +35,6 @@ namespace golias {
         FileSystem& GetFileSystem();
         MaterialManager& GetMaterialManager();
         AudioManager& GetAudioManager();
-        
         FontManager& GetFontManager();
         
         Scene* GetScene() const;

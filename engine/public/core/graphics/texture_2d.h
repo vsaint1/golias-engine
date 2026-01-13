@@ -53,14 +53,6 @@ namespace golias {
 
     };
 
-    // TODO: create other file for TextureManager
-    class TextureManager {
-    public:
-        std::shared_ptr<Texture2D> EnsureTexture2D(const std::string_view pFilePath);
-        std::shared_ptr<Texture2D> EnsureTexture2D(const std::string_view pFilePath,int width, int height, ETextureFormat format, const Uint8* data);
-
-    private:
-        std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures2D;
-    };
+ 
 
 } // namespace golias

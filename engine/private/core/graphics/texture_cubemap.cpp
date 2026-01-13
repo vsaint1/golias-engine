@@ -1,5 +1,6 @@
+#include "core/graphics/texture_cubemap.h"
+
 #include "core/engine.h"
-#include "core/graphics/textuce_cubemap.h"
 
 namespace golias {
     Uint32 TextureCubemap::GetWidth() const {
@@ -28,12 +29,19 @@ namespace golias {
 
 
     std::shared_ptr<TextureCubemap> TextureCubemap::Load(const std::string_view pFilePath) {
-        auto rd      = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
-        auto cubemap = rd->CreateCubemapFromCross(pFilePath.data());
+        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto cubemap  = textureManager.EnsureTextureCubemapCross(pFilePath);
 
         return cubemap;
     }
 
+
+    std::shared_ptr<TextureCubemap> TextureCubemap::Load(const std::array<std::string, 6>& faces) {
+        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto cubemap  = textureManager.EnsureTextureCubemapFaces(faces);
+
+        return cubemap;
+    }
 
     glm::vec3 TextureCubemap::GetCubemapDirection(int face, float u, float v) {
         switch (face) {
