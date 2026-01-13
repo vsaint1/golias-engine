@@ -65,7 +65,7 @@ namespace golias {
             return shadowFBO;
         }
 
-        std::shared_ptr<TextureCubemap>  CreateCubemapFromFiles(const std::array<std::string, 6>& faces) override;
+        std::shared_ptr<TextureCubemap>  CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
         std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
         std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
 

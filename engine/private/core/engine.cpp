@@ -43,7 +43,7 @@ namespace golias {
         }
 
         fontManager.SetFallbackFonts({
-            "fonts/NotoSans.ttf", 
+            "fonts/NotoSans.ttf",
             "fonts/NotoSansCJK.otf",
             // "fonts/Twemoji.ttf" // needs plutosvg
         });
@@ -77,13 +77,15 @@ namespace golias {
         return true;
     }
 
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
     void engine_core_loop() {
+
         Engine& engine = Engine::GetInstance();
 
         Uint64 current_time_point = SDL_GetPerformanceCounter();
         Uint64 time_delta         = current_time_point - engine.GetLastTimePoint();
-        float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
+
+        float delta_time = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
+
         engine.SetLastTimePoint(current_time_point);
 
         engine.GetInputManager().Update();
@@ -103,9 +105,17 @@ namespace golias {
             engine.GetInputManager().ProcessEvent(event);
         }
 
+
         engine.GetPhysicsManager().StepSimulation(delta_time);
 
         engine.GetApplication()->Update(delta_time);
+
+        DirectionalLightCommand dirLight;
+        dirLight.direction   = glm::vec3(0.5f, -1.0f, 0.3f);
+        dirLight.color       = glm::vec3(1.0f, 1.0f, 1.0f);
+        dirLight.intensity   = 1.0f;
+        dirLight.castShadows = true;
+        engine.GetSceneRenderer().Submit(dirLight);
 
         CameraCommand cameraData;
         if (engine.GetScene() && engine.GetScene()->GetMainCamera()) {
@@ -123,16 +133,17 @@ namespace golias {
             }
         }
 
-        engine.GetSceneRenderer().Clear();
+        engine.GetSceneRenderer().BeginFrame();
         engine.GetSceneRenderer().Draw(cameraData);
 
         if (engine.GetPhysicsManager().IsDebugDrawEnabled()) {
             engine.GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
         }
 
+        engine.GetSceneRenderer().EndFrame();
+
         engine.GetSceneRenderer().Present();
     }
-#endif
 
     void Engine::Run() {
 
@@ -142,76 +153,14 @@ namespace golias {
 
         last_time_point = SDL_GetPerformanceCounter();
 
-        
+
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
         emscripten_set_main_loop(engine_core_loop, 0, 1);
 #else
         while (!application->ShouldClose()) {
 
-            Uint64 current_time_point = SDL_GetPerformanceCounter();
-            Uint64 time_delta         = current_time_point - last_time_point;
-            float delta_time          = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
-            last_time_point           = current_time_point;
 
-            inputManager.Update();
-
-            SDL_Event event;
-
-            while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_EVENT_QUIT) {
-                    application->Close();
-                }
-
-                if (event.type == SDL_EVENT_WINDOW_RESIZED) {
-                    _width  = event.window.data1;
-                    _height = event.window.data2;
-                    GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, _width, _height});
-                }
-
-                inputManager.ProcessEvent(event);
-            }
-
-            DirectionalLightCommand dirLight;
-            dirLight.direction = glm::vec3(0.5f, -1.0f, 0.3f);
-            dirLight.color = glm::vec3(1.0f, 1.0f, 1.0f);
-            dirLight.intensity = 1.0f;
-            dirLight.castShadows = true;
-            sceneRenderer.Submit(dirLight);
-
-
-            physicsManager.StepSimulation(delta_time);
-
-            application->Update(delta_time);
-
-
-            CameraCommand cameraData;
-            if (scene && scene->GetMainCamera()) {
-
-                auto pCameraComponent = scene->GetMainCamera()->GetComponent<CameraComponent>();
-
-                if (pCameraComponent) {
-                    cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
-
-                    float aspect                  = static_cast<float>(_width) / static_cast<float>(_height);
-                    cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
-                    cameraData.orthographicMatrix = glm::ortho(0.0f, static_cast<float>(_width), 0.0f, static_cast<float>(_height));
-
-                    cameraData.position = scene->GetMainCamera()->GetWorldPosition();
-                }
-            }
-
-            sceneRenderer.BeginFrame();
-
-            sceneRenderer.Draw(cameraData);
-
-            if (GetPhysicsManager().IsDebugDrawEnabled()) {
-                GetPhysicsManager().RenderDebug(cameraData.projectionMatrix * cameraData.viewMatrix);
-            }
-
-            sceneRenderer.EndFrame();
-            sceneRenderer.Present();
-
-
+            engine_core_loop();
         }
 #endif
     }

@@ -315,7 +315,7 @@ namespace golias {
         return true;
     }
 
-    std::shared_ptr<TextureCubemap> RenderingDeviceGLES3::CreateCubemapFromFiles(const std::array<std::string, 6>& faces) {
+    std::shared_ptr<TextureCubemap> RenderingDeviceGLES3::CreateCubemapFromFaces(const std::array<std::string, 6>& faces) {
 
         return std::make_shared<OpenglTextureCubemap>(faces);
     }

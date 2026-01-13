@@ -43,7 +43,7 @@ namespace golias {
     }
 
 
-    std::shared_ptr<Material> Material::Load(const std::string_view pPath, const Json* paramOverrides) {
+    std::shared_ptr<Material> Material::Load(const std::string_view pPath, const nlohmann::json* paramOverrides) {
 
         std::string cacheKey = GenerateMaterialCacheKey(pPath, paramOverrides);
 

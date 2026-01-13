@@ -85,7 +85,7 @@ namespace golias {
         bool depthWriteEnabled    = true;
         EComparisonFunc depthFunc = EComparisonFunc::COMPARISON_LESS;
         ECullMode cullMode        = ECullMode::CULL_BACK;
-        bool useIBL               = true; // Use IBL by default, can be disabled per-material
+        bool useIBL               = false;
 
         std::unordered_map<std::string, UniformValue> parameters;
     };

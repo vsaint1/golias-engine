@@ -5,7 +5,7 @@
 #include "core/graphics/mesh.h"
 #include "core/graphics/shader.h"
 #include "core/graphics/texture_2d.h"
-#include "core/graphics/textuce_cubemap.h"
+#include "core/graphics/texture_cubemap.h"
 #include "physics/3d/physics_debug_drawer.h"
 #include <SDL3/SDL.h>
 
@@ -69,7 +69,7 @@ namespace golias {
 
         virtual std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() = 0;
 
-        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromFiles(const std::array<std::string, 6>& faces) = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) = 0;
         virtual std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) = 0;
         virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const = 0;
 
