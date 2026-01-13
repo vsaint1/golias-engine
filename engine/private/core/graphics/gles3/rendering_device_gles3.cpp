@@ -64,6 +64,11 @@ namespace golias {
             return false;
         }
 
+        if (!CreateDefaultTextures()) {
+            spdlog::error("RenderingDeviceGLES3::Initialize Failed to create default textures.");
+            return false;
+        }
+
         spdlog::info("RenderingDeviceGLES3::Initialize Initialized successfully GLES3 Rendering Device.");
 
         physicsDebug3D = std::make_unique<PhysicsDebugDrawerGLES3>();
@@ -124,6 +129,15 @@ namespace golias {
 
         return std::make_shared<OpenglShader>(vertexSource, fragmentSource);
     }
+
+    std::shared_ptr<Texture2D> RenderingDeviceGLES3::GetWhiteTexture2D() const {
+        return whiteTexture2D;
+    }
+
+    std::shared_ptr<Texture2D> RenderingDeviceGLES3::GetNormalTexture2D() const {
+        return normalTexture2D;
+    }
+
 
     std::shared_ptr<Mesh> RenderingDeviceGLES3::CreateMeshFromData(const VertexLayout& layout,
                                                                    const std::vector<float>& vertices,
@@ -309,6 +323,26 @@ namespace golias {
 
         if (!skybox_shader) {
             spdlog::error("RenderingDeviceGLES3::CreateSkyboxShader Failed to create skybox shader.");
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool RenderingDeviceGLES3::CreateDefaultTextures() {
+        Uint8* whitePixel = new Uint8[4]{255, 255, 255, 255};
+        whiteTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA, whitePixel);
+        
+        if (!whiteTexture2D) {
+            spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create white texture.");
+            return false;
+        }
+
+        Uint8* normalPixel = new Uint8[4]{128, 128, 255, 255};
+        normalTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA, normalPixel);
+        if (!normalTexture2D) {
+            spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create normal texture.");
             return false;
         }
 

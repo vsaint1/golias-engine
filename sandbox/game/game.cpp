@@ -2,6 +2,7 @@
 
 #include "scene/2d/sprite_component_2d.h"
 #include "scene/3d/skeleton_animation_component.h"
+#include "scene/3d/world_environment_component.h"
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
 
@@ -58,8 +59,17 @@ bool SandboxApplication::Initialize() {
 
     godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
     godette->SetPosition({0.0f, 1.0f, -1.0f});
-    godette->SetUseIBL(false);
+    // godette->SetUseIBL(false);
 
+
+    auto worldEnvironment = Tscene->CreateObject("WorldEnvironment");
+    auto textureCubemap   = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
+
+    auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_REINHARD, 1.0f);
+    worldEnvComp->SetEnvironmentMode(golias::EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX);
+    // auto worldEnvComp = new golias::WorldEnvironmentComponent();
+    worldEnvironment->AddComponent(worldEnvComp);
+    // worldEnvComp->SetClearColor({0.2f, 0.3f, 0.4f, 1.0f});
 
     if (godette) {
 
@@ -124,13 +134,13 @@ WASD to move, Mouse to look around)";
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
 
-    auto textAmmo = Tscene->CreateObject("TextAmmo", canvas_2d);
+    auto textAmmo     = Tscene->CreateObject("TextAmmo", canvas_2d);
     auto textCompAmmo = new golias::TextWidgetComponent();
     textCompAmmo->SetText("9/10");
     textCompAmmo->SetFont("fonts/Minecraft.ttf", 32);
     textCompAmmo->SetShadowEnabled(true);
-    textAmmo->SetPosition2D({1000.0f, 100.0f}); 
-    textAmmo->AddComponent(textCompAmmo); 
+    textAmmo->SetPosition2D({1000.0f, 100.0f});
+    textAmmo->AddComponent(textCompAmmo);
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else

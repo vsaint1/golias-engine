@@ -38,10 +38,6 @@ namespace golias {
         return shader;
     }
 
-    bool Material::UseImageBasedLighting() const {
-        return useIBL;
-    }
-
 
     std::shared_ptr<Material> Material::Load(const std::string_view pPath, const nlohmann::json* paramOverrides) {
 
@@ -166,7 +162,7 @@ namespace golias {
             }
         }
 
-       
+
         if (json.contains("cull_mode")) {
             std::string cullModeStr = json["cull_mode"].get<std::string>();
             if (cullModeStr == "none") {
@@ -179,7 +175,7 @@ namespace golias {
         }
 
         if (json.contains("use_ibl")) {
-            material->SetUseIBL(json["use_ibl"].get<bool>());
+            material->SetImageBasedLighting(json["use_ibl"].get<bool>());
         }
 
         ParseParameters(material, json);
@@ -295,6 +291,65 @@ namespace golias {
                 }
             }
         }
+    }
+
+    void Material::SetImageBasedLighting(bool value) {
+        this->useIBL = value;
+    }
+
+    bool Material::UseImageBasedLighting() const {
+        return useIBL;
+    }
+
+    bool Material::IsTransparent() const {
+        return blendMode != EBlendMode::BLEND_MODE_OPAQUE;
+    }
+
+    EBlendMode Material::GetBlendMode() const {
+        return blendMode;
+    }
+
+    void Material::SetBlendMode(EBlendMode mode) {
+        blendMode = mode;
+    }
+
+    float Material::GetAlphaClipThreshold() const {
+        return alphaClipThreshold;
+    }
+
+    void  Material::SetAlphaClipThreshold(float threshold) {
+        alphaClipThreshold = threshold;
+    }
+
+    bool Material::IsDepthTestEnabled() const {
+        return depthTestEnabled;
+    }
+
+    void Material::SetDepthTestEnabled(bool enabled) {
+        depthTestEnabled = enabled;
+    }
+
+    bool Material::IsDepthWriteEnabled() const {
+        return depthWriteEnabled;
+    }
+
+    void Material::SetDepthWriteEnabled(bool enabled) {
+        depthWriteEnabled = enabled;
+    }
+
+    EComparisonFunc Material::GetDepthFunc() const {
+        return depthFunc;
+    }
+
+    void Material::SetDepthFunc(EComparisonFunc func) {
+        depthFunc = func;
+    }
+
+    ECullMode Material::GetCullMode() const {
+        return cullMode;
+    }
+    void Material::SetCullMode(ECullMode mode) {
+        cullMode = mode;
     }
 
     MaterialManager& MaterialManager::GetInstance() {

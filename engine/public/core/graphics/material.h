@@ -13,59 +13,31 @@ namespace golias {
         void SetShader(const std::shared_ptr<Shader>& pShader);
         std::shared_ptr<Shader> GetShader() const;
 
-        void SetUseIBL(bool value) {
-            this->useIBL = value;
-        }
-
+        void SetImageBasedLighting(bool value);
         bool UseImageBasedLighting() const;
 
-        bool IsTransparent() const{
-            return blendMode != EBlendMode::BLEND_MODE_OPAQUE;
-        }
+        bool IsTransparent() const;
+        EBlendMode GetBlendMode() const;
 
-        EBlendMode GetBlendMode() const {
-            return blendMode;
-        }
-        
-        void SetBlendMode(EBlendMode mode) {
-            blendMode = mode;
-        }
+        void SetBlendMode(EBlendMode mode);
 
-        float GetAlphaClipThreshold() const {
-            return alphaClipThreshold;
-        }
-        void SetAlphaClipThreshold(float threshold) {
-            alphaClipThreshold = threshold;
-        }
+        float GetAlphaClipThreshold() const;
+        void SetAlphaClipThreshold(float threshold);
 
-        // Depth testing
-        bool IsDepthTestEnabled() const {
-            return depthTestEnabled;
-        }
-        void SetDepthTestEnabled(bool enabled) {
-            depthTestEnabled = enabled;
-        }
 
-        bool IsDepthWriteEnabled() const {
-            return depthWriteEnabled;
-        }
-        void SetDepthWriteEnabled(bool enabled) {
-            depthWriteEnabled = enabled;
-        }
+        bool IsDepthTestEnabled() const;
+        void SetDepthTestEnabled(bool enabled);
 
-        EComparisonFunc GetDepthFunc() const {
-            return depthFunc;
-        }
-        void SetDepthFunc(EComparisonFunc func) {
-            depthFunc = func;
-        }
+        bool IsDepthWriteEnabled() const;
 
-        ECullMode GetCullMode() const {
-            return cullMode;
-        }
-        void SetCullMode(ECullMode mode) {
-            cullMode = mode;
-        }
+        void SetDepthWriteEnabled(bool enabled);
+        EComparisonFunc GetDepthFunc() const;
+
+        void SetDepthFunc(EComparisonFunc func);
+
+        ECullMode GetCullMode() const;
+
+        void SetCullMode(ECullMode mode);
 
         template <typename T>
         void SetParameter(const std::string_view pName, const T& value) {

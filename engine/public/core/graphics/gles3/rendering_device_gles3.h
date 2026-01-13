@@ -68,6 +68,9 @@ namespace golias {
         std::shared_ptr<TextureCubemap>  CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
         std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
         std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
+            
+        std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
+        std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
 
     private:
         SDL_GLContext gl_context = nullptr;
@@ -84,5 +87,6 @@ namespace golias {
         bool CreateDefaultShaders();
         bool CreateDefaultFramebuffers();
         bool CreateSkyboxShader();
+        bool CreateDefaultTextures();
     };
 }; // namespace golias

@@ -242,7 +242,7 @@ namespace golias {
 
         if (auto meshComp = GetComponent<golias::MeshComponent>()) {
             if (auto material = meshComp->GetMaterial()) {
-                material->SetUseIBL(value);
+                material->SetImageBasedLighting(value);
             }
         }
 

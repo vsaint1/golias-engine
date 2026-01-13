@@ -455,8 +455,8 @@ namespace golias {
             Uint32 offset = 0;
             for (const auto& batch : command.batches) {
 
-                shader_canvas->SetUniform("HAS_TEXTURE", batch.texture ? 1 : 0);
-                shader_canvas->SetUniform("TEXTURE", batch.texture);
+                // shader_canvas->SetUniform("HAS_TEXTURE", batch.texture ? 1 : 0);
+                shader_canvas->SetUniform("TEXTURE", batch.texture != nullptr ? batch.texture : rendering_device->GetWhiteTexture2D().get());
 
                 glm::mat4 model = command.modelMatrix * glm::scale(glm::mat4(1.0f), glm::vec3(command.scale));
 
@@ -494,7 +494,7 @@ namespace golias {
             shader_2d->SetUniform("TEXTURE_UV_MIN", command.lowerLeftUV);
             shader_2d->SetUniform("TEXTURE_UV_MAX", command.upperRightUV);
             shader_2d->SetUniform("COLOR", command.color);
-            shader_2d->SetUniform("TEXTURE", command.texture);
+            shader_2d->SetUniform("TEXTURE", command.texture != nullptr ? command.texture : rendering_device->GetWhiteTexture2D().get());
 
             quad->Draw();
         }

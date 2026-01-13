@@ -759,7 +759,7 @@ namespace golias {
             spdlog::debug("No material data, using studio lighting");
         }
 
-        material->SetUseIBL(shouldUseIBL);
+        material->SetImageBasedLighting(shouldUseIBL);
 
         material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
         material->SetParameter("u_material.modulate", base_color);
@@ -869,7 +869,7 @@ namespace golias {
             spdlog::debug("OBJ has no material, using studio lighting");
         }
 
-        material->SetUseIBL(shouldUseIBL);
+        material->SetImageBasedLighting(shouldUseIBL);
 
         material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
         material->SetParameter("u_material.modulate", base_color);

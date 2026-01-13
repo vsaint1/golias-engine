@@ -7,6 +7,22 @@ namespace golias {
         return fontSize;
     }
 
+    int Font::GetAscender() const {
+        return ascender;
+    }
+
+    int Font::GetDescender() const {
+        return descender;
+    }
+
+    void Font::SetAscender(int asc) {
+        ascender = asc;
+    }
+
+    void Font::SetDescender(int desc) {
+        descender = desc;
+    }
+    
     const Glyph* Font::GetGlyph(uint32_t codepoint) const {
         auto it = glyphs.find(codepoint);
         if (it != glyphs.end()) {

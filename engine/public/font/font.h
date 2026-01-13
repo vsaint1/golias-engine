@@ -23,33 +23,25 @@ namespace golias {
     class Font {
     public:
 
-        int GetSize() const;
 
         const Glyph* GetGlyph(uint32_t codepoint) const;
         bool HasGlyph(uint32_t codepoint) const;
         void SetGlyphDescription(uint32_t codepoint, const Glyph& glyph);
 
         const std::shared_ptr<Texture2D>& GetTexture() const;
-
+        
+        int GetSize() const;
         void SetSize(int size);
 
         void SetTexture(const std::shared_ptr<Texture2D>& tex);
 
-        int GetAscender() const{
-            return ascender;
-        }
+        int GetAscender() const;
 
-        int GetDescender() const{
-            return descender;
-        }
+        int GetDescender() const;
 
-        void SetAscender(int asc){
-            ascender = asc;
-        }
+        void SetAscender(int asc);
 
-        void SetDescender(int desc){
-            descender = desc;
-        }
+        void SetDescender(int desc);
     private:
         int fontSize = 0;
         int ascender  = 0;
