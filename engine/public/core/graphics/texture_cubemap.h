@@ -21,6 +21,7 @@ namespace golias {
 
         static std::shared_ptr<TextureCubemap> Load(const std::string_view pFilePath);
         static std::shared_ptr<TextureCubemap> Load(const std::array<std::string, 6>& faces);
+        static std::shared_ptr<TextureCubemap> LoadProcedural();
 
     protected:
         TextureCubemap() = default;

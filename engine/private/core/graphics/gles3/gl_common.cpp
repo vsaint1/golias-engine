@@ -157,11 +157,11 @@ GLenum ToGLBlendOp(EBlendOp op) {
 
 GLenum ToGLCullMode(ECullMode mode) {
     switch (mode) {
-    case ECullMode::CULL_FRONT:
+    case ECullMode::CULL_MODE_FRONT:
         return GL_FRONT;
-    case ECullMode::CULL_BACK:
+    case ECullMode::CULL_MODE_BACK:
         return GL_BACK;
-    case ECullMode::CULL_NONE:
+    case ECullMode::CULL_MODE_DISABLED:
         return GL_FRONT_AND_BACK; // Special case: disable culling
     default:
         return GL_BACK;

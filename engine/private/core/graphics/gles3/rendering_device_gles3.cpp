@@ -93,6 +93,19 @@ namespace golias {
     void RenderingDeviceGLES3::BindMaterial(Material* material) {
         if (material) {
             material->Activate();
+
+            if (material->IsDepthTestEnabled()) {
+                SetDepthTest(true);
+                SetDepthComparison(material->GetDepthFunc());
+            } else {
+                SetDepthTest(false);
+            }
+
+            SetDepthWrite(material->IsDepthWriteEnabled());
+
+            SetBlendMode(material->GetBlendMode());
+
+            SetCullMode(material->GetCullMode());
         }
     }
 
@@ -105,6 +118,35 @@ namespace golias {
     void RenderingDeviceGLES3::UnbindMesh(Mesh* mesh) {
         if (mesh) {
             mesh->Unbind();
+        }
+    }
+
+    
+    void RenderingDeviceGLES3::BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture) {
+        if (!texture) {
+            return;
+        }
+
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_2D, texture->GetNativeHandle());
+
+        GLint loc = shader->GetUniformLocation(uniformName);
+        if (loc != -1) {
+            glUniform1i(loc, slot);
+        }
+    }
+
+    void RenderingDeviceGLES3::BindCubemap(Shader* shader, std::string_view uniformName, Uint32 slot, TextureCubemap* texture) {
+        if (!texture) {
+            return;
+        }
+
+        glActiveTexture(GL_TEXTURE0 + slot);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, texture->GetNativeHandle());
+
+        GLint loc = shader->GetUniformLocation(uniformName);
+        if (loc != -1) {
+            glUniform1i(loc, slot);
         }
     }
 
@@ -180,7 +222,7 @@ namespace golias {
 
 
     std::shared_ptr<Framebuffer> RenderingDeviceGLES3::CreateFramebuffer(const FramebufferSpec& speficiation) {
-        return std::make_shared<GLFramebuffer>(speficiation);
+        return std::make_shared<OpenglFramebuffer>(speficiation);
     }
 
     std::shared_ptr<Shader> RenderingDeviceGLES3::CreateShaderFromFile(const std::string_view pFilePath) {
@@ -279,7 +321,7 @@ namespace golias {
         shadowFboSpec.attachments = {
             FramebufferAttachmentSpec(EFramebufferAttachment::DEPTH_ATTACHMENT, EFramebufferTextureFormat::DEPTH32F)};
 
-        shadowFBO = std::make_shared<GLFramebuffer>(shadowFboSpec);
+        shadowFBO = std::make_shared<OpenglFramebuffer>(shadowFboSpec);
 
         if (!shadowFBO) {
             spdlog::error("RenderingDeviceGLES3::CreateDefaultFramebuffers Failed to create shadow map Framebuffer");
@@ -301,14 +343,15 @@ namespace golias {
             return;
         }
 
+
         shadowFBO->Bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-        glCullFace(GL_BACK);
+     
+        
     }
 
     void RenderingDeviceGLES3::EndShadowPass() {
-        // glCullFace(GL_BACK);
+        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, viewport.width, viewport.height);
     }
@@ -333,7 +376,7 @@ namespace golias {
     bool RenderingDeviceGLES3::CreateDefaultTextures() {
         Uint8* whitePixel = new Uint8[4]{255, 255, 255, 255};
         whiteTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA, whitePixel);
-        
+
         if (!whiteTexture2D) {
             spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create white texture.");
             return false;
@@ -362,13 +405,124 @@ namespace golias {
         return std::make_shared<OpenglTextureCubemap>(fileSystem.GetAssetFile(crossPath));
     }
 
+
+    std::shared_ptr<TextureCubemap> RenderingDeviceGLES3::CreateCubemapProcedural() {
+        return std::make_shared<OpenglTextureCubemap>();
+    }
+
     std::shared_ptr<Shader> RenderingDeviceGLES3::GetDefaultSkyboxShader() const {
         return skybox_shader;
     }
 
 
-    RenderingDeviceGLES3::~RenderingDeviceGLES3() {
+    RenderingDeviceGLES3::RenderingDeviceGLES3() {
+    }
 
+    std::shared_ptr<Framebuffer> RenderingDeviceGLES3::GetDefaultFramebuffer() {
+        return nullptr;
+    }
+
+    std::shared_ptr<Framebuffer> RenderingDeviceGLES3::GetDefaultShadowMapFramebuffer() {
+        return shadowFBO;
+    }
+
+
+    void RenderingDeviceGLES3::SetScissor(const Scissor& scissor) {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(scissor.x, scissor.y, scissor.width, scissor.height);
+    }
+
+    void RenderingDeviceGLES3::SetBlendMode(EBlendMode blendMode) {
+        switch (blendMode) {
+        case EBlendMode::BLEND_MODE_DISABLED:
+            glDisable(GL_BLEND);
+            break;
+        case EBlendMode::BLEND_MODE_OPAQUE:
+            glDisable(GL_BLEND);
+            break;
+        case EBlendMode::BLEND_MODE_ALPHA:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        case EBlendMode::BLEND_MODE_ADDITIVE:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            break;
+        case EBlendMode::BLEND_MODE_MULTIPLY:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+        default:
+            break;
+        }
+    }
+
+    void RenderingDeviceGLES3::SetDepthComparison(EComparisonFunc func) {
+        switch (func) {
+        case EComparisonFunc::COMPARISON_NEVER:
+            glDepthFunc(GL_NEVER);
+            break;
+        case EComparisonFunc::COMPARISON_LESS:
+            glDepthFunc(GL_LESS);
+            break;
+        case EComparisonFunc::COMPARISON_EQUAL:
+            glDepthFunc(GL_EQUAL);
+            break;
+        case EComparisonFunc::COMPARISON_LESS_EQUAL:
+            glDepthFunc(GL_LEQUAL);
+            break;
+        case EComparisonFunc::COMPARISON_GREATER:
+            glDepthFunc(GL_GREATER);
+            break;
+        case EComparisonFunc::COMPARISON_NOT_EQUAL:
+            glDepthFunc(GL_NOTEQUAL);
+            break;
+        case EComparisonFunc::COMPARISON_GREATER_EQUAL:
+            glDepthFunc(GL_GEQUAL);
+            break;
+        case EComparisonFunc::COMPARISON_ALWAYS:
+            glDepthFunc(GL_ALWAYS);
+            break;
+        default:
+            glDepthFunc(GL_LESS);
+            break;
+        }
+    }
+
+    void RenderingDeviceGLES3::SetCullMode(ECullMode cullMode) {
+
+        switch (cullMode) {
+        case ECullMode::CULL_MODE_DISABLED:
+            glDisable(GL_CULL_FACE);
+            break;
+        case ECullMode::CULL_MODE_FRONT:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+            break;
+        case ECullMode::CULL_MODE_BACK:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            break;
+        case ECullMode::CULL_MODE_FRONT_AND_BACK:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT_AND_BACK);
+            break;
+        }
+    }
+
+    void RenderingDeviceGLES3::SetDepthWrite(bool enable) {
+        glDepthMask(enable ? GL_TRUE : GL_FALSE);
+    }
+
+    void RenderingDeviceGLES3::SetDepthTest(bool enable) {
+        if (enable) {
+            glEnable(GL_DEPTH_TEST);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+
+    RenderingDeviceGLES3::~RenderingDeviceGLES3() {
 
         if (gl_context) {
             SDL_GL_DestroyContext(gl_context);

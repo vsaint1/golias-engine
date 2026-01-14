@@ -108,7 +108,7 @@ namespace golias {
         material->SetDepthTestEnabled(true);
         material->SetDepthWriteEnabled(true);
         material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
-        material->SetCullMode(ECullMode::CULL_BACK);
+        material->SetCullMode(ECullMode::CULL_MODE_BACK);
         material->SetAlphaClipThreshold(0.5f);
 
         if (json.contains("blend_mode")) {
@@ -166,11 +166,11 @@ namespace golias {
         if (json.contains("cull_mode")) {
             std::string cullModeStr = json["cull_mode"].get<std::string>();
             if (cullModeStr == "none") {
-                material->SetCullMode(ECullMode::CULL_NONE);
+                material->SetCullMode(ECullMode::CULL_MODE_DISABLED);
             } else if (cullModeStr == "front") {
-                material->SetCullMode(ECullMode::CULL_FRONT);
+                material->SetCullMode(ECullMode::CULL_MODE_FRONT);
             } else if (cullModeStr == "back") {
-                material->SetCullMode(ECullMode::CULL_BACK);
+                material->SetCullMode(ECullMode::CULL_MODE_BACK);
             }
         }
 

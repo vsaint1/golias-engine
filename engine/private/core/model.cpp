@@ -617,7 +617,7 @@ namespace golias {
         // Default material state
         EBlendMode blendMode     = EBlendMode::BLEND_MODE_OPAQUE;
         bool depthWrite          = true;
-        ECullMode cullMode       = ECullMode::CULL_BACK;
+        ECullMode cullMode       = ECullMode::CULL_MODE_BACK;
         float alphaClipThreshold = 0.5f;
 
         if (gltf_material) {
@@ -638,7 +638,7 @@ namespace golias {
             }
 
             if (gltf_material->double_sided) {
-                cullMode = ECullMode::CULL_NONE;
+                cullMode = ECullMode::CULL_MODE_DISABLED;
                 spdlog::debug("Material '{}' is double-sided", gltf_material->name ? gltf_material->name : "unnamed");
             }
 
@@ -801,7 +801,7 @@ namespace golias {
         // Default material state
         EBlendMode blendMode = EBlendMode::BLEND_MODE_OPAQUE;
         bool depthWrite      = true;
-        ECullMode cullMode   = ECullMode::CULL_BACK;
+        ECullMode cullMode   = ECullMode::CULL_MODE_BACK;
 
         if (obj_material) {
             float alpha = obj_material->dissolve;

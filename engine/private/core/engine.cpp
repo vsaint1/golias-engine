@@ -113,7 +113,7 @@ namespace golias {
         DirectionalLightCommand dirLight;
         dirLight.direction   = glm::vec3(0.5f, -1.0f, 0.3f);
         dirLight.color       = glm::vec3(1.0f, 1.0f, 1.0f);
-        dirLight.intensity   = 1.0f;
+        dirLight.intensity   = 5.0f;
         dirLight.castShadows = true;
         engine.GetSceneRenderer().Submit(dirLight);
 

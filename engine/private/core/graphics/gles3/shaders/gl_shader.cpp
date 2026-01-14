@@ -1,5 +1,7 @@
 #include "core/graphics/gles3/shaders/gl_shader.h"
 
+#include "core/graphics/gles3/storage/gl_texture_2d.h"
+#include "core/graphics/gles3/storage/gl_texture_cubemap.h"
 
 namespace golias {
 
@@ -39,7 +41,7 @@ namespace golias {
         return -1;
     }
 
-    void OpenglShader::SetUniform(const std::string_view pName, const UniformValue& value,int count) {
+    void OpenglShader::SetUniform(const std::string_view pName, const UniformValue& value, int count) {
 
         GLint location = GetUniformLocation(pName);
 
@@ -55,7 +57,7 @@ namespace golias {
 
                 if constexpr (std::is_same_v<T, int>) {
                     glUniform1i(location, v);
-                }else if constexpr (std::is_same_v<T, bool>) {
+                } else if constexpr (std::is_same_v<T, bool>) {
                     glUniform1i(location, v ? 1 : 0);
                 } else if constexpr (std::is_same_v<T, float>) {
                     glUniform1f(location, v);
@@ -66,7 +68,7 @@ namespace golias {
                 } else if constexpr (std::is_same_v<T, glm::vec4>) {
                     glUniform4fv(location, 1, &v.x);
                 } else if constexpr (std::is_same_v<T, glm::mat4>) {
-                    glUniformMatrix4fv(location, 1, GL_FALSE, &v[0][0]);
+                    glUniformMatrix4fv(location, count, GL_FALSE, &v[0][0]);
                 } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture2D>>) {
                     if (v && v.get()) {
                         glActiveTexture(GL_TEXTURE0 + current_texture_unit);

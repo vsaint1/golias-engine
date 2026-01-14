@@ -15,6 +15,7 @@ namespace golias {
 
         std::shared_ptr<TextureCubemap> EnsureTextureCubemapCross(const std::string_view pFilePath);
         std::shared_ptr<TextureCubemap> EnsureTextureCubemapFaces(const std::array<std::string, 6>& faces);
+        std::shared_ptr<TextureCubemap> EnsureTextureCubemapProcedural(const std::string_view pIdentifier = "procedural_cubemap");
 
     private:
         std::unordered_map<std::string, std::shared_ptr<Texture2D>> textures2D;

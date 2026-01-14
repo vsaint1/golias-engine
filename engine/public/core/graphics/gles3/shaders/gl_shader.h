@@ -13,7 +13,7 @@ namespace golias {
         void Unbind() override;
 
         int32_t GetUniformLocation(const std::string_view pName) override;
-        void SetUniform(const std::string_view pName, const UniformValue& value,int count = 0) override;
+        void SetUniform(const std::string_view pName, const UniformValue& value, int count = 1) override;
 
     private:
         GLuint CompileShader(GLenum type, const std::string& source);
@@ -21,7 +21,6 @@ namespace golias {
         GLuint CreateProgram(const std::string& vertexSource, const std::string& fragmentSource);
 
         const char* GetShaderTypeCStr(GLenum type);
-
     };
 
 }; // namespace golias

@@ -43,6 +43,14 @@ namespace golias {
         return cubemap;
     }
 
+
+    std::shared_ptr<TextureCubemap> TextureCubemap::LoadProcedural() {
+        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto cubemap  = textureManager.EnsureTextureCubemapProcedural();
+
+        return cubemap;
+    }
+
     glm::vec3 TextureCubemap::GetCubemapDirection(int face, float u, float v) {
         switch (face) {
         case 0:

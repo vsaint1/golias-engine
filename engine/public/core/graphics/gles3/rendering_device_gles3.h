@@ -12,7 +12,7 @@ namespace golias {
 
     class RenderingDeviceGLES3 final : public RenderingDevice {
     public:
-        RenderingDeviceGLES3() = default;
+        RenderingDeviceGLES3();
 
         ~RenderingDeviceGLES3();
 
@@ -21,11 +21,13 @@ namespace golias {
         void BindShader(Shader* shader) override;
         void BindMesh(Mesh* mesh) override;
         void UnbindMesh(Mesh* mesh) override;
+        void BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture) override;
+        void BindCubemap(Shader* shader, std::string_view uniformName, Uint32 slot, TextureCubemap* texture) override;
         void BindMaterial(Material* material) override;
 
-        std::shared_ptr<Shader> GetDefaultShader3D() const;
-        std::shared_ptr<Shader> GetDefaultShader2D() const;
-        std::shared_ptr<Shader> GetDefaultShaderCanvas() const;
+        std::shared_ptr<Shader> GetDefaultShader3D() const override;
+        std::shared_ptr<Shader> GetDefaultShader2D() const override;
+        std::shared_ptr<Shader> GetDefaultShaderCanvas() const override;
         std::shared_ptr<Shader> GetDefaultShadowMapShader() const override;
 
         std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) override;
@@ -48,7 +50,7 @@ namespace golias {
 
         void Clear(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) override;
 
-        void DrawMesh(Mesh* mesh);
+        void DrawMesh(Mesh* mesh) override;
 
         void SwapChain() override;
 
@@ -57,20 +59,23 @@ namespace golias {
         void BeginShadowPass() override;
         void EndShadowPass() override;
 
-        std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override {
-            return nullptr;
-        }
-
-        std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() override {
-            return shadowFBO;
-        }
+        std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
+        std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() override;
 
         std::shared_ptr<TextureCubemap>  CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
         std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
+        std::shared_ptr<TextureCubemap> CreateCubemapProcedural() override;
         std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
             
         std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
         std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
+        void SetScissor(const Scissor& scissor) override;
+
+        void SetBlendMode(EBlendMode blendMode) override;
+        void SetDepthComparison(EComparisonFunc func) override;
+        void SetCullMode(ECullMode cullMode) override;
+        void SetDepthWrite(bool enable) override;
+        void SetDepthTest(bool enable) override;
 
     private:
         SDL_GLContext gl_context = nullptr;

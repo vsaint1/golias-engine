@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "core/graphics/gles3/rendering_device_gles3.h"
 
 namespace golias {
@@ -87,7 +86,6 @@ namespace golias {
         float scale = 0.01f; // Pixels -> World units
     };
 
-
     class SceneRenderer {
     public:
         bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
@@ -122,19 +120,32 @@ namespace golias {
         std::vector<PointLightCommand> point_lights;
         std::vector<SpotLightCommand> spot_lights;
 
-
         std::vector<ScreenCanvasCommand> canvas_commands;
         std::vector<WorldCanvasCommand> world_canvas_commands;
-
 
         std::shared_ptr<Mesh> quad        = nullptr;
         RenderingDevice* rendering_device = nullptr;
 
-    private:
-        void RenderObject(const DrawCommand& command, const CameraCommand& camera, bool shadowsEnabled);
-        void ApplyBlendMode(EBlendMode mode);
-        GLenum ConvertDepthFunc(EComparisonFunc func);
-        void ApplyMaterialState(Material* material);
+        struct RenderContext {
+            CameraCommand camera;
+            bool shadowsEnabled = true;
+        } renderContext{};
+
+        void ShadowPass();
+        void GeometryOpaquePass(const std::vector<DrawCommand>& opaqueCommands);
+        void SkyboxPass();
+        void GeometryTransparentPass(const std::vector<DrawCommand>& transparentCommands);
+        void WorldCanvasPass();
+        void Sprite2DPass();
+        void ScreenCanvasPass();
+
+
+        void RenderObject(const DrawCommand& command);
+        void CalculateLightSpaceMatrices();
+        void SetupMaterialUniforms(const DrawCommand& command);
+        void SetupLightingUniforms(Shader* shader);
+        void SetupShadowUniforms(Shader* shader);
+        void SetupIBLUniforms(Shader* shader, const DrawCommand& command);
     };
 
 }; // namespace golias

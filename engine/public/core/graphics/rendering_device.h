@@ -26,10 +26,12 @@ namespace golias {
 
         virtual bool Initialize(SDL_Window* sdl_window) = 0;
 
-        virtual void BindShader(Shader* shader)       = 0;
-        virtual void BindMesh(Mesh* mesh)             = 0;
-        virtual void UnbindMesh(Mesh* mesh)           = 0;
-        virtual void BindMaterial(Material* material) = 0;
+        virtual void BindShader(Shader* shader)                                                                      = 0;
+        virtual void BindMesh(Mesh* mesh)                                                                            = 0;
+        virtual void UnbindMesh(Mesh* mesh)                                                                          = 0;
+        virtual void BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture)    = 0;
+        virtual void BindCubemap(Shader* shader, std::string_view uniformName, Uint32 slot, TextureCubemap* texture) = 0;
+        virtual void BindMaterial(Material* material)                                                                = 0;
 
         virtual std::shared_ptr<Shader> GetDefaultShader3D() const     = 0;
         virtual std::shared_ptr<Shader> GetDefaultShader2D() const     = 0;
@@ -65,25 +67,36 @@ namespace golias {
 
         virtual void SetViewport(const Viewport& vp) = 0;
 
-        virtual std::shared_ptr<Framebuffer> GetDefaultFramebuffer() = 0;
+        virtual std::shared_ptr<Framebuffer> GetDefaultFramebuffer()          = 0;
         virtual std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() = 0;
 
         virtual std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) = 0;
-        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) = 0;
-        virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath)            = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapProcedural() = 0;
 
-        virtual std::shared_ptr<Texture2D> GetWhiteTexture2D() const = 0;
+        virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const                                          = 0;
+
+        virtual std::shared_ptr<Texture2D> GetWhiteTexture2D() const  = 0;
         virtual std::shared_ptr<Texture2D> GetNormalTexture2D() const = 0;
+
+        virtual void SetScissor(const Scissor& scissor) = 0;
+
+        virtual void SetBlendMode(EBlendMode blendMode)       = 0;
+        virtual void SetDepthComparison(EComparisonFunc func) = 0;
+        virtual void SetCullMode(ECullMode cullMode)          = 0;
+        virtual void SetDepthWrite(bool enable)               = 0;
+        virtual void SetDepthTest(bool enable)                = 0;
+
 
     protected:
         glm::vec4 clear_color                              = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
         SDL_Window* window                                 = nullptr;
         std::unique_ptr<PhysicsDebugDrawer> physicsDebug3D = nullptr;
 
-        std::shared_ptr<Texture2D> whiteTexture2D                     = nullptr;
-        std::shared_ptr<Texture2D> normalTexture2D                     = nullptr;
+        std::shared_ptr<Texture2D> whiteTexture2D  = nullptr;
+        std::shared_ptr<Texture2D> normalTexture2D = nullptr;
 
-        Viewport viewport                                      = Viewport();
-        Scissor scissor = Scissor();
+        Viewport viewport = Viewport();
+        Scissor scissor   = Scissor();
     };
 }; // namespace golias

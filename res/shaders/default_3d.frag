@@ -115,8 +115,25 @@ uniform SpotLight u_spotLights[MAX_SPOT_LIGHTS];
 uniform int u_spotLightCount;
 
 /* ============================================================================
-      Tonemapping & Gamma Correction Functions
+   Color Space Conversion (sRGB <-> Linear)
    ============================================================================ */
+
+vec3 SRGBToLinear(vec3 srgb) {
+    return mix(srgb / 12.92, pow((srgb + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), srgb));
+}
+
+vec3 LinearToSRGB(vec3 linear) {
+    return mix(linear * 12.92, pow(linear, vec3(1.0 / 2.4)) * 1.055 - 0.055, step(vec3(0.0031308), linear));
+}
+
+vec3 ApplyGamma(vec3 color) {
+    return pow(color, vec3(1.0 / 2.2));
+}
+
+/* ============================================================================
+   Tonemapping Functions
+   ============================================================================ */
+
 vec3 Tonemap_Linear(vec3 c) {
     return c;
 }
@@ -125,7 +142,6 @@ vec3 Tonemap_Reinhard(vec3 c) {
     return c / (c + vec3(1.0));
 }
 
-// Filmic (Hable / Uncharted 2)
 vec3 Tonemap_Uncharted2(vec3 x) {
     const float A = 0.15;
     const float B = 0.50;
@@ -138,7 +154,6 @@ vec3 Tonemap_Uncharted2(vec3 x) {
         (x * (A * x + B) + D * F)) - E / F;
 }
 
-// Filmic approximation (fast)
 vec3 Tonemap_Filmic(vec3 c) {
     c = max(vec3(0.0), c - 0.004);
     return (c * (6.2 * c + 0.5)) / (c * (6.2 * c + 1.7) + 0.06);
@@ -168,10 +183,6 @@ vec3 ApplyTonemap(vec3 color) {
         color = Tonemap_Linear(color);
 
     return color;
-}
-
-vec3 ApplyGamma(vec3 color) {
-    return pow(color, vec3(1.0 / 2.2));
 }
 
 /* ============================================================================
@@ -205,7 +216,7 @@ vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 }
 
 /* ============================================================================
-   Soft, High-Quality Shadows
+   Shadow Calculation
    ============================================================================ */
 
 float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
@@ -216,21 +227,14 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
         return 1.0;
 
     float currentDepth = proj.z;
-
-    // Calculate proper bias based on surface angle to light
     float NdotL = max(dot(N, L), 0.0);
-
-    // Use a more aggressive bias strategy to prevent self-shadowing
     float bias = max(0.005 * (1.0 - NdotL), 0.001);
-
-    // Additional depth-based bias for far surfaces
     bias += currentDepth * 0.0001;
 
     vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
     float shadow = 0.0;
     int count = 0;
 
-    // 3x3 PCF for softer shadows
     for(int x = -1; x <= 1; x++) {
         for(int y = -1; y <= 1; y++) {
             vec2 offset = vec2(x, y) * texelSize;
@@ -243,16 +247,18 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
     return shadow / float(count);
 }
 
-/* ============================================================================
-   Material Sampling
-   ============================================================================ */
-
 Material SampleMaterial() {
     Material mat;
 
-    mat.albedo = ((TEXTURE_FLAGS & HAS_ALBEDO_FLAG) != 0) ? texture(ALBEDO_TEXTURE, v_texcoord) * u_material.modulate : u_material.modulate;
+    if((TEXTURE_FLAGS & HAS_ALBEDO_FLAG) != 0) {
+        vec4 texColor = texture(ALBEDO_TEXTURE, v_texcoord);
+        texColor.rgb = SRGBToLinear(texColor.rgb);
+        mat.albedo = texColor * u_material.modulate;
+    } else {
+        mat.albedo = u_material.modulate;
+    }
 
-    mat.albedo.rgb *= v_color;
+    mat.albedo.rgb *= SRGBToLinear(v_color);
 
     mat.metallic = ((TEXTURE_FLAGS & HAS_METALLIC_FLAG) != 0) ? texture(METALLIC_TEXTURE, v_texcoord).b * u_material.metallicFactor : u_material.metallicFactor;
     mat.metallic = clamp(mat.metallic, 0.0, 1.0);
@@ -262,7 +268,13 @@ Material SampleMaterial() {
 
     mat.ao = ((TEXTURE_FLAGS & HAS_AO_FLAG) != 0) ? texture(AO_TEXTURE, v_texcoord).r : 1.0;
 
-    mat.emissive = ((TEXTURE_FLAGS & HAS_EMISSIVE_FLAG) != 0) ? texture(EMISSIVE_TEXTURE, v_texcoord).rgb * u_material.emissiveFactor * u_material.emissiveStrength : vec3(0.0);
+    if((TEXTURE_FLAGS & HAS_EMISSIVE_FLAG) != 0) {
+        vec3 emissiveTex = texture(EMISSIVE_TEXTURE, v_texcoord).rgb;
+        emissiveTex = SRGBToLinear(emissiveTex);
+        mat.emissive = emissiveTex * u_material.emissiveFactor * u_material.emissiveStrength;
+    } else {
+        mat.emissive = vec3(0.0);
+    }
 
     mat.normal = normalize(v_normal);
     if((TEXTURE_FLAGS & HAS_NORMAL_FLAG) != 0) {
@@ -274,7 +286,7 @@ Material SampleMaterial() {
 }
 
 /* ============================================================================
-   Direct Lighting
+   Direct Lighting 
    ============================================================================ */
 
 vec3 CalculateDirectionalLight(
@@ -304,6 +316,7 @@ vec3 CalculateDirectionalLight(
     vec3 diffuse = kD * albedo / PI;
 
     vec3 radiance = light.color * light.intensity;
+
     return (diffuse + specular) * radiance * NdotL * shadow;
 }
 
@@ -346,6 +359,7 @@ vec3 CalculatePointLight(
     vec3 diffuse = kD * albedo / PI;
 
     vec3 radiance = light.color * light.intensity * attenuation;
+
     return (diffuse + specular) * radiance * NdotL;
 }
 
@@ -397,67 +411,71 @@ vec3 CalculateSpotLight(
     vec3 diffuse = kD * albedo / PI;
 
     vec3 radiance = light.color * light.intensity * attenuation * spotIntensity;
+
     return (diffuse + specular) * radiance * NdotL;
 }
 
-vec3 CalculateIBL(vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float roughness, float ao) {
+vec3 CalculateIBL(
+    vec3 N,
+    vec3 V,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    float ao
+) {
     if(USE_IBL == 0) {
         return vec3(0.0);
     }
 
-    vec3 R = reflect(-V, N);
     float NdotV = max(dot(N, V), 0.0);
+    vec3 R = reflect(-V, N);
 
     vec3 F = F_SchlickRoughness(NdotV, F0, roughness);
-    vec3 kD = (1.0 - F) * (1.0 - metallic);
+
+    vec3 kS = F;
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
     vec3 irradiance = texture(IRRADIANCE_MAP, N).rgb;
-    vec3 diffuse = kD * irradiance * albedo;
+    vec3 diffuse = irradiance * albedo;
 
     const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefilteredColor = textureLod(PREFILTER_MAP, R, roughness * MAX_REFLECTION_LOD).rgb;
-    vec3 specular = prefilteredColor * F;
+    vec3 prefiltered = textureLod(PREFILTER_MAP, R, roughness * MAX_REFLECTION_LOD).rgb;
 
-    return (diffuse + specular) * ao;
+    float specularWeight = mix(1.0, 0.0, roughness);
+    vec3 specular = prefiltered * F * specularWeight;
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
+
+    return ambient;
 }
 
 /* ============================================================================
-   Studio Lighting Setup (when no lights present)
+   Studio Lighting - Simplified for non-PBR look
    ============================================================================ */
 
-vec3 StudioLighting(vec3 N, vec3 V, vec3 F0, vec3 albedo, float metallic, float roughness) {
+vec3 StudioLighting(vec3 N, vec3 V, vec3 albedo, float roughness) {
     vec3 totalLight = vec3(0.0);
 
-    // Key light (main light, slightly warm)
+    // Key light (main directional light)
     vec3 keyDir = normalize(vec3(0.5, 0.8, 0.6));
-    vec3 keyColor = vec3(1.0, 0.98, 0.95) * 2.2;
+    float keyNdotL = max(dot(N, keyDir), 0.0);
+    vec3 keyColor = vec3(1.0, 0.98, 0.95) * 1.8;
+    totalLight += albedo * keyColor * keyNdotL;
 
-    vec3 H = normalize(V + keyDir);
-    float NdotL = max(dot(N, keyDir), 0.0);
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotV = max(dot(N, V), 0.001);
-    float HdotV = max(dot(H, V), 0.0);
-
-    float D = D_GGX(NdotH, roughness);
-    float G = G_Smith(NdotV, NdotL, roughness);
-    vec3 F = F_Schlick(HdotV, F0);
-
-    vec3 specular = (D * G * F) / (4.0 * NdotV * NdotL + 0.001);
-    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
-
-    totalLight += (diffuse + specular) * keyColor * NdotL;
-
-    // Fill light (softer, cooler, from opposite side)
+    // Fill light (softer, from opposite side)
     vec3 fillDir = normalize(vec3(-0.3, 0.3, -0.4));
-    vec3 fillColor = vec3(0.7, 0.8, 1.0) * 0.6;
-    NdotL = max(dot(N, fillDir), 0.0);
-    totalLight += albedo * fillColor * NdotL * (1.0 - metallic);
+    float fillNdotL = max(dot(N, fillDir), 0.0);
+    vec3 fillColor = vec3(0.7, 0.8, 1.0) * 0.4;
+    totalLight += albedo * fillColor * fillNdotL;
 
-    // Rim light (edge highlight for depth)
+    // Rim light (edge highlight)
     float rimPower = 1.0 - max(dot(N, V), 0.0);
     rimPower = pow(rimPower, 3.0);
-    totalLight += vec3(0.9, 0.95, 1.0) * rimPower * 0.8;
+    totalLight += vec3(0.9, 0.95, 1.0) * rimPower * 0.3;
+
+    // Ambient base
+    totalLight += albedo * vec3(0.15, 0.16, 0.18);
 
     return totalLight;
 }
@@ -502,13 +520,14 @@ void main() {
     // Ambient/IBL
     vec3 ambient;
     if(USE_IBL == 1) {
+        // PBR path with IBL
         ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao);
     } else if(!hasLights) {
-
-        Lo = StudioLighting(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
-        ambient = vec3(0.15, 0.16, 0.18) * mat.albedo.rgb * mat.ao;
+        // No lights - use simplified studio lighting (non-PBR look)
+        Lo = StudioLighting(N, V, mat.albedo.rgb, mat.roughness);
+        ambient = vec3(0.0); // Already included in studio lighting
     } else {
-
+        // Has lights but no IBL - use simple hemisphere ambient
         float upDot = dot(N, vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5;
         vec3 skyColor = vec3(0.5, 0.6, 0.7);
         vec3 groundColor = vec3(0.2, 0.22, 0.25);

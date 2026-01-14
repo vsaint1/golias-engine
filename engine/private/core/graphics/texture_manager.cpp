@@ -1,10 +1,11 @@
 #include "core/graphics/texture_manager.h"
+
+#include "core/engine.h"
 #include "core/graphics/texture_2d.h"
 #include "core/graphics/texture_cubemap.h"
-#include "core/engine.h"
 
 namespace golias {
-        std::shared_ptr<Texture2D> TextureManager::EnsureTexture2D(const std::string_view pFilePath) {
+    std::shared_ptr<Texture2D> TextureManager::EnsureTexture2D(const std::string_view pFilePath) {
         auto it = textures2D.find(pFilePath.data());
 
         if (it != textures2D.end()) {
@@ -85,4 +86,25 @@ namespace golias {
 
         return texture;
     }
-}
+
+    std::shared_ptr<TextureCubemap> golias::TextureManager::EnsureTextureCubemapProcedural(const std::string_view pIdentifier) {
+        auto it = texturesCubemap.find(pIdentifier.data());
+        if (it != texturesCubemap.end()) {
+            spdlog::debug("Cubemap cache HIT (procedural): {} (Total cached: {})", pIdentifier, texturesCubemap.size());
+            return it->second;
+        }
+
+        auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
+        auto texture = rd->CreateCubemapProcedural();
+        
+        if (texture) {
+            texturesCubemap[pIdentifier.data()] = texture;
+            spdlog::debug("Cubemap cache MISS (procedural), created: {} (Total cached: {})", pIdentifier, texturesCubemap.size());
+            return texture;
+        }
+
+        spdlog::warn("Cubemap cache MISS (procedural), but no procedural generation implemented: {}", pIdentifier);
+        return nullptr;
+    }
+
+} // namespace golias

@@ -1,5 +1,4 @@
 #pragma once
-#include "core/graphics/texture_2d.h"
 #include <cstdint>
 #include <memory>
 #include <spdlog/spdlog.h>
@@ -9,9 +8,21 @@
 
 #include <glm/glm.hpp>
 
-using UniformValue = std::variant<bool,int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4, std::shared_ptr<golias::Texture2D>,golias::Texture2D*, const glm::mat4*>;
 
 namespace golias {
+    class Texture2D;
+    class TextureCubemap;
+
+    using UniformValue = std::variant<bool,
+                                      int,
+                                      float,
+                                      glm::vec2,
+                                      glm::vec3,
+                                      glm::vec4,
+                                      glm::mat4,
+                                      std::shared_ptr<golias::Texture2D>,
+                                      golias::Texture2D*,
+                                      const glm::mat4*>;
 
     class Shader {
     public:
@@ -22,7 +33,7 @@ namespace golias {
 
         virtual int32_t GetUniformLocation(const std::string_view pName) = 0;
 
-        virtual void SetUniform(const std::string_view pName, const UniformValue& value,int count = 0) = 0;
+        virtual void SetUniform(const std::string_view pName, const UniformValue& value, int count = 1) = 0;
 
         int32_t GetNativeHandle() const;
 

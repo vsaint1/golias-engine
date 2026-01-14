@@ -1,7 +1,7 @@
 #pragma once
 
 #include "shader.h"
-
+#include "core/graphics/structs.h"
 #include <json.hpp>
 
 namespace golias {
@@ -56,7 +56,7 @@ namespace golias {
         bool depthTestEnabled     = true;
         bool depthWriteEnabled    = true;
         EComparisonFunc depthFunc = EComparisonFunc::COMPARISON_LESS;
-        ECullMode cullMode        = ECullMode::CULL_BACK;
+        ECullMode cullMode        = ECullMode::CULL_MODE_BACK;
         bool useIBL               = false;
 
         std::unordered_map<std::string, UniformValue> parameters;

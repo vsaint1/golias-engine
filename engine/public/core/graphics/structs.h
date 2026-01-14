@@ -25,6 +25,28 @@ enum class ETextureMipGenSettings {
     SHARPEN1, // Future: Sharpen filter level 1
 };
 
+ enum class EFramebufferAttachment {
+        COLOR_ATTACHMENT0 = 0,
+        COLOR_ATTACHMENT1 = 1,
+        COLOR_ATTACHMENT2 = 2,
+        COLOR_ATTACHMENT3 = 3,
+        DEPTH_ATTACHMENT,
+        STENCIL_ATTACHMENT,
+        DEPTH_STENCIL_ATTACHMENT
+    };
+
+    enum class EFramebufferTextureFormat {
+        RGBA8,
+        RGB8,
+        RGBA16F,
+        RGB16F,
+        RGBA32F,
+        RGB32F,
+        DEPTH24,
+        DEPTH32F,
+        DEPTH24_STENCIL8,
+        DEPTH32F_STENCIL8
+    };
 
 enum class ETextureCompressionSettings {
     DEFAULT,
@@ -105,9 +127,10 @@ enum class EBlendFactor {
 
 
 enum class ECullMode {
-    CULL_NONE,
-    CULL_FRONT,
-    CULL_BACK
+    CULL_MODE_DISABLED,
+    CULL_MODE_FRONT,
+    CULL_MODE_BACK,
+    CULL_MODE_FRONT_AND_BACK,
 };
 
 enum class EPolygonMode { FILL, LINE, POINT };
@@ -116,7 +139,7 @@ enum class EPrimitiveTopology { POINTS, LINES, LINE_STRIP, TRIANGLES, TRIANGLE_S
 
 enum class EShaderStage { VERTEX = 1 << 0, FRAGMENT = 1 << 1, COMPUTE = 1 << 2 };
 
-enum class EBlendMode { BLEND_MODE_OPAQUE, BLEND_MODE_ALPHA, BLEND_MODE_ADDITIVE, BLEND_MODE_MULTIPLY };
+enum class EBlendMode { BLEND_MODE_DISABLED, BLEND_MODE_OPAQUE, BLEND_MODE_ALPHA, BLEND_MODE_ADDITIVE, BLEND_MODE_MULTIPLY };
 
 enum class EBufferTarget {
     BUFFER_USAGE_VERTEX       = 1 << 0,
