@@ -27,44 +27,6 @@ namespace golias {
         return rendering_device;
     }
 
-    SceneRenderer::~SceneRenderer() {
-        if (rendering_device) {
-            delete rendering_device;
-            rendering_device = nullptr;
-        }
-    }
-
-    void SceneRenderer::Submit(const DrawCommand& command) {
-        command_queue.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const DrawCommand2D& command) {
-        command_queue_2d.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const ScreenCanvasCommand& command) {
-        canvas_commands.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const WorldCanvasCommand& command) {
-        world_canvas_commands.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const DirectionalLightCommand& command) {
-        directional_lights.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const PointLightCommand& command) {
-        point_lights.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const SpotLightCommand& command) {
-        spot_lights.push_back(command);
-    }
-
-    void SceneRenderer::Submit(const WorldEnvironmentCommand& command) {
-        world_environment_command = command;
-    }
 
     void SceneRenderer::SetupMaterialUniforms(const DrawCommand& command) {
         auto shader = command.material->GetShader();
@@ -187,14 +149,14 @@ namespace golias {
             renderContext.shadowsEnabled = true;
 
             const float orthoSize  = 30.0f;
-            const float near_plane = 1.0f; 
-            const float far_plane  = 150.0f; 
+            const float near_plane = 1.0f;
+            const float far_plane  = 150.0f;
 
             glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, near_plane, far_plane);
 
             glm::vec3 lightDir = glm::normalize(directional_light.direction);
 
-            glm::vec3 cameraFront = glm::normalize(-renderContext.camera.viewMatrix[2]);
+            glm::vec3 cameraFront  = glm::normalize(-renderContext.camera.viewMatrix[2]);
             glm::vec3 shadowCenter = renderContext.camera.position + cameraFront * (orthoSize * 0.5f);
 
             glm::vec3 lightPos = shadowCenter - lightDir * (far_plane * 0.5f);
@@ -362,6 +324,7 @@ namespace golias {
 
         rendering_device->SetDepthTest(false);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
+        rendering_device->SetCullMode(ECullMode::CULL_MODE_DISABLED);
 
         const auto shader_2d = rendering_device->GetDefaultShader2D();
         shader_2d->Bind();
@@ -390,6 +353,7 @@ namespace golias {
 
         rendering_device->SetDepthTest(false);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
+        rendering_device->SetCullMode(ECullMode::CULL_MODE_DISABLED);
 
         auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
         shader_canvas->Bind();
@@ -403,12 +367,8 @@ namespace golias {
 
             Uint32 indexOffset = 0;
             for (const auto& batch : command.batches) {
-                if (batch.texture) {
-                    shader_canvas->SetUniform("HAS_TEXTURE", 1);
-                    shader_canvas->SetUniform("TEXTURE", batch.texture);
-                } else {
-                    shader_canvas->SetUniform("HAS_TEXTURE", 0);
-                }
+                shader_canvas->SetUniform("TEXTURE",
+                                          batch.texture != nullptr ? batch.texture : rendering_device->GetWhiteTexture2D().get());
 
                 shader_canvas->SetUniform("USE_BILLBOARDING", false);
                 shader_canvas->SetUniform("MODEL_MATRIX", glm::mat4(1.0f));
@@ -478,7 +438,7 @@ namespace golias {
             return false;
         }
 
-        quad = Mesh::CreateQuad(1.0f, 1.0f);
+        quad = Mesh::CreateQuad();
 
         spdlog::info("SceneRenderer::Initialize Scene Renderer initialized successfully.");
         return true;
@@ -514,4 +474,43 @@ namespace golias {
         spot_lights.clear();
     }
 
+
+    SceneRenderer::~SceneRenderer() {
+        if (rendering_device) {
+            delete rendering_device;
+            rendering_device = nullptr;
+        }
+    }
+
+    void SceneRenderer::Submit(const DrawCommand& command) {
+        command_queue.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const DrawCommand2D& command) {
+        command_queue_2d.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const ScreenCanvasCommand& command) {
+        canvas_commands.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const WorldCanvasCommand& command) {
+        world_canvas_commands.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const DirectionalLightCommand& command) {
+        directional_lights.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const PointLightCommand& command) {
+        point_lights.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const SpotLightCommand& command) {
+        spot_lights.push_back(command);
+    }
+
+    void SceneRenderer::Submit(const WorldEnvironmentCommand& command) {
+        world_environment_command = command;
+    }
 }; // namespace golias

@@ -21,28 +21,29 @@ namespace golias {
         index_type               = EDataType::UNSIGNED_INT;
     }
 
-    std::shared_ptr<Mesh> Mesh::CreateQuad(float width, float height) {
+    std::shared_ptr<Mesh> Mesh::CreateQuad() {
 
 
         std::vector<float> quad_vertices = {
-            // pos(x,y)
-            1.0f,
-            1.0f,
-            0.0f,
-            1.0f,
-            0.0f,
-            0.0f,
-            1.0f,
-            0.0f,
+            // x, y, z,   r, g, b, a,   u, v
+            0, 0, 0,    1, 1, 1, 1,   0, 0,
+            1, 0, 0,    1, 1, 1, 1,   1, 0,
+            1, 1, 0,    1, 1, 1, 1,   1, 1,
+            0, 1, 0,    1, 1, 1, 1,   0, 1,
         };
 
-        std::vector<uint32_t> quad_indices = {0, 1, 2, 0, 2, 3};
+       std::vector<uint32_t> quad_indices = {
+            0, 1, 2,
+            2, 3, 0
+        };
 
-        golias::VertexLayout layout;
+        VertexLayout layout;
         layout.elements = {
-            {0, 2, EDataType::FLOAT, false, 0},
+            {0, 3, EDataType::FLOAT, false, 0},                 
+            {1, 4, EDataType::FLOAT, false, 3 * sizeof(float)}, 
+            {2, 2, EDataType::FLOAT, false, 7 * sizeof(float)}, 
         };
-        layout.stride = 2 * sizeof(float);
+        layout.stride = 9 * sizeof(float);
 
         auto rd = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice();
         return rd->CreateMeshFromData(layout, quad_vertices, quad_indices);

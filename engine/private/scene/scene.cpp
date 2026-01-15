@@ -22,6 +22,7 @@
 #pragma region UI_COMPONENTS
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
+#include "scene/ui/button_component.h"
 #pragma endregion
 
 namespace golias {
@@ -415,6 +416,7 @@ namespace golias {
         WidgetComponent::Register();
         CanvasComponent::Register();
         TextWidgetComponent::Register();
+        ButtonWidgetComponent::Register();
     }
 
 } // namespace golias

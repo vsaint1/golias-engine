@@ -43,9 +43,9 @@ namespace golias {
         std::vector<Uint32> indices;
         std::shared_ptr<Mesh> mesh = nullptr;
         ECanvasMode canvasMode     = ECanvasMode::SCREEN_SPACE;
-        bool useBillboarding     = false;
-        float worldSpaceScale     = 1.0f; // Scale factor for world space (1px = 0.01 units)
-        
+        bool useBillboarding       = false;
+        float worldSpaceScale      = 1.0f; // Scale factor for world space (1px = 0.01 units)
+
     };
 
 } // namespace golias
