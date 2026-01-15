@@ -1,6 +1,6 @@
 {
     "blend_mode": "alpha",
-    "cull_mode": "none",
+    "cull_mode": "back",
     "depth_write": false,
     "use_ibl": true,
     "parameters": {
