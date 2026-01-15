@@ -163,6 +163,20 @@ struct Buffer {
     EBufferTarget target = EBufferTarget::BUFFER_USAGE_UNIFORM;
 };
 
+enum EClearFlags : uint32_t {
+    CLEAR_COLOR   = 1 << 0,
+    CLEAR_DEPTH   = 1 << 1,
+    CLEAR_STENCIL = 1 << 2
+};
+
+inline EClearFlags operator|(EClearFlags a, EClearFlags b) {
+    return static_cast<EClearFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline EClearFlags& operator|=(EClearFlags& a, EClearFlags b) {
+    a = a | b;
+    return a;
+}
 
 enum class EDataType : uint32_t {
     BYTE,

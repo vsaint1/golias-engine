@@ -198,11 +198,18 @@ namespace golias {
     }
 
 
-    void RenderingDeviceGLES3::Clear(glm::vec4 color) {
+    void RenderingDeviceGLES3::ClearColor(glm::vec4 color) {
         glClearColor(color.r, color.g, color.b, color.a);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         clear_color = color;
+    }
+
+
+    void RenderingDeviceGLES3::ClearBuffer(EClearFlags flags) {
+        GLbitfield glFlags = ToGLClearFlags(flags);
+
+        glClear(glFlags);
     }
 
     Buffer RenderingDeviceGLES3::CreateGPUBuffer(size_t size, const void* data, EBufferUsageFlags bufferFlags, EBufferTarget bufferTarget) {
@@ -337,22 +344,6 @@ namespace golias {
         return default_shader_csm;
     }
 
-    void RenderingDeviceGLES3::BeginShadowPass() {
-
-        if (!shadowFBO) {
-            return;
-        }
-
-
-        shadowFBO->Bind();
-        glClear(GL_DEPTH_BUFFER_BIT);
-        
-    }
-
-    void RenderingDeviceGLES3::EndShadowPass() {
-        shadowFBO->Unbind();
-        glViewport(0, 0, viewport.width, viewport.height);
-    }
 
     bool RenderingDeviceGLES3::CreateSkyboxShader() {
         const auto& fileSystem = Engine::GetInstance().GetFileSystem();

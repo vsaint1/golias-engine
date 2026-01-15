@@ -29,6 +29,7 @@ namespace golias {
         std::shared_ptr<Shader> GetDefaultShader2D() const override;
         std::shared_ptr<Shader> GetDefaultShaderCanvas() const override;
         std::shared_ptr<Shader> GetDefaultShadowMapShader() const override;
+        std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
 
         std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) override;
         std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) override;
@@ -48,7 +49,8 @@ namespace golias {
 
         PhysicsDebugDrawer* GetPhysicsDebugDrawer() override;
 
-        void Clear(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) override;
+        void ClearColor(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) override;
+        void ClearBuffer(EClearFlags flags) override;
 
         void DrawMesh(Mesh* mesh) override;
 
@@ -56,8 +58,6 @@ namespace golias {
 
         void SetViewport(const Viewport& vp) override;
 
-        void BeginShadowPass() override;
-        void EndShadowPass() override;
 
         std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
         std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() override;
@@ -65,7 +65,6 @@ namespace golias {
         std::shared_ptr<TextureCubemap>  CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
         std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
         std::shared_ptr<TextureCubemap> CreateCubemapProcedural() override;
-        std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
             
         std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
         std::shared_ptr<Texture2D> GetNormalTexture2D() const override;

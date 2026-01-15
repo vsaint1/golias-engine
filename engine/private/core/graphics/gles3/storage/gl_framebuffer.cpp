@@ -3,6 +3,7 @@
 #include "core/graphics/gles3/gl_common.h"
 #include "core/graphics/gles3/storage/gl_texture_2d.h"
 #include <spdlog/spdlog.h>
+#include "core/engine.h"
 
 namespace golias {
 
@@ -84,6 +85,8 @@ namespace golias {
 
     void OpenglFramebuffer::Unbind() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        auto viewport = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice()->GetViewport();
+        glViewport(0, 0, viewport.width, viewport.height);
     }
 
     void OpenglFramebuffer::Resize(Uint32 width, Uint32 height) {

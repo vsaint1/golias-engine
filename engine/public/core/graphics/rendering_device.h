@@ -29,7 +29,7 @@ namespace golias {
         virtual void BindShader(Shader* shader)                                                                      = 0;
         virtual void BindMesh(Mesh* mesh)                                                                            = 0;
         virtual void UnbindMesh(Mesh* mesh)                                                                          = 0;
-        virtual void BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture)    = 0;
+        virtual void BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture)      = 0;
         virtual void BindCubemap(Shader* shader, std::string_view uniformName, Uint32 slot, TextureCubemap* texture) = 0;
         virtual void BindMaterial(Material* material)                                                                = 0;
 
@@ -51,7 +51,8 @@ namespace golias {
 
         virtual PhysicsDebugDrawer* GetPhysicsDebugDrawer() = 0;
 
-        virtual void Clear(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) = 0;
+        virtual void ClearColor(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) = 0;
+        virtual void ClearBuffer(EClearFlags flags)                                  = 0;
 
         virtual void DrawMesh(Mesh* mesh) = 0;
 
@@ -59,9 +60,6 @@ namespace golias {
 
         virtual std::shared_ptr<Framebuffer> CreateFramebuffer(const FramebufferSpec& specification) = 0;
 
-        virtual std::shared_ptr<Shader> GetDefaultShadowMapShader() const = 0;
-        virtual void BeginShadowPass()                                    = 0;
-        virtual void EndShadowPass()                                      = 0;
 
         const Viewport& GetViewport() const;
 
@@ -69,12 +67,13 @@ namespace golias {
 
         virtual std::shared_ptr<Framebuffer> GetDefaultFramebuffer()          = 0;
         virtual std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() = 0;
+        virtual std::shared_ptr<Shader> GetDefaultShadowMapShader() const     = 0;
 
         virtual std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) = 0;
         virtual std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath)            = 0;
-        virtual std::shared_ptr<TextureCubemap> CreateCubemapProcedural() = 0;
+        virtual std::shared_ptr<TextureCubemap> CreateCubemapProcedural()                                       = 0;
 
-        virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const                                          = 0;
+        virtual std::shared_ptr<Shader> GetDefaultSkyboxShader() const = 0;
 
         virtual std::shared_ptr<Texture2D> GetWhiteTexture2D() const  = 0;
         virtual std::shared_ptr<Texture2D> GetNormalTexture2D() const = 0;

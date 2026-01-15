@@ -5,6 +5,7 @@
 #include "scene/3d/world_environment_component.h"
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
+#include "scene/ui/button_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
 golias::GameObject* porsche           = nullptr;
@@ -167,6 +168,13 @@ WASD to move, Mouse to look around)";
     text2->SetPosition2D({300.0f, 200.0f});
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
+
+    auto button = Tscene->CreateObject("Button2D", canvas_2d);
+    auto buttonComp = new golias::ButtonWidgetComponent();
+    buttonComp->SetRect({150.0f, 50.0f});
+    buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
+    button->SetPosition2D({1000.0f, 100.0f});
+    button->AddComponent(buttonComp);
 
     auto textAmmo     = Tscene->CreateObject("TextAmmo", canvas_2d);
     auto textCompAmmo = new golias::TextWidgetComponent();

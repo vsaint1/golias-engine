@@ -178,7 +178,9 @@ namespace golias {
         rendering_device->SetDepthWrite(true);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
         rendering_device->SetCullMode(ECullMode::CULL_MODE_FRONT);
-        rendering_device->BeginShadowPass();
+       
+        rendering_device->GetDefaultShadowMapFramebuffer()->Bind();
+        rendering_device->ClearBuffer(EClearFlags::CLEAR_DEPTH);
 
         auto shadowShader = rendering_device->GetDefaultShadowMapShader();
         shadowShader->Bind();
@@ -211,7 +213,8 @@ namespace golias {
             break;
         }
 
-        rendering_device->EndShadowPass();
+        rendering_device->GetDefaultShadowMapFramebuffer()->Unbind();
+
     }
 
     void SceneRenderer::GeometryOpaquePass(const std::vector<DrawCommand>& opaqueCommands) {
@@ -455,13 +458,15 @@ namespace golias {
 
             if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR
                 || envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
-                rendering_device->Clear(world_environment_command.environmentComponent->GetClearColor());
+                rendering_device->ClearColor(world_environment_command.environmentComponent->GetClearColor());
             } else if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX) {
-                rendering_device->Clear(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                rendering_device->ClearColor(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
             }
         } else {
-            rendering_device->Clear(color);
+            rendering_device->ClearColor(color);
         }
+
+        rendering_device->ClearBuffer(EClearFlags::CLEAR_COLOR | EClearFlags::CLEAR_DEPTH);
     }
 
     void SceneRenderer::EndFrame() {

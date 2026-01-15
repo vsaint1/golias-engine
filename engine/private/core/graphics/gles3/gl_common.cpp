@@ -214,6 +214,62 @@ GLenum ToGLStencilOp(EStencilOp op) {
     }
 }
 
+
+GLenum FramebufferTextureFormatToGL(EFramebufferTextureFormat format) {
+    switch (format) {
+    case EFramebufferTextureFormat::RGBA8:
+        return GL_RGBA8;
+    case EFramebufferTextureFormat::RGB8:
+        return GL_RGB8;
+    case EFramebufferTextureFormat::RGBA16F:
+        return GL_RGBA16F;
+    case EFramebufferTextureFormat::RGB16F:
+        return GL_RGB16F;
+    case EFramebufferTextureFormat::RGBA32F:
+        return GL_RGBA32F;
+    case EFramebufferTextureFormat::RGB32F:
+        return GL_RGB32F;
+    case EFramebufferTextureFormat::DEPTH24:
+        return GL_DEPTH_COMPONENT24;
+    case EFramebufferTextureFormat::DEPTH32F:
+        return GL_DEPTH_COMPONENT32F;
+    case EFramebufferTextureFormat::DEPTH24_STENCIL8:
+        return GL_DEPTH24_STENCIL8;
+    case EFramebufferTextureFormat::DEPTH32F_STENCIL8:
+        return GL_DEPTH32F_STENCIL8;
+    }
+    return GL_RGBA8;
+}
+
+bool IsDepthFormat(EFramebufferTextureFormat format) {
+    switch (format) {
+    case EFramebufferTextureFormat::DEPTH24:
+    case EFramebufferTextureFormat::DEPTH32F:
+    case EFramebufferTextureFormat::DEPTH24_STENCIL8:
+    case EFramebufferTextureFormat::DEPTH32F_STENCIL8:
+        return true;
+    default:
+        return false;
+    }
+}
+
+GLbitfield ToGLClearFlags(EClearFlags flags) {
+    GLbitfield glFlags = 0;
+    if (flags & CLEAR_COLOR) {
+        glFlags |= GL_COLOR_BUFFER_BIT;
+    }
+
+    if (flags & CLEAR_DEPTH) {
+        glFlags |= GL_DEPTH_BUFFER_BIT;
+    }
+
+    if (flags & CLEAR_STENCIL) {
+        glFlags |= GL_STENCIL_BUFFER_BIT;
+    }
+
+    return glFlags;
+}
+
 std::string GetShaderHeaderVersion() {
 #if defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_EMSCRIPTEN)
     return "#version 300 es\n precision mediump float;\n";
