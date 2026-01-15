@@ -218,34 +218,31 @@ vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 /* ============================================================================
    Shadow Calculation
    ============================================================================ */
-
 float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
     vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
     proj = proj * 0.5 + 0.5;
 
-    if(proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
+    if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
         return 1.0;
 
     float currentDepth = proj.z;
     float NdotL = max(dot(N, L), 0.0);
-    float bias = max(0.005 * (1.0 - NdotL), 0.001);
-    bias += currentDepth * 0.0001;
+
+    float bias = clamp(0.0005 * tan(acos(NdotL)),0.00001, 0.0003);
 
     vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
     float shadow = 0.0;
-    int count = 0;
 
-    for(int x = -1; x <= 1; x++) {
-        for(int y = -1; y <= 1; y++) {
-            vec2 offset = vec2(x, y) * texelSize;
-            float pcfDepth = texture(SHADOW_MAP, proj.xy + offset).r;
-            shadow += (currentDepth - bias) > pcfDepth ? 0.0 : 1.0;
-            count++;
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(SHADOW_MAP, proj.xy + vec2(x,y) * texelSize).r;
+            shadow += (currentDepth - bias <= pcfDepth) ? 1.0 : 0.0;
         }
     }
 
-    return shadow / float(count);
+    return shadow / 9.0;
 }
+
 
 Material SampleMaterial() {
     Material mat;

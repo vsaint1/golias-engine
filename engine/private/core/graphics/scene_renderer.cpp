@@ -80,7 +80,7 @@ namespace golias {
         if (world_environment_command.environmentComponent) {
             shader->SetUniform("u_tonemap", static_cast<int>(world_environment_command.environmentComponent->GetToneMappingMode()));
             shader->SetUniform("u_exposure", world_environment_command.environmentComponent->GetExposure());
-        } 
+        }
 
         if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
             shader->SetUniform("USE_SKINNING", true);
@@ -137,7 +137,8 @@ namespace golias {
 
     void SceneRenderer::SetupShadowUniforms(Shader* shader) {
         if (renderContext.shadowsEnabled && !directional_lights.empty()) {
-            rendering_device->BindTexture(shader, "SHADOW_MAP", 6, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachment().get());
+            rendering_device->BindTexture(
+                shader, "SHADOW_MAP", 6, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachment().get());
             shader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[0].lightSpaceMatrix);
         }
     }
@@ -179,23 +180,32 @@ namespace golias {
         renderContext.shadowsEnabled = false;
 
         for (auto& directional_light : directional_lights) {
-            if (directional_light.castShadows) {
-                renderContext.shadowsEnabled = true;
-
-                float orthoSize  = 30.0f;
-                float near_plane = -50.0f;
-                float far_plane  = 100.0f;
-
-                glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, near_plane, far_plane);
-                glm::vec3 lightDir        = glm::normalize(-directional_light.direction);
-                glm::mat4 lightView       = glm::lookAt(
-                    renderContext.camera.position + lightDir * 50.0f, renderContext.camera.position, glm::vec3(0.0f, 1.0f, 0.0f));
-
-                directional_light.lightSpaceMatrix = lightProjection * lightView;
-                break;
+            if (!directional_light.castShadows) {
+                continue;
             }
+
+            renderContext.shadowsEnabled = true;
+
+            const float orthoSize  = 30.0f;
+            const float near_plane = 1.0f; 
+            const float far_plane  = 150.0f; 
+
+            glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, near_plane, far_plane);
+
+            glm::vec3 lightDir = glm::normalize(directional_light.direction);
+
+            glm::vec3 cameraFront = glm::normalize(-renderContext.camera.viewMatrix[2]);
+            glm::vec3 shadowCenter = renderContext.camera.position + cameraFront * (orthoSize * 0.5f);
+
+            glm::vec3 lightPos = shadowCenter - lightDir * (far_plane * 0.5f);
+
+            glm::mat4 lightView = glm::lookAt(lightPos, shadowCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+
+            directional_light.lightSpaceMatrix = lightProjection * lightView;
+            break;
         }
     }
+
 
     void SceneRenderer::ShadowPass() {
         if (!renderContext.shadowsEnabled) {
@@ -205,7 +215,7 @@ namespace golias {
         rendering_device->SetDepthTest(true);
         rendering_device->SetDepthWrite(true);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
-
+        rendering_device->SetCullMode(ECullMode::CULL_MODE_FRONT);
         rendering_device->BeginShadowPass();
 
         auto shadowShader = rendering_device->GetDefaultShadowMapShader();

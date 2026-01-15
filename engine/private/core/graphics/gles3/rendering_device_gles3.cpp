@@ -346,13 +346,11 @@ namespace golias {
 
         shadowFBO->Bind();
         glClear(GL_DEPTH_BUFFER_BIT);
-     
         
     }
 
     void RenderingDeviceGLES3::EndShadowPass() {
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        shadowFBO->Unbind();
         glViewport(0, 0, viewport.width, viewport.height);
     }
 

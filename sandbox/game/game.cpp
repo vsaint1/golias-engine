@@ -59,17 +59,18 @@ bool SandboxApplication::Initialize() {
 
     godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
     godette->SetPosition({0.0f, 1.0f, -1.0f});
-    // godette->SetUseIBL(false);
 
 
     auto worldEnvironment = Tscene->CreateObject("WorldEnvironment");
-    auto textureCubemap   = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
+    auto textureCubemap   = golias::TextureCubemap::LoadProcedural();
+    // auto textureCubemap   = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
 
-    auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_REINHARD, 1.0f);
+    auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_ACES, 1.0f);
     worldEnvComp->SetEnvironmentMode(golias::EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX);
     // auto worldEnvComp = new golias::WorldEnvironmentComponent();
     worldEnvironment->AddComponent(worldEnvComp);
-    // worldEnvComp->SetClearColor({0.2f, 0.3f, 0.4f, 1.0f});
+    worldEnvComp->SetExposure(0.3f);
+    // worldEnvComp->SetClearColor({0.8f, 0.7f, 0.6f, 1.0f});
 
     if (godette) {
 

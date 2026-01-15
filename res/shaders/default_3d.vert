@@ -18,7 +18,6 @@ uniform mat4 VIEW_MATRIX;
 uniform mat4 PROJECTION_MATRIX;
 uniform mat4 LIGHT_SPACE_MATRIX;
 
-// Skeletal animation
 uniform int USE_SKINNING;
 const int MAX_BONES = 128;
 uniform mat4 BONE_MATRICES[MAX_BONES];
@@ -30,7 +29,7 @@ void main() {
     vec4 localPos = vec4(a_pos, 1.0);
     vec3 localNormal = a_normal;
     
-    // Apply skeletal skinning if enabled
+    
     if (USE_SKINNING > 0) {
         mat4 boneTransform = mat4(0.0);
         
@@ -43,7 +42,7 @@ void main() {
             }
         }
         
-        // If all weights are zero, use identity
+        
         if (dot(a_bone_weights, vec4(1.0)) > 0.01) {
             localPos = boneTransform * localPos;
             localNormal = mat3(boneTransform) * localNormal;
