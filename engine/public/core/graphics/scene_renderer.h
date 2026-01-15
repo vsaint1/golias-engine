@@ -83,7 +83,8 @@ namespace golias {
         Mesh* mesh = nullptr;
         std::vector<CanvasBatch> batches;
         glm::mat4 modelMatrix;
-        float scale = 0.01f; // Pixels -> World units
+        float scale          = 1.0f; 
+        bool useBillboarding = false;
     };
 
     class SceneRenderer {
@@ -99,7 +100,6 @@ namespace golias {
         void Submit(const SpotLightCommand& command);
         void Submit(const WorldEnvironmentCommand& command);
 
-        void Clear(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
 
         void Draw(const CameraCommand& camera);
 

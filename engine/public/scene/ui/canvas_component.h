@@ -34,13 +34,18 @@ namespace golias {
         void SetWorldSpaceScale(float scale);
         float GetWorldSpaceScale() const;
 
+        void SetUseBillboarding(bool enable);
+        bool GetUseBillboarding() const;
+
     private:
         std::vector<CanvasBatch> batches;
         std::vector<float> vertices;
         std::vector<Uint32> indices;
         std::shared_ptr<Mesh> mesh = nullptr;
         ECanvasMode canvasMode     = ECanvasMode::SCREEN_SPACE;
-        float worldSpaceScale      = 0.01f; /// Scale factor for world space (1px = 0.01 units)
+        bool useBillboarding     = false;
+        float worldSpaceScale     = 1.0f; // Scale factor for world space (1px = 0.01 units)
+        
     };
 
 } // namespace golias

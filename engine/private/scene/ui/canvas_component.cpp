@@ -5,6 +5,15 @@
 
 namespace golias {
 
+
+    void CanvasComponent::SetUseBillboarding(bool enable) {
+        useBillboarding = enable;
+    }
+
+    bool CanvasComponent::GetUseBillboarding() const {
+        return useBillboarding;
+    }
+    
     void CanvasComponent::Start() {
 
         vertices.clear();
@@ -51,10 +60,11 @@ namespace golias {
                 Engine::GetInstance().GetSceneRenderer().Submit(command);
             } else {
                 WorldCanvasCommand command;
-                command.mesh        = mesh.get();
-                command.batches     = batches;
-                command.modelMatrix = GetOwner()->GetWorldTransform();
-                command.scale       = worldSpaceScale;
+                command.mesh            = mesh.get();
+                command.batches         = batches;
+                command.modelMatrix     = GetOwner()->GetWorldTransform();
+                command.useBillboarding = useBillboarding;
+                command.scale           = worldSpaceScale;
                 Engine::GetInstance().GetSceneRenderer().Submit(command);
             }
         }
@@ -79,7 +89,7 @@ namespace golias {
     void CanvasComponent::SetCanvasMode(ECanvasMode mode) {
         canvasMode = mode;
     }
-    
+
     ECanvasMode CanvasComponent::GetCanvasMode() const {
         return canvasMode;
     }

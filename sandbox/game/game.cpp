@@ -61,9 +61,21 @@ bool SandboxApplication::Initialize() {
     godette->SetPosition({0.0f, 1.0f, -1.0f});
 
 
+    auto carCanvas     = Tscene->CreateObject("CanvasT");
+    auto carCanvasComp = new golias::CanvasComponent();
+    carCanvasComp->SetCanvasMode(golias::ECanvasMode::WORLD_SPACE);
+
+    auto textCar     = Tscene->CreateObject("TextT", carCanvas);
+    auto textCarComp = new golias::TextWidgetComponent();
+    textCarComp->SetText("Porsche");
+
+    textCar->AddComponent(textCarComp);
+    textCar->SetPosition({0.0f, 150.0f, 0.0f});
+    porsche->AddComponent(carCanvasComp);
+
     auto worldEnvironment = Tscene->CreateObject("WorldEnvironment");
-    auto textureCubemap   = golias::TextureCubemap::LoadProcedural();
-    // auto textureCubemap   = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
+    // auto textureCubemap   = golias::TextureCubemap::LoadProcedural();
+    auto textureCubemap = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
 
     auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_ACES, 1.0f);
     worldEnvComp->SetEnvironmentMode(golias::EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX);
@@ -74,10 +86,31 @@ bool SandboxApplication::Initialize() {
 
     if (godette) {
 
-        if (auto skeleton = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
-
-            skeleton->Play("Cheer", true);
+        if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
+            godetteAnim->Play("Cheer", true);
         }
+
+        auto godetteCanvas = Tscene->CreateObject("GodetteCanvas", godette);
+
+        auto godetteCanvasComp = new golias::CanvasComponent();
+        godetteCanvasComp->SetCanvasMode(golias::ECanvasMode::WORLD_SPACE);
+        godetteCanvasComp->SetUseBillboarding(true);
+        godetteCanvasComp->SetWorldSpaceScale(0.01f);
+        godetteCanvas->AddComponent(godetteCanvasComp);
+
+
+        auto godetteText = Tscene->CreateObject("GodetteText", godetteCanvas);
+
+        auto godetteTextComp = new golias::TextWidgetComponent();
+        godetteTextComp->SetText("Godette");
+        godetteTextComp->SetFont("fonts/Minecraft.ttf", 32);
+        godetteTextComp->SetShadowEnabled(true);
+
+        godetteText->AddComponent(godetteTextComp);
+
+
+        godetteCanvas->SetPosition({0.0f, 2.5f, 0.0f});
+        godetteText->SetScale({0.01f, 0.01f, 0.01f});
     }
 
 
@@ -103,20 +136,20 @@ bool SandboxApplication::Initialize() {
     auto canvas     = Tscene->CreateObject("Canvas");
     auto canvasComp = new golias::CanvasComponent();
     canvasComp->SetCanvasMode(golias::ECanvasMode::WORLD_SPACE);
+    // canvasComp->SetUseBillboarding(true);
+    canvasComp->SetWorldSpaceScale(0.01f);
+
     canvas->AddComponent(canvasComp);
 
     auto text     = Tscene->CreateObject("Text", canvas);
     auto textComp = new golias::TextWidgetComponent();
     textComp->SetText("Hello, Golias Engine! こんにちは 안녕하세요 привет");
-    // textComp->SetFont("fonts/Minecraft.ttf", 32);
-    // textComp->SetShadowEnabled(true);
     textComp->SetOutlineEnabled(true);
 
 
     text->AddComponent(textComp);
 
-    text->SetPosition({10.0f, 150.0f, 2.0f});
-    // text->SetPosition2D({400.0f, 300.0f});
+    canvas->SetPosition({5.0f, 2.0f, -5.0f});
 
     auto canvas_2d    = Tscene->CreateObject("Canvas2D");
     auto canvasComp2D = new golias::CanvasComponent();

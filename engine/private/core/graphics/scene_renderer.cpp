@@ -344,7 +344,7 @@ namespace golias {
                 shader_canvas->SetUniform("VIEW_MATRIX", renderContext.camera.viewMatrix);
                 shader_canvas->SetUniform("PROJECTION_MATRIX", renderContext.camera.projectionMatrix);
                 shader_canvas->SetUniform("CAMERA_POSITION", renderContext.camera.position);
-                shader_canvas->SetUniform("USE_BILLBOARDING", true);
+                shader_canvas->SetUniform("USE_BILLBOARDING", command.useBillboarding);
 
                 command.mesh->DrawIndexed(offset, batch.indexCount);
                 offset += batch.indexCount;
@@ -484,9 +484,6 @@ namespace golias {
         return true;
     }
 
-    void SceneRenderer::Clear(const glm::vec4& color) {
-        rendering_device->Clear(color);
-    }
 
     void SceneRenderer::Present() {
         rendering_device->SwapChain();
