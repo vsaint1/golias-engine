@@ -1,10 +1,16 @@
 #include "font/font.h"
 
+#include <freetype/freetype.h>
+
 namespace golias {
 
 
     int Font::GetSize() const {
-        return fontSize;
+        if (face) {
+            return face->size->metrics.y_ppem;
+        }
+
+        return 0;
     }
 
     int Font::GetAscender() const {
@@ -22,7 +28,11 @@ namespace golias {
     void Font::SetDescender(int desc) {
         descender = desc;
     }
-    
+
+    void Font::SetFace(FT_Face ftFace) {
+        face = ftFace;
+    }
+
     const Glyph* Font::GetGlyph(uint32_t codepoint) const {
         auto it = glyphs.find(codepoint);
         if (it != glyphs.end()) {
@@ -39,8 +49,11 @@ namespace golias {
         return texture;
     }
 
-    void Font::SetSize(int size) {
-        fontSize = size;
+    void Font::SetSize(int fontSize) {
+
+        if (face) {
+            FT_Set_Pixel_Sizes(face, 0, static_cast<FT_UInt>(fontSize));
+        }
     }
 
     void Font::SetGlyphDescription(uint32_t codepoint, const Glyph& glyph) {
@@ -50,4 +63,16 @@ namespace golias {
     void Font::SetTexture(const std::shared_ptr<Texture2D>& tex) {
         texture = tex;
     }
+
+    void Font::Destroy() {
+        if (face) {
+            FT_Done_Face(face);
+            face = nullptr;
+        }
+
+        glyphs.clear();
+        texture = nullptr;
+    }
+
+    Font::~Font() = default;
 } // namespace golias

@@ -3,10 +3,13 @@
 #include <memory>
 #include <unordered_map>
 
+typedef struct FT_FaceRec_*  FT_Face;
+
+
 namespace golias {
 
     class Texture2D;
-
+    
     struct Glyph {
         int x0, y0; // bottom-left
         int x1, y1; // top-right
@@ -42,12 +45,18 @@ namespace golias {
         void SetAscender(int asc);
 
         void SetDescender(int desc);
+
+        void SetFace(FT_Face ftFace);
+
+        void Destroy();
+        
+        ~Font();
     private:
-        int fontSize = 0;
         int ascender  = 0;
         int descender = 0;
         std::unordered_map<uint32_t, Glyph> glyphs;
 
         std::shared_ptr<Texture2D> texture;
+        FT_Face face = NULL;
     };
 }; // namespace golias

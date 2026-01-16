@@ -56,6 +56,19 @@ namespace golias {
         }
     }
 
+    void TextWidgetComponent::SetFontSize(int size) {
+        fontSize = size;
+      
+        if (font) {
+            font->SetSize(size);
+        }
+
+    }
+
+    int TextWidgetComponent::GetFontSize() const {
+        return fontSize;
+    }
+
     const std::shared_ptr<Font>& TextWidgetComponent::GetFont() const {
         return font;
     }
@@ -209,8 +222,12 @@ namespace golias {
 
                 cursorX += static_cast<float>(glyph->advance);
 
-                pCanvas->DrawTexture2D(
-                    glm::vec3(x1, y1, zOffset), glm::vec3(x2, y2, zOffset), glm::vec2(u1, v2), glm::vec2(u2, v1), glyphFont->GetTexture().get(), color);
+                pCanvas->DrawTexture2D(glm::vec3(x1, y1, zOffset),
+                                       glm::vec3(x2, y2, zOffset),
+                                       glm::vec2(u1, v2),
+                                       glm::vec2(u2, v1),
+                                       glyphFont->GetTexture().get(),
+                                       color);
             }
         };
 
@@ -243,8 +260,8 @@ namespace golias {
 
         glm::vec2 rect(0.0f);
         float currentLineWidth = 0.0f;
-        float lineHeight = font ? static_cast<float>(font->GetSize()) : 0.0f;
-        int lineCount = 1;
+        float lineHeight       = font ? static_cast<float>(font->GetSize()) : 0.0f;
+        int lineCount          = 1;
 
         const char* ptr = text.c_str();
         const char* end = ptr + text.length();
@@ -255,14 +272,14 @@ namespace golias {
             uint32_t codepoint = DecodeUTF8(ptr);
 
             if (codepoint == '\n') {
-                rect.x = glm::max(rect.x, currentLineWidth);
+                rect.x           = glm::max(rect.x, currentLineWidth);
                 currentLineWidth = 0.0f;
                 lineCount++;
                 continue;
             }
 
             if (codepoint == '\r') {
-                rect.x = glm::max(rect.x, currentLineWidth);
+                rect.x           = glm::max(rect.x, currentLineWidth);
                 currentLineWidth = 0.0f;
                 continue;
             }
@@ -275,7 +292,7 @@ namespace golias {
             }
         }
 
-  
+
         rect.x = glm::max(rect.x, currentLineWidth);
         rect.y = lineHeight * lineCount;
 

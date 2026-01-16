@@ -526,11 +526,7 @@ namespace golias {
     }
 
     void SceneRenderer::Submit(const SpotLightCommand& command) {
-        SpotLightCommand optimized  = command;
-        optimized.innerConeAngleCos = glm::cos(glm::radians(command.innerConeAngle));
-        optimized.outerConeAngleCos = glm::cos(glm::radians(command.outerConeAngle));
-
-        spot_lights.push_back(optimized);
+        spot_lights.push_back(command);
     }
 
     void SceneRenderer::Submit(const WorldEnvironmentCommand& command) {

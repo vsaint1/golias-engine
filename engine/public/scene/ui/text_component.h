@@ -18,6 +18,8 @@ namespace golias {
         void SetFont(const std::shared_ptr<Font>& pFont);
         const std::shared_ptr<Font>& GetFont() const;
         void SetFont(const std::string_view pFilePath, int size);
+        void SetFontSize(int size);
+        int GetFontSize() const;
         
         void SetOutlineEnabled(bool enabled);
         bool IsOutlineEnabled() const;
@@ -42,6 +44,7 @@ namespace golias {
         std::string text;
         glm::vec4 textColor = glm::vec4(1.0f);
         std::shared_ptr<Font> font = nullptr;
+        int fontSize = 12;
         
         bool outlineEnabled = false;
         glm::vec4 outlineColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);

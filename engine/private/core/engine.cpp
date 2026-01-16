@@ -112,23 +112,6 @@ namespace golias {
         engine.GetApplication()->Update(delta_time);
 
 
-        // TEST ONLY (CREATE A COMPONENT)
-        SpotLightCommand spotLight;
-        spotLight.position      = glm::vec3(2.0f, 4.0f, 2.0f);
-        spotLight.direction     = glm::vec3(-0.5f, -1.0f, -0.5f);
-        spotLight.color         = glm::vec3(0.0f, 0.0f, 1.0f);
-        spotLight.intensity     = 10.0f;
-        spotLight.innerConeAngle = 15.0f;
-        spotLight.outerConeAngle = 20.0f;
-        engine.GetSceneRenderer().Submit(spotLight);
-
-        // TEST ONLY (CREATE A COMPONENT)
-        PointLightCommand pointLight;
-        pointLight.position  = glm::vec3(-2.0f, 3.0f, -2.0f);
-        pointLight.color     = glm::vec3(1.0f, 0.0f, 0.0f);
-        pointLight.intensity = 10.0f;
-        engine.GetSceneRenderer().Submit(pointLight);
-
         CameraCommand cameraData;
         if (engine.GetScene() && engine.GetScene()->GetMainCamera()) {
             auto pCameraComponent = engine.GetScene()->GetMainCamera()->GetComponent<CameraComponent>();

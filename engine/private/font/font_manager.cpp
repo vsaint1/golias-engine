@@ -9,6 +9,15 @@
 namespace golias {
 
     FontManager::~FontManager() {
+
+        for(const auto& [path, fontFamily] : fonts){
+            for(const auto& [size, font] : fontFamily){
+                if(font){
+                    font->Destroy();
+                }
+            }
+        }
+
         if (ftLibrary) {
             FT_Done_FreeType(ftLibrary);
             ftLibrary = nullptr;
@@ -245,10 +254,11 @@ namespace golias {
         font->SetSize(size);
         font->SetAscender(face->size->metrics.ascender >> 6);
         font->SetDescender(face->size->metrics.descender >> 6);
+        font->SetFace(face);
 
         fonts[path.data()][size] = font;
 
-        FT_Done_Face(face);
+        // FT_Done_Face(face);
 
         spdlog::info("FontManager::LoadFont Loaded font '{}' (size: {}) with {} glyphs in {}x{} atlas",
                      path,
