@@ -34,6 +34,7 @@ const int HAS_AO_FLAG = 16;
 const int HAS_EMISSIVE_FLAG = 32;
 
 const float PI = 3.14159265359;
+const float INV_PI = 0.31830988618;
 
 uniform int TEXTURE_FLAGS;
 
@@ -91,8 +92,8 @@ struct SpotLight {
     vec3 color;
     float intensity;
     float range;
-    float innerConeAngle;
-    float outerConeAngle;
+    float innerConeAngleCos;  // Pre-calculated cosine
+    float outerConeAngleCos;  // Pre-calculated cosine
     float constant;
     float linear;
     float quadratic;
@@ -186,7 +187,7 @@ vec3 ApplyTonemap(vec3 color) {
 }
 
 /* ============================================================================
-   PBR Functions 
+   PBR Functions
    ============================================================================ */
 
 float D_GGX(float NdotH, float roughness) {
@@ -199,7 +200,7 @@ float D_GGX(float NdotH, float roughness) {
 
 float G_SchlickGGX(float NdotV, float roughness) {
     float r = roughness + 1.0;
-    float k = (r * r) / 8.0;
+    float k = (r * r) * 0.125; // Divide by 8 optimized to multiply by 0.125
     return NdotV / (NdotV * (1.0 - k) + k);
 }
 
@@ -208,11 +209,17 @@ float G_Smith(float NdotV, float NdotL, float roughness) {
 }
 
 vec3 F_Schlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    float f = 1.0 - cosTheta;
+    float f2 = f * f;
+    float f5 = f2 * f2 * f;
+    return F0 + (1.0 - F0) * f5;
 }
 
 vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    float f = 1.0 - cosTheta;
+    float f2 = f * f;
+    float f5 = f2 * f2 * f;
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * f5;
 }
 
 /* ============================================================================
@@ -222,27 +229,26 @@ float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
     vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
     proj = proj * 0.5 + 0.5;
 
-    if (proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
+    if(proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
         return 1.0;
 
     float currentDepth = proj.z;
     float NdotL = max(dot(N, L), 0.0);
 
-    float bias = clamp(0.0005 * tan(acos(NdotL)),0.00001, 0.0003);
+    float bias = clamp(0.0005 * tan(acos(NdotL)), 0.00001, 0.0003);
 
     vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
     float shadow = 0.0;
 
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(SHADOW_MAP, proj.xy + vec2(x,y) * texelSize).r;
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(SHADOW_MAP, proj.xy + vec2(x, y) * texelSize).r;
             shadow += (currentDepth - bias <= pcfDepth) ? 1.0 : 0.0;
         }
     }
 
-    return shadow / 9.0;
+    return shadow * 0.1111111111111111; // 1.0 / 9.0 pre-calculated
 }
-
 
 Material SampleMaterial() {
     Material mat;
@@ -294,12 +300,12 @@ vec3 CalculateDirectionalLight(
     vec3 albedo,
     float metallic,
     float roughness,
-    float shadow
+    float shadow,
+    float NdotV
 ) {
     vec3 L = normalize(-light.direction);
     vec3 H = normalize(V + L);
 
-    float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
@@ -310,7 +316,7 @@ vec3 CalculateDirectionalLight(
 
     vec3 specular = (D * G * F) / (4.0 * NdotV * NdotL + 0.001);
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
+    vec3 diffuse = kD * albedo * INV_PI; // Use pre-calculated 1/PI
 
     vec3 radiance = light.color * light.intensity;
 
@@ -325,7 +331,8 @@ vec3 CalculatePointLight(
     vec3 F0,
     vec3 albedo,
     float metallic,
-    float roughness
+    float roughness,
+    float NdotV
 ) {
     vec3 L = light.position - fragPos;
     float distance = length(L);
@@ -333,18 +340,22 @@ vec3 CalculatePointLight(
     if(distance > light.range)
         return vec3(0.0);
 
-    L = normalize(L);
+    L = L / distance;
     vec3 H = normalize(V + L);
 
-    float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
 
+    // Optimized attenuation calculation
+    float distRatio = distance / light.range;
+    float distRatio2 = distRatio * distRatio;
+    float distRatio4 = distRatio2 * distRatio2;
+    float rangeFalloff = max(1.0 - distRatio4, 0.0);
+    rangeFalloff *= rangeFalloff;
+
     float attenuation = 1.0 / (light.constant + light.linear * distance +
         light.quadratic * distance * distance);
-    float rangeFalloff = pow(1.0 - pow(distance / light.range, 4.0), 2.0);
-    rangeFalloff = max(rangeFalloff, 0.0);
     attenuation *= rangeFalloff;
 
     float D = D_GGX(NdotH, roughness);
@@ -353,7 +364,7 @@ vec3 CalculatePointLight(
 
     vec3 specular = (D * G * F) / (4.0 * NdotV * NdotL + 0.001);
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
+    vec3 diffuse = kD * albedo * INV_PI;
 
     vec3 radiance = light.color * light.intensity * attenuation;
 
@@ -368,7 +379,8 @@ vec3 CalculateSpotLight(
     vec3 F0,
     vec3 albedo,
     float metallic,
-    float roughness
+    float roughness,
+    float NdotV
 ) {
     vec3 L = light.position - fragPos;
     float distance = length(L);
@@ -376,11 +388,11 @@ vec3 CalculateSpotLight(
     if(distance > light.range)
         return vec3(0.0);
 
-    L = normalize(L);
+    L = L / distance; 
 
     float theta = dot(L, normalize(-light.direction));
-    float epsilon = light.innerConeAngle - light.outerConeAngle;
-    float spotIntensity = clamp((theta - light.outerConeAngle) / epsilon, 0.0, 1.0);
+    float epsilon = light.innerConeAngleCos - light.outerConeAngleCos;
+    float spotIntensity = clamp((theta - light.outerConeAngleCos) / epsilon, 0.0, 1.0);
     spotIntensity = smoothstep(0.0, 1.0, spotIntensity);
 
     if(spotIntensity <= 0.0)
@@ -388,15 +400,18 @@ vec3 CalculateSpotLight(
 
     vec3 H = normalize(V + L);
 
-    float NdotV = max(dot(N, V), 0.001);
     float NdotL = max(dot(N, L), 0.0);
     float NdotH = max(dot(N, H), 0.0);
     float HdotV = max(dot(H, V), 0.0);
 
+    float distRatio = distance / light.range;
+    float distRatio2 = distRatio * distRatio;
+    float distRatio4 = distRatio2 * distRatio2;
+    float rangeFalloff = max(1.0 - distRatio4, 0.0);
+    rangeFalloff *= rangeFalloff;
+
     float attenuation = 1.0 / (light.constant + light.linear * distance +
         light.quadratic * distance * distance);
-    float rangeFalloff = pow(1.0 - pow(distance / light.range, 4.0), 2.0);
-    rangeFalloff = max(rangeFalloff, 0.0);
     attenuation *= rangeFalloff;
 
     float D = D_GGX(NdotH, roughness);
@@ -405,7 +420,7 @@ vec3 CalculateSpotLight(
 
     vec3 specular = (D * G * F) / (4.0 * NdotV * NdotL + 0.001);
     vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
+    vec3 diffuse = kD * albedo * INV_PI;
 
     vec3 radiance = light.color * light.intensity * attenuation * spotIntensity;
 
@@ -419,13 +434,13 @@ vec3 CalculateIBL(
     vec3 albedo,
     float metallic,
     float roughness,
-    float ao
+    float ao,
+    float NdotV
 ) {
     if(USE_IBL == 0) {
         return vec3(0.0);
     }
 
-    float NdotV = max(dot(N, V), 0.0);
     vec3 R = reflect(-V, N);
 
     vec3 F = F_SchlickRoughness(NdotV, F0, roughness);
@@ -439,7 +454,7 @@ vec3 CalculateIBL(
     const float MAX_REFLECTION_LOD = 4.0;
     vec3 prefiltered = textureLod(PREFILTER_MAP, R, roughness * MAX_REFLECTION_LOD).rgb;
 
-    float specularWeight = mix(1.0, 0.0, roughness);
+    float specularWeight = 1.0 - roughness; // Simplified
     vec3 specular = prefiltered * F * specularWeight;
 
     vec3 ambient = (kD * diffuse + specular) * ao;
@@ -468,7 +483,7 @@ vec3 StudioLighting(vec3 N, vec3 V, vec3 albedo, float roughness) {
 
     // Rim light (edge highlight)
     float rimPower = 1.0 - max(dot(N, V), 0.0);
-    rimPower = pow(rimPower, 3.0);
+    rimPower = rimPower * rimPower * rimPower; // pow(x, 3) optimized
     totalLight += vec3(0.9, 0.95, 1.0) * rimPower * 0.3;
 
     // Ambient base
@@ -482,6 +497,7 @@ void main() {
 
     vec3 N = mat.normal;
     vec3 V = normalize(CAMERA_POSITION - v_frag_pos);
+    float NdotV = max(dot(N, V), 0.001);
 
     vec3 F0 = mix(vec3(0.04), mat.albedo.rgb, mat.metallic);
 
@@ -499,26 +515,26 @@ void main() {
             shadow = CalculateShadow(v_frag_pos_light_space, N, L);
         }
 
-        Lo += CalculateDirectionalLight(light, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, shadow);
+        Lo += CalculateDirectionalLight(light, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, shadow, NdotV);
     }
 
     // Point lights
     for(int i = 0; i < u_pointLightCount; i++) {
         hasLights = true;
-        Lo += CalculatePointLight(u_pointLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
+        Lo += CalculatePointLight(u_pointLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, NdotV);
     }
 
     // Spot lights
     for(int i = 0; i < u_spotLightCount; i++) {
         hasLights = true;
-        Lo += CalculateSpotLight(u_spotLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness);
+        Lo += CalculateSpotLight(u_spotLights[i], v_frag_pos, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, NdotV);
     }
 
     // Ambient/IBL
     vec3 ambient;
     if(USE_IBL == 1) {
         // PBR path with IBL
-        ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao);
+        ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao, NdotV);
     } else if(!hasLights) {
         // No lights - use simplified studio lighting (non-PBR look)
         Lo = StudioLighting(N, V, mat.albedo.rgb, mat.roughness);
