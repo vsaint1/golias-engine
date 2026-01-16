@@ -26,7 +26,7 @@ namespace golias {
         void SetMaterial(const std::shared_ptr<Material>& pMaterial);
         Material* GetMaterial() const;
 
-        void LoadProperties(const nlohmann::json& json);
+        void LoadProperties(const nlohmann::json& json) override;
     private:
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<Material> material;

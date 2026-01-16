@@ -41,7 +41,7 @@ namespace golias {
             return false;
         }
 
-        // TODO: make possible to swap/recrate the application 
+        // TODO: make possible to swap/recrate the application
         if (application) {
 
 
@@ -64,7 +64,7 @@ namespace golias {
                 spdlog::error("Engine::Initialize Failed to initialize the Application.");
                 return false;
             }
-        }else{
+        } else {
             spdlog::error("Engine::Initialize No Application instance set before initialization.");
             return false;
         }
@@ -96,7 +96,8 @@ namespace golias {
             if (event.type == SDL_EVENT_WINDOW_RESIZED) {
                 engine.GetApplication()->SetWidth(event.window.data1);
                 engine.GetApplication()->SetHeight(event.window.data2);
-                engine.GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, engine.GetApplication()->GetWidth(), engine.GetApplication()->GetHeight()});
+                engine.GetSceneRenderer().GetRenderingDevice()->SetViewport(
+                    {0, 0, engine.GetApplication()->GetWidth(), engine.GetApplication()->GetHeight()});
             }
 
             engine.GetInputManager().ProcessEvent(event);
@@ -124,10 +125,13 @@ namespace golias {
             if (pCameraComponent) {
                 cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
 
-                float aspect                = static_cast<float>(engine.GetApplication()->GetWidth()) / static_cast<float>(engine.GetApplication()->GetHeight());
-                cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
-                cameraData.orthographicMatrix =
-                    glm::ortho(0.0f, static_cast<float>(engine.GetApplication()->GetWidth()), 0.0f, static_cast<float>(engine.GetApplication()->GetHeight()));
+                float aspect =
+                    static_cast<float>(engine.GetApplication()->GetWidth()) / static_cast<float>(engine.GetApplication()->GetHeight());
+                cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
+                cameraData.orthographicMatrix = glm::ortho(0.0f,
+                                                           static_cast<float>(engine.GetApplication()->GetWidth()),
+                                                           0.0f,
+                                                           static_cast<float>(engine.GetApplication()->GetHeight()));
 
                 cameraData.position = engine.GetScene()->GetMainCamera()->GetWorldPosition();
             }
@@ -188,6 +192,15 @@ namespace golias {
 
         application.reset(pApplication);
     }
+
+
+    Uint64 Engine::GetLastTimePoint() const {
+        return last_time_point;
+    }
+    void Engine::SetLastTimePoint(Uint64 timePoint) {
+        last_time_point = timePoint;
+    }
+
 
     void Engine::SetScene(const std::shared_ptr<Scene>& pScene) {
         scene = pScene;

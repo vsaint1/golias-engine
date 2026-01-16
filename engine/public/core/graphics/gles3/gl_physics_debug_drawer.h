@@ -44,7 +44,7 @@ namespace golias {
 
         Shader* debugShader = nullptr;
 
-        void Cleanup();
+        void Cleanup() override;
         glm::vec3 btToGlm(const btVector3& vec) const;
     };
 

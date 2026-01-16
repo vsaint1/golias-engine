@@ -236,9 +236,6 @@ namespace golias {
     }
 
     void GameObject::SetUseIBL(bool value) {
-        if (!this) {
-            return;
-        }
 
         if (auto meshComp = GetComponent<golias::MeshComponent>()) {
             if (auto material = meshComp->GetMaterial()) {

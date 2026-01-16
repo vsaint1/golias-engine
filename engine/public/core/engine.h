@@ -42,11 +42,8 @@ namespace golias {
         Scene* GetScene() const;
         void SetScene(const std::shared_ptr<Scene>& pScene);
 
-        Uint64 GetLastTimePoint() const { return last_time_point; }
-        void SetLastTimePoint(Uint64 timePoint) { last_time_point = timePoint; }
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
-        friend void ::engine_core_loop();
-#endif
+        Uint64 GetLastTimePoint() const ;
+        void SetLastTimePoint(Uint64 timePoint);
 
     private:
         Engine()                         = default;
