@@ -11,9 +11,6 @@
 #include "core/input/canvas_input_manager.h"
 #include "core/input/cursor.h"
 
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
-void engine_core_loop();
-#endif
 
 namespace golias {
     class Application;
