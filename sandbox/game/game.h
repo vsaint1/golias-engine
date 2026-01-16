@@ -6,6 +6,10 @@
 
 class SandboxApplication : public golias::Application {
 public:
+    SandboxApplication()
+        : golias::Application("Golias Engine - Sandbox", 1280, 720, golias::ERenderingDeviceType::COMPATIBILITY) {
+    }
+
     void RegisterTypes() override;
 
     bool Initialize() override;

@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     golias::Engine& engine = golias::Engine::GetInstance();
     engine.SetApplication(gameApp);
     
-    if (!engine.Initialize("Golias Engine - Sandbox", 1280, 720)) {
+    if (!engine.Initialize()) {
         return -1;
     }
 

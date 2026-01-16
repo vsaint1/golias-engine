@@ -172,9 +172,22 @@ WASD to move, Mouse to look around)";
     auto button = Tscene->CreateObject("Button2D", canvas_2d);
     auto buttonComp = new golias::ButtonWidgetComponent();
     buttonComp->SetRect({150.0f, 50.0f});
-    buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
-    button->SetPosition2D({1000.0f, 100.0f});
+    // buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
+    button->SetPosition2D({500.0f, 150.0f});
     button->AddComponent(buttonComp);
+    buttonComp->onClick = []() {
+        spdlog::info("Button Clicked!");
+    };
+
+    // golias::Cursor::SetCursorEnabled(false);
+    
+    auto buttonText     = Tscene->CreateObject("ButtonText", button);
+    auto buttonTextComp = new golias::TextWidgetComponent();
+    buttonTextComp->SetText("Click Me!");
+    buttonTextComp->SetTextColor({0.0f, 0.0f, 0.0f, 1.0f});
+    // buttonTextComp->SetShadowEnabled(true);
+    buttonText->SetPosition2D({4.0f, 8.0f});
+    buttonText->AddComponent(buttonTextComp);
 
     auto textAmmo     = Tscene->CreateObject("TextAmmo", canvas_2d);
     auto textCompAmmo = new golias::TextWidgetComponent();
@@ -183,6 +196,11 @@ WASD to move, Mouse to look around)";
     textCompAmmo->SetShadowEnabled(true);
     textAmmo->SetPosition2D({1000.0f, 100.0f});
     textAmmo->AddComponent(textCompAmmo);
+
+    auto& canvasInputManager = golias::Engine::GetInstance().GetCanvasInputManager();
+    canvasInputManager.SetActive(true);
+    canvasInputManager.SetActiveCanvas(canvasComp2D);
+
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
