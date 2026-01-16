@@ -1,6 +1,5 @@
 #include "core/engine.h"
 
-#include "core/application.h"
 #include "scene/3d/camera_component.h"
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -14,33 +13,19 @@ namespace golias {
         return instance;
     }
 
-    bool Engine::Initialize(const char* pTitle, int width, int height, ERenderingDeviceType deviceType) {
+    bool Engine::Initialize() {
 
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK)) {
             spdlog::error("Engine::Initialize Failed to initialize SDL : {}", SDL_GetError());
             return false;
         }
 
-        _width  = width;
-        _height = height;
-        window  = SDL_CreateWindow(pTitle, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-
-        if (!window) {
-            spdlog::error("Engine::Initialize Failed to create SDL Window : {}", SDL_GetError());
-            return false;
-        }
 
         if (!fontManager.Initialize()) {
             spdlog::error("Engine::Initialize Failed to initialize Font Manager.");
             return false;
         }
 
-        SDL_SetWindowRelativeMouseMode(window, true);
-
-        if (!sceneRenderer.Initialize(window, deviceType)) {
-            spdlog::error("Engine::Initialize Failed to initialize Rendering Canvas.");
-            return false;
-        }
 
         fontManager.SetFallbackFonts({
             "fonts/NotoSans.ttf",
@@ -48,13 +33,6 @@ namespace golias {
             // "fonts/Twemoji.ttf" // needs plutosvg
         });
 
-        sceneRenderer.GetRenderingDevice()->SetViewport({0, 0, width, height});
-
-
-        if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
-            spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
-            return false;
-        }
 
         Scene::RegisterTypes();
 
@@ -63,13 +41,32 @@ namespace golias {
             return false;
         }
 
+        // TODO: make possible to swap/recrate the application 
         if (application) {
+
+
+            if (!sceneRenderer.Initialize(application->GetWindowNativeHandle(), application->GetRenderingDeviceType())) {
+                spdlog::error("Engine::Initialize Failed to initialize Rendering Canvas.");
+                return false;
+            }
+
+            sceneRenderer.GetRenderingDevice()->SetViewport({0, 0, application->GetWidth(), application->GetHeight()});
+
+
+            if (!physicsManager.Initialize(sceneRenderer.GetRenderingDevice()->GetPhysicsDebugDrawer())) {
+                spdlog::error("Engine::Initialize Failed to initialize Physics Manager.");
+                return false;
+            }
+
             application->RegisterTypes();
 
             if (!application->Initialize()) {
                 spdlog::error("Engine::Initialize Failed to initialize the Application.");
                 return false;
             }
+        }else{
+            spdlog::error("Engine::Initialize No Application instance set before initialization.");
+            return false;
         }
 
         spdlog::info("Engine::Initialize Golias Engine Initialized successfully.");
@@ -97,14 +94,17 @@ namespace golias {
             }
 
             if (event.type == SDL_EVENT_WINDOW_RESIZED) {
-                engine.SetWidth(event.window.data1);
-                engine.SetHeight(event.window.data2);
-                engine.GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, engine.GetWidth(), engine.GetHeight()});
+                engine.GetApplication()->SetWidth(event.window.data1);
+                engine.GetApplication()->SetHeight(event.window.data2);
+                engine.GetSceneRenderer().GetRenderingDevice()->SetViewport({0, 0, engine.GetApplication()->GetWidth(), engine.GetApplication()->GetHeight()});
             }
 
             engine.GetInputManager().ProcessEvent(event);
         }
 
+        if (engine.GetCanvasInputManager().IsActive()) {
+            engine.GetCanvasInputManager().Update(delta_time);
+        }
 
         engine.GetPhysicsManager().StepSimulation(delta_time);
 
@@ -124,10 +124,10 @@ namespace golias {
             if (pCameraComponent) {
                 cameraData.viewMatrix = pCameraComponent->GetViewMatrix();
 
-                float aspect                = static_cast<float>(engine.GetWidth()) / static_cast<float>(engine.GetHeight());
+                float aspect                = static_cast<float>(engine.GetApplication()->GetWidth()) / static_cast<float>(engine.GetApplication()->GetHeight());
                 cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
                 cameraData.orthographicMatrix =
-                    glm::ortho(0.0f, static_cast<float>(engine.GetWidth()), 0.0f, static_cast<float>(engine.GetHeight()));
+                    glm::ortho(0.0f, static_cast<float>(engine.GetApplication()->GetWidth()), 0.0f, static_cast<float>(engine.GetApplication()->GetHeight()));
 
                 cameraData.position = engine.GetScene()->GetMainCamera()->GetWorldPosition();
             }
@@ -163,16 +163,16 @@ namespace golias {
             engine_core_loop();
         }
 #endif
+        application.reset(nullptr);
     }
 
     void Engine::Destroy() {
 
         if (application) {
             application->Destroy();
-            application.reset();
+            application.reset(nullptr);
         }
 
-        SDL_DestroyWindow(window);
         SDL_Quit();
 
         spdlog::info("Engine::Destroy Cleanup phase completed, Engine systems destroyed.");
@@ -192,7 +192,6 @@ namespace golias {
     void Engine::SetScene(const std::shared_ptr<Scene>& pScene) {
         scene = pScene;
     }
-
 
     Application* Engine::GetApplication() const {
         return application.get();
@@ -216,6 +215,10 @@ namespace golias {
 
     FileSystem& Engine::GetFileSystem() {
         return fileSystem;
+    }
+
+    CanvasInputManager& Engine::GetCanvasInputManager() {
+        return canvasInputManager;
     }
 
     Scene* Engine::GetScene() const {

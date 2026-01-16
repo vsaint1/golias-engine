@@ -29,7 +29,7 @@ namespace golias {
 
 
     std::shared_ptr<TextureCubemap> TextureCubemap::Load(const std::string_view pFilePath) {
-        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto& textureManager = Engine::GetInstance().GetTextureManager();
         auto cubemap  = textureManager.EnsureTextureCubemapCross(pFilePath);
 
         return cubemap;
@@ -37,7 +37,7 @@ namespace golias {
 
 
     std::shared_ptr<TextureCubemap> TextureCubemap::Load(const std::array<std::string, 6>& faces) {
-        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto& textureManager = Engine::GetInstance().GetTextureManager();
         auto cubemap  = textureManager.EnsureTextureCubemapFaces(faces);
 
         return cubemap;
@@ -45,7 +45,7 @@ namespace golias {
 
 
     std::shared_ptr<TextureCubemap> TextureCubemap::LoadProcedural() {
-        auto textureManager = Engine::GetInstance().GetTextureManager();
+        auto& textureManager = Engine::GetInstance().GetTextureManager();
         auto cubemap  = textureManager.EnsureTextureCubemapProcedural();
 
         return cubemap;

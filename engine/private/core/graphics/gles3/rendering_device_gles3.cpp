@@ -156,7 +156,7 @@ namespace golias {
 
     std::shared_ptr<Texture2D> RenderingDeviceGLES3::CreateTextureFromFile(const std::string_view pFilePath) {
 
-        auto fileSystem = golias::Engine::GetInstance().GetFileSystem();
+        auto& fileSystem = golias::Engine::GetInstance().GetFileSystem();
 
         return std::make_shared<OpenglTexture2D>(fileSystem.GetAssetFile(pFilePath));
     }

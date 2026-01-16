@@ -8,6 +8,8 @@
 #include "audio/audio_manager.h"
 #include "font/font_manager.h"
 #include "core/graphics/texture_manager.h"
+#include "core/input/canvas_input_manager.h"
+#include "core/input/cursor.h"
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
 void engine_core_loop();
@@ -15,14 +17,13 @@ void engine_core_loop();
 
 namespace golias {
     class Application;
+    
     class Engine {
     public:
         ~Engine() = default;
         static Engine& GetInstance();
-        bool Initialize(const char* pTitle              = "Golias Engine",
-                        int w                           = 1280,
-                        int h                           = 720,
-                        ERenderingDeviceType deviceType = ERenderingDeviceType::COMPATIBILITY);
+        
+        bool Initialize();
         void Run();
         void Destroy();
         void SetApplication(Application* pApplication);
@@ -36,14 +37,11 @@ namespace golias {
         MaterialManager& GetMaterialManager();
         AudioManager& GetAudioManager();
         FontManager& GetFontManager();
-        
+        CanvasInputManager& GetCanvasInputManager();
+
         Scene* GetScene() const;
         void SetScene(const std::shared_ptr<Scene>& pScene);
-        
-        int GetWidth() const { return _width; }
-        int GetHeight() const { return _height; }
-        void SetWidth(int width) { _width = width; }
-        void SetHeight(int height) { _height = height; }
+
         Uint64 GetLastTimePoint() const { return last_time_point; }
         void SetLastTimePoint(Uint64 timePoint) { last_time_point = timePoint; }
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
@@ -60,9 +58,7 @@ namespace golias {
     private:
         std::unique_ptr<Application> application;
         Uint64 last_time_point = 0;
-        SDL_Window* window           = nullptr;
-        int _width                   = 1280;
-        int _height                  = 720;
+ 
         std::shared_ptr<Scene> scene = nullptr;
     private:
         SceneRenderer sceneRenderer;
@@ -73,5 +69,6 @@ namespace golias {
         MaterialManager materialManager;
         AudioManager audioManager;
         FontManager fontManager;
+        CanvasInputManager canvasInputManager;
     };
 }; // namespace golias

@@ -7,15 +7,13 @@
 #include "core/graphics/texture_2d.h"
 #include "core/graphics/texture_cubemap.h"
 #include "physics/3d/physics_debug_drawer.h"
+#include "core/application.h"
 #include <SDL3/SDL.h>
 
 
 namespace golias {
 
-    enum ERenderingDeviceType {
-        COMPATIBILITY,
-        FORWARD_PLUS,
-    };
+
 
 
     class RenderingDevice {
