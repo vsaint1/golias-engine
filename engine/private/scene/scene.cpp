@@ -13,6 +13,7 @@
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
 #include "scene/3d/world_environment_component.h"
+#include "scene/3d/directional_light_component.h"
 #pragma endregion
 
 #pragma region 2D_COMPONENTS
@@ -409,6 +410,7 @@ namespace golias {
         AudioListenerComponent::Register();
         SkeletonAnimationComponent::Register();
         WorldEnvironmentComponent::Register();
+        DirectionalLightComponent::Register();
 
         SpriteComponent2D::Register();
 

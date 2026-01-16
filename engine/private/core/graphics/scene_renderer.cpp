@@ -27,7 +27,6 @@ namespace golias {
         return rendering_device;
     }
 
-
     void SceneRenderer::SetupMaterialUniforms(const DrawCommand& command) {
         auto shader = command.material->GetShader();
 
@@ -54,6 +53,8 @@ namespace golias {
     }
 
     void SceneRenderer::SetupLightingUniforms(Shader* shader) {
+
+
         // Directional lights
         int directionalLightCount = static_cast<int>(directional_lights.size());
         shader->SetUniform("u_directionalLightCount", directionalLightCount);
@@ -79,7 +80,7 @@ namespace golias {
             shader->SetUniform(p + "quadratic", point_lights[i].quadratic);
         }
 
-        // Spot lights
+        // Spot lights - now using pre-calculated cosine values
         int spotLightCount = static_cast<int>(spot_lights.size());
         shader->SetUniform("u_spotLightCount", spotLightCount);
         for (int i = 0; i < spotLightCount; ++i) {
@@ -89,8 +90,9 @@ namespace golias {
             shader->SetUniform(p + "color", spot_lights[i].color);
             shader->SetUniform(p + "intensity", spot_lights[i].intensity);
             shader->SetUniform(p + "range", spot_lights[i].range);
-            shader->SetUniform(p + "innerConeAngle", glm::cos(glm::radians(spot_lights[i].innerConeAngle)));
-            shader->SetUniform(p + "outerConeAngle", glm::cos(glm::radians(spot_lights[i].outerConeAngle)));
+            // Use pre-calculated cosine values
+            shader->SetUniform(p + "innerConeAngleCos", spot_lights[i].innerConeAngleCos);
+            shader->SetUniform(p + "outerConeAngleCos", spot_lights[i].outerConeAngleCos);
             shader->SetUniform(p + "constant", spot_lights[i].constant);
             shader->SetUniform(p + "linear", spot_lights[i].linear);
             shader->SetUniform(p + "quadratic", spot_lights[i].quadratic);
@@ -139,14 +141,14 @@ namespace golias {
     }
 
     void SceneRenderer::CalculateLightSpaceMatrices() {
-        renderContext.shadowsEnabled = false;
+        if (!AreShadowsEnabled()) {
+            return;
+        }
 
         for (auto& directional_light : directional_lights) {
             if (!directional_light.castShadows) {
                 continue;
             }
-
-            renderContext.shadowsEnabled = true;
 
             const float orthoSize  = 30.0f;
             const float near_plane = 1.0f;
@@ -164,13 +166,23 @@ namespace golias {
             glm::mat4 lightView = glm::lookAt(lightPos, shadowCenter, glm::vec3(0.0f, 1.0f, 0.0f));
 
             directional_light.lightSpaceMatrix = lightProjection * lightView;
-            break;
         }
     }
 
-
     void SceneRenderer::ShadowPass() {
-        if (!renderContext.shadowsEnabled) {
+        if (!AreShadowsEnabled()) {
+            return;
+        }
+
+        bool hasShadowCasters = false;
+        for (const auto& light : directional_lights) {
+            if (light.castShadows) {
+                hasShadowCasters = true;
+                break;
+            }
+        }
+
+        if (!hasShadowCasters) {
             return;
         }
 
@@ -178,7 +190,7 @@ namespace golias {
         rendering_device->SetDepthWrite(true);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
         rendering_device->SetCullMode(ECullMode::CULL_MODE_FRONT);
-       
+
         rendering_device->GetDefaultShadowMapFramebuffer()->Bind();
         rendering_device->ClearBuffer(EClearFlags::CLEAR_DEPTH);
 
@@ -214,7 +226,6 @@ namespace golias {
         }
 
         rendering_device->GetDefaultShadowMapFramebuffer()->Unbind();
-
     }
 
     void SceneRenderer::GeometryOpaquePass(const std::vector<DrawCommand>& opaqueCommands) {
@@ -243,7 +254,6 @@ namespace golias {
             return;
         }
 
-
         rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS_EQUAL);
         rendering_device->SetDepthWrite(false);
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
@@ -267,7 +277,6 @@ namespace golias {
     }
 
     void SceneRenderer::GeometryTransparentPass(const std::vector<DrawCommand>& transparentCommands) {
-
         rendering_device->SetDepthTest(true);
         rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS);
         rendering_device->SetDepthWrite(true);
@@ -420,7 +429,6 @@ namespace golias {
             });
         }
 
-
         ShadowPass();
         GeometryOpaquePass(opaqueCommands);
         SkyboxPass();
@@ -446,7 +454,6 @@ namespace golias {
         spdlog::info("SceneRenderer::Initialize Scene Renderer initialized successfully.");
         return true;
     }
-
 
     void SceneRenderer::Present() {
         rendering_device->SwapChain();
@@ -478,7 +485,14 @@ namespace golias {
         point_lights.clear();
         spot_lights.clear();
     }
+    
+    void SceneRenderer::SetShadowEnabled(bool enabled) {
+        renderContext.shadowsEnabled = enabled;
+    }
 
+    bool SceneRenderer::AreShadowsEnabled() const {
+        return renderContext.shadowsEnabled;
+    }
 
     SceneRenderer::~SceneRenderer() {
         if (rendering_device) {
@@ -512,10 +526,15 @@ namespace golias {
     }
 
     void SceneRenderer::Submit(const SpotLightCommand& command) {
-        spot_lights.push_back(command);
+        SpotLightCommand optimized  = command;
+        optimized.innerConeAngleCos = glm::cos(glm::radians(command.innerConeAngle));
+        optimized.outerConeAngleCos = glm::cos(glm::radians(command.outerConeAngle));
+
+        spot_lights.push_back(optimized);
     }
 
     void SceneRenderer::Submit(const WorldEnvironmentCommand& command) {
         world_environment_command = command;
     }
+
 }; // namespace golias

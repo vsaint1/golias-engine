@@ -37,11 +37,11 @@ namespace golias {
     };
 
     struct DirectionalLightCommand {
-        glm::vec3 direction = glm::vec3(0.5f, -1.0f, 0.3f);
-        glm::vec3 color     = glm::vec3(1.0f, 1.0f, 1.0f);
-        float intensity     = 1.0f;
-        bool castShadows    = true;
-        glm::mat4 lightSpaceMatrix;
+        glm::vec3 direction        = glm::vec3(0.5f, -1.0f, 0.3f);
+        glm::vec3 color            = glm::vec3(1.0f, 1.0f, 1.0f);
+        float intensity            = 1.0f;
+        bool castShadows           = true;
+        glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
     };
 
     struct PointLightCommand {
@@ -63,10 +63,12 @@ namespace golias {
         float range          = 10.0f; // Maximum distance of light influence
         float innerConeAngle = 12.5f; // Inner cone angle in degrees
         float outerConeAngle = 17.5f; // Outer cone angle in degrees
-        float constant       = 1.0f; // Constant attenuation term
-        float linear         = 0.09f; // Linear attenuation term
-        float quadratic      = 0.032f; // Quadratic attenuation term
-        bool castShadows     = false;
+        float innerConeAngleCos;
+        float outerConeAngleCos;
+        float constant   = 1.0f; // Constant attenuation term
+        float linear     = 0.09f; // Linear attenuation term
+        float quadratic  = 0.032f; // Quadratic attenuation term
+        bool castShadows = false;
     };
 
     struct CanvasBatch {
@@ -83,7 +85,7 @@ namespace golias {
         Mesh* mesh = nullptr;
         std::vector<CanvasBatch> batches;
         glm::mat4 modelMatrix;
-        float scale          = 1.0f; 
+        float scale          = 1.0f;
         bool useBillboarding = false;
     };
 
@@ -101,6 +103,9 @@ namespace golias {
         void Submit(const WorldEnvironmentCommand& command);
 
 
+        void SetShadowEnabled(bool enabled);
+        bool AreShadowsEnabled() const;
+        
         void Draw(const CameraCommand& camera);
 
         void BeginFrame(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
@@ -112,6 +117,7 @@ namespace golias {
         ~SceneRenderer();
 
     private:
+
         WorldEnvironmentCommand world_environment_command;
         std::vector<DrawCommand> command_queue;
         std::vector<DrawCommand2D> command_queue_2d;

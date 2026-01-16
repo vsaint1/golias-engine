@@ -6,10 +6,10 @@
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
 #include "scene/ui/button_component.h"
+#include "scene/3d/directional_light_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
 golias::GameObject* porsche           = nullptr;
-golias::GameObject* godette           = nullptr;
 
 
 void SpawnBox(const glm::vec3& position) {
@@ -58,7 +58,7 @@ bool SandboxApplication::Initialize() {
     porsche->SetPosition({10.0f, 1.0f, 0.0f});
     porsche->SetScale({100.0f, 100.0f, 100.0f});
 
-    godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+    auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
     godette->SetPosition({0.0f, 1.0f, -1.0f});
 
 
@@ -114,6 +114,13 @@ bool SandboxApplication::Initialize() {
         godetteText->SetScale({0.01f, 0.01f, 0.01f});
     }
 
+    // for (int i = 0; i < 10; i++){
+    //     auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+    //     godette->SetPosition({static_cast<float>(std::rand() % 20 - 10), 1.0f, static_cast<float>(std::rand() % 20 - 10)});
+    //     if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
+    //         godetteAnim->Play("Cheer", true);
+    //     }
+    // }
 
     // auto sponza = golias::Model::Load("models/pbr/sponza/Sponza.gltf", Tscene.get());
     // sponza->SetPosition({10.0f, 1.0f, 10.0f});
@@ -201,6 +208,13 @@ WASD to move, Mouse to look around)";
     canvasInputManager.SetActive(true);
     canvasInputManager.SetActiveCanvas(canvasComp2D);
 
+    auto directionalLight = Tscene->CreateObject("DirectionalLight");
+    auto directionalLightComp = new golias::DirectionalLightComponent();
+    directionalLightComp->SetDirection({0.5f, -1.0f, 0.3f});
+    directionalLightComp->SetColor({1.0f, 1.0f, 1.0f});
+    directionalLightComp->SetIntensity(5.0f);
+    directionalLightComp->SetCastShadows(true);
+    directionalLight->AddComponent(directionalLightComp);
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
