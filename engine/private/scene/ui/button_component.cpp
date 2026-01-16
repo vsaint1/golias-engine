@@ -13,7 +13,8 @@ namespace golias {
     }
 
     void ButtonWidgetComponent::SetColor(const glm::vec4& value) {
-        color = value;
+        normalColor = value;
+        color       = value;
     }
 
     glm::vec4 ButtonWidgetComponent::GetColor() const {
@@ -28,8 +29,8 @@ namespace golias {
 
         pCanvas->DrawTexture2D(glm::vec3(pos.x, pos.y, 0.0f),
                                glm::vec3(pos.x + rect.x, pos.y + rect.y, 0.0f),
-                               glm::vec2(0.0f, 1.0f), 
-                               glm::vec2(1.0f, 0.0f), 
+                               glm::vec2(0.0f, 1.0f),
+                               glm::vec2(1.0f, 0.0f),
                                nullptr,
                                color);
     }
@@ -55,17 +56,24 @@ namespace golias {
     }
 
     void ButtonWidgetComponent::OnPointerEnter() {
+        color = hoverColor;
     }
 
     void ButtonWidgetComponent::OnPointerExit() {
+        color = normalColor;
     }
 
     void ButtonWidgetComponent::OnPointerDown() {
+        color = pressedColor;
     }
 
     void ButtonWidgetComponent::OnPointerUp() {
+        color = hoverColor;
     }
 
     void ButtonWidgetComponent::OnClick() {
+        if (onClick) {
+            onClick();
+        }
     }
 } // namespace golias

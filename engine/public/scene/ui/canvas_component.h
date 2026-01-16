@@ -37,6 +37,8 @@ namespace golias {
         void SetUseBillboarding(bool enable);
         bool GetUseBillboarding() const;
 
+        void CollectWidget(WidgetComponent* pWidget, std::vector<WidgetComponent*>& outWidgets);
+
     private:
         std::vector<CanvasBatch> batches;
         std::vector<float> vertices;

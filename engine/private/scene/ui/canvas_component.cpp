@@ -13,7 +13,20 @@ namespace golias {
     bool CanvasComponent::GetUseBillboarding() const {
         return useBillboarding;
     }
+
+    void CanvasComponent::CollectWidget(WidgetComponent* pWidget, std::vector<WidgetComponent*>& outWidgets) {
+        outWidgets.push_back(pWidget);
+
+
+        const auto& children = pWidget->GetOwner()->GetChildren();
+        for (const auto& child : children) {
+            if (auto pComponent = child->GetComponent<WidgetComponent>()) {
+                CollectWidget(pComponent, outWidgets);
+            }
+        }
     
+    }
+
     void CanvasComponent::Start() {
 
         vertices.clear();
