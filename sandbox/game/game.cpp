@@ -1,12 +1,14 @@
 #include "game.h"
 
 #include "scene/2d/sprite_component_2d.h"
+#include "scene/3d/directional_light_component.h"
 #include "scene/3d/skeleton_animation_component.h"
+#include "scene/3d/spotlight_component.h"
+#include "scene/3d/pointlight_component.h"
 #include "scene/3d/world_environment_component.h"
+#include "scene/ui/button_component.h"
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
-#include "scene/ui/button_component.h"
-#include "scene/3d/directional_light_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
 golias::GameObject* porsche           = nullptr;
@@ -105,6 +107,7 @@ bool SandboxApplication::Initialize() {
         auto godetteTextComp = new golias::TextWidgetComponent();
         godetteTextComp->SetText("Godette");
         godetteTextComp->SetFont("fonts/Minecraft.ttf", 32);
+        godetteTextComp->SetFontSize(16);
         godetteTextComp->SetShadowEnabled(true);
 
         godetteText->AddComponent(godetteTextComp);
@@ -176,18 +179,17 @@ WASD to move, Mouse to look around)";
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
 
-    auto button = Tscene->CreateObject("Button2D", canvas_2d);
+    auto button     = Tscene->CreateObject("Button2D", canvas_2d);
     auto buttonComp = new golias::ButtonWidgetComponent();
     buttonComp->SetRect({150.0f, 50.0f});
     // buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
     button->SetPosition2D({500.0f, 150.0f});
     button->AddComponent(buttonComp);
-    buttonComp->onClick = []() {
-        spdlog::info("Button Clicked!");
-    };
+    buttonComp->onClick = []() { spdlog::info("Button Clicked!"); };
 
+    golias::Cursor::SetCursorLockState(golias::ECursorLockState::CURSOR_LOCKED);
     // golias::Cursor::SetCursorEnabled(false);
-    
+
     auto buttonText     = Tscene->CreateObject("ButtonText", button);
     auto buttonTextComp = new golias::TextWidgetComponent();
     buttonTextComp->SetText("Click Me!");
@@ -208,13 +210,31 @@ WASD to move, Mouse to look around)";
     canvasInputManager.SetActive(true);
     canvasInputManager.SetActiveCanvas(canvasComp2D);
 
-    auto directionalLight = Tscene->CreateObject("DirectionalLight");
+    auto directionalLight     = Tscene->CreateObject("DirectionalLight");
     auto directionalLightComp = new golias::DirectionalLightComponent();
     directionalLightComp->SetDirection({0.5f, -1.0f, 0.3f});
     directionalLightComp->SetColor({1.0f, 1.0f, 1.0f});
     directionalLightComp->SetIntensity(5.0f);
     directionalLightComp->SetCastShadows(true);
     directionalLight->AddComponent(directionalLightComp);
+
+    auto spotLight     = Tscene->CreateObject("SpotLight");
+    auto spotLightComp = new golias::SpotlightComponent();
+    spotLightComp->SetPosition({2.0f, 5.0f, 2.0f});
+    spotLightComp->SetDirection({-0.5f, -1.0f, -0.5f});
+    spotLightComp->SetColor({0.0f, 0.0f, 1.0f});
+    spotLightComp->SetIntensity(10.0f);
+    spotLightComp->SetRange(15.0f);
+    spotLightComp->SetInnerConeAngle(15.0f);
+    spotLightComp->SetOuterConeAngle(25.0f);
+    spotLight->AddComponent(spotLightComp);
+
+    auto pointLight     = Tscene->CreateObject("PointLight");
+    auto pointLightComp = new golias::PointLightComponent();
+    pointLightComp->SetPosition({-2.0f, 3.0f, -2.0f});
+    pointLightComp->SetColor({1.0f, 0.0f, 0.0f});
+    pointLightComp->SetIntensity(10.0f);
+    pointLight->AddComponent(pointLightComp);
 
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
