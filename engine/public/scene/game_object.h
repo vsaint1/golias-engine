@@ -128,24 +128,14 @@ namespace golias {
 
     class ObjectRegistry {
     public:
-        static ObjectRegistry& GetInstance() {
-            static ObjectRegistry instance;
-            return instance;
-        }
+        static ObjectRegistry& GetInstance();
 
         template <typename T>
         void RegisterObject(const std::string_view pName) {
             creators.emplace(pName.data(), std::make_unique<ObjectFactory<T>>());
         }
 
-        GameObject* CreateObject(const std::string_view pName) const {
-            auto it = creators.find(pName.data());
-            if (it != creators.end()) {
-                return it->second->Create();
-            }
-
-            return nullptr;
-        }
+        GameObject* CreateObject(const std::string_view pName) const;
 
     private:
         std::unordered_map<std::string, std::unique_ptr<ObjectFactoryBase>> creators;

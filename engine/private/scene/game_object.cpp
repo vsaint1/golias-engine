@@ -2,7 +2,6 @@
 
 #include "core/engine.h"
 #include "core/model.h"
-#include <spdlog/spdlog.h>
 #include <scene/3d/mesh_component.h>
 
 namespace golias {
@@ -248,4 +247,17 @@ namespace golias {
         }
     }
 
+    ObjectRegistry& ObjectRegistry::GetInstance() {
+        static ObjectRegistry instance;
+        return instance;
+    }
+
+    GameObject* ObjectRegistry::CreateObject(const std::string_view pName) const {
+        auto it = creators.find(pName.data());
+        if (it != creators.end()) {
+            return it->second->Create();
+        }
+
+        return nullptr;
+    }
 } // namespace golias

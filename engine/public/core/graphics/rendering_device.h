@@ -78,6 +78,7 @@ namespace golias {
 
         virtual void SetScissor(const Scissor& scissor) = 0;
 
+        virtual void SetColorWrite(bool red, bool green, bool blue, bool alpha) = 0;
         virtual void SetBlendMode(EBlendMode blendMode)       = 0;
         virtual void SetDepthComparison(EComparisonFunc func) = 0;
         virtual void SetCullMode(ECullMode cullMode)          = 0;

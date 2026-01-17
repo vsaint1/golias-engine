@@ -716,7 +716,7 @@ namespace golias {
             }
         }
 
-     
+
         bool shouldUseIBL = false;
 
         if (gltf_material) {
@@ -732,7 +732,7 @@ namespace golias {
                     spdlog::debug("Material '{}' has high metallic ({:.2f}), enabling IBL",
                                   gltf_material->name ? gltf_material->name : "unnamed",
                                   metallic);
-                }// 2. Very smooth materials benefit from IBL (polished surfaces)
+                } // 2. Very smooth materials benefit from IBL (polished surfaces)
                 else if (roughness < 0.3f) {
                     shouldUseIBL = true;
                     spdlog::debug("Material '{}' has low roughness ({:.2f}), enabling IBL",
@@ -845,7 +845,7 @@ namespace golias {
             roughness = 1.0f - glm::clamp(shininess / 1000.0f, 0.0f, 1.0f);
         }
 
-        
+
         bool shouldUseIBL = false;
 
         if (obj_material) {
@@ -1001,7 +1001,6 @@ namespace golias {
 
             spdlog::debug("Loaded {} Animation clips from GLTF file", data->animations_count);
         }
-       
     }
 
     // ============================================================================
@@ -1036,7 +1035,7 @@ namespace golias {
                 SkeletonJoint joint;
                 joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
 
-                
+
                 if (jointNode->has_translation) {
                     joint.position = glm::vec3(jointNode->translation[0], jointNode->translation[1], jointNode->translation[2]);
                 }
@@ -1050,7 +1049,7 @@ namespace golias {
                     joint.scale = glm::vec3(jointNode->scale[0], jointNode->scale[1], jointNode->scale[2]);
                 }
 
-               
+
                 if (skin.inverse_bind_matrices) {
                     float mat[16];
                     cgltf_accessor_read_float(skin.inverse_bind_matrices, ji, mat, 16);
@@ -1060,7 +1059,7 @@ namespace golias {
                 skeleton->joints.push_back(joint);
             }
 
-            
+
             for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
                 cgltf_node* jointNode = skin.joints[ji];
                 if (jointNode->parent) {
@@ -1188,7 +1187,8 @@ namespace golias {
 
             for (auto& clip : skeletonClips) {
                 skelAnimComp->RegisterClip(clip->name, clip);
-                spdlog::debug("Registered skeleton animation clip: {} with {} tracks, duration: {}", clip->name, clip->tracks.size(), clip->duration);
+                spdlog::debug(
+                    "Registered skeleton animation clip: {} with {} tracks, duration: {}", clip->name, clip->tracks.size(), clip->duration);
             }
 
             spdlog::debug("Loaded {} Skeleton animation clips from GLTF file", skeletonClips.size());
@@ -1362,21 +1362,29 @@ namespace golias {
     GameObject* Model::LoadGLTF(std::string_view path, Scene* scene) {
         auto& fs = Engine::GetInstance().GetFileSystem();
 
-        std::string fullPath = fs.GetAssetsPath() + std::string(path);
-        size_t s             = path.find_last_of("/\\");
-        std::string basePath = (s == std::string::npos) ? "" : std::string(path.substr(0, s + 1));
 
-        std::string model_name(path);
-        size_t last_slash = model_name.find_last_of("/\\");
-        if (last_slash != std::string::npos) {
-            model_name = model_name.substr(last_slash + 1);
+        std::vector<char> fileData = fs.LoadAssetFile(path);
+        if (fileData.empty()) {
+            spdlog::error("Failed to load GLTF/GLB file: {}", path);
+            return nullptr;
         }
 
-        cgltf_options options = {};
-        memset(&options, 0, sizeof(cgltf_options));
 
-        cgltf_data* data    = nullptr;
-        cgltf_result result = cgltf_parse_file(&options, fullPath.c_str(), &data);
+        std::string fullPath = fs.GetAssetsPath() + std::string(path);
+
+        size_t slash         = path.find_last_of("/\\");
+        std::string basePath = (slash == std::string::npos) ? "" : std::string(path.substr(0, slash + 1));
+
+        std::string model_name(path);
+        if (slash != std::string::npos) {
+            model_name = model_name.substr(slash + 1);
+        }
+
+
+        cgltf_options options{};
+        cgltf_data* data = nullptr;
+
+        cgltf_result result = cgltf_parse(&options, fileData.data(), fileData.size(), &data);
 
         if (result != cgltf_result_success) {
             spdlog::error("Failed to parse GLTF/GLB file: {}", fullPath);

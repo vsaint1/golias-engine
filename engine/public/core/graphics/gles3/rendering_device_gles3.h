@@ -57,6 +57,7 @@ namespace golias {
         void SwapChain() override;
 
         void SetViewport(const Viewport& vp) override;
+        void SetScissor(const Scissor& scissor) override;
 
 
         std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
@@ -68,8 +69,8 @@ namespace golias {
             
         std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
         std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
-        void SetScissor(const Scissor& scissor) override;
 
+        void SetColorWrite(bool red, bool green, bool blue, bool alpha) override;
         void SetBlendMode(EBlendMode blendMode) override;
         void SetDepthComparison(EComparisonFunc func) override;
         void SetCullMode(ECullMode cullMode) override;

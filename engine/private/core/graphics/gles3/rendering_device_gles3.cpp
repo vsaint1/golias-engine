@@ -121,7 +121,7 @@ namespace golias {
         }
     }
 
-    
+
     void RenderingDeviceGLES3::BindTexture(Shader* shader, std::string_view uniformName, Uint32 slot, Texture2D* texture) {
         if (!texture) {
             return;
@@ -421,7 +421,12 @@ namespace golias {
         glScissor(scissor.x, scissor.y, scissor.width, scissor.height);
     }
 
+    void RenderingDeviceGLES3::SetColorWrite(bool red, bool green, bool blue, bool alpha) {
+        glColorMask(red ? GL_TRUE : GL_FALSE, green ? GL_TRUE : GL_FALSE, blue ? GL_TRUE : GL_FALSE, alpha ? GL_TRUE : GL_FALSE);
+    }
     void RenderingDeviceGLES3::SetBlendMode(EBlendMode blendMode) {
+
+
         switch (blendMode) {
         case EBlendMode::BLEND_MODE_DISABLED:
             glDisable(GL_BLEND);
