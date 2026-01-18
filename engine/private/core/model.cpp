@@ -25,10 +25,6 @@
 namespace golias {
 
 
-    // ============================================================================
-    // Utility Functions
-    // ============================================================================
-
     size_t GetDataTypeSize(EDataType type) {
         switch (type) {
         case EDataType::BYTE:
@@ -433,6 +429,7 @@ namespace golias {
 
     std::shared_ptr<Texture2D>
         LoadGLTFTexture(cgltf_texture* texture, const std::string& base_path, const std::string& fallback_name = "") {
+
         if (!texture || !texture->image) {
             return nullptr;
         }
@@ -462,7 +459,7 @@ namespace golias {
                 }
 
                 int width, height, channels;
-                unsigned char* image_data =
+                stbi_uc* image_data =
                     stbi_load_from_memory(decoded.data(), static_cast<int>(decoded.size()), &width, &height, &channels, 0);
 
                 if (!image_data) {
@@ -472,47 +469,30 @@ namespace golias {
 
                 std::string embedded_path = "datauri://" + (fallback_name.empty() ? "unnamed_texture" : fallback_name);
 
-                try {
-                    ETextureFormat format;
-                    if (channels == 1) {
-                        format = ETextureFormat::RED;
-                    } else if (channels == 2) {
-                        format = ETextureFormat::RG;
-                    } else if (channels == 3) {
-                        format = ETextureFormat::RGB;
-                    } else if (channels == 4) {
-                        format = ETextureFormat::RGBA;
-                    } else {
-                        stbi_image_free(image_data);
-                        spdlog::warn("Unsupported channel count {} for {}", channels, fallback_name);
-                        return nullptr;
-                    }
+                ETextureFormat format = TextureFormatFromChannels(channels);
 
-                    auto loaded_texture = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+                auto loaded_texture = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
-                    if (loaded_texture) {
-                        spdlog::debug(
-                            "Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
-                        return loaded_texture;
-                    }
-                } catch (const std::exception& e) {
+                if (loaded_texture) {
+                    spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
+                    return loaded_texture;
+                } else {
                     stbi_image_free(image_data);
-                    spdlog::warn("Failed to create texture from data URI {}: {}", fallback_name, e.what());
+                    spdlog::warn("Failed to create texture from data URI {}: unknown_error", fallback_name);
                 }
 
                 return nullptr;
             } else {
                 // External file
                 std::string tex_path = base_path + image->uri;
-                try {
-                    auto loaded_texture = texture_manager.EnsureTexture2D(tex_path);
-                    if (loaded_texture) {
-                        spdlog::debug("Loaded external texture: {}", tex_path);
-                        return loaded_texture;
-                    }
-                } catch (const std::exception& e) {
-                    spdlog::warn("Failed to load external texture {}: {}", tex_path, e.what());
+                auto loaded_texture  = texture_manager.EnsureTexture2D(tex_path);
+                if (loaded_texture) {
+                    spdlog::debug("Loaded external texture: {}", tex_path);
+                    return loaded_texture;
+                } else {
+                    spdlog::warn("Failed to load external texture {}: unknown_error", tex_path);
                 }
+
                 return nullptr;
             }
         }
@@ -528,12 +508,7 @@ namespace golias {
 
             int width, height, channels;
 
-            if (!stbi_info_from_memory(data, static_cast<int>(size), &width, &height, &channels)) {
-                spdlog::warn("STBI cannot identify embedded image format for {}", fallback_name);
-                return nullptr;
-            }
-
-            unsigned char* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
+            stbi_uc* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
 
             if (!image_data) {
                 spdlog::warn("Failed to decode embedded texture {}: {}", fallback_name, stbi_failure_reason());
@@ -555,35 +530,17 @@ namespace golias {
             }
 
             embedded_path += fallback_name.empty() ? "unnamed_texture" : fallback_name;
+            ETextureFormat format = TextureFormatFromChannels(channels);
+            auto loaded_texture   = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
-            try {
-                ETextureFormat format;
-                if (channels == 1) {
-                    format = ETextureFormat::RED;
-                } else if (channels == 2) {
-                    format = ETextureFormat::RG;
-                } else if (channels == 3) {
-                    format = ETextureFormat::RGB;
-                } else if (channels == 4) {
-                    format = ETextureFormat::RGBA;
-                } else {
-                    stbi_image_free(image_data);
-                    spdlog::warn("Unsupported channel count {} for {}", channels, fallback_name);
-                    return nullptr;
-                }
-
-                auto loaded_texture = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
-
-                if (loaded_texture) {
-                    spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
-                    return loaded_texture;
-                }
-            } catch (const std::exception& e) {
+            if (loaded_texture) {
+                spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
+            } else {
                 stbi_image_free(image_data);
-                spdlog::warn("Failed to create texture from embedded data {}: {}", fallback_name, e.what());
+                spdlog::warn("Failed to create texture from embedded data {}: unknown error", fallback_name);
             }
 
-            return nullptr;
+            return loaded_texture;
         }
 
         spdlog::warn("Texture has neither URI nor buffer_view: {}", fallback_name);
@@ -599,6 +556,7 @@ namespace golias {
                                  const std::vector<Uint32>& indices,
                                  cgltf_material* gltf_material,
                                  const std::string& base_path) {
+
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
 
@@ -651,7 +609,8 @@ namespace golias {
                 roughness = pbr.roughness_factor;
 
                 if (base_color.a < 1.0f && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
-                    spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. Consider using BLEND mode.",
+                    spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. "
+                                 "Consider using BLEND mode.",
                                  gltf_material->name ? gltf_material->name : "unnamed");
                 }
 
@@ -716,7 +675,6 @@ namespace golias {
             }
         }
 
-
         bool shouldUseIBL = false;
 
         if (gltf_material) {
@@ -747,7 +705,8 @@ namespace golias {
                 } // Otherwise, default to studio lighting (no IBL)
                 else {
                     shouldUseIBL = false;
-                    spdlog::debug("Material '{}' using studio lighting (metallic: {:.2f}, roughness: {:.2f})",
+                    spdlog::debug("Material '{}' using studio lighting (metallic: {:.2f}, "
+                                  "roughness: {:.2f})",
                                   gltf_material->name ? gltf_material->name : "unnamed",
                                   metallic,
                                   roughness);
@@ -778,13 +737,13 @@ namespace golias {
         gameObject->AddComponent(new MeshComponent(mesh, material));
     }
 
-
     void CreateMeshComponentOBJ(GameObject* gameObject,
                                 const VertexLayout& layout,
                                 const std::vector<float>& vertices,
                                 const std::vector<Uint32>& indices,
                                 const tinyobj::material_t* obj_material,
                                 const std::string& base_path) {
+                                    
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
 
@@ -845,7 +804,6 @@ namespace golias {
             roughness = 1.0f - glm::clamp(shininess / 1000.0f, 0.0f, 1.0f);
         }
 
-
         bool shouldUseIBL = false;
 
         if (obj_material) {
@@ -887,7 +845,6 @@ namespace golias {
 
         gameObject->AddComponent(new MeshComponent(mesh, material));
     }
-
 
     // ============================================================================
     // GLTF Animation Loading
@@ -1035,7 +992,6 @@ namespace golias {
                 SkeletonJoint joint;
                 joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
 
-
                 if (jointNode->has_translation) {
                     joint.position = glm::vec3(jointNode->translation[0], jointNode->translation[1], jointNode->translation[2]);
                 }
@@ -1049,7 +1005,6 @@ namespace golias {
                     joint.scale = glm::vec3(jointNode->scale[0], jointNode->scale[1], jointNode->scale[2]);
                 }
 
-
                 if (skin.inverse_bind_matrices) {
                     float mat[16];
                     cgltf_accessor_read_float(skin.inverse_bind_matrices, ji, mat, 16);
@@ -1058,7 +1013,6 @@ namespace golias {
 
                 skeleton->joints.push_back(joint);
             }
-
 
             for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
                 cgltf_node* jointNode = skin.joints[ji];
@@ -1115,7 +1069,10 @@ namespace golias {
 
                 std::vector<float> times;
                 if (!ExtractScalarData(sampler->input, times)) {
-                    spdlog::warn("Failed to extract skeleton animation times for clip: {} channel: {}", clip->name, ci);
+                    spdlog::warn("Failed to extract skeleton animation times for clip: {} "
+                                 "channel: {}",
+                                 clip->name,
+                                 ci);
                     continue;
                 }
 
@@ -1336,7 +1293,6 @@ namespace golias {
         }
     }
 
-
     // ============================================================================
     // Public API Implementation
     // ============================================================================
@@ -1362,13 +1318,11 @@ namespace golias {
     GameObject* Model::LoadGLTF(std::string_view path, Scene* scene) {
         auto& fs = Engine::GetInstance().GetFileSystem();
 
-
         std::vector<char> fileData = fs.LoadAssetFile(path);
         if (fileData.empty()) {
             spdlog::error("Failed to load GLTF/GLB file: {}", path);
             return nullptr;
         }
-
 
         std::string fullPath = fs.GetAssetsPath() + std::string(path);
 
@@ -1379,7 +1333,6 @@ namespace golias {
         if (slash != std::string::npos) {
             model_name = model_name.substr(slash + 1);
         }
-
 
         cgltf_options options{};
         cgltf_data* data = nullptr;
@@ -1422,6 +1375,8 @@ namespace golias {
         LoadGLTFSkeleton(data, rootObject);
 
         cgltf_free(data);
+        fileData.clear();
+        fileData.shrink_to_fit();
 
         spdlog::info("Successfully loaded GLTF/GLB model: {}", path);
         return rootObject;

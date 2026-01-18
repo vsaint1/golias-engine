@@ -388,7 +388,7 @@ vec3 CalculateSpotLight(
     if(distance > light.range)
         return vec3(0.0);
 
-    L = L / distance; 
+    L = L / distance;
 
     float theta = dot(L, normalize(-light.direction));
     float epsilon = light.innerConeAngleCos - light.outerConeAngleCos;
@@ -437,29 +437,24 @@ vec3 CalculateIBL(
     float ao,
     float NdotV
 ) {
-    if(USE_IBL == 0) {
+    if(USE_IBL == 0)
         return vec3(0.0);
-    }
 
     vec3 R = reflect(-V, N);
-
     vec3 F = F_SchlickRoughness(NdotV, F0, roughness);
 
     vec3 kS = F;
-    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
     vec3 irradiance = texture(IRRADIANCE_MAP, N).rgb;
     vec3 diffuse = irradiance * albedo;
 
-    const float MAX_REFLECTION_LOD = 4.0;
-    vec3 prefiltered = textureLod(PREFILTER_MAP, R, roughness * MAX_REFLECTION_LOD).rgb;
+    const float MAX_LOD = 4.0;
+    vec3 prefiltered = textureLod(PREFILTER_MAP, R, roughness * MAX_LOD).rgb;
 
-    float specularWeight = 1.0 - roughness; // Simplified
-    vec3 specular = prefiltered * F * specularWeight;
+    vec3 specular = prefiltered * F;
 
-    vec3 ambient = (kD * diffuse + specular) * ao;
-
-    return ambient;
+    return (kD * diffuse + specular) * ao;
 }
 
 /* ============================================================================

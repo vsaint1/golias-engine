@@ -78,19 +78,70 @@ GLenum ToGLTextureFilterMode(ETextureFilterMode mode) {
 GLenum ToGLTextureFormat(ETextureFormat format) {
 
     switch (format) {
-    case ETextureFormat::RED:
-        return GL_RED;
-    case ETextureFormat::RG:
-        return GL_RG;
-    case ETextureFormat::RGB:
-        return GL_RGB;
-    case ETextureFormat::RGBA:
-        return GL_RGBA;
-    default:
-        spdlog::warn("ToGLTextureFormat: Unknown ETextureFormat enum value.");
 
-        return GL_RGBA;
+    case ETextureFormat::RGBA8:
+        return GL_RGBA8;
+    case ETextureFormat::RGB8:
+        return GL_RGB8;
+    case ETextureFormat::RGBA16F:
+        return GL_RGBA16F;
+    case ETextureFormat::RGB16F:
+        return GL_RGB16F;
+    case ETextureFormat::RGBA32F:
+        return GL_RGBA32F;
+    case ETextureFormat::RGB32F:
+        return GL_RGB32F;
+    case ETextureFormat::DEPTH24:
+        return GL_DEPTH_COMPONENT24;
+    case ETextureFormat::DEPTH32F:
+        return GL_DEPTH_COMPONENT32F;
+    case ETextureFormat::DEPTH24_STENCIL8:
+        return GL_DEPTH24_STENCIL8;
+    case ETextureFormat::DEPTH32F_STENCIL8:
+        return GL_DEPTH32F_STENCIL8;
     }
+    return GL_RGBA8;
+}
+
+GLTextureFormatDesc GetGLTextureFormatDesc(ETextureFormat format) {
+    GLTextureFormatDesc desc{};
+
+    desc.internalFormat = ToGLTextureFormat(format);
+    desc.isDepth        = IsDepthFormat(format);
+
+    switch (format) {
+    case ETextureFormat::DEPTH24:
+        desc.format = GL_DEPTH_COMPONENT;
+        desc.type   = GL_UNSIGNED_INT;
+        desc.isDepth = true;
+        break;
+
+    case ETextureFormat::DEPTH32F:
+        desc.format = GL_DEPTH_COMPONENT;
+        desc.type   = GL_FLOAT;
+        desc.isDepth = true;
+        break;
+
+    case ETextureFormat::DEPTH24_STENCIL8:
+        desc.format = GL_DEPTH_STENCIL;
+        desc.type   = GL_UNSIGNED_INT_24_8;
+        desc.isDepth = true;
+        break;
+
+    case ETextureFormat::DEPTH32F_STENCIL8:
+        desc.format = GL_DEPTH_STENCIL;
+        desc.type   = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+        desc.isDepth = true;
+        break;
+
+    default:
+        desc.format = GL_RGBA;
+        desc.type   = GL_UNSIGNED_BYTE;
+        desc.isDepth = false;
+        break;
+    }
+
+    return desc;
 }
 
 GLenum ToGLTextureFormatFromChannels(int num_channels) {
@@ -215,38 +266,12 @@ GLenum ToGLStencilOp(EStencilOp op) {
 }
 
 
-GLenum FramebufferTextureFormatToGL(EFramebufferTextureFormat format) {
+bool IsDepthFormat(ETextureFormat format) {
     switch (format) {
-    case EFramebufferTextureFormat::RGBA8:
-        return GL_RGBA8;
-    case EFramebufferTextureFormat::RGB8:
-        return GL_RGB8;
-    case EFramebufferTextureFormat::RGBA16F:
-        return GL_RGBA16F;
-    case EFramebufferTextureFormat::RGB16F:
-        return GL_RGB16F;
-    case EFramebufferTextureFormat::RGBA32F:
-        return GL_RGBA32F;
-    case EFramebufferTextureFormat::RGB32F:
-        return GL_RGB32F;
-    case EFramebufferTextureFormat::DEPTH24:
-        return GL_DEPTH_COMPONENT24;
-    case EFramebufferTextureFormat::DEPTH32F:
-        return GL_DEPTH_COMPONENT32F;
-    case EFramebufferTextureFormat::DEPTH24_STENCIL8:
-        return GL_DEPTH24_STENCIL8;
-    case EFramebufferTextureFormat::DEPTH32F_STENCIL8:
-        return GL_DEPTH32F_STENCIL8;
-    }
-    return GL_RGBA8;
-}
-
-bool IsDepthFormat(EFramebufferTextureFormat format) {
-    switch (format) {
-    case EFramebufferTextureFormat::DEPTH24:
-    case EFramebufferTextureFormat::DEPTH32F:
-    case EFramebufferTextureFormat::DEPTH24_STENCIL8:
-    case EFramebufferTextureFormat::DEPTH32F_STENCIL8:
+    case ETextureFormat::DEPTH24:
+    case ETextureFormat::DEPTH32F:
+    case ETextureFormat::DEPTH24_STENCIL8:
+    case ETextureFormat::DEPTH32F_STENCIL8:
         return true;
     default:
         return false;

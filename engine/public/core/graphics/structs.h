@@ -6,8 +6,6 @@
 #include <glm/glm.hpp>
 
 
-enum class ETextureFormat { RGB, RGBA, RED, RG };
-
 enum class ETextureWrapMode { REPEAT, CLAMP_TO_EDGE, MIRRORED_REPEAT, CLAMP_TO_BORDER };
 
 enum class ETextureFilterMode {
@@ -25,28 +23,17 @@ enum class ETextureMipGenSettings {
     SHARPEN1, // Future: Sharpen filter level 1
 };
 
- enum class EFramebufferAttachment {
-        COLOR_ATTACHMENT0 = 0,
-        COLOR_ATTACHMENT1 = 1,
-        COLOR_ATTACHMENT2 = 2,
-        COLOR_ATTACHMENT3 = 3,
-        DEPTH_ATTACHMENT,
-        STENCIL_ATTACHMENT,
-        DEPTH_STENCIL_ATTACHMENT
-    };
+enum class EFramebufferAttachment {
+    COLOR_ATTACHMENT0 = 0,
+    COLOR_ATTACHMENT1 = 1,
+    COLOR_ATTACHMENT2 = 2,
+    COLOR_ATTACHMENT3 = 3,
+    DEPTH_ATTACHMENT,
+    STENCIL_ATTACHMENT,
+    DEPTH_STENCIL_ATTACHMENT
+};
 
-    enum class EFramebufferTextureFormat {
-        RGBA8,
-        RGB8,
-        RGBA16F,
-        RGB16F,
-        RGBA32F,
-        RGB32F,
-        DEPTH24,
-        DEPTH32F,
-        DEPTH24_STENCIL8,
-        DEPTH32F_STENCIL8
-    };
+enum class ETextureFormat { R8, RG8, RGBA8, RGB8, RGBA16F, RGB16F, RGBA32F, RGB32F, DEPTH24, DEPTH32F, DEPTH24_STENCIL8, DEPTH32F_STENCIL8 };
 
 enum class ETextureCompressionSettings {
     DEFAULT,
@@ -163,11 +150,7 @@ struct Buffer {
     EBufferTarget target = EBufferTarget::BUFFER_USAGE_UNIFORM;
 };
 
-enum EClearFlags : uint32_t {
-    CLEAR_COLOR   = 1 << 0,
-    CLEAR_DEPTH   = 1 << 1,
-    CLEAR_STENCIL = 1 << 2
-};
+enum EClearFlags : uint32_t { CLEAR_COLOR = 1 << 0, CLEAR_DEPTH = 1 << 1, CLEAR_STENCIL = 1 << 2 };
 
 inline EClearFlags operator|(EClearFlags a, EClearFlags b) {
     return static_cast<EClearFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
@@ -225,5 +208,5 @@ namespace golias {
         Uint32 stride = 0; // Total vertex size in bytes
     };
 
-
+    ETextureFormat TextureFormatFromChannels(int channels);
 }; // namespace golias

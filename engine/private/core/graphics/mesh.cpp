@@ -12,6 +12,8 @@ namespace golias {
         vertex_count             = floats_per_vertex > 0 ? v.size() / floats_per_vertex : 0;
         index_count              = i.size();
         index_type               = EDataType::UNSIGNED_INT;
+
+        aabb = ComputeAABBFromInterleavedBuffer(layout, v, i);
     }
 
     Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& v) : vertex_layout(layout) {
@@ -19,8 +21,14 @@ namespace golias {
         vertex_count             = floats_per_vertex > 0 ? v.size() / floats_per_vertex : 0;
         index_count              = 0;
         index_type               = EDataType::UNSIGNED_INT;
+        aabb = ComputeAABBFromInterleavedBuffer(layout, v, {});
+
     }
 
+    AABB Mesh::GetLocalAABB() const {
+            return aabb;
+    }
+        
     std::shared_ptr<Mesh> Mesh::CreateQuad() {
 
 
