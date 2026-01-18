@@ -16,7 +16,6 @@ namespace golias {
         Material* material = nullptr;
         glm::mat4 modelMatrix;
         SkeletonAnimationComponent* skeletonAnimation = nullptr;
-        bool useIBL                                   = true; // Enable/disable IBL for this draw command
     };
 
     struct DrawCommand2D {
@@ -105,7 +104,7 @@ namespace golias {
 
         void SetShadowEnabled(bool enabled);
         bool AreShadowsEnabled() const;
-        
+
         void Draw(const CameraCommand& camera);
 
         void BeginFrame(const glm::vec4& color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f));
@@ -114,10 +113,15 @@ namespace golias {
 
         RenderingDevice* GetRenderingDevice() const;
 
+        void SetOcclusionCullingEnabled(bool enabled);
+        bool IsOcclusionCullingEnabled() const;
+
+        void SetImageBasedLightingEnabled(bool enabled);
+        bool IsImageBasedLightingEnabled() const;
+
         ~SceneRenderer();
 
     private:
-
         WorldEnvironmentCommand world_environment_command;
         std::vector<DrawCommand> command_queue;
         std::vector<DrawCommand2D> command_queue_2d;
@@ -134,7 +138,9 @@ namespace golias {
 
         struct RenderContext {
             CameraCommand camera;
-            bool shadowsEnabled = true;
+            bool shadowsEnabled          = true;
+            bool occlusionCullingEnabled = false;
+            bool iblEnabled              = true;
         } renderContext{};
 
         void ShadowPass();
@@ -152,6 +158,7 @@ namespace golias {
         void SetupLightingUniforms(Shader* shader);
         void SetupShadowUniforms(Shader* shader);
         void SetupIBLUniforms(Shader* shader, const DrawCommand& command);
+   
     };
 
 }; // namespace golias

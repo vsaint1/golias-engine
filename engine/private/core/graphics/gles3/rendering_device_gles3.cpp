@@ -181,6 +181,11 @@ namespace golias {
     }
 
 
+    std::shared_ptr<TextureCubemap> RenderingDeviceGLES3::GetWhiteTextureCubemap() const {
+        
+        return whiteTextureCubemap;
+    }
+
     std::shared_ptr<Mesh> RenderingDeviceGLES3::CreateMeshFromData(const VertexLayout& layout,
                                                                    const std::vector<float>& vertices,
 
@@ -326,7 +331,7 @@ namespace golias {
         shadowFboSpec.width       = 4096;
         shadowFboSpec.height      = 4096;
         shadowFboSpec.attachments = {
-            FramebufferAttachmentSpec(EFramebufferAttachment::DEPTH_ATTACHMENT, EFramebufferTextureFormat::DEPTH32F)};
+            FramebufferAttachmentSpec(EFramebufferAttachment::DEPTH_ATTACHMENT, ETextureFormat::DEPTH32F)};
 
         shadowFBO = std::make_shared<OpenglFramebuffer>(shadowFboSpec);
 
@@ -364,7 +369,7 @@ namespace golias {
 
     bool RenderingDeviceGLES3::CreateDefaultTextures() {
         Uint8* whitePixel = new Uint8[4]{255, 255, 255, 255};
-        whiteTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA, whitePixel);
+        whiteTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA8, whitePixel);
 
         if (!whiteTexture2D) {
             spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create white texture.");
@@ -372,9 +377,19 @@ namespace golias {
         }
 
         Uint8* normalPixel = new Uint8[4]{128, 128, 255, 255};
-        normalTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA, normalPixel);
+        normalTexture2D    = std::make_shared<OpenglTexture2D>(1, 1, ETextureFormat::RGBA8, normalPixel);
         if (!normalTexture2D) {
             spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create normal texture.");
+            return false;
+        }
+
+        Uint8* whiteCubemapPixel = new Uint8[6 * 4]{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                                                   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+
+        whiteTextureCubemap = std::make_shared<OpenglTextureCubemap>(1, 1, ETextureFormat::RGBA8, whiteCubemapPixel);
+       
+        if (!whiteTextureCubemap) {
+            spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create white cubemap texture.");
             return false;
         }
 

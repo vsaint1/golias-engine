@@ -27,6 +27,54 @@ namespace golias {
         return rendering_device;
     }
 
+
+    void SceneRenderer::Draw(const CameraCommand& camera) {
+        renderContext.camera = camera;
+
+        CalculateLightSpaceMatrices();
+
+        std::vector<DrawCommand> opaqueCommands;
+        std::vector<DrawCommand> transparentCommands;
+
+        Frustum frustum = CalculateFrustum(camera.projectionMatrix * camera.viewMatrix);
+
+        for (const auto& command : command_queue) {
+            if (!command.mesh || !command.material) {
+                continue;
+            }
+
+            AABB worldAABB = WorldTransformAABB(command.mesh->GetLocalAABB(), command.modelMatrix);
+
+            if (!frustum.IntersectsAABB(worldAABB) || !frustum.IntersectsSphereAABB(worldAABB)) {
+                continue;
+            }
+
+            if (command.material->IsTransparent()) {
+                transparentCommands.push_back(command);
+            } else {
+                opaqueCommands.push_back(command);
+            }
+        }
+
+        if (!transparentCommands.empty()) {
+            std::ranges::sort(transparentCommands, [this](const DrawCommand& a, const DrawCommand& b) {
+                glm::vec3 posA = glm::vec3(a.modelMatrix[3]);
+                glm::vec3 posB = glm::vec3(b.modelMatrix[3]);
+                float distA    = glm::distance(renderContext.camera.position, posA);
+                float distB    = glm::distance(renderContext.camera.position, posB);
+                return distA > distB;
+            });
+        }
+
+        ShadowPass();
+        GeometryOpaquePass(opaqueCommands);
+        SkyboxPass();
+        GeometryTransparentPass(transparentCommands);
+        WorldCanvasPass();
+        Sprite2DPass();
+        ScreenCanvasPass();
+    }
+
     void SceneRenderer::SetupMaterialUniforms(const DrawCommand& command) {
         auto shader = command.material->GetShader();
 
@@ -51,6 +99,7 @@ namespace golias {
             shader->SetUniform("USE_SKINNING", false);
         }
     }
+
 
     void SceneRenderer::SetupLightingUniforms(Shader* shader) {
 
@@ -108,10 +157,21 @@ namespace golias {
     }
 
     void SceneRenderer::SetupIBLUniforms(Shader* shader, const DrawCommand& command) {
+
+
         const bool useIBL =
             command.material->UseImageBasedLighting() && world_environment_command.environmentComponent
             && world_environment_command.environmentComponent->GetTextureCubemap()
             && world_environment_command.environmentComponent->GetEnvironmentMode() == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX;
+
+        if (!renderContext.iblEnabled || !useIBL) {
+            shader->SetUniform("USE_IBL", false);
+            auto cubemap = rendering_device->GetWhiteTextureCubemap().get();
+            rendering_device->BindCubemap(shader, "IRRADIANCE_MAP", 7, cubemap);
+            rendering_device->BindCubemap(shader, "PREFILTER_MAP", 8, cubemap);
+            shader->SetUniform("AMBIENT_STRENGTH", 0.5f);
+            return;
+        }
 
         if (useIBL) {
             auto cubemap = world_environment_command.environmentComponent->GetTextureCubemap().get();
@@ -121,9 +181,6 @@ namespace golias {
 
             shader->SetUniform("USE_IBL", true);
             shader->SetUniform("AMBIENT_STRENGTH", 0.3f);
-        } else {
-            shader->SetUniform("USE_IBL", false);
-            shader->SetUniform("AMBIENT_STRENGTH", 0.5f);
         }
     }
 
@@ -399,43 +456,13 @@ namespace golias {
         rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
     }
 
-    void SceneRenderer::Draw(const CameraCommand& camera) {
-        renderContext.camera = camera;
 
-        CalculateLightSpaceMatrices();
+    void SceneRenderer::SetOcclusionCullingEnabled(bool enabled) {
+        renderContext.occlusionCullingEnabled = enabled;
+    }
 
-        std::vector<DrawCommand> opaqueCommands;
-        std::vector<DrawCommand> transparentCommands;
-
-        for (const auto& command : command_queue) {
-            if (!command.mesh || !command.material) {
-                continue;
-            }
-
-            if (command.material->IsTransparent()) {
-                transparentCommands.push_back(command);
-            } else {
-                opaqueCommands.push_back(command);
-            }
-        }
-
-        if (!transparentCommands.empty()) {
-            std::ranges::sort(transparentCommands, [this](const DrawCommand& a, const DrawCommand& b) {
-                glm::vec3 posA = glm::vec3(a.modelMatrix[3]);
-                glm::vec3 posB = glm::vec3(b.modelMatrix[3]);
-                float distA    = glm::distance(renderContext.camera.position, posA);
-                float distB    = glm::distance(renderContext.camera.position, posB);
-                return distA > distB;
-            });
-        }
-
-        ShadowPass();
-        GeometryOpaquePass(opaqueCommands);
-        SkyboxPass();
-        GeometryTransparentPass(transparentCommands);
-        WorldCanvasPass();
-        Sprite2DPass();
-        ScreenCanvasPass();
+    bool SceneRenderer::IsOcclusionCullingEnabled() const {
+        return renderContext.occlusionCullingEnabled;
     }
 
     bool SceneRenderer::Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType) {
@@ -485,13 +512,21 @@ namespace golias {
         point_lights.clear();
         spot_lights.clear();
     }
-    
+
     void SceneRenderer::SetShadowEnabled(bool enabled) {
         renderContext.shadowsEnabled = enabled;
     }
 
     bool SceneRenderer::AreShadowsEnabled() const {
         return renderContext.shadowsEnabled;
+    }
+
+    void SceneRenderer::SetImageBasedLightingEnabled(bool enabled) {
+        renderContext.iblEnabled = enabled;
+    }
+    
+    bool SceneRenderer::IsImageBasedLightingEnabled() const {
+        return renderContext.iblEnabled;
     }
 
     SceneRenderer::~SceneRenderer() {

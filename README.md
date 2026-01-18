@@ -45,7 +45,9 @@ powerful**.
 - [x] **PBR (Physically Based Rendering)** `SIMPLIFIED`
 - [x] **Blinn-Phong Shading Model**
 - [x] **Skybox Reflections** IBL (Image Based Lighting)
-- [ ] Frustum Culling
+- [ ] Culling
+    - [x] **Frustum Culling**
+    - [ ] **Occlusion Culling**
 - [x] **Normal mapping** (TBN calculated per fragment)
 - [x] **3D Physics** (Bullet Physics)
 - [x] **Lighting System**

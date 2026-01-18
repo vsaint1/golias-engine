@@ -63,12 +63,13 @@ namespace golias {
         std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
         std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() override;
 
-        std::shared_ptr<TextureCubemap>  CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
+        std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
         std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
         std::shared_ptr<TextureCubemap> CreateCubemapProcedural() override;
-            
+
         std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
         std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
+        std::shared_ptr<TextureCubemap> GetWhiteTextureCubemap() const override;
 
         void SetColorWrite(bool red, bool green, bool blue, bool alpha) override;
         void SetBlendMode(EBlendMode blendMode) override;

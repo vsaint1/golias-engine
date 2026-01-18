@@ -75,6 +75,7 @@ namespace golias {
 
         virtual std::shared_ptr<Texture2D> GetWhiteTexture2D() const  = 0;
         virtual std::shared_ptr<Texture2D> GetNormalTexture2D() const = 0;
+        virtual std::shared_ptr<TextureCubemap> GetWhiteTextureCubemap() const = 0;
 
         virtual void SetScissor(const Scissor& scissor) = 0;
 
@@ -93,6 +94,7 @@ namespace golias {
 
         std::shared_ptr<Texture2D> whiteTexture2D  = nullptr;
         std::shared_ptr<Texture2D> normalTexture2D = nullptr;
+        std::shared_ptr<TextureCubemap> whiteTextureCubemap = nullptr;
 
         Viewport viewport = Viewport();
         Scissor scissor   = Scissor();

@@ -117,13 +117,13 @@ bool SandboxApplication::Initialize() {
         godetteText->SetScale({0.01f, 0.01f, 0.01f});
     }
 
-    // for (int i = 0; i < 10; i++){
-    //     auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
-    //     godette->SetPosition({static_cast<float>(std::rand() % 20 - 10), 1.0f, static_cast<float>(std::rand() % 20 - 10)});
-    //     if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
-    //         godetteAnim->Play("Cheer", true);
-    //     }
-    // }
+    for (int i = 0; i < 3; i++){
+        auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+        godette->SetPosition({static_cast<float>(std::rand() % 20 - 10), 1.0f, static_cast<float>(std::rand() % 20 - 10)});
+        if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
+            godetteAnim->Play("Cheer", true);
+        }
+    }
 
     // auto sponza = golias::Model::Load("models/pbr/sponza/Sponza.gltf", Tscene.get());
     // sponza->SetPosition({10.0f, 1.0f, 10.0f});
@@ -181,7 +181,7 @@ WASD to move, Mouse to look around)";
 
     auto button     = Tscene->CreateObject("Button2D", canvas_2d);
     auto buttonComp = new golias::ButtonWidgetComponent();
-    buttonComp->SetRect({150.0f, 50.0f});
+    buttonComp->SetRect({180.0f, 50.0f});
     // buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
     button->SetPosition2D({500.0f, 150.0f});
     button->AddComponent(buttonComp);
@@ -192,7 +192,7 @@ WASD to move, Mouse to look around)";
 
     auto buttonText     = Tscene->CreateObject("ButtonText", button);
     auto buttonTextComp = new golias::TextWidgetComponent();
-    buttonTextComp->SetText("Click Me!");
+    buttonTextComp->SetText("Click Me");
     buttonTextComp->SetTextColor({0.0f, 0.0f, 0.0f, 1.0f});
     // buttonTextComp->SetShadowEnabled(true);
     buttonText->SetPosition2D({4.0f, 8.0f});
