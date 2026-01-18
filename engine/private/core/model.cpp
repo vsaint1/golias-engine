@@ -1,4 +1,3 @@
-
 #include "core/model.h"
 
 #include "core/engine.h"
@@ -20,9 +19,105 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace golias {
+
+
+    struct MeshAsset {
+        std::vector<float> vertices;
+        std::vector<Uint32> indices;
+        VertexLayout layout;
+    };
+
+    struct CachedModel {
+        std::vector<MeshAsset> meshes;
+        std::string path;
+    };
+
+
+
+    ModelFormat DetectFormatFromHeader(const std::string& filepath) {
+        SDL_IOStream* file = SDL_IOFromFile(filepath.c_str(), "rb");
+        if (!file) {
+            return ModelFormat::UNKNOWN;
+        }
+
+        Uint8 magic[4]   = {0};
+        size_t bytesRead = SDL_ReadIO(file, magic, 4);
+
+        if (bytesRead < 4) {
+            SDL_CloseIO(file);
+            return ModelFormat::UNKNOWN;
+        }
+
+        if (magic[0] == 0x67 && magic[1] == 0x6C && magic[2] == 0x54 && magic[3] == 0x46) {
+            SDL_CloseIO(file);
+            return ModelFormat::GLB;
+        }
+
+        SDL_SeekIO(file, 0, SDL_IO_SEEK_SET);
+        char firstChars[64] = {0};
+        SDL_ReadIO(file, firstChars, 63); // firstChars[64]  - \n
+
+        for (int i = 0; i < 63; ++i) {
+            if (firstChars[i] == '{') {
+                SDL_CloseIO(file);
+                return ModelFormat::GLTF;
+            }
+            if (firstChars[i] != ' ' && firstChars[i] != '\t' && firstChars[i] != '\r' && firstChars[i] != '\n') {
+                break;
+            }
+        }
+
+        // Check for OBJ
+        SDL_SeekIO(file, 0, SDL_IO_SEEK_SET);
+        char line[256];
+        for (int lineNum = 0; lineNum < 10; ++lineNum) {
+            size_t pos        = 0;
+            bool foundNewline = false;
+
+            while (pos < 255) {
+                size_t read = SDL_ReadIO(file, &line[pos], 1);
+                if (read == 0) {
+                    break;
+                }
+                if (line[pos] == '\n') {
+                    foundNewline = true;
+                    break;
+                }
+                pos++;
+            }
+
+            if (!foundNewline && pos == 0) {
+                break;
+            }
+            line[pos] = '\0';
+
+            size_t start = 0;
+            while (start < pos && (line[start] == ' ' || line[start] == '\t')) {
+                start++;
+            }
+
+            if (start >= pos) {
+                continue;
+            }
+
+            const char* content = &line[start];
+
+            if (content[0] == '#' || (content[0] == 'v' && content[1] == ' ')
+                || (content[0] == 'v' && content[1] == 't' && content[2] == ' ')
+                || (content[0] == 'v' && content[1] == 'n' && content[2] == ' ') || (content[0] == 'f' && content[1] == ' ')
+                || SDL_strncmp(content, "mtllib", 6) == 0) {
+                SDL_CloseIO(file);
+                return ModelFormat::OBJ;
+            }
+        }
+
+        SDL_CloseIO(file);
+        return ModelFormat::UNKNOWN;
+    }
 
 
     size_t GetDataTypeSize(EDataType type) {
@@ -82,6 +177,32 @@ namespace golias {
         }
     }
 
+    std::vector<uint8_t> Base64Decode(const std::string& encoded) {
+        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                                "abcdefghijklmnopqrstuvwxyz"
+                                                "0123456789+/";
+
+        std::vector<uint8_t> decoded;
+        std::vector<int> T(256, -1);
+        for (int i = 0; i < 64; i++) {
+            T[base64_chars[i]] = i;
+        }
+
+        int val = 0, valb = -8;
+        for (unsigned char c : encoded) {
+            if (T[c] == -1) {
+                break;
+            }
+            val = (val << 6) + T[c];
+            valb += 6;
+            if (valb >= 0) {
+                decoded.push_back(char((val >> valb) & 0xFF));
+                valb -= 8;
+            }
+        }
+        return decoded;
+    }
+
     // ============================================================================
     // GLTF Data Extraction
     // ============================================================================
@@ -95,7 +216,6 @@ namespace golias {
         for (size_t i = 0; i < accessor->count; ++i) {
             cgltf_accessor_read_float(accessor, i, &out[i], 1);
         }
-
         return true;
     }
 
@@ -110,7 +230,6 @@ namespace golias {
         for (size_t i = 0; i < accessor->count; ++i) {
             cgltf_accessor_read_float(accessor, i, &out[i * components], components);
         }
-
         return true;
     }
 
@@ -125,7 +244,6 @@ namespace golias {
             cgltf_accessor_read_float(accessor, i, vec, 3);
             out[i] = glm::vec3(vec[0], vec[1], vec[2]);
         }
-
         return true;
     }
 
@@ -140,7 +258,6 @@ namespace golias {
             cgltf_accessor_read_float(accessor, i, vec, 4);
             out[i] = glm::quat(vec[3], vec[0], vec[1], vec[2]);
         }
-
         return true;
     }
 
@@ -155,12 +272,11 @@ namespace golias {
         for (size_t i = 0; i < accessor->count; ++i) {
             out[i] = static_cast<Uint32>(cgltf_accessor_read_index(accessor, i));
         }
-
         return true;
     }
 
     // ============================================================================
-    // Vertex Layout and Data Structures
+    // Vertex Layout
     // ============================================================================
 
     VertexLayout CreateStandardVertexLayout() {
@@ -187,33 +303,31 @@ namespace golias {
         VertexLayout layout;
         Uint32 offset = 0;
 
-        // Position
         layout.elements.push_back({0, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
-        // Color
         layout.elements.push_back({1, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
-        // TexCoord
         layout.elements.push_back({2, 2, EDataType::FLOAT, false, offset});
         offset += 8;
 
-        // Normal
         layout.elements.push_back({3, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
-        // Bone Indices (4 ints)
         layout.elements.push_back({4, 4, EDataType::FLOAT, false, offset});
         offset += 16;
 
-        // Bone Weights (4 floats)
         layout.elements.push_back({5, 4, EDataType::FLOAT, false, offset});
         offset += 16;
 
         layout.stride = offset;
         return layout;
     }
+
+    // ============================================================================
+    // Vertex Data
+    // ============================================================================
 
     struct VertexAttributeData {
         std::vector<float> positions;
@@ -303,11 +417,11 @@ namespace golias {
 
     std::vector<float> InterleaveVertexData(const VertexAttributeData& data) {
         std::vector<float> vertices;
-        size_t floatsPerVertex = data.hasSkinning ? 19 : 11; // 3+3+2+3 = 11, +4+4 = 19 for skinned
+        size_t floatsPerVertex = data.hasSkinning ? 19 : 11;
         vertices.reserve(data.vertexCount * floatsPerVertex);
 
         for (size_t v = 0; v < data.vertexCount; ++v) {
-            // Position (3 floats)
+            // Position
             if (v * 3 + 2 < data.positions.size()) {
                 vertices.push_back(data.positions[v * 3]);
                 vertices.push_back(data.positions[v * 3 + 1]);
@@ -316,7 +430,7 @@ namespace golias {
                 vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f});
             }
 
-            // Color (3 floats)
+            // Color
             if (!data.colors.empty() && data.colorAccessor) {
                 size_t colorComps = GetComponentCount(data.colorAccessor->type);
                 if (colorComps == 3 && v * 3 + 2 < data.colors.size()) {
@@ -334,7 +448,7 @@ namespace golias {
                 vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
             }
 
-            // Texcoord (2 floats)
+            // TexCoord
             if (!data.texcoords.empty() && data.texcoordAccessor) {
                 size_t texcoordComps = GetComponentCount(data.texcoordAccessor->type);
                 if (texcoordComps == 2 && v * 2 + 1 < data.texcoords.size()) {
@@ -350,7 +464,7 @@ namespace golias {
                 vertices.insert(vertices.end(), {0.0f, 0.0f});
             }
 
-            // Normal (3 floats)
+            // Normal
             if (!data.normals.empty() && data.normalAccessor && v * 3 + 2 < data.normals.size()) {
                 vertices.push_back(data.normals[v * 3]);
                 vertices.push_back(data.normals[v * 3 + 1]);
@@ -359,34 +473,36 @@ namespace golias {
                 vertices.insert(vertices.end(), {0.0f, 1.0f, 0.0f});
             }
 
-            // Bone Indices (4 floats - will be interpreted as ints in shader)
-            if (data.hasSkinning && !data.boneIndices.empty()) {
-                size_t jointComps = GetComponentCount(data.jointsAccessor->type);
-                if (jointComps == 4 && v * 4 + 3 < data.boneIndices.size()) {
-                    vertices.push_back(data.boneIndices[v * 4]);
-                    vertices.push_back(data.boneIndices[v * 4 + 1]);
-                    vertices.push_back(data.boneIndices[v * 4 + 2]);
-                    vertices.push_back(data.boneIndices[v * 4 + 3]);
+            if (data.hasSkinning) {
+                // Bone Indices
+                if (!data.boneIndices.empty() && data.jointsAccessor) {
+                    size_t jointComps = GetComponentCount(data.jointsAccessor->type);
+                    if (jointComps == 4 && v * 4 + 3 < data.boneIndices.size()) {
+                        vertices.push_back(data.boneIndices[v * 4]);
+                        vertices.push_back(data.boneIndices[v * 4 + 1]);
+                        vertices.push_back(data.boneIndices[v * 4 + 2]);
+                        vertices.push_back(data.boneIndices[v * 4 + 3]);
+                    } else {
+                        vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
+                    }
                 } else {
                     vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
                 }
-            } else if (data.hasSkinning) {
-                vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
-            }
 
-            // Bone Weights (4 floats)
-            if (data.hasSkinning && !data.boneWeights.empty()) {
-                size_t weightComps = GetComponentCount(data.weightsAccessor->type);
-                if (weightComps == 4 && v * 4 + 3 < data.boneWeights.size()) {
-                    vertices.push_back(data.boneWeights[v * 4]);
-                    vertices.push_back(data.boneWeights[v * 4 + 1]);
-                    vertices.push_back(data.boneWeights[v * 4 + 2]);
-                    vertices.push_back(data.boneWeights[v * 4 + 3]);
+                // Bone Weights
+                if (!data.boneWeights.empty() && data.weightsAccessor) {
+                    size_t weightComps = GetComponentCount(data.weightsAccessor->type);
+                    if (weightComps == 4 && v * 4 + 3 < data.boneWeights.size()) {
+                        vertices.push_back(data.boneWeights[v * 4]);
+                        vertices.push_back(data.boneWeights[v * 4 + 1]);
+                        vertices.push_back(data.boneWeights[v * 4 + 2]);
+                        vertices.push_back(data.boneWeights[v * 4 + 3]);
+                    } else {
+                        vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
+                    }
                 } else {
                     vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
                 }
-            } else if (data.hasSkinning) {
-                vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
             }
         }
 
@@ -394,42 +510,10 @@ namespace golias {
     }
 
     // ============================================================================
-    // Base64 Decoding
-    // ============================================================================
-
-    std::vector<uint8_t> Base64Decode(const std::string& encoded) {
-        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                                "abcdefghijklmnopqrstuvwxyz"
-                                                "0123456789+/";
-
-        std::vector<uint8_t> decoded;
-        std::vector<int> T(256, -1);
-        for (int i = 0; i < 64; i++) {
-            T[base64_chars[i]] = i;
-        }
-
-        int val = 0, valb = -8;
-        for (unsigned char c : encoded) {
-            if (T[c] == -1) {
-                break;
-            }
-            val = (val << 6) + T[c];
-            valb += 6;
-            if (valb >= 0) {
-                decoded.push_back(char((val >> valb) & 0xFF));
-                valb -= 8;
-            }
-        }
-        return decoded;
-    }
-
-    // ============================================================================
     // Texture Loading
     // ============================================================================
 
-    std::shared_ptr<Texture2D>
-        LoadGLTFTexture(cgltf_texture* texture, const std::string& base_path, const std::string& fallback_name = "") {
-
+    std::shared_ptr<Texture2D> LoadGLTFTexture(cgltf_texture* texture, const std::string& base_path, const std::string& fallback_name) {
         if (!texture || !texture->image) {
             return nullptr;
         }
@@ -437,7 +521,6 @@ namespace golias {
         auto& texture_manager = Engine::GetInstance().GetTextureManager();
         cgltf_image* image    = texture->image;
 
-        // Handle data URI
         if (image->uri) {
             std::string uri_str(image->uri);
 
@@ -468,10 +551,8 @@ namespace golias {
                 }
 
                 std::string embedded_path = "datauri://" + (fallback_name.empty() ? "unnamed_texture" : fallback_name);
-
-                ETextureFormat format = TextureFormatFromChannels(channels);
-
-                auto loaded_texture = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+                ETextureFormat format     = TextureFormatFromChannels(channels);
+                auto loaded_texture       = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
                 if (loaded_texture) {
                     spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
@@ -483,7 +564,6 @@ namespace golias {
 
                 return nullptr;
             } else {
-                // External file
                 std::string tex_path = base_path + image->uri;
                 auto loaded_texture  = texture_manager.EnsureTexture2D(tex_path);
                 if (loaded_texture) {
@@ -497,7 +577,6 @@ namespace golias {
             }
         }
 
-        // Handle embedded buffer view
         if (image->buffer_view) {
             spdlog::info("Loading embedded texture from buffer view: {} ({} bytes)",
                          fallback_name.empty() ? "unnamed" : fallback_name,
@@ -507,7 +586,6 @@ namespace golias {
             size_t size         = image->buffer_view->size;
 
             int width, height, channels;
-
             stbi_uc* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
 
             if (!image_data) {
@@ -550,6 +628,7 @@ namespace golias {
     // ============================================================================
     // Mesh Component Creation
     // ============================================================================
+
     void CreateMeshComponentGLTF(GameObject* gameObject,
                                  const VertexLayout& layout,
                                  const std::vector<float>& vertices,
@@ -572,7 +651,6 @@ namespace golias {
         float emissiveStrength     = 1.0f;
         ETextureFlags textureFlags = ETextureFlags::NONE;
 
-        // Default material state
         EBlendMode blendMode     = EBlendMode::BLEND_MODE_OPAQUE;
         bool depthWrite          = true;
         ECullMode cullMode       = ECullMode::CULL_MODE_BACK;
@@ -600,7 +678,6 @@ namespace golias {
                 spdlog::debug("Material '{}' is double-sided", gltf_material->name ? gltf_material->name : "unnamed");
             }
 
-            // Parse PBR properties
             if (gltf_material->has_pbr_metallic_roughness) {
                 auto& pbr = gltf_material->pbr_metallic_roughness;
                 base_color =
@@ -609,12 +686,10 @@ namespace golias {
                 roughness = pbr.roughness_factor;
 
                 if (base_color.a < 1.0f && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
-                    spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. "
-                                 "Consider using BLEND mode.",
+                    spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. Consider using BLEND mode.",
                                  gltf_material->name ? gltf_material->name : "unnamed");
                 }
 
-                // Albedo texture
                 if (pbr.base_color_texture.texture) {
                     std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
                     auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, base_path, tex_name);
@@ -624,7 +699,6 @@ namespace golias {
                     }
                 }
 
-                // Metallic-Roughness texture
                 if (pbr.metallic_roughness_texture.texture) {
                     std::string tex_name =
                         gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
@@ -638,7 +712,6 @@ namespace golias {
                 }
             }
 
-            // Normal map
             if (gltf_material->normal_texture.texture) {
                 std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
                 auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, base_path, tex_name);
@@ -648,7 +721,6 @@ namespace golias {
                 }
             }
 
-            // Occlusion map
             if (gltf_material->occlusion_texture.texture) {
                 std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
                 auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, base_path, tex_name);
@@ -658,7 +730,6 @@ namespace golias {
                 }
             }
 
-            // Emissive
             emissive = glm::vec3(gltf_material->emissive_factor[0], gltf_material->emissive_factor[1], gltf_material->emissive_factor[2]);
 
             if (gltf_material->has_emissive_strength) {
@@ -682,44 +753,35 @@ namespace golias {
                 shouldUseIBL = false;
                 spdlog::debug("Material '{}' is unlit, disabling IBL", gltf_material->name ? gltf_material->name : "unnamed");
             } else {
-
-                // Only enable IBL if material has STRONG indicators of needing it
-                // 1. High metallic materials NEED IBL (mirrors, chrome, etc.)
                 if (metallic > 0.5f) {
                     shouldUseIBL = true;
                     spdlog::debug("Material '{}' has high metallic ({:.2f}), enabling IBL",
                                   gltf_material->name ? gltf_material->name : "unnamed",
                                   metallic);
-                } // 2. Very smooth materials benefit from IBL (polished surfaces)
-                else if (roughness < 0.3f) {
+                } else if (roughness < 0.3f) {
                     shouldUseIBL = true;
                     spdlog::debug("Material '{}' has low roughness ({:.2f}), enabling IBL",
                                   gltf_material->name ? gltf_material->name : "unnamed",
                                   roughness);
-                } // 3. If material has metallic/roughness texture, it's probably PBR
-                else if (gltf_material->has_pbr_metallic_roughness
-                         && gltf_material->pbr_metallic_roughness.metallic_roughness_texture.texture) {
+                } else if (gltf_material->has_pbr_metallic_roughness
+                           && gltf_material->pbr_metallic_roughness.metallic_roughness_texture.texture) {
                     shouldUseIBL = true;
                     spdlog::debug("Material '{}' has metallic/roughness texture, enabling IBL",
                                   gltf_material->name ? gltf_material->name : "unnamed");
-                } // Otherwise, default to studio lighting (no IBL)
-                else {
+                } else {
                     shouldUseIBL = false;
-                    spdlog::debug("Material '{}' using studio lighting (metallic: {:.2f}, "
-                                  "roughness: {:.2f})",
+                    spdlog::debug("Material '{}' using studio lighting (metallic: {:.2f}, roughness: {:.2f})",
                                   gltf_material->name ? gltf_material->name : "unnamed",
                                   metallic,
                                   roughness);
                 }
             }
         } else {
-            // No material data - default to no IBL for studio lighting
             shouldUseIBL = false;
             spdlog::debug("No material data, using studio lighting");
         }
 
         material->SetImageBasedLighting(shouldUseIBL);
-
         material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
         material->SetParameter("u_material.modulate", base_color);
         material->SetParameter("u_material.metallicFactor", metallic);
@@ -734,7 +796,7 @@ namespace golias {
         material->SetDepthTestEnabled(true);
         material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
 
-        gameObject->AddComponent(new MeshComponent(mesh, material));
+        gameObject->AddComponent(new MeshRendererComponent(mesh, material));
     }
 
     void CreateMeshComponentOBJ(GameObject* gameObject,
@@ -743,7 +805,7 @@ namespace golias {
                                 const std::vector<Uint32>& indices,
                                 const tinyobj::material_t* obj_material,
                                 const std::string& base_path) {
-                                    
+
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
 
@@ -757,7 +819,6 @@ namespace golias {
         float roughness = 1.0f;
         float shininess = 0.0f;
 
-        // Default material state
         EBlendMode blendMode = EBlendMode::BLEND_MODE_OPAQUE;
         bool depthWrite      = true;
         ECullMode cullMode   = ECullMode::CULL_MODE_BACK;
@@ -807,28 +868,22 @@ namespace golias {
         bool shouldUseIBL = false;
 
         if (obj_material) {
-            // OBJ doesn't have metallic values, so we use shininess as a heuristic
-            // Very shiny materials (chrome, mirrors) should use IBL
             if (shininess > 500.0f) {
                 shouldUseIBL = true;
                 spdlog::debug("OBJ material has high shininess ({:.1f}), enabling IBL", shininess);
-            } // Materials with specular highlights benefit from IBL
-            else if (obj_material->specular[0] > 0.5f || obj_material->specular[1] > 0.5f || obj_material->specular[2] > 0.5f) {
+            } else if (obj_material->specular[0] > 0.5f || obj_material->specular[1] > 0.5f || obj_material->specular[2] > 0.5f) {
                 shouldUseIBL = true;
                 spdlog::debug("OBJ material has strong specular, enabling IBL");
-            } // Otherwise use studio lighting
-            else {
+            } else {
                 shouldUseIBL = false;
                 spdlog::debug("OBJ material using studio lighting (shininess: {:.1f})", shininess);
             }
         } else {
-            // No material - use studio lighting
             shouldUseIBL = false;
             spdlog::debug("OBJ has no material, using studio lighting");
         }
 
         material->SetImageBasedLighting(shouldUseIBL);
-
         material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
         material->SetParameter("u_material.modulate", base_color);
         material->SetParameter("u_material.metallicFactor", 0.0f);
@@ -843,12 +898,13 @@ namespace golias {
         material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
         material->SetAlphaClipThreshold(0.5f);
 
-        gameObject->AddComponent(new MeshComponent(mesh, material));
+        gameObject->AddComponent(new MeshRendererComponent(mesh, material));
     }
 
     // ============================================================================
     // GLTF Animation Loading
     // ============================================================================
+
     void LoadGLTFAnimations(cgltf_data* data, GameObject* rootObject) {
         std::vector<std::shared_ptr<AnimationClip>> clips;
 
@@ -905,8 +961,8 @@ namespace golias {
                                 track.positions[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 case cgltf_animation_path_type_rotation:
                     {
@@ -920,8 +976,8 @@ namespace golias {
                                 track.rotations[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 case cgltf_animation_path_type_scale:
                     {
@@ -935,8 +991,8 @@ namespace golias {
                                 track.scales[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 default:
                     break;
@@ -963,15 +1019,14 @@ namespace golias {
     // ============================================================================
     // GLTF Skeleton Loading
     // ============================================================================
+
     void LoadGLTFSkeleton(cgltf_data* data, GameObject* rootObject) {
-        // Check if the model has any skins (skeletal data)
         if (data->skins_count == 0) {
             return;
         }
 
         std::vector<std::shared_ptr<Skeleton>> skeletons;
         std::vector<std::shared_ptr<SkeletonAnimationClip>> skeletonClips;
-
         std::unordered_set<cgltf_node*> jointNodes;
 
         for (cgltf_size si = 0; si < data->skins_count; ++si) {
@@ -981,13 +1036,12 @@ namespace golias {
 
             spdlog::info("Processing GLTF Skin/Skeleton: {} with {} joints", skeleton->name, skin.joints_count);
 
-            // Build joint hierarchy
             std::unordered_map<cgltf_node*, int> nodeToJointIndex;
 
             for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
                 cgltf_node* jointNode       = skin.joints[ji];
                 nodeToJointIndex[jointNode] = static_cast<int>(ji);
-                jointNodes.insert(jointNode); // Track all joint nodes
+                jointNodes.insert(jointNode);
 
                 SkeletonJoint joint;
                 joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
@@ -1060,7 +1114,6 @@ namespace golias {
                 }
 
                 bool isJoint = jointNodes.find(channel.target_node) != jointNodes.end();
-
                 if (!isJoint) {
                     continue;
                 }
@@ -1069,10 +1122,7 @@ namespace golias {
 
                 std::vector<float> times;
                 if (!ExtractScalarData(sampler->input, times)) {
-                    spdlog::warn("Failed to extract skeleton animation times for clip: {} "
-                                 "channel: {}",
-                                 clip->name,
-                                 ci);
+                    spdlog::warn("Failed to extract skeleton animation times for clip: {} channel: {}", clip->name, ci);
                     continue;
                 }
 
@@ -1091,8 +1141,8 @@ namespace golias {
                                 track.positions[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 case cgltf_animation_path_type_rotation:
                     {
@@ -1106,8 +1156,8 @@ namespace golias {
                                 track.rotations[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 case cgltf_animation_path_type_scale:
                     {
@@ -1121,8 +1171,8 @@ namespace golias {
                                 track.scales[i].value = values[i];
                             }
                         }
+                        break;
                     }
-                    break;
 
                 default:
                     break;
@@ -1139,7 +1189,6 @@ namespace golias {
         if (!skeletons.empty() && !skeletonClips.empty()) {
             auto skelAnimComp = new SkeletonAnimationComponent();
             rootObject->AddComponent(skelAnimComp);
-
             skelAnimComp->SetSkeleton(skeletons[0]);
 
             for (auto& clip : skeletonClips) {
@@ -1162,6 +1211,7 @@ namespace golias {
     // ============================================================================
     // GLTF Scene Graph Parsing
     // ============================================================================
+
     void ParseGLTFNode(cgltf_node* node, GameObject* parent, cgltf_data* data, const std::string& base_path, Scene* scene) {
         std::string node_name  = node->name ? node->name : "Node";
         GameObject* nodeObject = scene->CreateObject(node_name, parent);
@@ -1223,16 +1273,17 @@ namespace golias {
     // ============================================================================
     // OBJ Parsing
     // ============================================================================
+
     void ParseOBJ(const tinyobj::attrib_t& attrib,
-                  const std::vector<tinyobj::shape_t>& staticMeshes,
+                  const std::vector<tinyobj::shape_t>& shapes,
                   const std::vector<tinyobj::material_t>& materials,
                   GameObject* rootObject,
                   const std::string& base_path,
                   Scene* scene) {
 
-        for (const auto& staticMesh : staticMeshes) {
-            GameObject* staticMeshObject = scene->CreateObject(staticMesh.name.empty() ? "SM_" : staticMesh.name, rootObject);
-            const auto& mesh             = staticMesh.mesh;
+        for (const auto& shape : shapes) {
+            GameObject* shapeObject = scene->CreateObject(shape.name.empty() ? "SM_" : shape.name, rootObject);
+            const auto& mesh        = shape.mesh;
 
             VertexLayout layout = CreateStandardVertexLayout();
             std::vector<float> vertices;
@@ -1246,7 +1297,6 @@ namespace golias {
                 for (size_t v = 0; v < fv; ++v) {
                     tinyobj::index_t idx = mesh.indices[index_offset + v];
 
-                    // Position
                     if (idx.vertex_index >= 0 && 3 * idx.vertex_index + 2 < attrib.vertices.size()) {
                         vertices.push_back(attrib.vertices[3 * idx.vertex_index]);
                         vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
@@ -1255,10 +1305,8 @@ namespace golias {
                         vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f});
                     }
 
-                    // Color (white default)
                     vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
 
-                    // TexCoord
                     if (idx.texcoord_index >= 0 && 2 * idx.texcoord_index + 1 < attrib.texcoords.size()) {
                         vertices.push_back(attrib.texcoords[2 * idx.texcoord_index]);
                         vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
@@ -1266,7 +1314,6 @@ namespace golias {
                         vertices.insert(vertices.end(), {0.0f, 0.0f});
                     }
 
-                    // Normal
                     if (idx.normal_index >= 0 && 3 * idx.normal_index + 2 < attrib.normals.size()) {
                         vertices.push_back(attrib.normals[3 * idx.normal_index]);
                         vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
@@ -1289,12 +1336,12 @@ namespace golias {
                 mat_ptr = &materials[mesh.material_ids[0]];
             }
 
-            CreateMeshComponentOBJ(staticMeshObject, layout, vertices, indices, mat_ptr, base_path);
+            CreateMeshComponentOBJ(shapeObject, layout, vertices, indices, mat_ptr, base_path);
         }
     }
 
     // ============================================================================
-    // Public API Implementation
+    // Public API
     // ============================================================================
 
     GameObject* Model::Load(std::string_view path, Scene* scene) {
@@ -1303,14 +1350,17 @@ namespace golias {
             return nullptr;
         }
 
-        std::string extension = FileSystem::GetFileExtension(path);
+        auto& fs             = Engine::GetInstance().GetFileSystem();
+        std::string fullPath = fs.GetAssetsPath() + std::string(path);
 
-        if (extension == "gltf" || extension == "glb") {
+        ModelFormat format = DetectFormatFromHeader(fullPath);
+
+        if (format == ModelFormat::GLTF || format == ModelFormat::GLB) {
             return LoadGLTF(path, scene);
-        } else if (extension == "obj") {
+        } else if (format == ModelFormat::OBJ) {
             return LoadOBJ(path, scene);
         } else {
-            spdlog::error("Unsupported model format: {}", path);
+            spdlog::error("Unknown or unsupported model format: {}", path);
             return nullptr;
         }
     }
@@ -1325,7 +1375,6 @@ namespace golias {
         }
 
         std::string fullPath = fs.GetAssetsPath() + std::string(path);
-
         size_t slash         = path.find_last_of("/\\");
         std::string basePath = (slash == std::string::npos) ? "" : std::string(path.substr(0, slash + 1));
 

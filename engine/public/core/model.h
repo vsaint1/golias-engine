@@ -9,6 +9,8 @@ namespace golias {
     class GameObject;
     class Scene;
 
+    enum class ModelFormat { UNKNOWN, GLTF, GLB, OBJ };
+
     /**
      * @brief Model loading and parsing utility
      * 

@@ -27,7 +27,7 @@ void SpawnBox(const glm::vec3& position) {
 
     obj->SetPosition(position);
 
-    obj->AddComponent(new golias::MeshComponent(mesh, mat));
+    obj->AddComponent(new golias::MeshRendererComponent(mesh, mat));
 
     auto collider = std::make_shared<golias::BoxCollider>(boxExtents);
     auto body     = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 50.0f);
@@ -236,6 +236,9 @@ WASD to move, Mouse to look around)";
     pointLightComp->SetIntensity(10.0f);
     pointLight->AddComponent(pointLightComp);
 
+    auto torus = golias::Model::Load("models/torus.obj", Tscene.get());
+    torus->SetPosition({5.0f, 2.0f, -2.0f});
+
     golias::Engine::GetInstance().SetScene(Tscene);
 #else
     auto& fs = golias::Engine::GetInstance().GetFileSystem();
@@ -274,7 +277,7 @@ WASD to move, Mouse to look around)";
 
     auto groundExtents = glm::vec3(50.0f, 2.0f, 50.0f);
     auto groundMesh    = golias::Mesh::CreateBox(groundExtents);
-    ground->AddComponent(new golias::MeshComponent(groundMesh, material));
+    ground->AddComponent(new golias::MeshRendererComponent(groundMesh, material));
 
     auto groundCollider = std::make_shared<golias::BoxCollider>(groundExtents);
 

@@ -21,7 +21,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -90,7 +90,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -152,7 +152,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -214,7 +214,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -276,7 +276,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/brick.mat",
                         "parameters": {}
@@ -332,7 +332,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/glass.mat",
                         "parameters": {
@@ -390,7 +390,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/mirror.mat",
                         "parameters": {
@@ -448,7 +448,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -518,7 +518,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -587,7 +587,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {
@@ -656,7 +656,7 @@
             },
             "components": [
                 {
-                    "type": "MeshComponent",
+                    "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/checker.mat",
                         "parameters": {

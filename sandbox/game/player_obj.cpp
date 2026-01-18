@@ -69,7 +69,7 @@ void Player::Update(float deltaTime) {
         auto bullet = golias::Engine::GetInstance().GetScene()->CreateObject<Bullet>("Bullet");
         auto mesh   = golias::Mesh::CreateSphere(0.2f, 32, 32);
         auto mat    = golias::Material::Load("materials/checker.mat");
-        bullet->AddComponent(new golias::MeshComponent(mesh, mat));
+        bullet->AddComponent(new golias::MeshRendererComponent(mesh, mat));
 
         auto pos = FindChildByName("BOOM_35")->GetWorldPosition();
         bullet->SetPosition(pos + GetRotation() * glm::vec3(-0.2f, 0.2, -1.7f));

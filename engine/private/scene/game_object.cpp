@@ -236,7 +236,7 @@ namespace golias {
 
     void GameObject::SetUseIBL(bool value) {
 
-        if (auto meshComp = GetComponent<golias::MeshComponent>()) {
+        if (auto meshComp = GetComponent<golias::MeshRendererComponent>()) {
             if (auto material = meshComp->GetMaterial()) {
                 material->SetImageBasedLighting(value);
             }

@@ -5,14 +5,14 @@
 
 namespace golias {
 
-    MeshComponent::MeshComponent(const std::shared_ptr<Mesh>& pMesh, const std::shared_ptr<Material>& pMaterial)
+    MeshRendererComponent::MeshRendererComponent(const std::shared_ptr<Mesh>& pMesh, const std::shared_ptr<Material>& pMaterial)
         : mesh(pMesh), material(pMaterial) {
     }
 
-    void MeshComponent::Start() {
+    void MeshRendererComponent::Start() {
     }
 
-    void MeshComponent::Update(float deltaTime) {
+    void MeshRendererComponent::Update(float deltaTime) {
 
         if (!mesh || !material) {
             return;
@@ -38,24 +38,24 @@ namespace golias {
         renderer.Submit(command);
     }
 
-    Mesh* MeshComponent::GetMesh() const {
+    Mesh* MeshRendererComponent::GetMesh() const {
         return mesh.get();
     }
 
-    void MeshComponent::SetMesh(const std::shared_ptr<Mesh>& pMesh) {
+    void MeshRendererComponent::SetMesh(const std::shared_ptr<Mesh>& pMesh) {
         mesh = pMesh;
     }
 
-    void MeshComponent::SetMaterial(const std::shared_ptr<Material>& pMaterial) {
+    void MeshRendererComponent::SetMaterial(const std::shared_ptr<Material>& pMaterial) {
         material = pMaterial;
     }
 
-    Material* MeshComponent::GetMaterial() const {
+    Material* MeshRendererComponent::GetMaterial() const {
         return material.get();
     }
 
 
-    void MeshComponent::LoadProperties(const nlohmann::json& json) {
+    void MeshRendererComponent::LoadProperties(const nlohmann::json& json) {
 
         if (json.contains("material")) {
             const auto materialObject = json["material"];

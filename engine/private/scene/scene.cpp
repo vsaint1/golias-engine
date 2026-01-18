@@ -401,7 +401,7 @@ namespace golias {
     }
 
     void Scene::RegisterTypes() {
-        MeshComponent::Register();
+        MeshRendererComponent::Register();
         CameraComponent::Register();
         FirstPersonControllerComponent::Register();
         AnimationComponent::Register();

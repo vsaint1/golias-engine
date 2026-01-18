@@ -8,14 +8,14 @@ namespace golias {
     class Mesh;
     class Material;
 
-    class MeshComponent : public Component {
-        COMPONENT(MeshComponent)
+    class MeshRendererComponent : public Component {
+        COMPONENT(MeshRendererComponent)
     public:
-        MeshComponent() = default;
+        MeshRendererComponent() = default;
 
-        MeshComponent(const std::shared_ptr<Mesh>& pMesh, const std::shared_ptr<Material>& pMaterial);
+        MeshRendererComponent(const std::shared_ptr<Mesh>& pMesh, const std::shared_ptr<Material>& pMaterial);
 
-        virtual ~MeshComponent() = default;
+        virtual ~MeshRendererComponent() = default;
 
         void Start() override;
         void Update(float deltaTime) override;
