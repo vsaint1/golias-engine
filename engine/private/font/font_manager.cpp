@@ -182,7 +182,7 @@ namespace golias {
 
         const size_t stride     = textureWidth * 4;
         const size_t totalBytes = static_cast<size_t>(textureWidth * textureHeight * 4);
-        auto atlas              = new unsigned char[totalBytes];
+        Uint8* atlas = static_cast<Uint8*>(SDL_malloc(totalBytes));
 
         SDL_memset(atlas, 0, totalBytes);
 
@@ -248,8 +248,9 @@ namespace golias {
         }
 
         auto texture =
-            Engine::GetInstance().GetTextureManager().EnsureTexture2D(path, textureWidth, textureHeight, ETextureFormat::RGBA, atlas);
+            Engine::GetInstance().GetTextureManager().EnsureTexture2D(path, textureWidth, textureHeight, ETextureFormat::RGBA8, atlas);
 
+        
         font->SetTexture(texture);
         font->SetSize(size);
         font->SetAscender(face->size->metrics.ascender >> 6);

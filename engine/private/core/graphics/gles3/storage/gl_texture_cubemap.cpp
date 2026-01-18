@@ -118,10 +118,10 @@ namespace golias {
             }
 
             GLenum format         = (nrChannels == 3) ? GL_RGB : GL_RGBA;
-            GLenum internalFormat = (nrChannels == 3) ? GL_RGB : GL_RGBA;
+            GLenum internalFormat = (nrChannels == 3) ? GL_RGB8 : GL_RGBA8;
 
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, w, h, 0, format, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
+            SDL_free(data);
         }
 
         if (!loadSuccess) {
@@ -214,7 +214,7 @@ namespace golias {
                     data[idx + 2] = (unsigned char) std::clamp(color.b - variation * 0.3f, 0.0f, 255.0f);
                 }
             }
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB8, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data.data());
         };
 
         for (int face = 0; face < 6; face++) {
@@ -384,6 +384,61 @@ namespace golias {
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
             glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(maxAnisotropy, 4.0f));
         }
+    }
+
+
+    OpenglTextureCubemap::OpenglTextureCubemap(int w, int h, ETextureFormat format, const void* pixelData) {
+        width  = w;
+        height = h;
+
+        GLenum internalFormat = GL_RGBA8;
+        GLenum dataFormat     = GL_RGBA;
+        GLenum dataType       = GL_UNSIGNED_BYTE;
+
+        switch (format) {
+        case ETextureFormat::RGB8:
+            internalFormat = GL_RGB8;
+            dataFormat     = GL_RGB;
+            break;
+        case ETextureFormat::RGBA8:
+            internalFormat = GL_RGBA8;
+            dataFormat     = GL_RGBA;
+            break;
+        case ETextureFormat::RGB16F:
+            internalFormat = GL_RGB16F;
+            dataFormat     = GL_RGB;
+            dataType       = GL_FLOAT;
+            break;
+        case ETextureFormat::RGBA16F:
+            internalFormat = GL_RGBA16F;
+            dataFormat     = GL_RGBA;
+            dataType       = GL_FLOAT;
+            break;
+        default:
+            spdlog::error("OpenglTextureCubemap: Unsupported format");
+            handle = 0;
+            return;
+        }
+
+        GLuint textureID = 0;
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+        for (int face = 0; face < 6; ++face) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, internalFormat, width, height, 0, dataFormat, dataType, pixelData);
+        }
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+        handle = textureID;
+
+        spdlog::info("OpenglTextureCubemap: Created default cubemap {}x{}", width, height);
     }
 
 } // namespace golias

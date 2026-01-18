@@ -10,10 +10,10 @@ namespace golias {
 
     struct FramebufferAttachmentSpec {
         EFramebufferAttachment attachment;
-        EFramebufferTextureFormat format;
+        ETextureFormat format;
 
         FramebufferAttachmentSpec() = default;
-        FramebufferAttachmentSpec(EFramebufferAttachment att, EFramebufferTextureFormat fmt) : attachment(att), format(fmt) {
+        FramebufferAttachmentSpec(EFramebufferAttachment att, ETextureFormat fmt) : attachment(att), format(fmt) {
         }
     };
 

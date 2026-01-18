@@ -19,10 +19,17 @@ GLenum ToGLComparisonFunc(EComparisonFunc func);
 
 GLenum ToGLStencilOp(EStencilOp op);
 
-GLenum FramebufferTextureFormatToGL(EFramebufferTextureFormat format);
-
-bool IsDepthFormat(EFramebufferTextureFormat format);
+bool IsDepthFormat(ETextureFormat format);
 
 GLbitfield ToGLClearFlags(EClearFlags flags);
 
 std::string GetShaderHeaderVersion();
+
+struct GLTextureFormatDesc {
+    GLenum internalFormat;
+    GLenum format;
+    GLenum type;
+    bool   isDepth;
+};
+
+GLTextureFormatDesc GetGLTextureFormatDesc(ETextureFormat format);

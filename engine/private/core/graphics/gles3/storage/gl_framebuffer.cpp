@@ -31,8 +31,8 @@ namespace golias {
 
                 GLuint handle = static_cast<OpenglTexture2D*>(depthAttachment.get())->GetNativeHandle();
 
-                GLenum glAttachment = (attachment.format == EFramebufferTextureFormat::DEPTH24_STENCIL8
-                                       || attachment.format == EFramebufferTextureFormat::DEPTH32F_STENCIL8)
+                GLenum glAttachment = (attachment.format == ETextureFormat::DEPTH24_STENCIL8
+                                       || attachment.format == ETextureFormat::DEPTH32F_STENCIL8)
                                         ? GL_DEPTH_STENCIL_ATTACHMENT
                                         : GL_DEPTH_ATTACHMENT;
 

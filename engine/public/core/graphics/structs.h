@@ -209,4 +209,5 @@ namespace golias {
     };
 
     ETextureFormat TextureFormatFromChannels(int channels);
+    int ChannelsFromTextureFormat(ETextureFormat format);
 }; // namespace golias

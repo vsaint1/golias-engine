@@ -40,7 +40,7 @@ namespace golias {
         Uint32 height         = 0;
         Uint32 handle         = 0;
         int channels          = 0;
-        ETextureFormat format = ETextureFormat::RGBA;
+        ETextureFormat format = ETextureFormat::RGBA8;
         bool sRGB             = false;
     };
 

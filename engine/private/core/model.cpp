@@ -477,7 +477,7 @@ namespace golias {
                     spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
                     return loaded_texture;
                 } else {
-                    stbi_image_free(image_data);
+                    SDL_free(image_data);
                     spdlog::warn("Failed to create texture from data URI {}: unknown_error", fallback_name);
                 }
 
@@ -536,7 +536,7 @@ namespace golias {
             if (loaded_texture) {
                 spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
             } else {
-                stbi_image_free(image_data);
+                SDL_free(image_data);
                 spdlog::warn("Failed to create texture from embedded data {}: unknown error", fallback_name);
             }
 

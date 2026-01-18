@@ -35,7 +35,7 @@ namespace golias {
 
         std::string file_path;
 
-        ETextureFormat format                            = ETextureFormat::RGBA;
+        ETextureFormat format                            = ETextureFormat::RGBA8;
         ETextureWrapMode wrap_mode                       = ETextureWrapMode::REPEAT;
         ETextureFilterMode filter_mode                   = ETextureFilterMode::BILINEAR;
         ETextureMipGenSettings mip_gen_settings          = ETextureMipGenSettings::SIMPLE_AVERAGE;
