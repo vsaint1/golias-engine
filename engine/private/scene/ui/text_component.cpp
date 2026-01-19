@@ -49,7 +49,7 @@ namespace golias {
     }
 
     void TextWidgetComponent::SetFont(const std::string_view pFilePath, int size) {
-        font = Engine::GetInstance().GetFontManager().GetFont(pFilePath, size);
+        font = Engine::GetInstance().GetAssetManager().EnsureFont(pFilePath, size);
 
         if (!font) {
             spdlog::error("TextWidgetComponent::SetFont Failed to load font '{}' with size {}", pFilePath, size);
@@ -122,7 +122,7 @@ namespace golias {
     }
 
     void TextWidgetComponent::Start() {
-        font = Engine::GetInstance().GetFontManager().GetFont("fonts/NotoSans.ttf", 32);
+        font = Engine::GetInstance().GetAssetManager().EnsureFont("fonts/NotoSans.ttf", 32);
         spdlog::info("TextWidgetComponent::Start Default font set to 'NotoSans.ttf' with size 32");
     }
 
@@ -177,7 +177,7 @@ namespace golias {
         }
 
         auto pos          = GetPivotPos();
-        auto& fontManager = Engine::GetInstance().GetFontManager();
+        auto& assetManager = Engine::GetInstance().GetAssetManager();
         float lineHeight  = static_cast<float>(font->GetSize());
 
         auto draw_text_internal = [&](const glm::vec2& basePos, const glm::vec4& color, float zOffset) {
@@ -201,7 +201,7 @@ namespace golias {
                 }
 
                 std::shared_ptr<Font> glyphFont;
-                const Glyph* glyph = fontManager.GetGlyphWithFallback(font, codepoint, glyphFont);
+                const Glyph* glyph = assetManager.GetGlyphWithFallback(font, codepoint, glyphFont);
 
                 if (!glyph || !glyphFont) {
                     continue;
@@ -266,7 +266,7 @@ namespace golias {
         const char* ptr = text.c_str();
         const char* end = ptr + text.length();
 
-        auto& fontManager = Engine::GetInstance().GetFontManager();
+        auto& assetManager = Engine::GetInstance().GetAssetManager();
 
         while (ptr < end) {
             uint32_t codepoint = DecodeUTF8(ptr);
@@ -285,7 +285,7 @@ namespace golias {
             }
 
             std::shared_ptr<Font> glyphFont;
-            const Glyph* glyph = fontManager.GetGlyphWithFallback(font, codepoint, glyphFont);
+            const Glyph* glyph = assetManager.GetGlyphWithFallback(font, codepoint, glyphFont);
 
             if (glyph) {
                 currentLineWidth += static_cast<float>(glyph->advance);

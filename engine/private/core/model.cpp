@@ -518,7 +518,7 @@ namespace golias {
             return nullptr;
         }
 
-        auto& texture_manager = Engine::GetInstance().GetTextureManager();
+        auto& assetManager = Engine::GetInstance().GetAssetManager();
         cgltf_image* image    = texture->image;
 
         if (image->uri) {
@@ -552,7 +552,7 @@ namespace golias {
 
                 std::string embedded_path = "datauri://" + (fallback_name.empty() ? "unnamed_texture" : fallback_name);
                 ETextureFormat format     = TextureFormatFromChannels(channels);
-                auto loaded_texture       = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+                auto loaded_texture       = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
                 if (loaded_texture) {
                     spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
@@ -565,7 +565,7 @@ namespace golias {
                 return nullptr;
             } else {
                 std::string tex_path = base_path + image->uri;
-                auto loaded_texture  = texture_manager.EnsureTexture2D(tex_path);
+                auto loaded_texture  = assetManager.EnsureTexture2D(tex_path);
                 if (loaded_texture) {
                     spdlog::debug("Loaded external texture: {}", tex_path);
                     return loaded_texture;
@@ -609,7 +609,7 @@ namespace golias {
 
             embedded_path += fallback_name.empty() ? "unnamed_texture" : fallback_name;
             ETextureFormat format = TextureFormatFromChannels(channels);
-            auto loaded_texture   = texture_manager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+            auto loaded_texture   = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
 
             if (loaded_texture) {
                 spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
@@ -808,6 +808,7 @@ namespace golias {
 
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
+        auto& assetManager = engine.GetAssetManager();
 
         std::shared_ptr<Mesh> mesh         = rd->CreateMeshFromData(layout, vertices, indices);
         std::shared_ptr<Material> material = std::make_shared<Material>();
@@ -835,7 +836,7 @@ namespace golias {
 
             if (!obj_material->diffuse_texname.empty()) {
                 std::string tex_path = base_path + obj_material->diffuse_texname;
-                auto texture         = engine.GetTextureManager().EnsureTexture2D(tex_path);
+                auto texture         = assetManager.EnsureTexture2D(tex_path);
                 if (texture) {
                     material->SetParameter("ALBEDO_TEXTURE", texture);
                     textureFlags |= ETextureFlags::HAS_ALBEDO;
@@ -844,7 +845,7 @@ namespace golias {
 
             if (!obj_material->normal_texname.empty()) {
                 std::string tex_path = base_path + obj_material->normal_texname;
-                auto texture         = engine.GetTextureManager().EnsureTexture2D(tex_path);
+                auto texture         = assetManager.EnsureTexture2D(tex_path);
                 if (texture) {
                     material->SetParameter("NORMAL_TEXTURE", texture);
                     textureFlags |= ETextureFlags::HAS_NORMAL;
@@ -853,7 +854,7 @@ namespace golias {
 
             if (!obj_material->alpha_texname.empty()) {
                 std::string tex_path = base_path + obj_material->alpha_texname;
-                auto texture         = engine.GetTextureManager().EnsureTexture2D(tex_path);
+                auto texture         = assetManager.EnsureTexture2D(tex_path);
                 if (texture) {
                     spdlog::info("Found alpha texture in OBJ: {}", obj_material->alpha_texname);
                     blendMode  = EBlendMode::BLEND_MODE_ALPHA;

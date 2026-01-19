@@ -62,7 +62,7 @@ namespace golias {
     void SpriteComponent2D::LoadProperties(const nlohmann::json& json) {
         const std::string path = json.value("texture", "");
        
-        if(auto tex = Engine::GetInstance().GetTextureManager().EnsureTexture2D(path)) {
+        if(auto tex = Engine::GetInstance().GetAssetManager().EnsureTexture2D(path)) {
             SetTexture(tex);
         }
 

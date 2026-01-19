@@ -35,8 +35,8 @@ namespace golias {
 
 
     std::shared_ptr<Texture2D> Texture2D::Load(const std::string_view pFilePath) {
-        auto textureManager = Engine::GetInstance().GetTextureManager();
-        return textureManager.EnsureTexture2D(pFilePath);
+        auto& assetManager = Engine::GetInstance().GetAssetManager();
+        return assetManager.EnsureTexture2D(pFilePath);
     }
 
 

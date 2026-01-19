@@ -43,7 +43,7 @@ namespace golias {
 
         std::string cacheKey = GenerateMaterialCacheKey(pPath, paramOverrides);
 
-        if (auto existingMaterial = Engine::GetInstance().GetMaterialManager().GetMaterial(cacheKey); existingMaterial) {
+        if (auto existingMaterial = Engine::GetInstance().GetAssetManager().EnsureMaterial(cacheKey); existingMaterial) {
             spdlog::info("Material::Load: Using cached material: {} (cache key: {})", pPath, cacheKey);
             return existingMaterial;
         }
@@ -190,7 +190,7 @@ namespace golias {
 
         spdlog::info("Material::Load: Successfully loaded Material: {} (cache key: {})", pPath, cacheKey);
 
-        Engine::GetInstance().GetMaterialManager().RegisterMaterial(cacheKey, material);
+        Engine::GetInstance().GetAssetManager().RegisterMaterial(cacheKey, material);
 
         return material;
     }
@@ -317,7 +317,7 @@ namespace golias {
         return alphaClipThreshold;
     }
 
-    void  Material::SetAlphaClipThreshold(float threshold) {
+    void Material::SetAlphaClipThreshold(float threshold) {
         alphaClipThreshold = threshold;
     }
 
@@ -350,24 +350,6 @@ namespace golias {
     }
     void Material::SetCullMode(ECullMode mode) {
         cullMode = mode;
-    }
-
-    MaterialManager& MaterialManager::GetInstance() {
-        static MaterialManager instance;
-        return instance;
-    }
-
-    std::shared_ptr<Material> MaterialManager::GetMaterial(const std::string_view pPath) {
-        auto it = materials.find(pPath.data());
-        if (it != materials.end()) {
-            return it->second;
-        }
-
-        return nullptr;
-    }
-
-    void MaterialManager::RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial) {
-        materials[pPath.data()] = pMaterial;
     }
 
 

@@ -62,15 +62,4 @@ namespace golias {
         std::unordered_map<std::string, UniformValue> parameters;
     };
 
-    class MaterialManager {
-    public:
-        static MaterialManager& GetInstance();
-
-        std::shared_ptr<Material> GetMaterial(const std::string_view pPath);
-
-        void RegisterMaterial(const std::string_view pPath, const std::shared_ptr<Material>& pMaterial);
-
-    private:
-        std::unordered_map<std::string, std::shared_ptr<Material>> materials;
-    };
 } // namespace golias

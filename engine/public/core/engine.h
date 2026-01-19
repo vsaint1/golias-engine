@@ -6,8 +6,7 @@
 #include "physics/3d/physics_manager.h"
 #include "scene/scene.h"
 #include "audio/audio_manager.h"
-#include "font/font_manager.h"
-#include "core/graphics/texture_manager.h"
+#include "core/asset_manager.h"
 #include "core/input/canvas_input_manager.h"
 #include "core/input/cursor.h"
 
@@ -28,12 +27,10 @@ namespace golias {
         Application* GetApplication() const;
         InputManager& GetInputManager();
         SceneRenderer& GetSceneRenderer();
-        TextureManager& GetTextureManager();
+        AssetManager& GetAssetManager();
         PhysicsManager& GetPhysicsManager();
         FileSystem& GetFileSystem();
-        MaterialManager& GetMaterialManager();
         AudioManager& GetAudioManager();
-        FontManager& GetFontManager();
         CanvasInputManager& GetCanvasInputManager();
 
         Scene* GetScene() const;
@@ -56,13 +53,11 @@ namespace golias {
         std::shared_ptr<Scene> scene = nullptr;
     private:
         SceneRenderer sceneRenderer;
-        TextureManager textureManager;
+        AssetManager assetManager;
         InputManager inputManager;
         FileSystem fileSystem;
         PhysicsManager physicsManager;
-        MaterialManager materialManager;
         AudioManager audioManager;
-        FontManager fontManager;
         CanvasInputManager canvasInputManager;
     };
 }; // namespace golias

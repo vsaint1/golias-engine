@@ -117,13 +117,13 @@ bool SandboxApplication::Initialize() {
         godetteText->SetScale({0.01f, 0.01f, 0.01f});
     }
 
-    for (int i = 0; i < 3; i++){
-        auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
-        godette->SetPosition({static_cast<float>(std::rand() % 20 - 10), 1.0f, static_cast<float>(std::rand() % 20 - 10)});
-        if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
-            godetteAnim->Play("Cheer", true);
-        }
-    }
+    // for (int i = 0; i < 3; i++){
+    //     auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+    //     godette->SetPosition({static_cast<float>(std::rand() % 20 - 10), 1.0f, static_cast<float>(std::rand() % 20 - 10)});
+    //     if (auto godetteAnim = godette->GetComponent<golias::SkeletonAnimationComponent>()) {
+    //         godetteAnim->Play("Cheer", true);
+    //     }
+    // }
 
     // auto sponza = golias::Model::Load("models/pbr/sponza/Sponza.gltf", Tscene.get());
     // sponza->SetPosition({10.0f, 1.0f, 10.0f});

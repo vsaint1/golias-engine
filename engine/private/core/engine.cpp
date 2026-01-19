@@ -21,13 +21,13 @@ namespace golias {
         }
 
 
-        if (!fontManager.Initialize()) {
-            spdlog::error("Engine::Initialize Failed to initialize Font Manager.");
+        if (!assetManager.Initialize()) {
+            spdlog::error("Engine::Initialize Failed to initialize Asset Manager.");
             return false;
         }
 
 
-        fontManager.SetFallbackFonts({
+        assetManager.SetFallbackFonts({
             "fonts/NotoSans.ttf",
             "fonts/NotoSansCJK.otf",
             // "fonts/Twemoji.ttf" // needs plutosvg
@@ -203,10 +203,6 @@ namespace golias {
         return application.get();
     }
 
-    FontManager& Engine::GetFontManager() {
-        return fontManager;
-    }
-
     InputManager& Engine::GetInputManager() {
         return inputManager;
     }
@@ -231,12 +227,8 @@ namespace golias {
         return scene.get();
     }
 
-    MaterialManager& Engine::GetMaterialManager() {
-        return materialManager;
-    }
-
-    TextureManager& Engine::GetTextureManager() {
-        return textureManager;
+    AssetManager& Engine::GetAssetManager() {
+        return assetManager;
     }
 
     PhysicsManager& Engine::GetPhysicsManager() {

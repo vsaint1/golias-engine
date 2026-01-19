@@ -28,6 +28,7 @@ namespace golias {
          */
         static GameObject* Load(std::string_view path, Scene* scene);
 
+
     private:
         Model() = delete;
         
