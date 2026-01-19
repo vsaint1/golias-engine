@@ -27,15 +27,17 @@ namespace golias {
         void TrackAudioBuffer(rAudioBuffer* buffer);
         void UntrackAudioBuffer(rAudioBuffer* buffer);
 
-        rAudioBuffer* GetFirstBuffer() { return firstBuffer; }
+        rAudioBuffer* GetFirstBuffer() {
+            return firstBuffer;
+        }
 
     private:
-        std::unique_ptr<ma_device> maDevice = nullptr;
-        std::unique_ptr<ma_context> maContext = nullptr;
-        
-        void* maMutex = nullptr;  // Opaque pointer (ma_mutex*)
-        
-        bool isReady = false;
+        ma_device* maDevice   = nullptr;
+        ma_context* maContext = nullptr;
+
+        void* maMutex = nullptr; // Opaque pointer (ma_mutex*)
+
+        bool isReady       = false;
         float masterVolume = 1.0f;
 
         float listenerPosX = 0.0f;
@@ -43,6 +45,6 @@ namespace golias {
         float listenerPosZ = 0.0f;
 
         rAudioBuffer* firstBuffer = nullptr;
-        rAudioBuffer* lastBuffer = nullptr;
+        rAudioBuffer* lastBuffer  = nullptr;
     };
 }; // namespace golias
