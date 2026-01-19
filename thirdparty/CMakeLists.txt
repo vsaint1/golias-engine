@@ -35,8 +35,10 @@ add_subdirectory(mini_audio)
 
 add_subdirectory(freetype)
 
-set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Build ASSIMP tests" FORCE)
-set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "Build ASSIMP with internal ZLIB" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(assimp)
 
 add_library(thirdparty INTERFACE)
