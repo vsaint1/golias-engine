@@ -7,276 +7,40 @@
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/skeleton_animation_component.h"
 #include "scene/game_object.h"
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <spdlog/spdlog.h>
+#include <stb_image.h>
+#include <unordered_map>
+#include <unordered_set>
 
+#include <assimp/Importer.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
-#define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
-
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <stb_image.h>
-#include <tiny_obj_loader.h>
-#include <unordered_map>
-#include <unordered_set>
-
 namespace golias {
 
+    static std::unordered_map<std::string, int> g_boneNameToIndex;
 
-    struct MeshAsset {
-        std::vector<float> vertices;
-        std::vector<Uint32> indices;
-        VertexLayout layout;
-    };
+    // ============================================================================
+    // Utility Functions
+    // ============================================================================
 
-    struct CachedModel {
-        std::vector<MeshAsset> meshes;
-        std::string path;
-    };
-
-
-
-    ModelFormat DetectFormatFromHeader(const std::string& filepath) {
-        SDL_IOStream* file = SDL_IOFromFile(filepath.c_str(), "rb");
-        if (!file) {
-            return ModelFormat::UNKNOWN;
-        }
-
-        Uint8 magic[4]   = {0};
-        size_t bytesRead = SDL_ReadIO(file, magic, 4);
-
-        if (bytesRead < 4) {
-            SDL_CloseIO(file);
-            return ModelFormat::UNKNOWN;
-        }
-
-        if (magic[0] == 0x67 && magic[1] == 0x6C && magic[2] == 0x54 && magic[3] == 0x46) {
-            SDL_CloseIO(file);
-            return ModelFormat::GLB;
-        }
-
-        SDL_SeekIO(file, 0, SDL_IO_SEEK_SET);
-        char firstChars[64] = {0};
-        SDL_ReadIO(file, firstChars, 63); // firstChars[64]  - \n
-
-        for (int i = 0; i < 63; ++i) {
-            if (firstChars[i] == '{') {
-                SDL_CloseIO(file);
-                return ModelFormat::GLTF;
-            }
-            if (firstChars[i] != ' ' && firstChars[i] != '\t' && firstChars[i] != '\r' && firstChars[i] != '\n') {
-                break;
-            }
-        }
-
-        // Check for OBJ
-        SDL_SeekIO(file, 0, SDL_IO_SEEK_SET);
-        char line[256];
-        for (int lineNum = 0; lineNum < 10; ++lineNum) {
-            size_t pos        = 0;
-            bool foundNewline = false;
-
-            while (pos < 255) {
-                size_t read = SDL_ReadIO(file, &line[pos], 1);
-                if (read == 0) {
-                    break;
-                }
-                if (line[pos] == '\n') {
-                    foundNewline = true;
-                    break;
-                }
-                pos++;
-            }
-
-            if (!foundNewline && pos == 0) {
-                break;
-            }
-            line[pos] = '\0';
-
-            size_t start = 0;
-            while (start < pos && (line[start] == ' ' || line[start] == '\t')) {
-                start++;
-            }
-
-            if (start >= pos) {
-                continue;
-            }
-
-            const char* content = &line[start];
-
-            if (content[0] == '#' || (content[0] == 'v' && content[1] == ' ')
-                || (content[0] == 'v' && content[1] == 't' && content[2] == ' ')
-                || (content[0] == 'v' && content[1] == 'n' && content[2] == ' ') || (content[0] == 'f' && content[1] == ' ')
-                || SDL_strncmp(content, "mtllib", 6) == 0) {
-                SDL_CloseIO(file);
-                return ModelFormat::OBJ;
-            }
-        }
-
-        SDL_CloseIO(file);
-        return ModelFormat::UNKNOWN;
+    glm::mat4 AiMatrix4x4ToGlm(const aiMatrix4x4& from) {
+        return glm::transpose(glm::make_mat4(&from.a1));
     }
 
-
-    size_t GetDataTypeSize(EDataType type) {
-        switch (type) {
-        case EDataType::BYTE:
-        case EDataType::UNSIGNED_BYTE:
-            return 1;
-        case EDataType::SHORT:
-        case EDataType::UNSIGNED_SHORT:
-            return 2;
-        case EDataType::INT:
-        case EDataType::UNSIGNED_INT:
-        case EDataType::FLOAT:
-            return 4;
-        default:
-            return 4;
-        }
+    glm::vec3 AiVector3DToGlm(const aiVector3D& vec) {
+        return glm::vec3(vec.x, vec.y, vec.z);
     }
 
-    EDataType ComponentTypeToDataType(cgltf_component_type type) {
-        switch (type) {
-        case cgltf_component_type_r_8:
-            return EDataType::BYTE;
-        case cgltf_component_type_r_8u:
-            return EDataType::UNSIGNED_BYTE;
-        case cgltf_component_type_r_16:
-            return EDataType::SHORT;
-        case cgltf_component_type_r_16u:
-            return EDataType::UNSIGNED_SHORT;
-        case cgltf_component_type_r_32u:
-            return EDataType::UNSIGNED_INT;
-        case cgltf_component_type_r_32f:
-            return EDataType::FLOAT;
-        default:
-            return EDataType::FLOAT;
-        }
-    }
-
-    Uint32 GetComponentCount(cgltf_type type) {
-        switch (type) {
-        case cgltf_type_scalar:
-            return 1;
-        case cgltf_type_vec2:
-            return 2;
-        case cgltf_type_vec3:
-            return 3;
-        case cgltf_type_vec4:
-            return 4;
-        case cgltf_type_mat2:
-            return 4;
-        case cgltf_type_mat3:
-            return 9;
-        case cgltf_type_mat4:
-            return 16;
-        default:
-            return 0;
-        }
-    }
-
-    std::vector<uint8_t> Base64Decode(const std::string& encoded) {
-        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                                "abcdefghijklmnopqrstuvwxyz"
-                                                "0123456789+/";
-
-        std::vector<uint8_t> decoded;
-        std::vector<int> T(256, -1);
-        for (int i = 0; i < 64; i++) {
-            T[base64_chars[i]] = i;
-        }
-
-        int val = 0, valb = -8;
-        for (unsigned char c : encoded) {
-            if (T[c] == -1) {
-                break;
-            }
-            val = (val << 6) + T[c];
-            valb += 6;
-            if (valb >= 0) {
-                decoded.push_back(char((val >> valb) & 0xFF));
-                valb -= 8;
-            }
-        }
-        return decoded;
+    glm::quat AiQuaternionToGlm(const aiQuaternion& q) {
+        return glm::quat(q.w, q.x, q.y, q.z);
     }
 
     // ============================================================================
-    // GLTF Data Extraction
-    // ============================================================================
-
-    bool ExtractScalarData(const cgltf_accessor* accessor, std::vector<float>& out) {
-        if (!accessor || !accessor->buffer_view) {
-            return false;
-        }
-
-        out.resize(accessor->count);
-        for (size_t i = 0; i < accessor->count; ++i) {
-            cgltf_accessor_read_float(accessor, i, &out[i], 1);
-        }
-        return true;
-    }
-
-    bool ExtractFloatData(const cgltf_accessor* accessor, std::vector<float>& out) {
-        if (!accessor || !accessor->buffer_view) {
-            return false;
-        }
-
-        size_t components = GetComponentCount(accessor->type);
-        out.resize(accessor->count * components);
-
-        for (size_t i = 0; i < accessor->count; ++i) {
-            cgltf_accessor_read_float(accessor, i, &out[i * components], components);
-        }
-        return true;
-    }
-
-    bool ExtractVec3Data(const cgltf_accessor* accessor, std::vector<glm::vec3>& out) {
-        if (!accessor || !accessor->buffer_view) {
-            return false;
-        }
-
-        out.resize(accessor->count);
-        for (size_t i = 0; i < accessor->count; ++i) {
-            float vec[3] = {0.0f, 0.0f, 0.0f};
-            cgltf_accessor_read_float(accessor, i, vec, 3);
-            out[i] = glm::vec3(vec[0], vec[1], vec[2]);
-        }
-        return true;
-    }
-
-    bool ExtractQuatData(const cgltf_accessor* accessor, std::vector<glm::quat>& out) {
-        if (!accessor || !accessor->buffer_view) {
-            return false;
-        }
-
-        out.resize(accessor->count);
-        for (size_t i = 0; i < accessor->count; ++i) {
-            float vec[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-            cgltf_accessor_read_float(accessor, i, vec, 4);
-            out[i] = glm::quat(vec[3], vec[0], vec[1], vec[2]);
-        }
-        return true;
-    }
-
-    bool ExtractIndexData(const cgltf_accessor* accessor, std::vector<Uint32>& out, EDataType& out_type) {
-        if (!accessor || !accessor->buffer_view) {
-            return false;
-        }
-
-        out_type = ComponentTypeToDataType(accessor->component_type);
-        out.resize(accessor->count);
-
-        for (size_t i = 0; i < accessor->count; ++i) {
-            out[i] = static_cast<Uint32>(cgltf_accessor_read_index(accessor, i));
-        }
-        return true;
-    }
-
-    // ============================================================================
-    // Vertex Layout
+    // Vertex Layout Creation
     // ============================================================================
 
     VertexLayout CreateStandardVertexLayout() {
@@ -303,21 +67,27 @@ namespace golias {
         VertexLayout layout;
         Uint32 offset = 0;
 
+        // Position
         layout.elements.push_back({0, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
+        // Color
         layout.elements.push_back({1, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
+        // TexCoord
         layout.elements.push_back({2, 2, EDataType::FLOAT, false, offset});
         offset += 8;
 
+        // Normal
         layout.elements.push_back({3, 3, EDataType::FLOAT, false, offset});
         offset += 12;
 
+        // Bone Indices (4 floats)
         layout.elements.push_back({4, 4, EDataType::FLOAT, false, offset});
         offset += 16;
 
+        // Bone Weights (4 floats)
         layout.elements.push_back({5, 4, EDataType::FLOAT, false, offset});
         offset += 16;
 
@@ -326,459 +96,240 @@ namespace golias {
     }
 
     // ============================================================================
-    // Vertex Data
-    // ============================================================================
-
-    struct VertexAttributeData {
-        std::vector<float> positions;
-        std::vector<float> colors;
-        std::vector<float> texcoords;
-        std::vector<float> normals;
-        std::vector<float> boneIndices;
-        std::vector<float> boneWeights;
-        size_t vertexCount = 0;
-        bool hasSkinning   = false;
-
-        const cgltf_accessor* positionAccessor = nullptr;
-        const cgltf_accessor* colorAccessor    = nullptr;
-        const cgltf_accessor* texcoordAccessor = nullptr;
-        const cgltf_accessor* normalAccessor   = nullptr;
-        const cgltf_accessor* jointsAccessor   = nullptr;
-        const cgltf_accessor* weightsAccessor  = nullptr;
-    };
-
-    bool ExtractGLTFVertexData(const cgltf_primitive* prim, VertexAttributeData& data) {
-        for (size_t i = 0; i < prim->attributes_count; ++i) {
-            const cgltf_attribute& a = prim->attributes[i];
-            if (!a.data) {
-                continue;
-            }
-
-            switch (a.type) {
-            case cgltf_attribute_type_position:
-                data.positionAccessor = a.data;
-                data.vertexCount      = a.data->count;
-                break;
-            case cgltf_attribute_type_normal:
-                data.normalAccessor = a.data;
-                break;
-            case cgltf_attribute_type_texcoord:
-                if (!data.texcoordAccessor) {
-                    data.texcoordAccessor = a.data;
-                }
-                break;
-            case cgltf_attribute_type_color:
-                if (!data.colorAccessor) {
-                    data.colorAccessor = a.data;
-                }
-                break;
-            case cgltf_attribute_type_joints:
-                if (!data.jointsAccessor) {
-                    data.jointsAccessor = a.data;
-                    data.hasSkinning    = true;
-                }
-                break;
-            case cgltf_attribute_type_weights:
-                if (!data.weightsAccessor) {
-                    data.weightsAccessor = a.data;
-                    data.hasSkinning     = true;
-                }
-                break;
-            default:
-                break;
-            }
-        }
-
-        if (data.vertexCount == 0) {
-            return false;
-        }
-
-        if (data.positionAccessor) {
-            ExtractFloatData(data.positionAccessor, data.positions);
-        }
-        if (data.normalAccessor) {
-            ExtractFloatData(data.normalAccessor, data.normals);
-        }
-        if (data.texcoordAccessor) {
-            ExtractFloatData(data.texcoordAccessor, data.texcoords);
-        }
-        if (data.colorAccessor) {
-            ExtractFloatData(data.colorAccessor, data.colors);
-        }
-        if (data.jointsAccessor) {
-            ExtractFloatData(data.jointsAccessor, data.boneIndices);
-        }
-        if (data.weightsAccessor) {
-            ExtractFloatData(data.weightsAccessor, data.boneWeights);
-        }
-
-        return true;
-    }
-
-    std::vector<float> InterleaveVertexData(const VertexAttributeData& data) {
-        std::vector<float> vertices;
-        size_t floatsPerVertex = data.hasSkinning ? 19 : 11;
-        vertices.reserve(data.vertexCount * floatsPerVertex);
-
-        for (size_t v = 0; v < data.vertexCount; ++v) {
-            // Position
-            if (v * 3 + 2 < data.positions.size()) {
-                vertices.push_back(data.positions[v * 3]);
-                vertices.push_back(data.positions[v * 3 + 1]);
-                vertices.push_back(data.positions[v * 3 + 2]);
-            } else {
-                vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f});
-            }
-
-            // Color
-            if (!data.colors.empty() && data.colorAccessor) {
-                size_t colorComps = GetComponentCount(data.colorAccessor->type);
-                if (colorComps == 3 && v * 3 + 2 < data.colors.size()) {
-                    vertices.push_back(data.colors[v * 3]);
-                    vertices.push_back(data.colors[v * 3 + 1]);
-                    vertices.push_back(data.colors[v * 3 + 2]);
-                } else if (colorComps == 4 && v * 4 + 2 < data.colors.size()) {
-                    vertices.push_back(data.colors[v * 4]);
-                    vertices.push_back(data.colors[v * 4 + 1]);
-                    vertices.push_back(data.colors[v * 4 + 2]);
-                } else {
-                    vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
-                }
-            } else {
-                vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
-            }
-
-            // TexCoord
-            if (!data.texcoords.empty() && data.texcoordAccessor) {
-                size_t texcoordComps = GetComponentCount(data.texcoordAccessor->type);
-                if (texcoordComps == 2 && v * 2 + 1 < data.texcoords.size()) {
-                    vertices.push_back(data.texcoords[v * 2]);
-                    vertices.push_back(data.texcoords[v * 2 + 1]);
-                } else if (texcoordComps == 3 && v * 3 + 1 < data.texcoords.size()) {
-                    vertices.push_back(data.texcoords[v * 3]);
-                    vertices.push_back(data.texcoords[v * 3 + 1]);
-                } else {
-                    vertices.insert(vertices.end(), {0.0f, 0.0f});
-                }
-            } else {
-                vertices.insert(vertices.end(), {0.0f, 0.0f});
-            }
-
-            // Normal
-            if (!data.normals.empty() && data.normalAccessor && v * 3 + 2 < data.normals.size()) {
-                vertices.push_back(data.normals[v * 3]);
-                vertices.push_back(data.normals[v * 3 + 1]);
-                vertices.push_back(data.normals[v * 3 + 2]);
-            } else {
-                vertices.insert(vertices.end(), {0.0f, 1.0f, 0.0f});
-            }
-
-            if (data.hasSkinning) {
-                // Bone Indices
-                if (!data.boneIndices.empty() && data.jointsAccessor) {
-                    size_t jointComps = GetComponentCount(data.jointsAccessor->type);
-                    if (jointComps == 4 && v * 4 + 3 < data.boneIndices.size()) {
-                        vertices.push_back(data.boneIndices[v * 4]);
-                        vertices.push_back(data.boneIndices[v * 4 + 1]);
-                        vertices.push_back(data.boneIndices[v * 4 + 2]);
-                        vertices.push_back(data.boneIndices[v * 4 + 3]);
-                    } else {
-                        vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
-                    }
-                } else {
-                    vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f, 0.0f});
-                }
-
-                // Bone Weights
-                if (!data.boneWeights.empty() && data.weightsAccessor) {
-                    size_t weightComps = GetComponentCount(data.weightsAccessor->type);
-                    if (weightComps == 4 && v * 4 + 3 < data.boneWeights.size()) {
-                        vertices.push_back(data.boneWeights[v * 4]);
-                        vertices.push_back(data.boneWeights[v * 4 + 1]);
-                        vertices.push_back(data.boneWeights[v * 4 + 2]);
-                        vertices.push_back(data.boneWeights[v * 4 + 3]);
-                    } else {
-                        vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
-                    }
-                } else {
-                    vertices.insert(vertices.end(), {1.0f, 0.0f, 0.0f, 0.0f});
-                }
-            }
-        }
-
-        return vertices;
-    }
-
-    // ============================================================================
     // Texture Loading
     // ============================================================================
 
-    std::shared_ptr<Texture2D> LoadGLTFTexture(cgltf_texture* texture, const std::string& base_path, const std::string& fallback_name) {
-        if (!texture || !texture->image) {
+    std::shared_ptr<Texture2D> LoadAssimpTexture(const aiMaterial* material,
+                                                 aiTextureType type,
+                                                 const std::string& base_path,
+                                                 const aiScene* scene,
+                                                 const std::string& fallback_name = "") {
+        if (material->GetTextureCount(type) == 0) {
+            return nullptr;
+        }
+
+        aiString path;
+        if (material->GetTexture(type, 0, &path) != AI_SUCCESS) {
             return nullptr;
         }
 
         auto& assetManager = Engine::GetInstance().GetAssetManager();
-        cgltf_image* image    = texture->image;
+        std::string texPath(path.C_Str());
 
-        if (image->uri) {
-            std::string uri_str(image->uri);
+        // Check if texture is embedded
+        if (texPath[0] == '*') {
+            int texIndex = std::atoi(texPath.c_str() + 1);
+            if (texIndex >= 0 && texIndex < static_cast<int>(scene->mNumTextures)) {
+                aiTexture* embeddedTex = scene->mTextures[texIndex];
 
-            if (uri_str.find("data:") == 0) {
-                spdlog::info("Found data URI texture: {}", fallback_name.empty() ? "unnamed" : fallback_name);
+                spdlog::info("Loading embedded texture index {}: {}", texIndex, fallback_name);
 
-                size_t comma_pos = uri_str.find(',');
-                if (comma_pos == std::string::npos) {
-                    spdlog::warn("Invalid data URI format for {}", fallback_name);
-                    return nullptr;
-                }
+                if (embeddedTex->mHeight == 0) {
+                    // Compressed texture
+                    int width, height, channels;
+                    unsigned char* image_data = stbi_load_from_memory(
+                        reinterpret_cast<unsigned char*>(embeddedTex->pcData), embeddedTex->mWidth, &width, &height, &channels, 0);
 
-                std::string base64_data      = uri_str.substr(comma_pos + 1);
-                std::vector<uint8_t> decoded = Base64Decode(base64_data);
-
-                if (decoded.empty()) {
-                    spdlog::warn("Failed to decode base64 data for {}", fallback_name);
-                    return nullptr;
-                }
-
-                int width, height, channels;
-                stbi_uc* image_data =
-                    stbi_load_from_memory(decoded.data(), static_cast<int>(decoded.size()), &width, &height, &channels, 0);
-
-                if (!image_data) {
-                    spdlog::warn("Failed to decode data URI texture {}: {}", fallback_name, stbi_failure_reason());
-                    return nullptr;
-                }
-
-                std::string embedded_path = "datauri://" + (fallback_name.empty() ? "unnamed_texture" : fallback_name);
-                ETextureFormat format     = TextureFormatFromChannels(channels);
-                auto loaded_texture       = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
-
-                if (loaded_texture) {
-                    spdlog::debug("Successfully created data URI texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
-                    return loaded_texture;
-                } else {
-                    SDL_free(image_data);
-                    spdlog::warn("Failed to create texture from data URI {}: unknown_error", fallback_name);
-                }
-
-                return nullptr;
-            } else {
-                std::string tex_path = base_path + image->uri;
-                auto loaded_texture  = assetManager.EnsureTexture2D(tex_path);
-                if (loaded_texture) {
-                    spdlog::debug("Loaded external texture: {}", tex_path);
-                    return loaded_texture;
-                } else {
-                    spdlog::warn("Failed to load external texture {}: unknown_error", tex_path);
-                }
-
-                return nullptr;
-            }
-        }
-
-        if (image->buffer_view) {
-            spdlog::info("Loading embedded texture from buffer view: {} ({} bytes)",
-                         fallback_name.empty() ? "unnamed" : fallback_name,
-                         image->buffer_view->size);
-
-            const uint8_t* data = static_cast<const uint8_t*>(image->buffer_view->buffer->data) + image->buffer_view->offset;
-            size_t size         = image->buffer_view->size;
-
-            int width, height, channels;
-            stbi_uc* image_data = stbi_load_from_memory(data, static_cast<int>(size), &width, &height, &channels, 0);
-
-            if (!image_data) {
-                spdlog::warn("Failed to decode embedded texture {}: {}", fallback_name, stbi_failure_reason());
-                return nullptr;
-            }
-
-            std::string embedded_path = "embedded://";
-
-            if (!base_path.empty()) {
-                size_t last_slash = base_path.find_last_of("/\\");
-                if (last_slash != std::string::npos && last_slash + 1 < base_path.length()) {
-                    std::string model_name = base_path.substr(last_slash + 1);
-                    size_t dot_pos         = model_name.find_last_of('.');
-                    if (dot_pos != std::string::npos) {
-                        model_name = model_name.substr(0, dot_pos);
+                    if (!image_data) {
+                        spdlog::warn("Failed to decode embedded compressed texture {}: {}", texIndex, stbi_failure_reason());
+                        return nullptr;
                     }
-                    embedded_path += model_name + "/";
+
+                    std::string embedded_path = "embedded://" + fallback_name + "_" + std::to_string(texIndex);
+
+                    ETextureFormat format;
+                    if (channels == 1) {
+                        format = ETextureFormat::R8;
+                    } else if (channels == 2) {
+                        format = ETextureFormat::RG8;
+                    } else if (channels == 3) {
+                        format = ETextureFormat::RGB8;
+                    } else if (channels == 4) {
+                        format = ETextureFormat::RGBA8;
+                    } else {
+                        stbi_image_free(image_data);
+                        return nullptr;
+                    }
+
+                    try {
+                        auto loaded_texture = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+                        if (loaded_texture) {
+                            spdlog::debug("Created embedded texture: {} ({}x{})", embedded_path, width, height);
+                        }
+                        return loaded_texture;
+                    } catch (const std::exception& e) {
+                        stbi_image_free(image_data);
+                        spdlog::warn("Failed to create embedded texture: {}", e.what());
+                        return nullptr;
+                    }
+                } else {
+                    // Uncompressed texture
+                    int width  = embeddedTex->mWidth;
+                    int height = embeddedTex->mHeight;
+
+                    std::string embedded_path = "embedded://" + fallback_name + "_" + std::to_string(texIndex);
+
+                    ETextureFormat format     = ETextureFormat::RGBA8;
+                    unsigned char* image_data = reinterpret_cast<unsigned char*>(embeddedTex->pcData);
+
+                    try {
+                        auto loaded_texture = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
+                        if (loaded_texture) {
+                            spdlog::debug("Created uncompressed embedded texture: {} ({}x{})", embedded_path, width, height);
+                        }
+                        return loaded_texture;
+                    } catch (const std::exception& e) {
+                        spdlog::warn("Failed to create embedded texture: {}", e.what());
+                        return nullptr;
+                    }
                 }
             }
-
-            embedded_path += fallback_name.empty() ? "unnamed_texture" : fallback_name;
-            ETextureFormat format = TextureFormatFromChannels(channels);
-            auto loaded_texture   = assetManager.EnsureTexture2D(embedded_path, width, height, format, image_data);
-
-            if (loaded_texture) {
-                spdlog::debug("Successfully created embedded texture: {} ({}x{} {} channels)", embedded_path, width, height, channels);
-            } else {
-                SDL_free(image_data);
-                spdlog::warn("Failed to create texture from embedded data {}: unknown error", fallback_name);
+        } else {
+            // External texture file
+            std::string full_path = base_path + texPath;
+            try {
+                auto loaded_texture = assetManager.EnsureTexture2D(full_path);
+                if (loaded_texture) {
+                    spdlog::debug("Loaded external texture: {}", full_path);
+                }
+                return loaded_texture;
+            } catch (const std::exception& e) {
+                spdlog::warn("Failed to load external texture {}: {}", full_path, e.what());
+                return nullptr;
             }
-
-            return loaded_texture;
         }
 
-        spdlog::warn("Texture has neither URI nor buffer_view: {}", fallback_name);
         return nullptr;
     }
 
     // ============================================================================
-    // Mesh Component Creation
+    // Material Creation
     // ============================================================================
 
-    void CreateMeshComponentGLTF(GameObject* gameObject,
-                                 const VertexLayout& layout,
-                                 const std::vector<float>& vertices,
-                                 const std::vector<Uint32>& indices,
-                                 cgltf_material* gltf_material,
-                                 const std::string& base_path) {
-
+    std::shared_ptr<Material> CreateMaterialFromAssimp(const aiMaterial* ai_mat, const std::string& base_path, const aiScene* scene) {
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
 
-        std::shared_ptr<Mesh> mesh         = rd->CreateMeshFromData(layout, vertices, indices);
         std::shared_ptr<Material> material = std::make_shared<Material>();
         std::shared_ptr<Shader> shader     = rd->GetDefaultShader3D();
         material->SetShader(shader);
 
+        ETextureFlags textureFlags = ETextureFlags::NONE;
         glm::vec4 base_color(1.0f);
         float metallic  = 0.0f;
         float roughness = 1.0f;
         glm::vec3 emissive(0.0f);
-        float emissiveStrength     = 1.0f;
-        ETextureFlags textureFlags = ETextureFlags::NONE;
+        float emissiveStrength = 1.0f;
 
         EBlendMode blendMode     = EBlendMode::BLEND_MODE_OPAQUE;
         bool depthWrite          = true;
         ECullMode cullMode       = ECullMode::CULL_MODE_BACK;
         float alphaClipThreshold = 0.5f;
 
-        if (gltf_material) {
-            if (gltf_material->alpha_mode == cgltf_alpha_mode_blend) {
-                blendMode  = EBlendMode::BLEND_MODE_ALPHA;
-                depthWrite = false;
-                spdlog::debug("Material '{}' uses BLEND mode", gltf_material->name ? gltf_material->name : "unnamed");
-            } else if (gltf_material->alpha_mode == cgltf_alpha_mode_mask) {
-                blendMode          = EBlendMode::BLEND_MODE_OPAQUE;
-                depthWrite         = true;
-                alphaClipThreshold = gltf_material->alpha_cutoff;
-                spdlog::debug("Material '{}' uses MASK mode with cutoff: {}",
-                              gltf_material->name ? gltf_material->name : "unnamed",
-                              alphaClipThreshold);
-            } else {
-                blendMode  = EBlendMode::BLEND_MODE_OPAQUE;
-                depthWrite = true;
-            }
+        aiString matName;
+        if (ai_mat->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS) {
+            spdlog::debug("Processing material: {}", matName.C_Str());
+        }
 
-            if (gltf_material->double_sided) {
-                cullMode = ECullMode::CULL_MODE_DISABLED;
-                spdlog::debug("Material '{}' is double-sided", gltf_material->name ? gltf_material->name : "unnamed");
-            }
+        // Get base color / diffuse
+        aiColor4D diffuse(1.0f);
+        if (ai_mat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse) == AI_SUCCESS) {
+            base_color = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+        }
 
-            if (gltf_material->has_pbr_metallic_roughness) {
-                auto& pbr = gltf_material->pbr_metallic_roughness;
-                base_color =
-                    glm::vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
-                metallic  = pbr.metallic_factor;
-                roughness = pbr.roughness_factor;
+        // Get opacity
+        float opacity = 1.0f;
+        if (ai_mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
+            base_color.a *= opacity;
+        }
 
-                if (base_color.a < 1.0f && blendMode == EBlendMode::BLEND_MODE_OPAQUE) {
-                    spdlog::warn("Material '{}' has alpha < 1.0 but alpha_mode is OPAQUE. Consider using BLEND mode.",
-                                 gltf_material->name ? gltf_material->name : "unnamed");
-                }
+        // Check for transparency
+        if (base_color.a < 1.0f) {
+            blendMode  = EBlendMode::BLEND_MODE_ALPHA;
+            depthWrite = false;
+        }
 
-                if (pbr.base_color_texture.texture) {
-                    std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_albedo" : "albedo";
-                    auto texture         = LoadGLTFTexture(pbr.base_color_texture.texture, base_path, tex_name);
-                    if (texture) {
-                        material->SetParameter("ALBEDO_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_ALBEDO;
-                    }
-                }
+        // Get metallic/roughness (PBR)
+        ai_mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic);
+        ai_mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
 
-                if (pbr.metallic_roughness_texture.texture) {
-                    std::string tex_name =
-                        gltf_material->name ? std::string(gltf_material->name) + "_metallic_roughness" : "metallic_roughness";
-                    auto texture = LoadGLTFTexture(pbr.metallic_roughness_texture.texture, base_path, tex_name);
-                    if (texture) {
-                        material->SetParameter("METALLIC_TEXTURE", texture);
-                        material->SetParameter("ROUGHNESS_TEXTURE", texture);
-                        textureFlags |= ETextureFlags::HAS_METALLIC;
-                        textureFlags |= ETextureFlags::HAS_ROUGHNESS;
-                    }
-                }
-            }
+        // Fallback: use shininess to estimate roughness
+        float shininess = 0.0f;
+        if (ai_mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
+            roughness = 1.0f - glm::clamp(shininess / 1000.0f, 0.0f, 1.0f);
+        }
 
-            if (gltf_material->normal_texture.texture) {
-                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_normal" : "normal";
-                auto texture         = LoadGLTFTexture(gltf_material->normal_texture.texture, base_path, tex_name);
-                if (texture) {
-                    material->SetParameter("NORMAL_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_NORMAL;
-                }
-            }
+        // Get emissive
+        aiColor3D emissiveColor(0.0f);
+        if (ai_mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == AI_SUCCESS) {
+            emissive = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
+        }
 
-            if (gltf_material->occlusion_texture.texture) {
-                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_occlusion" : "occlusion";
-                auto texture         = LoadGLTFTexture(gltf_material->occlusion_texture.texture, base_path, tex_name);
-                if (texture) {
-                    material->SetParameter("AO_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_AO;
-                }
-            }
+        // Check two-sided
+        int twoSided = 0;
+        if (ai_mat->Get(AI_MATKEY_TWOSIDED, twoSided) == AI_SUCCESS && twoSided) {
+            cullMode = ECullMode::CULL_MODE_DISABLED;
+        }
 
-            emissive = glm::vec3(gltf_material->emissive_factor[0], gltf_material->emissive_factor[1], gltf_material->emissive_factor[2]);
+        // Load textures
+        auto albedoTex = LoadAssimpTexture(ai_mat, aiTextureType_DIFFUSE, base_path, scene, "albedo");
+        if (albedoTex) {
+            material->SetParameter("ALBEDO_TEXTURE", albedoTex);
+            textureFlags |= ETextureFlags::HAS_ALBEDO;
+        }
 
-            if (gltf_material->has_emissive_strength) {
-                emissiveStrength = gltf_material->emissive_strength.emissive_strength;
-            }
-
-            if (gltf_material->emissive_texture.texture) {
-                std::string tex_name = gltf_material->name ? std::string(gltf_material->name) + "_emissive" : "emissive";
-                auto texture         = LoadGLTFTexture(gltf_material->emissive_texture.texture, base_path, tex_name);
-                if (texture) {
-                    material->SetParameter("EMISSIVE_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_EMISSIVE;
-                }
+        // Try base color texture (GLTF)
+        if (!albedoTex) {
+            albedoTex = LoadAssimpTexture(ai_mat, aiTextureType_BASE_COLOR, base_path, scene, "base_color");
+            if (albedoTex) {
+                material->SetParameter("ALBEDO_TEXTURE", albedoTex);
+                textureFlags |= ETextureFlags::HAS_ALBEDO;
             }
         }
 
-        bool shouldUseIBL = false;
+        auto normalTex = LoadAssimpTexture(ai_mat, aiTextureType_NORMALS, base_path, scene, "normal");
+        if (normalTex) {
+            material->SetParameter("NORMAL_TEXTURE", normalTex);
+            textureFlags |= ETextureFlags::HAS_NORMAL;
+        }
 
-        if (gltf_material) {
-            if (gltf_material->unlit) {
-                shouldUseIBL = false;
-                spdlog::debug("Material '{}' is unlit, disabling IBL", gltf_material->name ? gltf_material->name : "unnamed");
-            } else {
-                if (metallic > 0.5f) {
-                    shouldUseIBL = true;
-                    spdlog::debug("Material '{}' has high metallic ({:.2f}), enabling IBL",
-                                  gltf_material->name ? gltf_material->name : "unnamed",
-                                  metallic);
-                } else if (roughness < 0.3f) {
-                    shouldUseIBL = true;
-                    spdlog::debug("Material '{}' has low roughness ({:.2f}), enabling IBL",
-                                  gltf_material->name ? gltf_material->name : "unnamed",
-                                  roughness);
-                } else if (gltf_material->has_pbr_metallic_roughness
-                           && gltf_material->pbr_metallic_roughness.metallic_roughness_texture.texture) {
-                    shouldUseIBL = true;
-                    spdlog::debug("Material '{}' has metallic/roughness texture, enabling IBL",
-                                  gltf_material->name ? gltf_material->name : "unnamed");
-                } else {
-                    shouldUseIBL = false;
-                    spdlog::debug("Material '{}' using studio lighting (metallic: {:.2f}, roughness: {:.2f})",
-                                  gltf_material->name ? gltf_material->name : "unnamed",
-                                  metallic,
-                                  roughness);
-                }
-            }
+        auto metallicTex = LoadAssimpTexture(ai_mat, aiTextureType_METALNESS, base_path, scene, "metallic");
+        if (metallicTex) {
+            material->SetParameter("METALLIC_TEXTURE", metallicTex);
+            textureFlags |= ETextureFlags::HAS_METALLIC;
+        }
+
+        auto roughnessTex = LoadAssimpTexture(ai_mat, aiTextureType_DIFFUSE_ROUGHNESS, base_path, scene, "roughness");
+        if (roughnessTex) {
+            material->SetParameter("ROUGHNESS_TEXTURE", roughnessTex);
+            textureFlags |= ETextureFlags::HAS_ROUGHNESS;
+        }
+
+        auto aoTex = LoadAssimpTexture(ai_mat, aiTextureType_AMBIENT_OCCLUSION, base_path, scene, "ao");
+        if (aoTex) {
+            material->SetParameter("AO_TEXTURE", aoTex);
+            textureFlags |= ETextureFlags::HAS_AO;
+        }
+
+        auto emissiveTex = LoadAssimpTexture(ai_mat, aiTextureType_EMISSIVE, base_path, scene, "emissive");
+        if (emissiveTex) {
+            material->SetParameter("EMISSIVE_TEXTURE", emissiveTex);
+            textureFlags |= ETextureFlags::HAS_EMISSIVE;
+        }
+
+        bool shouldUseIBL = false;
+        if (metallic > 0.5f) {
+            shouldUseIBL = true;
+            spdlog::debug("Material has high metallic ({:.2f}), enabling IBL", metallic);
+        } else if (roughness < 0.3f) {
+            shouldUseIBL = true;
+            spdlog::debug("Material has low roughness ({:.2f}), enabling IBL", roughness);
+        } else if (metallicTex || roughnessTex) {
+            shouldUseIBL = true;
+            spdlog::debug("Material has metallic/roughness textures, enabling IBL");
         } else {
             shouldUseIBL = false;
-            spdlog::debug("No material data, using studio lighting");
+            spdlog::debug("Material using studio lighting (metallic: {:.2f}, roughness: {:.2f})", metallic, roughness);
         }
 
         material->SetImageBasedLighting(shouldUseIBL);
@@ -796,213 +347,194 @@ namespace golias {
         material->SetDepthTestEnabled(true);
         material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
 
-        gameObject->AddComponent(new MeshRendererComponent(mesh, material));
+        return material;
     }
 
-    void CreateMeshComponentOBJ(GameObject* gameObject,
-                                const VertexLayout& layout,
-                                const std::vector<float>& vertices,
-                                const std::vector<Uint32>& indices,
-                                const tinyobj::material_t* obj_material,
-                                const std::string& base_path) {
+    // ============================================================================
+    // Mesh Processing
+    // ============================================================================
 
+    void ProcessAssimpMesh(const aiMesh* mesh, GameObject* gameObject, const aiScene* scene, const std::string& base_path) {
         auto& engine = Engine::GetInstance();
         auto rd      = engine.GetSceneRenderer().GetRenderingDevice();
-        auto& assetManager = engine.GetAssetManager();
 
-        std::shared_ptr<Mesh> mesh         = rd->CreateMeshFromData(layout, vertices, indices);
-        std::shared_ptr<Material> material = std::make_shared<Material>();
-        std::shared_ptr<Shader> shader     = rd->GetDefaultShader3D();
-        material->SetShader(shader);
+        bool hasSkinning    = mesh->HasBones();
+        VertexLayout layout = hasSkinning ? CreateSkinnedVertexLayout() : CreateStandardVertexLayout();
 
-        ETextureFlags textureFlags = ETextureFlags::NONE;
-        glm::vec4 base_color(1.0f);
-        float roughness = 1.0f;
-        float shininess = 0.0f;
+        std::vector<float> vertices;
+        std::vector<Uint32> indices;
 
-        EBlendMode blendMode = EBlendMode::BLEND_MODE_OPAQUE;
-        bool depthWrite      = true;
-        ECullMode cullMode   = ECullMode::CULL_MODE_BACK;
+        size_t floatsPerVertex = hasSkinning ? 19 : 11;
+        vertices.reserve(mesh->mNumVertices * floatsPerVertex);
 
-        if (obj_material) {
-            float alpha = obj_material->dissolve;
-            base_color  = glm::vec4(obj_material->diffuse[0], obj_material->diffuse[1], obj_material->diffuse[2], alpha);
-
-            if (alpha < 1.0f) {
-                blendMode  = EBlendMode::BLEND_MODE_ALPHA;
-                depthWrite = false;
-                spdlog::debug("OBJ material has transparency: alpha = {}", alpha);
-            }
-
-            if (!obj_material->diffuse_texname.empty()) {
-                std::string tex_path = base_path + obj_material->diffuse_texname;
-                auto texture         = assetManager.EnsureTexture2D(tex_path);
-                if (texture) {
-                    material->SetParameter("ALBEDO_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_ALBEDO;
-                }
-            }
-
-            if (!obj_material->normal_texname.empty()) {
-                std::string tex_path = base_path + obj_material->normal_texname;
-                auto texture         = assetManager.EnsureTexture2D(tex_path);
-                if (texture) {
-                    material->SetParameter("NORMAL_TEXTURE", texture);
-                    textureFlags |= ETextureFlags::HAS_NORMAL;
-                }
-            }
-
-            if (!obj_material->alpha_texname.empty()) {
-                std::string tex_path = base_path + obj_material->alpha_texname;
-                auto texture         = assetManager.EnsureTexture2D(tex_path);
-                if (texture) {
-                    spdlog::info("Found alpha texture in OBJ: {}", obj_material->alpha_texname);
-                    blendMode  = EBlendMode::BLEND_MODE_ALPHA;
-                    depthWrite = false;
-                }
-            }
-
-            shininess = obj_material->shininess;
-            roughness = 1.0f - glm::clamp(shininess / 1000.0f, 0.0f, 1.0f);
+        // Bone data structures for skinning
+        std::vector<std::vector<std::pair<int, float>>> vertexBoneData;
+        if (hasSkinning) {
+            vertexBoneData.resize(mesh->mNumVertices);
         }
 
-        bool shouldUseIBL = false;
+        // Process bone weights - CRITICAL: Map to GLOBAL skeleton indices
+        if (hasSkinning) {
+            for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
+                aiBone* bone         = mesh->mBones[b];
+                std::string boneName = bone->mName.C_Str();
 
-        if (obj_material) {
-            if (shininess > 500.0f) {
-                shouldUseIBL = true;
-                spdlog::debug("OBJ material has high shininess ({:.1f}), enabling IBL", shininess);
-            } else if (obj_material->specular[0] > 0.5f || obj_material->specular[1] > 0.5f || obj_material->specular[2] > 0.5f) {
-                shouldUseIBL = true;
-                spdlog::debug("OBJ material has strong specular, enabling IBL");
+                // Get the GLOBAL skeleton index for this bone
+                auto it = g_boneNameToIndex.find(boneName);
+                if (it == g_boneNameToIndex.end()) {
+                    spdlog::warn("Bone '{}' not found in global skeleton", boneName);
+                    continue;
+                }
+
+                int globalBoneIndex = it->second;
+
+                for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
+                    unsigned int vertexId = bone->mWeights[w].mVertexId;
+                    float weight          = bone->mWeights[w].mWeight;
+                    // Store GLOBAL bone index, not local mesh index
+                    vertexBoneData[vertexId].push_back({globalBoneIndex, weight});
+                }
+            }
+        }
+
+        // Process vertices
+        for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+            // Position
+            vertices.push_back(mesh->mVertices[i].x);
+            vertices.push_back(mesh->mVertices[i].y);
+            vertices.push_back(mesh->mVertices[i].z);
+
+            // Color
+            if (mesh->HasVertexColors(0)) {
+                vertices.push_back(mesh->mColors[0][i].r);
+                vertices.push_back(mesh->mColors[0][i].g);
+                vertices.push_back(mesh->mColors[0][i].b);
             } else {
-                shouldUseIBL = false;
-                spdlog::debug("OBJ material using studio lighting (shininess: {:.1f})", shininess);
+                vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
             }
-        } else {
-            shouldUseIBL = false;
-            spdlog::debug("OBJ has no material, using studio lighting");
+
+            // TexCoord
+            if (mesh->HasTextureCoords(0)) {
+                vertices.push_back(mesh->mTextureCoords[0][i].x);
+                vertices.push_back(mesh->mTextureCoords[0][i].y);
+            } else {
+                vertices.insert(vertices.end(), {0.0f, 0.0f});
+            }
+
+            // Normal
+            if (mesh->HasNormals()) {
+                vertices.push_back(mesh->mNormals[i].x);
+                vertices.push_back(mesh->mNormals[i].y);
+                vertices.push_back(mesh->mNormals[i].z);
+            } else {
+                vertices.insert(vertices.end(), {0.0f, 1.0f, 0.0f});
+            }
+
+            // Bone data
+            if (hasSkinning) {
+                float boneIndices[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+                float boneWeights[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+
+                auto& boneData = vertexBoneData[i];
+                for (size_t j = 0; j < std::min<size_t>(4, boneData.size()); ++j) {
+                    boneIndices[j] = static_cast<float>(boneData[j].first);
+                    boneWeights[j] = boneData[j].second;
+                }
+
+                // Normalize weights
+                float totalWeight = boneWeights[0] + boneWeights[1] + boneWeights[2] + boneWeights[3];
+                if (totalWeight > 0.0f) {
+                    boneWeights[0] /= totalWeight;
+                    boneWeights[1] /= totalWeight;
+                    boneWeights[2] /= totalWeight;
+                    boneWeights[3] /= totalWeight;
+                } else {
+                    boneWeights[0] = 1.0f;
+                }
+
+                vertices.insert(vertices.end(), {boneIndices[0], boneIndices[1], boneIndices[2], boneIndices[3]});
+                vertices.insert(vertices.end(), {boneWeights[0], boneWeights[1], boneWeights[2], boneWeights[3]});
+            }
         }
 
-        material->SetImageBasedLighting(shouldUseIBL);
-        material->SetParameter("TEXTURE_FLAGS", static_cast<int>(textureFlags));
-        material->SetParameter("u_material.modulate", base_color);
-        material->SetParameter("u_material.metallicFactor", 0.0f);
-        material->SetParameter("u_material.roughnessFactor", roughness);
-        material->SetParameter("u_material.emissiveFactor", glm::vec3(0.0f));
-        material->SetParameter("u_material.emissiveStrength", 1.0f);
+        // Process indices
+        for (unsigned int i = 0; i < mesh->mNumFaces; ++i) {
+            aiFace face = mesh->mFaces[i];
+            for (unsigned int j = 0; j < face.mNumIndices; ++j) {
+                indices.push_back(face.mIndices[j]);
+            }
+        }
 
-        material->SetBlendMode(blendMode);
-        material->SetDepthWriteEnabled(depthWrite);
-        material->SetCullMode(cullMode);
-        material->SetDepthTestEnabled(true);
-        material->SetDepthFunc(EComparisonFunc::COMPARISON_LESS);
-        material->SetAlphaClipThreshold(0.5f);
+        std::shared_ptr<Mesh> meshObj = rd->CreateMeshFromData(layout, vertices, indices);
+        std::shared_ptr<Material> material;
 
-        gameObject->AddComponent(new MeshRendererComponent(mesh, material));
+        if (mesh->mMaterialIndex >= 0 && mesh->mMaterialIndex < scene->mNumMaterials) {
+            material = CreateMaterialFromAssimp(scene->mMaterials[mesh->mMaterialIndex], base_path, scene);
+        } else {
+            material = std::make_shared<Material>();
+            material->SetShader(rd->GetDefaultShader3D());
+        }
+
+        gameObject->AddComponent(new MeshRendererComponent(meshObj, material));
     }
 
     // ============================================================================
-    // GLTF Animation Loading
+    // Animation Loading
     // ============================================================================
 
-    void LoadGLTFAnimations(cgltf_data* data, GameObject* rootObject) {
+    void LoadAssimpAnimations(const aiScene* scene, GameObject* rootObject) {
+        if (scene->mNumAnimations == 0) {
+            return;
+        }
+
         std::vector<std::shared_ptr<AnimationClip>> clips;
 
-        for (cgltf_size ai = 0; ai < data->animations_count; ++ai) {
-            auto& anim     = data->animations[ai];
-            auto clip      = std::make_shared<AnimationClip>();
-            clip->name     = anim.name ? anim.name : "no_name";
-            clip->duration = 0.0f;
+        for (unsigned int ai = 0; ai < scene->mNumAnimations; ++ai) {
+            aiAnimation* anim    = scene->mAnimations[ai];
+            auto clip            = std::make_shared<AnimationClip>();
+            clip->name           = anim->mName.C_Str();
+            float ticksPerSecond = (anim->mTicksPerSecond > 0.0) ? static_cast<float>(anim->mTicksPerSecond) : 25.0f;
+            clip->duration       = static_cast<float>(anim->mDuration) / ticksPerSecond;
 
-            spdlog::debug("Processing GLTF Animation clip: {} with {} channels", clip->name, anim.channels_count);
+            spdlog::debug("Processing animation: {} with {} channels, duration: {}", clip->name, anim->mNumChannels, clip->duration);
 
-            std::unordered_map<cgltf_node*, size_t> trackIndexOf;
-
-            auto ensureTrack = [&](cgltf_node* node) -> TransformTrack& {
-                auto it = trackIndexOf.find(node);
-                if (it != trackIndexOf.end()) {
-                    return clip->tracks[it->second];
-                }
+            for (unsigned int ci = 0; ci < anim->mNumChannels; ++ci) {
+                aiNodeAnim* channel = anim->mChannels[ci];
 
                 TransformTrack track;
-                track.targetName = node->name ? node->name : "";
+                track.targetName = channel->mNodeName.C_Str();
+
+                // Position keys
+                for (unsigned int pi = 0; pi < channel->mNumPositionKeys; ++pi) {
+                    aiVectorKey& key = channel->mPositionKeys[pi];
+                    KeyFrameVec3 keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiVector3DToGlm(key.mValue);
+                    track.positions.push_back(keyframe);
+                }
+
+                // Rotation keys
+                for (unsigned int ri = 0; ri < channel->mNumRotationKeys; ++ri) {
+                    aiQuatKey& key = channel->mRotationKeys[ri];
+                    KeyFrameQuat keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiQuaternionToGlm(key.mValue);
+                    track.rotations.push_back(keyframe);
+                }
+
+                // Scale keys
+                for (unsigned int si = 0; si < channel->mNumScalingKeys; ++si) {
+                    aiVectorKey& key = channel->mScalingKeys[si];
+                    KeyFrameVec3 keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiVector3DToGlm(key.mValue);
+                    track.scales.push_back(keyframe);
+                }
+
                 clip->tracks.push_back(track);
-                size_t idx         = clip->tracks.size() - 1;
-                trackIndexOf[node] = idx;
-                return clip->tracks[idx];
-            };
-
-            for (cgltf_size ci = 0; ci < anim.channels_count; ++ci) {
-                auto& channel = anim.channels[ci];
-                auto sampler  = channel.sampler;
-
-                if (!channel.target_node || !sampler || !sampler->input || !sampler->output) {
-                    continue;
-                }
-
-                std::vector<float> times;
-                if (!ExtractScalarData(sampler->input, times)) {
-                    spdlog::warn("Failed to extract animation times for clip: {} channel: {}", clip->name, ci);
-                    continue;
-                }
-
-                auto& track = ensureTrack(channel.target_node);
-
-                switch (channel.target_path) {
-                case cgltf_animation_path_type_translation:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.positions.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.positions[i].time  = times[i];
-                                track.positions[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                case cgltf_animation_path_type_rotation:
-                    {
-                        std::vector<glm::quat> values;
-                        ExtractQuatData(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.rotations.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.rotations[i].time  = times[i];
-                                track.rotations[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                case cgltf_animation_path_type_scale:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.scales.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.scales[i].time  = times[i];
-                                track.scales[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                default:
-                    break;
-                }
-
-                clip->duration = SDL_max(clip->duration, times.back());
             }
 
-            clips.push_back(std::move(clip));
+            clips.push_back(clip);
         }
 
         if (!clips.empty()) {
@@ -1013,336 +545,201 @@ namespace golias {
                 animComp->RegisterClip(clip->name, clip);
             }
 
-            spdlog::debug("Loaded {} Animation clips from GLTF file", data->animations_count);
+            spdlog::debug("Loaded {} animation clips", clips.size());
         }
     }
 
     // ============================================================================
-    // GLTF Skeleton Loading
+    // Skeleton Loading
     // ============================================================================
 
-    void LoadGLTFSkeleton(cgltf_data* data, GameObject* rootObject) {
-        if (data->skins_count == 0) {
+    void LoadAssimpSkeleton(const aiScene* scene, GameObject* rootObject) {
+        bool hasSkeleton = false;
+        for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+            if (scene->mMeshes[i]->HasBones()) {
+                hasSkeleton = true;
+                break;
+            }
+        }
+
+        if (!hasSkeleton) {
             return;
         }
 
-        std::vector<std::shared_ptr<Skeleton>> skeletons;
-        std::vector<std::shared_ptr<SkeletonAnimationClip>> skeletonClips;
-        std::unordered_set<cgltf_node*> jointNodes;
+        auto skeleton  = std::make_shared<Skeleton>();
+        skeleton->name = "Skeleton";
 
-        for (cgltf_size si = 0; si < data->skins_count; ++si) {
-            auto& skin     = data->skins[si];
-            auto skeleton  = std::make_shared<Skeleton>();
-            skeleton->name = skin.name ? skin.name : "Skeleton";
+        std::vector<aiBone*> allBones;
 
-            spdlog::info("Processing GLTF Skin/Skeleton: {} with {} joints", skeleton->name, skin.joints_count);
+        // Collect all unique bones from all meshes
+        for (unsigned int mi = 0; mi < scene->mNumMeshes; ++mi) {
+            aiMesh* mesh = scene->mMeshes[mi];
+            for (unsigned int bi = 0; bi < mesh->mNumBones; ++bi) {
+                aiBone* bone         = mesh->mBones[bi];
+                std::string boneName = bone->mName.C_Str();
 
-            std::unordered_map<cgltf_node*, int> nodeToJointIndex;
-
-            for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
-                cgltf_node* jointNode       = skin.joints[ji];
-                nodeToJointIndex[jointNode] = static_cast<int>(ji);
-                jointNodes.insert(jointNode);
-
-                SkeletonJoint joint;
-                joint.name = jointNode->name ? jointNode->name : ("Joint_" + std::to_string(ji));
-
-                if (jointNode->has_translation) {
-                    joint.position = glm::vec3(jointNode->translation[0], jointNode->translation[1], jointNode->translation[2]);
-                }
-
-                if (jointNode->has_rotation) {
-                    joint.rotation =
-                        glm::quat(jointNode->rotation[3], jointNode->rotation[0], jointNode->rotation[1], jointNode->rotation[2]);
-                }
-
-                if (jointNode->has_scale) {
-                    joint.scale = glm::vec3(jointNode->scale[0], jointNode->scale[1], jointNode->scale[2]);
-                }
-
-                if (skin.inverse_bind_matrices) {
-                    float mat[16];
-                    cgltf_accessor_read_float(skin.inverse_bind_matrices, ji, mat, 16);
-                    joint.inverseBindMatrix = glm::make_mat4(mat);
-                }
-
-                skeleton->joints.push_back(joint);
-            }
-
-            for (cgltf_size ji = 0; ji < skin.joints_count; ++ji) {
-                cgltf_node* jointNode = skin.joints[ji];
-                if (jointNode->parent) {
-                    auto parentIt = nodeToJointIndex.find(jointNode->parent);
-                    if (parentIt != nodeToJointIndex.end()) {
-                        skeleton->joints[ji].parentIndex = parentIt->second;
-                    }
+                if (g_boneNameToIndex.find(boneName) == g_boneNameToIndex.end()) {
+                    g_boneNameToIndex[boneName] = static_cast<int>(allBones.size());
+                    allBones.push_back(bone);
                 }
             }
-
-            skeletons.push_back(skeleton);
         }
 
-        for (cgltf_size ai = 0; ai < data->animations_count; ++ai) {
-            auto& anim     = data->animations[ai];
-            auto clip      = std::make_shared<SkeletonAnimationClip>();
-            clip->name     = anim.name ? anim.name : "SkeletonAnimation";
-            clip->duration = 0.0f;
+        // Create joints
+        skeleton->joints.resize(allBones.size());
 
-            std::unordered_map<cgltf_node*, size_t> trackIndexOf;
+        // Build node hierarchy map
+        std::unordered_map<std::string, aiNode*> nodeMap;
+        std::function<void(aiNode*)> buildNodeMap = [&](aiNode* node) {
+            nodeMap[node->mName.C_Str()] = node;
+            for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+                buildNodeMap(node->mChildren[i]);
+            }
+        };
+        buildNodeMap(scene->mRootNode);
 
-            auto ensureTrack = [&](cgltf_node* node) -> SkeletonAnimationTrack& {
-                auto it = trackIndexOf.find(node);
-                if (it != trackIndexOf.end()) {
-                    return clip->tracks[it->second];
+        // First pass: create all joints with LOCAL transforms
+        for (size_t i = 0; i < allBones.size(); ++i) {
+            aiBone* bone            = allBones[i];
+            SkeletonJoint& joint    = skeleton->joints[i];
+            joint.name              = bone->mName.C_Str();
+            joint.inverseBindMatrix = AiMatrix4x4ToGlm(bone->mOffsetMatrix);
+            joint.parentIndex       = -1;
+
+            // Get LOCAL transform from node (not global)
+            auto nodeIt = nodeMap.find(bone->mName.C_Str());
+            if (nodeIt != nodeMap.end()) {
+                aiNode* node = nodeIt->second;
+
+                // Extract LOCAL transform components
+                aiVector3D position, scaling;
+                aiQuaternion rotation;
+                node->mTransformation.Decompose(scaling, rotation, position);
+
+                joint.position = AiVector3DToGlm(position);
+                joint.rotation = AiQuaternionToGlm(rotation);
+                joint.scale    = AiVector3DToGlm(scaling);
+            } else {
+                joint.position = glm::vec3(0.0f);
+                joint.rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+                joint.scale    = glm::vec3(1.0f);
+            }
+        }
+
+        // Second pass: establish parent relationships
+        for (size_t i = 0; i < allBones.size(); ++i) {
+            aiBone* bone = allBones[i];
+            auto nodeIt  = nodeMap.find(bone->mName.C_Str());
+
+            if (nodeIt != nodeMap.end() && nodeIt->second->mParent) {
+                auto parentIt = g_boneNameToIndex.find(nodeIt->second->mParent->mName.C_Str());
+                if (parentIt != g_boneNameToIndex.end()) {
+                    skeleton->joints[i].parentIndex = parentIt->second;
+                }
+            }
+        }
+
+        // Process skeletal animations
+        std::vector<std::shared_ptr<SkeletonAnimationClip>> skeletonClips;
+
+        for (unsigned int ai = 0; ai < scene->mNumAnimations; ++ai) {
+            aiAnimation* anim    = scene->mAnimations[ai];
+            auto clip            = std::make_shared<SkeletonAnimationClip>();
+            clip->name           = anim->mName.C_Str();
+            float ticksPerSecond = (anim->mTicksPerSecond > 0.0) ? static_cast<float>(anim->mTicksPerSecond) : 25.0f;
+            clip->duration       = static_cast<float>(anim->mDuration) / ticksPerSecond;
+
+            for (unsigned int ci = 0; ci < anim->mNumChannels; ++ci) {
+                aiNodeAnim* channel  = anim->mChannels[ci];
+                std::string nodeName = channel->mNodeName.C_Str();
+
+                // Check if this is a bone
+                if (g_boneNameToIndex.find(nodeName) == g_boneNameToIndex.end()) {
+                    continue;
                 }
 
                 SkeletonAnimationTrack track;
-                track.targetJointName = node->name ? node->name : "";
+                track.targetJointName = nodeName;
+
+                for (unsigned int pi = 0; pi < channel->mNumPositionKeys; ++pi) {
+                    aiVectorKey& key = channel->mPositionKeys[pi];
+                    KeyFrameVec3 keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiVector3DToGlm(key.mValue);
+                    track.positions.push_back(keyframe);
+                }
+
+                for (unsigned int ri = 0; ri < channel->mNumRotationKeys; ++ri) {
+                    aiQuatKey& key = channel->mRotationKeys[ri];
+                    KeyFrameQuat keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiQuaternionToGlm(key.mValue);
+                    track.rotations.push_back(keyframe);
+                }
+
+                for (unsigned int si = 0; si < channel->mNumScalingKeys; ++si) {
+                    aiVectorKey& key = channel->mScalingKeys[si];
+                    KeyFrameVec3 keyframe;
+                    keyframe.time  = static_cast<float>(key.mTime) / ticksPerSecond;
+                    keyframe.value = AiVector3DToGlm(key.mValue);
+                    track.scales.push_back(keyframe);
+                }
+
                 clip->tracks.push_back(track);
-                size_t idx         = clip->tracks.size() - 1;
-                trackIndexOf[node] = idx;
-                return clip->tracks[idx];
-            };
-
-            bool hasSkeletonAnimation = false;
-
-            for (cgltf_size ci = 0; ci < anim.channels_count; ++ci) {
-                auto& channel = anim.channels[ci];
-                auto sampler  = channel.sampler;
-
-                if (!channel.target_node || !sampler || !sampler->input || !sampler->output) {
-                    continue;
-                }
-
-                bool isJoint = jointNodes.find(channel.target_node) != jointNodes.end();
-                if (!isJoint) {
-                    continue;
-                }
-
-                hasSkeletonAnimation = true;
-
-                std::vector<float> times;
-                if (!ExtractScalarData(sampler->input, times)) {
-                    spdlog::warn("Failed to extract skeleton animation times for clip: {} channel: {}", clip->name, ci);
-                    continue;
-                }
-
-                auto& track = ensureTrack(channel.target_node);
-
-                switch (channel.target_path) {
-                case cgltf_animation_path_type_translation:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.positions.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.positions[i].time  = times[i];
-                                track.positions[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                case cgltf_animation_path_type_rotation:
-                    {
-                        std::vector<glm::quat> values;
-                        ExtractQuatData(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.rotations.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.rotations[i].time  = times[i];
-                                track.rotations[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                case cgltf_animation_path_type_scale:
-                    {
-                        std::vector<glm::vec3> values;
-                        ExtractVec3Data(sampler->output, values);
-
-                        if (!values.empty()) {
-                            track.scales.resize(times.size());
-                            for (size_t i = 0; i < times.size(); ++i) {
-                                track.scales[i].time  = times[i];
-                                track.scales[i].value = values[i];
-                            }
-                        }
-                        break;
-                    }
-
-                default:
-                    break;
-                }
-
-                clip->duration = SDL_max(clip->duration, times.back());
             }
 
-            if (hasSkeletonAnimation) {
-                skeletonClips.push_back(std::move(clip));
-            }
+            skeletonClips.push_back(clip);
         }
 
-        if (!skeletons.empty() && !skeletonClips.empty()) {
+        if (!skeleton->joints.empty()) {
             auto skelAnimComp = new SkeletonAnimationComponent();
             rootObject->AddComponent(skelAnimComp);
-            skelAnimComp->SetSkeleton(skeletons[0]);
+            skelAnimComp->SetSkeleton(skeleton);
 
             for (auto& clip : skeletonClips) {
                 skelAnimComp->RegisterClip(clip->name, clip);
-                spdlog::debug(
-                    "Registered skeleton animation clip: {} with {} tracks, duration: {}", clip->name, clip->tracks.size(), clip->duration);
+                spdlog::debug("Registered skeleton animation: {} with {} tracks", clip->name, clip->tracks.size());
             }
 
-            spdlog::debug("Loaded {} Skeleton animation clips from GLTF file", skeletonClips.size());
-        } else if (!skeletons.empty()) {
-            auto skelAnimComp = new SkeletonAnimationComponent();
-            rootObject->AddComponent(skelAnimComp);
-            skelAnimComp->SetSkeleton(skeletons[0]);
-            spdlog::debug("Loaded Skeleton with {} joints (no animations)", skeletons[0]->joints.size());
-        }
-
-        spdlog::debug("Processed {} skins/skeletons from GLTF file", data->skins_count);
-    }
-
-    // ============================================================================
-    // GLTF Scene Graph Parsing
-    // ============================================================================
-
-    void ParseGLTFNode(cgltf_node* node, GameObject* parent, cgltf_data* data, const std::string& base_path, Scene* scene) {
-        std::string node_name  = node->name ? node->name : "Node";
-        GameObject* nodeObject = scene->CreateObject(node_name, parent);
-
-        glm::vec3 pos(0.0f);
-        glm::quat rot(1.0f, 0.0f, 0.0f, 0.0f);
-        glm::vec3 scl(1.0f);
-
-        if (node->has_translation) {
-            pos = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
-        }
-        if (node->has_rotation) {
-            rot = glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]);
-        }
-        if (node->has_scale) {
-            scl = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
-        }
-
-        if (node->has_matrix && !node->has_translation && !node->has_rotation && !node->has_scale) {
-            glm::mat4 mat = glm::make_mat4(node->matrix);
-            glm::vec3 skew;
-            glm::vec4 perspective;
-            glm::decompose(mat, scl, rot, pos, skew, perspective);
-        }
-
-        nodeObject->SetPosition(pos);
-        nodeObject->SetRotation(rot);
-        nodeObject->SetScale(scl);
-
-        if (node->mesh) {
-            cgltf_mesh* mesh_data = node->mesh;
-
-            for (cgltf_size p = 0; p < mesh_data->primitives_count; ++p) {
-                cgltf_primitive* prim = &mesh_data->primitives[p];
-
-                VertexAttributeData vertexData;
-                if (!ExtractGLTFVertexData(prim, vertexData)) {
-                    continue;
-                }
-
-                std::vector<float> vertices = InterleaveVertexData(vertexData);
-                VertexLayout layout         = vertexData.hasSkinning ? CreateSkinnedVertexLayout() : CreateStandardVertexLayout();
-
-                std::vector<Uint32> indices;
-                EDataType index_type;
-                if (prim->indices) {
-                    ExtractIndexData(prim->indices, indices, index_type);
-                }
-
-                CreateMeshComponentGLTF(nodeObject, layout, vertices, indices, prim->material, base_path);
-            }
-        }
-
-        for (cgltf_size c = 0; c < node->children_count; ++c) {
-            ParseGLTFNode(node->children[c], nodeObject, data, base_path, scene);
+            spdlog::debug("Loaded skeleton with {} joints", skeleton->joints.size());
         }
     }
 
     // ============================================================================
-    // OBJ Parsing
+    // Scene Graph Parsing
     // ============================================================================
 
-    void ParseOBJ(const tinyobj::attrib_t& attrib,
-                  const std::vector<tinyobj::shape_t>& shapes,
-                  const std::vector<tinyobj::material_t>& materials,
-                  GameObject* rootObject,
-                  const std::string& base_path,
-                  Scene* scene) {
+    void ProcessAssimpNode(aiNode* node, GameObject* parent, const aiScene* scene, const std::string& base_path, Scene* sceneObj) {
+        std::string nodeName = node->mName.C_Str();
+        if (nodeName.empty()) {
+            nodeName = "Node";
+        }
 
-        for (const auto& shape : shapes) {
-            GameObject* shapeObject = scene->CreateObject(shape.name.empty() ? "SM_" : shape.name, rootObject);
-            const auto& mesh        = shape.mesh;
+        GameObject* nodeObject = sceneObj->CreateObject(nodeName, parent);
 
-            VertexLayout layout = CreateStandardVertexLayout();
-            std::vector<float> vertices;
-            std::vector<Uint32> indices;
-            size_t vertex_offset = 0;
+        aiMatrix4x4 transform = node->mTransformation;
+        aiVector3D position, scaling;
+        aiQuaternion rotation;
+        transform.Decompose(scaling, rotation, position);
 
-            size_t index_offset = 0;
-            for (size_t f = 0; f < mesh.num_face_vertices.size(); ++f) {
-                size_t fv = mesh.num_face_vertices[f];
+        nodeObject->SetPosition(AiVector3DToGlm(position));
+        nodeObject->SetRotation(AiQuaternionToGlm(rotation));
+        nodeObject->SetScale(AiVector3DToGlm(scaling));
 
-                for (size_t v = 0; v < fv; ++v) {
-                    tinyobj::index_t idx = mesh.indices[index_offset + v];
+        // Process meshes
+        for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+            ProcessAssimpMesh(mesh, nodeObject, scene, base_path);
+        }
 
-                    if (idx.vertex_index >= 0 && 3 * idx.vertex_index + 2 < attrib.vertices.size()) {
-                        vertices.push_back(attrib.vertices[3 * idx.vertex_index]);
-                        vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
-                        vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
-                    } else {
-                        vertices.insert(vertices.end(), {0.0f, 0.0f, 0.0f});
-                    }
-
-                    vertices.insert(vertices.end(), {1.0f, 1.0f, 1.0f});
-
-                    if (idx.texcoord_index >= 0 && 2 * idx.texcoord_index + 1 < attrib.texcoords.size()) {
-                        vertices.push_back(attrib.texcoords[2 * idx.texcoord_index]);
-                        vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
-                    } else {
-                        vertices.insert(vertices.end(), {0.0f, 0.0f});
-                    }
-
-                    if (idx.normal_index >= 0 && 3 * idx.normal_index + 2 < attrib.normals.size()) {
-                        vertices.push_back(attrib.normals[3 * idx.normal_index]);
-                        vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
-                        vertices.push_back(attrib.normals[3 * idx.normal_index + 2]);
-                    } else {
-                        vertices.insert(vertices.end(), {0.0f, 1.0f, 0.0f});
-                    }
-                }
-
-                for (size_t v = 0; v < fv; ++v) {
-                    indices.push_back(static_cast<Uint32>(vertex_offset + v));
-                }
-
-                vertex_offset += fv;
-                index_offset += fv;
-            }
-
-            const tinyobj::material_t* mat_ptr = nullptr;
-            if (!mesh.material_ids.empty() && mesh.material_ids[0] >= 0 && mesh.material_ids[0] < materials.size()) {
-                mat_ptr = &materials[mesh.material_ids[0]];
-            }
-
-            CreateMeshComponentOBJ(shapeObject, layout, vertices, indices, mat_ptr, base_path);
+        // Process children recursively
+        for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+            ProcessAssimpNode(node->mChildren[i], nodeObject, scene, base_path, sceneObj);
         }
     }
 
     // ============================================================================
-    // Public API
+    // Public API Implementation
     // ============================================================================
 
     GameObject* Model::Load(std::string_view path, Scene* scene) {
@@ -1351,93 +748,15 @@ namespace golias {
             return nullptr;
         }
 
-        auto& fs             = Engine::GetInstance().GetFileSystem();
-        std::string fullPath = fs.GetAssetsPath() + std::string(path);
-
-        ModelFormat format = DetectFormatFromHeader(fullPath);
-
-        if (format == ModelFormat::GLTF || format == ModelFormat::GLB) {
-            return LoadGLTF(path, scene);
-        } else if (format == ModelFormat::OBJ) {
-            return LoadOBJ(path, scene);
-        } else {
-            spdlog::error("Unknown or unsupported model format: {}", path);
-            return nullptr;
-        }
+        return LoadAssimp(path, scene);
     }
 
-    GameObject* Model::LoadGLTF(std::string_view path, Scene* scene) {
+    GameObject* Model::LoadAssimp(std::string_view path, Scene* scene) {
         auto& fs = Engine::GetInstance().GetFileSystem();
-
-        std::vector<char> fileData = fs.LoadAssetFile(path);
-        if (fileData.empty()) {
-            spdlog::error("Failed to load GLTF/GLB file: {}", path);
-            return nullptr;
-        }
 
         std::string fullPath = fs.GetAssetsPath() + std::string(path);
-        size_t slash         = path.find_last_of("/\\");
-        std::string basePath = (slash == std::string::npos) ? "" : std::string(path.substr(0, slash + 1));
-
-        std::string model_name(path);
-        if (slash != std::string::npos) {
-            model_name = model_name.substr(slash + 1);
-        }
-
-        cgltf_options options{};
-        cgltf_data* data = nullptr;
-
-        cgltf_result result = cgltf_parse(&options, fileData.data(), fileData.size(), &data);
-
-        if (result != cgltf_result_success) {
-            spdlog::error("Failed to parse GLTF/GLB file: {}", fullPath);
-            return nullptr;
-        }
-
-        result = cgltf_load_buffers(&options, data, fullPath.c_str());
-        if (result != cgltf_result_success) {
-            spdlog::warn("Failed to load some GLTF/GLB buffers, but continuing: {}", fullPath);
-        }
-
-        result = cgltf_validate(data);
-        if (result != cgltf_result_success) {
-            spdlog::warn("GLTF/GLB validation warning: {}", fullPath);
-        }
-
-        if (data->meshes_count == 0 || data->meshes[0].primitives_count == 0) {
-            spdlog::error("No mesh data found in GLTF/GLB: {}", path);
-            cgltf_free(data);
-            return nullptr;
-        }
-
-        GameObject* rootObject = scene->CreateObject(model_name, nullptr);
-
-        // Parse scene graph
-        cgltf_scene* gltf_scene = data->scene ? data->scene : &data->scenes[0];
-        for (cgltf_size i = 0; i < gltf_scene->nodes_count; ++i) {
-            ParseGLTFNode(gltf_scene->nodes[i], rootObject, data, basePath, scene);
-        }
-
-        // Load animations (hierarchy animations)
-        LoadGLTFAnimations(data, rootObject);
-
-        // Load animations (skeletal animations)
-        LoadGLTFSkeleton(data, rootObject);
-
-        cgltf_free(data);
-        fileData.clear();
-        fileData.shrink_to_fit();
-
-        spdlog::info("Successfully loaded GLTF/GLB model: {}", path);
-        return rootObject;
-    }
-
-    GameObject* Model::LoadOBJ(std::string_view path, Scene* scene) {
-        auto& fs = Engine::GetInstance().GetFileSystem();
-
-        std::string dir(path);
-        size_t s = dir.find_last_of("/\\");
-        dir      = (s == std::string::npos) ? "" : dir.substr(0, s + 1);
+        size_t s             = path.find_last_of("/\\");
+        std::string basePath = (s == std::string::npos) ? "" : std::string(path.substr(0, s + 1));
 
         std::string model_name(path);
         size_t last_slash = model_name.find_last_of("/\\");
@@ -1445,34 +764,40 @@ namespace golias {
             model_name = model_name.substr(last_slash + 1);
         }
 
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string err;
+        Assimp::Importer importer;
 
-        std::string full_path = fs.GetAssetsPath() + std::string(path);
-        std::string mtl_dir   = fs.GetAssetsPath() + dir;
+        unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace
+                           | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_LimitBoneWeights
+                           | aiProcess_RemoveRedundantMaterials | aiProcess_SplitLargeMeshes | aiProcess_ValidateDataStructure
+                           | aiProcess_OptimizeMeshes;
 
-        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, full_path.c_str(), mtl_dir.c_str(), true);
+        const aiScene* aiScene = importer.ReadFile(fullPath, flags);
 
-        if (!err.empty()) {
-            if (!ret) {
-                spdlog::error("OBJ error: {}", err);
-                return nullptr;
-            } else {
-                spdlog::warn("OBJ warning: {}", err);
-            }
+        if (!aiScene || aiScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !aiScene->mRootNode) {
+            spdlog::error("Failed to load model: {} - {}", path, importer.GetErrorString());
+            return nullptr;
         }
 
-        if (shapes.empty()) {
-            spdlog::error("No StaticMeshes found in OBJ: {}", path);
+        if (aiScene->mNumMeshes == 0) {
+            spdlog::error("No mesh data found in model: {}", path);
             return nullptr;
         }
 
         GameObject* rootObject = scene->CreateObject(model_name, nullptr);
-        ParseOBJ(attrib, shapes, materials, rootObject, dir, scene);
 
-        spdlog::info("Successfully loaded OBJ model: {}", path);
+        g_boneNameToIndex.clear();
+        LoadAssimpSkeleton(aiScene, rootObject);
+
+        ProcessAssimpNode(aiScene->mRootNode, rootObject, aiScene, basePath, scene);
+
+        LoadAssimpAnimations(aiScene, rootObject);
+
+        spdlog::info("Successfully loaded model '{}' with {} meshes, {} materials, {} animations",
+                     path,
+                     aiScene->mNumMeshes,
+                     aiScene->mNumMaterials,
+                     aiScene->mNumAnimations);
+
         return rootObject;
     }
 

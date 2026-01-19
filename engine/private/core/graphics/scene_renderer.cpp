@@ -94,7 +94,8 @@ namespace golias {
         if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
             shader->SetUniform("USE_SKINNING", true);
             const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
-            shader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
+            int count = std::min<int>(jointMatrices.size(), 128);
+            shader->SetUniform("BONE_MATRICES", jointMatrices.data(), count);
         } else {
             shader->SetUniform("USE_SKINNING", false);
         }

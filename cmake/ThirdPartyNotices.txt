@@ -21,14 +21,9 @@ License: Zlib
 https://github.com/bulletphysics/bullet3
 
 ------------------------------------------------------------
-cgltf
-License: Public Domain / MIT
-https://github.com/jkuhlmann/cgltf
-
-------------------------------------------------------------
-tinyobjloader
-License: Public Domain / MIT
-https://github.com/tinyobjloader/tinyobjloader
+Assimp
+License: Open Asset Import Library (assimp) 3-clause BSD-License
+https://github.com/assimp/assimp
 
 ------------------------------------------------------------
 nlohmann-json

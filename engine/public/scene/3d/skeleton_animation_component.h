@@ -40,6 +40,7 @@ namespace golias {
 
     struct Skeleton {
         std::string name;
+        glm::mat4 globalInverseTransform = glm::mat4(1.0f); 
         std::vector<SkeletonJoint> joints;
         std::vector<glm::mat4> jointMatrices;
     };
@@ -51,7 +52,7 @@ namespace golias {
         void Start() override;
         void Update(float deltaTime) override;
 
-        void SetSkeleton(std::shared_ptr<Skeleton> skeleton);
+        void SetSkeleton(const std::shared_ptr<Skeleton>& pSkeleton);
         void SetClip(SkeletonAnimationClip* clip);
         void RegisterClip(const std::string_view pName, const std::shared_ptr<SkeletonAnimationClip>& clip);
         void Play(const std::string_view pName, bool loop = true);
@@ -79,6 +80,8 @@ namespace golias {
 
         std::unordered_map<std::string, std::shared_ptr<SkeletonAnimationClip>> animationClips;
         std::vector<int> trackToJointIndex;
+
+        void ComputeGlobalTransformRecursive(int index, std::vector<glm::mat4>& globals, std::vector<bool>& computed);
     };
 
 } // namespace golias

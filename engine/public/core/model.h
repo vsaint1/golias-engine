@@ -14,7 +14,7 @@ namespace golias {
     /**
      * @brief Model loading and parsing utility
      * 
-     * Supports loading GLTF, GLB, and OBJ model formats.
+     * Supports loading 3D models from various formats (GLTF, OBJ, FBX, etc.) using Assimp.
      * Creates GameObject hierarchies with appropriate components (meshes, materials, animations).
      */
     class Model {
@@ -32,14 +32,8 @@ namespace golias {
     private:
         Model() = delete;
         
-        // GLTF/GLB loading
-        static GameObject* LoadGLTF(std::string_view path, Scene* scene);
+        static GameObject* LoadAssimp(std::string_view path, Scene* scene);
         
-        // OBJ loading
-        static GameObject* LoadOBJ(std::string_view path, Scene* scene);
-
-        // FBX loading (not implemented)
-        static GameObject* LoadFBX(std::string_view path, Scene* scene) { return nullptr; }
     };
 
 } // namespace golias

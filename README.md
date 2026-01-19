@@ -94,7 +94,7 @@ powerful**.
 
 | Asset Type | Supported Formats                              |
 |------------|------------------------------------------------|
-| 3D Models  | OBJ, GLTF, FBX, GLB                            |
+| 3D Models  | See [Assimp](https://www.assimp.org/) Supported Formats                        |
 | Images     | PNG, JPEG, BMP, TGA, DDS, ETC.                 |
 | Fonts      | TTF & OTF.                                     |
 | Audio      | OGG, WAV, FLAC, MP3, ETC.                      |
@@ -128,8 +128,7 @@ Please refer to the [BUILDING.md](BUILDING.md) file for detailed instructions on
 | **[SDL3](https://github.com/libsdl-org/SDL)** | Windowing, input/events handling, and cross-platform abstraction | Zlib License |
 | **[GLM](https://github.com/g-truc/glm)** | Header-only mathematics library for graphics (vectors, matrices, quaternions) | MIT License |
 | **[Bullet Physics](https://github.com/bulletphysics/bullet3)** | Real-time 3D physics simulation | Zlib License |
-| **[cgltf](https://github.com/jkuhlmann/cgltf)** | Lightweight glTF 2.0 parsing library | MIT License |
-| **[tinyobjloader](https://github.com/tinyobjloader/tinyobjloader)** | Wavefront OBJ loader | MIT License |
+| **[Assimp](https://github.com/assimp/assimp)** | Open Asset Import Library for 3D model loading | BSD License |
 | **[stb_image](https://github.com/nothings/stb)** | Header-only image loading (PNG, JPG, TGA, etc.) | Public Domain / MIT |
 | **[miniaudio](https://github.com/mackron/miniaudio)** | Header-only audio playback and capture library | Public Domain / MIT |
 | **[FreeType](https://github.com/freetype/freetype)** | Font rasterization engine | FreeType License (BSD-style) |

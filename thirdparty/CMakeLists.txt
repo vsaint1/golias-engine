@@ -25,9 +25,6 @@ add_subdirectory(glm)
 add_subdirectory(spdlog)
 
 add_subdirectory(json)
-add_subdirectory(cgltf)
-add_subdirectory(tinyobjloader)
-
 
 set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
 set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
@@ -37,6 +34,10 @@ add_subdirectory(bullet3 EXCLUDE_FROM_ALL)
 add_subdirectory(mini_audio)
 
 add_subdirectory(freetype)
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Build ASSIMP tests" FORCE)
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "Build ASSIMP with internal ZLIB" FORCE)
+add_subdirectory(assimp)
 
 add_library(thirdparty INTERFACE)
 
@@ -50,12 +51,11 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         glad
         spdlog
         json
-        cgltf
-        tinyobjloader
         BulletDynamics
         BulletSoftBody
         BulletCollision
         LinearMath
         mini_audio
         freetype
+        assimp
 )
