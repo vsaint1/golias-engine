@@ -21,36 +21,33 @@ namespace golias {
         ghostObject->setCollisionShape(capsule);
         ghostObject->setCollisionFlags(ghostObject->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
 
-        // ghostPairCallback = std::make_unique<btGhostPairCallback>();
-
         physicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 
         const btScalar stepHeight = btScalar(0.35f);
         controller                = std::make_unique<btKinematicCharacterController>(ghostObject.get(), capsule, stepHeight);
 
         controller->setMaxSlope(btRadians(maxSlopeDegrees));
+
         controller->setGravity(physicsWorld->getGravity());
+
         controller->setMaxPenetrationDepth(btScalar(0.05f));
         controller->setJumpSpeed(btScalar(7.0f));
-        controller->setFallSpeed(btScalar(20.0f));
-
+        controller->setFallSpeed(btScalar(55.0f));
         controller->setStepHeight(stepHeight);
-
         controller->setUpInterpolate(true);
         controller->setUseGhostSweepTest(true);
 
         physicsWorld->addCollisionObject(ghostObject.get(), btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::AllFilter);
-
         physicsWorld->addAction(controller.get());
     }
 
     KinematicCharacterController::~KinematicCharacterController() {
         const auto physicsWorld = Engine::GetInstance().GetPhysicsManager().GetPhyisicsWorld();
-        
+
         if (!physicsWorld) {
             return;
         }
-        
+
         if (controller) {
             physicsWorld->removeAction(controller.get());
         }
@@ -62,8 +59,7 @@ namespace golias {
 
     glm::vec3 KinematicCharacterController::GetPosition() const {
         const auto& transform = ghostObject->getWorldTransform();
-        // const glm::vec3 offset = {0.0f, _height + 0.5f + _radius, 0.0f};
-        btVector3 origin = transform.getOrigin();
+        btVector3 origin      = transform.getOrigin();
         return glm::vec3(origin.getX(), origin.getY(), origin.getZ());
     }
 
@@ -86,11 +82,6 @@ namespace golias {
         ghostObject->setWorldTransform(transform);
     }
 
-    void KinematicCharacterController::Move(const glm::vec3& direction) {
-
-        btVector3 dir(btScalar(direction.x), btScalar(direction.y), btScalar(direction.z));
-        controller->setWalkDirection(dir);
-    }
 
     void KinematicCharacterController::Jump(const glm::vec3& force) {
         if (controller->onGround()) {
@@ -99,8 +90,25 @@ namespace golias {
         }
     }
 
+    void KinematicCharacterController::SetGravity(const glm::vec3& gravity) {
+        btVector3 grav(btScalar(gravity.x), btScalar(gravity.y), btScalar(gravity.z));
+        controller->setGravity(grav);
+    }
+
     bool KinematicCharacterController::OnGround() const {
+
         return controller->onGround();
+    }
+
+
+    void KinematicCharacterController::SetWalkDirection(const glm::vec3& dir) {
+        btVector3 walkDir(btScalar(dir.x), btScalar(dir.y), btScalar(dir.z));
+        controller->setWalkDirection(walkDir);
+    }
+
+
+    btKinematicCharacterController* KinematicCharacterController::GetNativeController() const {
+        return controller.get();
     }
 
     void KinematicCharacterController::SetMaxSlope(float value) {

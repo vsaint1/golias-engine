@@ -22,7 +22,6 @@ namespace golias {
         glm::quat GetRotation() const;
         void SetRotation(const glm::quat& rot);
 
-        void Move(const glm::vec3& direction);
         void Jump(const glm::vec3& force);
 
         float GetMaxSlope() const;
@@ -33,8 +32,14 @@ namespace golias {
         
         float GetJumpSpeed() const;
         void SetJumpSpeed(float value);
-        
+
         bool OnGround() const;
+
+        void SetWalkDirection(const glm::vec3& dir);
+        
+        void SetGravity(const glm::vec3& gravity);
+
+        btKinematicCharacterController* GetNativeController() const;
 
     private:
         KinematicCharacterController() = default;

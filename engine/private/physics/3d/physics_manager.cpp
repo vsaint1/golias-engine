@@ -8,21 +8,21 @@
 
 namespace golias {
 
-    PhysicsManager::PhysicsManager()  = default;
-    
+    PhysicsManager::PhysicsManager() = default;
+
     PhysicsManager::~PhysicsManager() {
-        
+
         if (dynamicsWorld) {
             int numCollisionObjects = dynamicsWorld->getNumCollisionObjects();
             for (int i = numCollisionObjects - 1; i >= 0; --i) {
                 btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-                btRigidBody* body = btRigidBody::upcast(obj);
+                btRigidBody* body      = btRigidBody::upcast(obj);
                 if (body) {
                     dynamicsWorld->removeRigidBody(body);
                 }
             }
         }
-        
+
         dynamicsWorld.reset();
         solver.reset();
         dispatcher.reset();
@@ -63,12 +63,20 @@ namespace golias {
     }
 
     void PhysicsManager::StepSimulation(float deltaTime) {
-        constexpr btScalar FIXED_TIME_STEP = 1 / 120.0f;
-        constexpr int MAX_SUB_STEPS        = 4;
-
-        if (dynamicsWorld) {
-            dynamicsWorld->stepSimulation(deltaTime, MAX_SUB_STEPS, FIXED_TIME_STEP);
+        if (!dynamicsWorld) {
+            return;
         }
+
+        // NOTE: this needs to be fixed, currently using 60 FPS sometimes causes issues with the simulation
+        const float MIN_DELTA = 0.0001f;
+        const float MAX_DELTA = 0.1f;
+        deltaTime             = glm::clamp(deltaTime, MIN_DELTA, MAX_DELTA);
+
+        constexpr btScalar FIXED_TIME_STEP = 1.0f / 60.0f;
+
+        constexpr int MAX_SUB_STEPS = 4;
+
+        dynamicsWorld->stepSimulation(deltaTime, MAX_SUB_STEPS, FIXED_TIME_STEP);
     }
 
     void PhysicsManager::AddRigidBody(RigidBody* pBody) {

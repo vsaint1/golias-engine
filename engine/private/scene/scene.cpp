@@ -9,7 +9,7 @@
 #include "scene/3d/audio_component.h"
 #include "scene/3d/audio_listener_component.h"
 #include "scene/3d/camera_component.h"
-#include "scene/3d/fp_controller_component.h"
+#include "scene/3d/character_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
 #include "scene/3d/world_environment_component.h"
@@ -403,7 +403,7 @@ namespace golias {
     void Scene::RegisterTypes() {
         MeshRendererComponent::Register();
         CameraComponent::Register();
-        FirstPersonControllerComponent::Register();
+        CharacterControllerComponent::Register();
         AnimationComponent::Register();
         PhysicsComponent::Register();
         AudioComponent::Register();

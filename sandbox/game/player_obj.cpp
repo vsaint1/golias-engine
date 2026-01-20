@@ -3,68 +3,112 @@
 #include "bullet.h"
 
 void Player::Start() {
+    auto scene          = golias::Engine::GetInstance().GetScene();
+    characterController = GetComponent<golias::CharacterControllerComponent>();
 
-#if defined(SCENE_LOAD_FROM_FILE)
-    auto scene = golias::Engine::GetInstance().GetScene();
-
-    fpControllerComp = new golias::FirstPersonControllerComponent();
-    auto camera      = scene->CreateObject<golias::GameObject>("Camera");
-    camera->AddComponent(new golias::CameraComponent());
-    camera->AddComponent(fpControllerComp);
-    camera->SetPosition({0.0f, 2.0f, 5.0f});
-    scene->SetMainCamera(camera);
-
-    auto gun = golias::Model::Load("models/carbine/scene.gltf", scene);
-    gun->SetParent(camera);
-    gun->SetPosition({0.75f, -0.5f, -0.75f});
-    gun->SetScale({-1.0f, 1.0f, 1.0f});
-
-    if (auto bullet = gun->FindChildByName("bullet_33")) {
-        bullet->SetActive(false);
-    }
-
-    if (auto fire = gun->FindChildByName("BOOM_35")) {
-        fire->SetActive(false);
-    }
-
-    if (auto ac = gun->GetComponent<golias::AnimationComponent>()) {
-        animComp = ac;
-    }
-
-#else
+    verticalVelocity = 0.0f;
 
     if (auto bullet = FindChildByName("bullet_33")) {
         bullet->SetActive(false);
     }
-
     if (auto fire = FindChildByName("BOOM_35")) {
         fire->SetActive(false);
     }
-
     if (auto gun = FindChildByName("Gun")) {
         if (auto ac = gun->GetComponent<golias::AnimationComponent>()) {
             animComp = ac;
         }
     }
-
     audioComp         = GetComponent<golias::AudioComponent>();
     audioListenerComp = GetComponent<golias::AudioListenerComponent>();
-#endif
 }
 
 Player::Player() {
+    verticalVelocity = 0.0f;
+    wasMousePressed  = false;
+}
+
+// *unused* Let the engine handle gravity
+void Player::ApplyGravity() {
+    if (!characterController) {
+        return;
+    }
+
+    if (characterController->IsGrounded() && verticalVelocity < 0.0f) {
+        verticalVelocity = -2.0f;
+    }
+
+    verticalVelocity += gravity * lastDeltaTime;
+}
+
+void Player::Move(float deltaTime) {
+    if (!characterController) {
+        return;
+    }
+
+    auto& input = golias::Engine::GetInstance().GetInputManager();
+
+    glm::quat yawRot     = glm::angleAxis(glm::radians(yaw), glm::vec3(0, 1, 0));
+    glm::vec3 camForward = yawRot * glm::vec3(0, 0, -1);
+    glm::vec3 camRight   = yawRot * glm::vec3(1, 0, 0);
+
+    camForward.y = 0.0f;
+    camRight.y   = 0.0f;
+
+    camForward = glm::normalize(camForward);
+    camRight   = glm::normalize(camRight);
+
+    glm::vec3 horizontalMove(0.0f);
+    if (input.IsKeyPressed(SDLK_W)) {
+        horizontalMove += camForward;
+    }
+
+    if (input.IsKeyPressed(SDLK_S)) {
+        horizontalMove -= camForward;
+    }
+
+    if (input.IsKeyPressed(SDLK_D)) {
+        horizontalMove += camRight;
+    }
+
+    if (input.IsKeyPressed(SDLK_A)) {
+        horizontalMove -= camRight;
+    }
+
+    if (glm::length(horizontalMove) > 0.01f) {
+        horizontalMove = glm::normalize(horizontalMove);
+    }
+
+    glm::vec3 velocity = horizontalMove * moveSpeed;
+
+    characterController->Move(velocity * deltaTime);
 }
 
 void Player::Update(float deltaTime) {
     golias::GameObject::Update(deltaTime);
+    if (!characterController) {
+        return;
+    }
+
+    lastDeltaTime = deltaTime;
 
     auto& input = golias::Engine::GetInstance().GetInputManager();
 
+    if (input.IsKeyPressed(SDLK_SPACE)) {
+        characterController->Jump(glm::vec3(0.0f, jumpForce, 0.0f));
+    }
+
+    Move(deltaTime);
+
     bool isMousePressed = input.IsMouseButtonPressed(SDL_BUTTON_LEFT);
-    
     if (isMousePressed && !wasMousePressed) {
-        animComp->Play("shoot", false);
-        audioComp->Play("GunShot", false);
+        if (animComp) {
+            animComp->Play("shoot", false);
+        }
+
+        if (audioComp) {
+            audioComp->Play("GunShot", false);
+        }
 
         auto bullet = golias::Engine::GetInstance().GetScene()->CreateObject<Bullet>("Bullet");
         auto mesh   = golias::Mesh::CreateSphere(0.2f, 32, 32);
@@ -76,18 +120,15 @@ void Player::Update(float deltaTime) {
 
         auto collider = std::make_shared<golias::SphereCollider>(0.2f);
         auto rb       = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 10.0f);
-
         bullet->AddComponent(new golias::PhysicsComponent(rb));
 
         glm::vec3 front = GetRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
         rb->ApplyImpulse(front * 500.0f);
     }
-    
     wasMousePressed = isMousePressed;
 
-    if (input.IsKeyPressed(SDLK_R)) {
-        if (!animComp->IsPlaying()) {
-            animComp->Play("reload", false);
-        }
+    // Reload
+    if (input.IsKeyPressed(SDLK_R) && animComp && !animComp->IsPlaying()) {
+        animComp->Play("reload", false);
     }
 }

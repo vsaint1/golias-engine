@@ -729,7 +729,7 @@
                     "type": "CameraComponent"
                 },
                 {
-                    "type": "FirstPersonControllerComponent"
+                    "type": "CharacterControllerComponent"
                 },
                 {
                     "type": "AudioListenerComponent"
