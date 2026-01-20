@@ -178,43 +178,32 @@ endif ()
 # -----------------------------
 if (EMSCRIPTEN)
     add_executable(${PROJECT_NAME} ${SOURCES})
-
-    set(EM_FLAGS
-            "-sUSE_WEBGL2=1"
-            "-sFULL_ES3=1"
-            "-sMIN_WEBGL_VERSION=2"
-            "-sMAX_WEBGL_VERSION=2"
-            "-sALLOW_MEMORY_GROWTH=1"
-            "-sNO_DISABLE_EXCEPTION_CATCHING=1"
-            "-sDISABLE_EXCEPTION_THROWING=0"
-            "-sDISABLE_EXCEPTION_CATCHING=0"
-            "-sFETCH=1"
-            "-sASYNCIFY"
-            "-sFORCE_FILESYSTEM=1"
-            "-sSTACK_SIZE=10MB"
-            "-sINITIAL_MEMORY=128MB"
-            "--preload-file ${CMAKE_SOURCE_DIR}/res@/res"
+    
+    set(EM_COMPILE_FLAGS  "-Wno-c++11-narrowing")
+    
+    set(EM_LINK_FLAGS
+        "-sUSE_WEBGL2=1"
+        "-sFULL_ES3=1"
+        "-sMIN_WEBGL_VERSION=2"
+        "-sMAX_WEBGL_VERSION=2"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sFETCH=1"
+        "-sASYNCIFY"
+        "-sSTACK_SIZE=10MB"
+        "-sINITIAL_MEMORY=128MB"
+        "--preload-file ${CMAKE_SOURCE_DIR}/res@/res"
     )
-
-    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wno-c++11-narrowing)
-
-    string(REPLACE ";" " " EM_FLAGS_STR "${EM_FLAGS}")
+    
+    target_compile_options(${PROJECT_NAME} PRIVATE ${EM_COMPILE_FLAGS})
+    
+    string(REPLACE ";" " " EM_LINK_FLAGS_STR "${EM_LINK_FLAGS}")
 
     set_target_properties(${PROJECT_NAME} PROPERTIES
-            OUTPUT_NAME "index"
-            SUFFIX ".html"
-            COMPILE_FLAGS "${EM_FLAGS_STR}"
-            LINK_FLAGS "${EM_FLAGS_STR}"
-    )
+        OUTPUT_NAME "index"
+        SUFFIX ".html"
+        LINK_FLAGS "${EM_LINK_FLAGS_STR}")
 
-    # Optional: custom shell (HTML template)
-    # set(SHELL_HTML_FILE "${CMAKE_SOURCE_DIR}/templates/web/shell.html")
-    # if (EXISTS ${SHELL_HTML_FILE})
-    #     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS
-    #         "${EM_FLAGS_STR} --shell-file ${SHELL_HTML_FILE}")
-    # endif ()
-endif ()
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_executable(${PROJECT_NAME} ${SOURCES})
@@ -229,7 +218,7 @@ endif ()
 # =========================================================
 #  COMMON TARGET SETTINGS
 # =========================================================
-# target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 
 
@@ -237,18 +226,4 @@ target_link_libraries(${PROJECT_NAME} PUBLIC engine)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/cmake/ThirdPartyNotices.txt
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/ThirdPartyNotices.txt
-)
-
-# if(MSVC)
-# get_target_property(DXC_DLLS DirectxShaderCompiler DXC_RUNTIME_DLLS)
-
-# add_custom_command(
-#     TARGET ${PROJECT_NAME}
-#     POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         ${DXC_DLLS}
-#         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-# )
-
-# endif()
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/ThirdPartyNotices.txt)
