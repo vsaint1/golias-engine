@@ -42,6 +42,8 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 add_compile_definitions(ASSIMP_BUILD_NO_GLTF1_IMPORTER=0)
 add_subdirectory(assimp)
 
+add_subdirectory(entt)
+
 add_library(thirdparty INTERFACE)
 
 target_include_directories(${PROJECT_NAME}  INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -61,4 +63,5 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         mini_audio
         freetype
         assimp
+        entt
 )
