@@ -33,6 +33,8 @@ namespace golias {
 
         CalculateLightSpaceMatrices();
 
+        ShadowPass();
+
         std::vector<DrawCommand> opaqueCommands;
         std::vector<DrawCommand> transparentCommands;
 
@@ -65,14 +67,17 @@ namespace golias {
                 return distA > distB;
             });
         }
-
-        ShadowPass();
+        
+        BeginMainRenderPass();
+        
         GeometryOpaquePass(opaqueCommands);
         SkyboxPass();
         GeometryTransparentPass(transparentCommands);
         WorldCanvasPass();
         Sprite2DPass();
         ScreenCanvasPass();
+        
+        rendering_device->EndRenderPass();
     }
 
     void SceneRenderer::SetupMaterialUniforms(const DrawCommand& command) {
@@ -151,9 +156,29 @@ namespace golias {
 
     void SceneRenderer::SetupShadowUniforms(Shader* shader) {
         if (renderContext.shadowsEnabled && !directional_lights.empty()) {
-            rendering_device->BindTexture(
-                shader, "SHADOW_MAP", 6, rendering_device->GetDefaultShadowMapFramebuffer()->GetDepthAttachment().get());
-            shader->SetUniform("LIGHT_SPACE_MATRIX", directional_lights[0].lightSpaceMatrix);
+            
+            
+            // Bind all cascade shadow maps
+            for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
+                std::string uniformName = "SHADOW_MAP_CASCADE_" + std::to_string(i);
+                rendering_device->BindTexture(
+                    shader, uniformName, 6 + i, 
+                    rendering_device->GetCascadeShadowMapFramebuffer(i)->GetDepthAttachment().get());
+            }
+            
+            // Set cascade matrices
+            for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
+                std::string uniformName = "LIGHT_SPACE_MATRIX_CASCADE_" + std::to_string(i);
+                shader->SetUniform(uniformName, directional_lights[0].lightSpaceMatrices[i]);
+            }
+            
+            // Set cascade split distances as individual floats
+            for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
+                std::string uniformName = "CASCADE_SPLIT_" + std::to_string(i);
+                shader->SetUniform(uniformName, directional_lights[0].cascadeSplits[i]);
+            }
+
+            shader->SetUniform("DEBUG_CASCADES", renderContext.debugCascades);
         }
     }
 
@@ -208,22 +233,116 @@ namespace golias {
                 continue;
             }
 
-            const float orthoSize  = 30.0f;
-            const float near_plane = 1.0f;
-            const float far_plane  = 150.0f;
-
-            glm::mat4 lightProjection = glm::ortho(-orthoSize, orthoSize, -orthoSize, orthoSize, near_plane, far_plane);
+            const float camera_near = 0.1f;
+            const float camera_far = 150.0f;
+            
+            // Calculate cascade split distances using practical split scheme
+            // Blend between logarithmic and uniform distribution
+            const float lambda = 0.75f; // Blending factor
+            
+            for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
+                float p = static_cast<float>(i + 1) / DirectionalLightCommand::NUM_CASCADES;
+                float log_split = camera_near * std::pow(camera_far / camera_near, p);
+                float uniform_split = camera_near + (camera_far - camera_near) * p;
+                
+                directional_light.cascadeSplits[i] = lambda * log_split + (1.0f - lambda) * uniform_split;
+            }
+            
+        
 
             glm::vec3 lightDir = glm::normalize(directional_light.direction);
+            
+            float lastSplitDist = camera_near;
+            for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
+                float splitDist = directional_light.cascadeSplits[i];
+                
+                glm::vec3 frustumCorners[8];
+                CalculateFrustumCorners(renderContext.camera.projectionMatrix,
+                                       renderContext.camera.viewMatrix,
+                                       lastSplitDist,
+                                       splitDist,
+                                       frustumCorners);
+                
+                // Calculate frustum center
+                glm::vec3 frustumCenter = glm::vec3(0.0f);
+                for (int j = 0; j < 8; ++j) {
+                    frustumCenter += frustumCorners[j];
+                }
+                frustumCenter /= 8.0f;
+                
+                // Calculate radius (bounding sphere of frustum)
+                float radius = 0.0f;
+                for (int j = 0; j < 8; ++j) {
+                    float distance = glm::length(frustumCorners[j] - frustumCenter);
+                    radius = std::max(radius, distance);
+                }
+                
+                // Round radius to reduce shimmering
+                radius = std::ceil(radius * 16.0f) / 16.0f;
+                
+                // Calculate light view matrix
+                glm::vec3 lightPos = frustumCenter - lightDir * radius;
+                glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+                
+                // Calculate orthographic projection
+                glm::mat4 lightProjection = glm::ortho(-radius, radius, -radius, radius, 0.0f, radius * 2.0f);
+                
+                // Stabilize shadow maps by snapping to texel grid
+                glm::mat4 shadowMatrix = lightProjection * lightView;
+                glm::vec4 shadowOrigin = shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                const float texelSize = (radius * 2.0f) / 2048.0f; // Assuming 2048 resolution
+                shadowOrigin *= (1.0f / texelSize);
+                shadowOrigin = glm::floor(shadowOrigin);
+                shadowOrigin *= texelSize;
+                
+                glm::vec4 roundOffset = shadowOrigin - (shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                lightProjection[3][0] += roundOffset.x;
+                lightProjection[3][1] += roundOffset.y;
+                
+                directional_light.lightSpaceMatrices[i] = lightProjection * lightView;
+                
+                lastSplitDist = splitDist;
+            }
+        }
+    }
 
-            glm::vec3 cameraFront  = glm::normalize(-renderContext.camera.viewMatrix[2]);
-            glm::vec3 shadowCenter = renderContext.camera.position + cameraFront * (orthoSize * 0.5f);
-
-            glm::vec3 lightPos = shadowCenter - lightDir * (far_plane * 0.5f);
-
-            glm::mat4 lightView = glm::lookAt(lightPos, shadowCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-
-            directional_light.lightSpaceMatrix = lightProjection * lightView;
+    void SceneRenderer::CalculateFrustumCorners(const glm::mat4& proj, const glm::mat4& view, 
+                                                float nearPlane, float farPlane, 
+                                                glm::vec3 frustumCorners[8]) {
+        glm::mat4 invViewProj = glm::inverse(proj * view);
+        
+        // For perspective projection: ndc_z = (far + near) / (far - near) + (2 * far * near) / ((far - near) * view_z)
+        
+        // Get camera near and far from projection matrix
+        float cam_near = proj[3][2] / (proj[2][2] - 1.0f);
+        float cam_far = proj[3][2] / (proj[2][2] + 1.0f);
+        
+        // Convert view-space depths to NDC Z
+        float ndcNear, ndcFar;
+        
+        if (proj[3][3] == 0.0f) {
+            // Perspective projection
+            ndcNear = (cam_far + cam_near) / (cam_far - cam_near) + (2.0f * cam_far * cam_near) / ((cam_far - cam_near) * -nearPlane);
+            ndcFar = (cam_far + cam_near) / (cam_far - cam_near) + (2.0f * cam_far * cam_near) / ((cam_far - cam_near) * -farPlane);
+        } else {
+            // Orthographic projection
+            ndcNear = (2.0f * nearPlane - cam_far - cam_near) / (cam_far - cam_near);
+            ndcFar = (2.0f * farPlane - cam_far - cam_near) / (cam_far - cam_near);
+        }
+        
+        int index = 0;
+        for (int z = 0; z < 2; ++z) {
+            for (int y = 0; y < 2; ++y) {
+                for (int x = 0; x < 2; ++x) {
+                    glm::vec4 corner = invViewProj * glm::vec4(
+                        2.0f * x - 1.0f,
+                        2.0f * y - 1.0f,
+                        z == 0 ? ndcNear : ndcFar,
+                        1.0f
+                    );
+                    frustumCorners[index++] = glm::vec3(corner) / corner.w;
+                }
+            }
         }
     }
 
@@ -244,54 +363,119 @@ namespace golias {
             return;
         }
 
-        rendering_device->SetDepthTest(true);
-        rendering_device->SetDepthWrite(true);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_FRONT);
-
-        rendering_device->GetDefaultShadowMapFramebuffer()->Bind();
-        rendering_device->ClearBuffer(EClearFlags::CLEAR_DEPTH);
+        rendering_device->ApplyPipelineState(pipeline_shadow);
 
         auto shadowShader = rendering_device->GetDefaultShadowMapShader();
-        shadowShader->Bind();
+        rendering_device->BindShader(shadowShader.get());
 
-        for (const auto& directional_light : directional_lights) {
-            if (!directional_light.castShadows) {
-                continue;
-            }
-
-            shadowShader->SetUniform("LIGHT_SPACE_MATRIX", directional_light.lightSpaceMatrix);
-
-            for (const auto& command : command_queue) {
-                if (!command.mesh || !command.material || command.material->IsTransparent()) {
+        for (int cascadeIndex = 0; cascadeIndex < DirectionalLightCommand::NUM_CASCADES; ++cascadeIndex) {
+            for (const auto& directional_light : directional_lights) {
+                if (!directional_light.castShadows) {
                     continue;
                 }
 
-                shadowShader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+                auto cascadeFBO = rendering_device->GetCascadeShadowMapFramebuffer(cascadeIndex);
+                
+                RenderPassBeginInfo rpInfo;
+                rpInfo.framebuffer = cascadeFBO.get();
+                rpInfo.colorLoadOp = ELoadOp::DONT_CARE;
+                rpInfo.colorStoreOp = EStoreOp::DONT_CARE;
+                rpInfo.depthLoadOp = ELoadOp::CLEAR;
+                rpInfo.depthStoreOp = EStoreOp::STORE;
+                rpInfo.clearValues.push_back(ClearValue::DepthStencil(1.0f, 0));
 
-                if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
-                    shadowShader->SetUniform("USE_SKINNING", true);
-                    const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
-                    shadowShader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
-                } else {
-                    shadowShader->SetUniform("USE_SKINNING", false);
+                const auto& spec = rpInfo.framebuffer->GetSpecification();
+                rpInfo.viewport.x = 0;
+                rpInfo.viewport.y = 0;
+                rpInfo.viewport.width = spec.width;
+                rpInfo.viewport.height = spec.height;
+                rpInfo.viewport.min_depth = 0.0f;
+                rpInfo.viewport.max_depth = 1.0f;
+                rpInfo.scissor.x = 0;
+                rpInfo.scissor.y = 0;
+                rpInfo.scissor.width = spec.width;
+                rpInfo.scissor.height = spec.height;
+
+                rendering_device->BeginRenderPass(rpInfo);
+
+                // Set light space matrix for this cascade
+                shadowShader->SetUniform("LIGHT_SPACE_MATRIX", directional_light.lightSpaceMatrices[cascadeIndex]);
+
+                // Render all shadow casters
+                for (const auto& command : command_queue) {
+                    if (!command.mesh || !command.material || command.material->IsTransparent()) {
+                        continue;
+                    }
+
+                    shadowShader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+
+                    if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+                        shadowShader->SetUniform("USE_SKINNING", true);
+                        const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+                        shadowShader->SetUniform("BONE_MATRICES", jointMatrices.data(), static_cast<int>(jointMatrices.size()));
+                    } else {
+                        shadowShader->SetUniform("USE_SKINNING", false);
+                    }
+
+                    rendering_device->BindMesh(command.mesh);
+                    rendering_device->DrawMesh(command.mesh);
                 }
 
-                rendering_device->BindMesh(command.mesh);
-                rendering_device->DrawMesh(command.mesh);
+                rendering_device->EndRenderPass();
+                
+                break;
             }
-            break;
         }
+    }
 
-        rendering_device->GetDefaultShadowMapFramebuffer()->Unbind();
+    void SceneRenderer::BeginMainRenderPass() {
+        RenderPassBeginInfo rpInfo;
+        rpInfo.framebuffer = nullptr; // nullptr means default framebuffer (screen)
+        rpInfo.colorLoadOp = ELoadOp::CLEAR;
+        rpInfo.colorStoreOp = EStoreOp::STORE;
+        rpInfo.depthLoadOp = ELoadOp::CLEAR;
+        rpInfo.depthStoreOp = EStoreOp::STORE;
+        
+        if (world_environment_command.environmentComponent) {
+            EWorldEnvironmentMode envMode = world_environment_command.environmentComponent->GetEnvironmentMode();
+            if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR ||
+                envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
+                glm::vec4 clearColor = world_environment_command.environmentComponent->GetClearColor();
+                rpInfo.clearValues.push_back(ClearValue::Color(clearColor));
+            } else {
+                rpInfo.clearValues.push_back(ClearValue::Color(0.0f, 0.0f, 0.0f, 1.0f));
+            }
+        } else {
+            rpInfo.clearValues.push_back(ClearValue::Color(renderContext.clearColor));
+        }
+        rpInfo.clearValues.push_back(ClearValue::DepthStencil(1.0f, 0));
+        
+        int windowWidth, windowHeight;
+        SDL_GetWindowSize(rendering_device->GetWindow(), &windowWidth, &windowHeight);
+        
+        
+        rpInfo.viewport.x = 0;
+        rpInfo.viewport.y = 0;
+        rpInfo.viewport.width = windowWidth;
+        rpInfo.viewport.height = windowHeight;
+        rpInfo.viewport.min_depth = 0.0f;
+        rpInfo.viewport.max_depth = 1.0f;
+        
+        rpInfo.scissor.x = 0;
+        rpInfo.scissor.y = 0;
+        rpInfo.scissor.width = windowWidth;
+        rpInfo.scissor.height = windowHeight;
+        
+        rendering_device->BeginRenderPass(rpInfo);
+    }
+
+
+    void SceneRenderer::EndMainRenderPass() {
     }
 
     void SceneRenderer::GeometryOpaquePass(const std::vector<DrawCommand>& opaqueCommands) {
-        rendering_device->SetDepthTest(true);
-        rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS);
-        rendering_device->SetDepthWrite(true);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_BACK);
+
+        rendering_device->ApplyPipelineState(pipeline_opaque);
 
         for (const auto& command : opaqueCommands) {
             RenderObject(command);
@@ -312,12 +496,9 @@ namespace golias {
             return;
         }
 
-        rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS_EQUAL);
-        rendering_device->SetDepthWrite(false);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_DISABLED);
+        rendering_device->ApplyPipelineState(pipeline_skybox);
 
-        skyboxShader->Bind();
+        rendering_device->BindShader(skyboxShader.get());
 
         glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(renderContext.camera.viewMatrix));
         skyboxShader->SetUniform("VIEW_MATRIX", viewNoTranslation);
@@ -328,18 +509,10 @@ namespace golias {
 
         rendering_device->BindMesh(skyboxMesh.get());
         rendering_device->DrawMesh(skyboxMesh.get());
-
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_BACK);
-        rendering_device->SetDepthWrite(true);
-        rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS);
     }
 
     void SceneRenderer::GeometryTransparentPass(const std::vector<DrawCommand>& transparentCommands) {
-        rendering_device->SetDepthTest(true);
-        rendering_device->SetDepthComparison(EComparisonFunc::COMPARISON_LESS);
-        rendering_device->SetDepthWrite(true);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_BACK);
+        rendering_device->ApplyPipelineState(pipeline_transparent);
 
         for (const auto& command : transparentCommands) {
             RenderObject(command);
@@ -351,12 +524,10 @@ namespace golias {
             return;
         }
 
-        rendering_device->SetDepthTest(true);
-        rendering_device->SetDepthWrite(false);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
+        rendering_device->ApplyPipelineState(pipeline_canvas);
 
         auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
-        shader_canvas->Bind();
+        rendering_device->BindShader(shader_canvas.get());
 
         for (const auto& command : world_canvas_commands) {
             if (!command.mesh || command.batches.empty()) {
@@ -382,9 +553,6 @@ namespace golias {
                 offset += batch.indexCount;
             }
         }
-
-        rendering_device->SetDepthWrite(true);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
     }
 
     void SceneRenderer::Sprite2DPass() {
@@ -392,12 +560,10 @@ namespace golias {
             return;
         }
 
-        rendering_device->SetDepthTest(false);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_DISABLED);
+        rendering_device->ApplyPipelineState(pipeline_2d);
 
         const auto shader_2d = rendering_device->GetDefaultShader2D();
-        shader_2d->Bind();
+        rendering_device->BindShader(shader_2d.get());
 
         quad->Bind();
         for (const auto& command : command_queue_2d) {
@@ -421,12 +587,10 @@ namespace golias {
             return;
         }
 
-        rendering_device->SetDepthTest(false);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_ALPHA);
-        rendering_device->SetCullMode(ECullMode::CULL_MODE_DISABLED);
+        rendering_device->ApplyPipelineState(pipeline_canvas);
 
         auto shader_canvas = rendering_device->GetDefaultShaderCanvas();
-        shader_canvas->Bind();
+        rendering_device->BindShader(shader_canvas.get());
 
         for (const auto& command : canvas_commands) {
             if (!command.mesh || command.batches.empty()) {
@@ -452,9 +616,6 @@ namespace golias {
 
             command.mesh->Unbind();
         }
-
-        rendering_device->SetDepthTest(true);
-        rendering_device->SetBlendMode(EBlendMode::BLEND_MODE_DISABLED);
     }
 
 
@@ -479,8 +640,165 @@ namespace golias {
 
         quad = Mesh::CreateQuad();
 
+        InitializePipelines();
+
         spdlog::info("SceneRenderer::Initialize Scene Renderer initialized successfully.");
         return true;
+    }
+
+    void SceneRenderer::InitializePipelines() {
+        pipeline_opaque = CreateOpaquePipeline();
+        pipeline_transparent = CreateTransparentPipeline();
+        pipeline_shadow = CreateShadowPipeline();
+        pipeline_skybox = CreateSkyboxPipeline();
+        pipeline_canvas = CreateCanvasPipeline();
+        pipeline_2d = Create2DPipeline();
+    }
+
+    PipelineState SceneRenderer::CreateOpaquePipeline() {
+        PipelineState state;
+        
+        // Rasterizer
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        
+        // Depth-stencil
+        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthWriteEnable = true;
+        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
+        
+        // Blend (disabled for opaque)
+        state.blend.attachments[0].blendEnable = false;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
+    }
+
+    PipelineState SceneRenderer::CreateTransparentPipeline() {
+        PipelineState state;
+        
+        // Rasterizer
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        
+        // Depth-stencil (read but don't write)
+        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthWriteEnable = false;
+        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
+        
+        // Blend (alpha blending)
+        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
+        state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
+        state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
+    }
+
+    PipelineState SceneRenderer::CreateShadowPipeline() {
+        PipelineState state;
+        
+        // Rasterizer (front-face culling for shadow acne)
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_FRONT;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        state.rasterizer.depthBiasEnable = true;
+        state.rasterizer.depthBiasConstant = 1.25f;
+        state.rasterizer.depthBiasSlopeFactor = 1.75f;
+        
+        // Depth-stencil
+        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthWriteEnable = true;
+        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
+        
+        // Blend (disabled)
+        state.blend.attachments[0].blendEnable = false;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
+    }
+
+    PipelineState SceneRenderer::CreateSkyboxPipeline() {
+        PipelineState state;
+        
+        // Rasterizer (no culling for skybox)
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        
+        // Depth-stencil (equal test, no write)
+        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthWriteEnable = false;
+        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS_EQUAL;
+        
+        // Blend (disabled)
+        state.blend.attachments[0].blendEnable = false;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
+    }
+
+    PipelineState SceneRenderer::CreateCanvasPipeline() {
+        PipelineState state;
+        
+        // Rasterizer (no culling)
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        
+        // Depth-stencil (test but don't write for world canvas)
+        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthWriteEnable = false;
+        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
+        
+        // Blend (alpha blending)
+        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
+        state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
+        state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
+    }
+
+    PipelineState SceneRenderer::Create2DPipeline() {
+        PipelineState state;
+        
+        // Rasterizer (no culling)
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW = true;
+        
+        // Depth-stencil (disabled for 2D)
+        state.depthStencil.depthTestEnable = false;
+        state.depthStencil.depthWriteEnable = false;
+        
+        // Blend (alpha blending)
+        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
+        state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
+        state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
+        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
+        
+        state.topology = EPrimitiveTopology::TRIANGLES;
+        
+        return state;
     }
 
     void SceneRenderer::Present() {
@@ -488,20 +806,11 @@ namespace golias {
     }
 
     void SceneRenderer::BeginFrame(const glm::vec4& color) {
-        if (world_environment_command.environmentComponent) {
-            EWorldEnvironmentMode envMode = world_environment_command.environmentComponent->GetEnvironmentMode();
-
-            if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR
-                || envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
-                rendering_device->ClearColor(world_environment_command.environmentComponent->GetClearColor());
-            } else if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX) {
-                rendering_device->ClearColor(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-            }
-        } else {
-            rendering_device->ClearColor(color);
-        }
-
-        rendering_device->ClearBuffer(EClearFlags::CLEAR_COLOR | EClearFlags::CLEAR_DEPTH);
+        // Store the clear color in render context for use in BeginMainRenderPass
+        renderContext.clearColor = color;
+        
+        // Note: Actual clearing happens in BeginMainRenderPass now,
+        // which is called at the start of Draw() after shadow pass
     }
 
     void SceneRenderer::EndFrame() {

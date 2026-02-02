@@ -18,6 +18,20 @@ namespace golias {
 
         bool Initialize(SDL_Window* sdl_window) override;
 
+        // ============================================================
+        // Pipeline State (Immutable)
+        // ============================================================
+        void ApplyPipelineState(const PipelineState& state) override;
+
+        // ============================================================
+        // Render Pass Management
+        // ============================================================
+        void BeginRenderPass(const RenderPassBeginInfo& info) override;
+        void EndRenderPass() override;
+
+        // ============================================================
+        // Resource Binding & Drawing
+        // ============================================================
         void BindShader(Shader* shader) override;
         void BindMesh(Mesh* mesh) override;
         void UnbindMesh(Mesh* mesh) override;
@@ -25,18 +39,16 @@ namespace golias {
         void BindCubemap(Shader* shader, std::string_view uniformName, Uint32 slot, TextureCubemap* texture) override;
         void BindMaterial(Material* material) override;
 
-        std::shared_ptr<Shader> GetDefaultShader3D() const override;
-        std::shared_ptr<Shader> GetDefaultShader2D() const override;
-        std::shared_ptr<Shader> GetDefaultShaderCanvas() const override;
-        std::shared_ptr<Shader> GetDefaultShadowMapShader() const override;
-        std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
+        void DrawMesh(Mesh* mesh) override;
 
+        // ============================================================
+        // Resource Creation
+        // ============================================================
         std::shared_ptr<Texture2D> CreateTextureFromFile(const std::string_view pFilePath) override;
         std::shared_ptr<Texture2D> CreateTextureFromData(int w, int h, ETextureFormat format, const Uint8* data) override;
 
         std::shared_ptr<Shader> CreateShaderFromFile(const std::string_view pFilePath) override;
         std::shared_ptr<Shader> CreateShaderFromSource(const std::string& vertexSource, const std::string& fragmentSource) override;
-
 
         std::shared_ptr<Mesh> CreateMesh() override;
         std::shared_ptr<Mesh> CreateMeshFromData(const VertexLayout& layout,
@@ -47,29 +59,38 @@ namespace golias {
 
         std::shared_ptr<Framebuffer> CreateFramebuffer(const FramebufferSpec& speficiation) override;
 
+        std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
+        std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
+        std::shared_ptr<TextureCubemap> CreateCubemapProcedural() override;
+
+        // ============================================================
+        // High-level Resources (Temporary - will move to ResourceManager)
+        // ============================================================
+        std::shared_ptr<Shader> GetDefaultShader3D() const override;
+        std::shared_ptr<Shader> GetDefaultShader2D() const override;
+        std::shared_ptr<Shader> GetDefaultShaderCanvas() const override;
+        std::shared_ptr<Shader> GetDefaultShadowMapShader() const override;
+        std::shared_ptr<Shader> GetDefaultSkyboxShader() const override;
+
+        std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
+        std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
+        std::shared_ptr<TextureCubemap> GetWhiteTextureCubemap() const override;
+
+        std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
+        std::shared_ptr<Framebuffer> GetCascadeShadowMapFramebuffer(int index) override;
+
         PhysicsDebugDrawer* GetPhysicsDebugDrawer() override;
 
+        // ============================================================
+        // Legacy Mutable State (Deprecated)
+        // ============================================================
         void ClearColor(glm::vec4 color = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f)) override;
         void ClearBuffer(EClearFlags flags) override;
-
-        void DrawMesh(Mesh* mesh) override;
 
         void SwapChain() override;
 
         void SetViewport(const Viewport& vp) override;
         void SetScissor(const Scissor& scissor) override;
-
-
-        std::shared_ptr<Framebuffer> GetDefaultFramebuffer() override;
-        std::shared_ptr<Framebuffer> GetDefaultShadowMapFramebuffer() override;
-
-        std::shared_ptr<TextureCubemap> CreateCubemapFromFaces(const std::array<std::string, 6>& faces) override;
-        std::shared_ptr<TextureCubemap> CreateCubemapFromCross(const std::string& crossPath) override;
-        std::shared_ptr<TextureCubemap> CreateCubemapProcedural() override;
-
-        std::shared_ptr<Texture2D> GetWhiteTexture2D() const override;
-        std::shared_ptr<Texture2D> GetNormalTexture2D() const override;
-        std::shared_ptr<TextureCubemap> GetWhiteTextureCubemap() const override;
 
         void SetColorWrite(bool red, bool green, bool blue, bool alpha) override;
         void SetBlendMode(EBlendMode blendMode) override;
@@ -77,9 +98,15 @@ namespace golias {
         void SetCullMode(ECullMode cullMode) override;
         void SetDepthWrite(bool enable) override;
         void SetDepthTest(bool enable) override;
+        
+        
 
     private:
         SDL_GLContext gl_context = nullptr;
+
+        // Current pipeline state (for OpenGL state tracking)
+        PipelineState current_pipeline_state;
+        bool pipeline_state_dirty = true;
 
         std::shared_ptr<Shader> default_shader_3d     = nullptr;
         std::shared_ptr<Shader> default_shader_2d     = nullptr;
@@ -87,12 +114,18 @@ namespace golias {
         std::shared_ptr<Shader> default_shader_csm    = nullptr;
         std::shared_ptr<Shader> skybox_shader         = nullptr;
 
-
-        std::shared_ptr<Framebuffer> shadowFBO = nullptr;
+        std::array<std::shared_ptr<Framebuffer>, NUM_SHADOW_CASCADES> cascadeShadowFBOs;
 
         bool CreateDefaultShaders();
         bool CreateDefaultFramebuffers();
         bool CreateSkyboxShader();
         bool CreateDefaultTextures();
+
+
+        void ApplyRasterizerState(const RasterizerState& state);
+        void ApplyDepthStencilState(const DepthStencilState& state);
+        void ApplyBlendState(const BlendState& state);
+
+
     };
 }; // namespace golias

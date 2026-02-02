@@ -14,7 +14,6 @@ enum class ETextureFilterMode {
     TRILINEAR,
 };
 
-// Texture Mip Gen Settings
 enum class ETextureMipGenSettings {
     NO_MIPMAPS, // No mipmaps
     FROM_TEXTURE_GROUP, // Use texture group settings (not implemented here)
@@ -187,6 +186,7 @@ struct Scissor {
 namespace golias {
 
     class Framebuffer;
+    class Shader;
 
     struct VertexElement {
         Uint32 location; // Shader layout(location = X)
@@ -206,6 +206,123 @@ namespace golias {
     struct VertexLayout {
         std::vector<VertexElement> elements;
         Uint32 stride = 0; // Total vertex size in bytes
+    };
+
+
+
+    struct RasterizerState {
+        ECullMode cullMode         = ECullMode::CULL_MODE_BACK;
+        EPolygonMode polygonMode   = EPolygonMode::FILL;
+        bool frontFaceCCW          = true;
+        bool depthBiasEnable       = false;
+        float depthBiasConstant    = 0.0f;
+        float depthBiasSlopeFactor = 0.0f;
+
+        bool operator==(const RasterizerState& other) const = default;
+    };
+
+    struct DepthStencilState {
+        bool depthTestEnable       = true;
+        bool depthWriteEnable      = true;
+        EComparisonFunc depthFunc  = EComparisonFunc::COMPARISON_LESS;
+        bool stencilTestEnable     = false;
+        EStencilOp stencilFailOp   = EStencilOp::STENCIL_OP_KEEP;
+        EStencilOp depthFailOp     = EStencilOp::STENCIL_OP_KEEP;
+        EStencilOp passOp          = EStencilOp::STENCIL_OP_KEEP;
+        EComparisonFunc stencilFunc = EComparisonFunc::COMPARISON_ALWAYS;
+        uint32_t stencilReadMask   = 0xFF;
+        uint32_t stencilWriteMask  = 0xFF;
+        uint32_t stencilRef        = 0;
+
+        bool operator==(const DepthStencilState& other) const = default;
+    };
+
+    struct BlendAttachmentState {
+        bool blendEnable            = false;
+        EBlendFactor srcColorBlend  = EBlendFactor::BLEND_ONE;
+        EBlendFactor dstColorBlend  = EBlendFactor::BLEND_ZERO;
+        EBlendOp colorBlendOp       = EBlendOp::BLEND_OP_ADD;
+        EBlendFactor srcAlphaBlend  = EBlendFactor::BLEND_ONE;
+        EBlendFactor dstAlphaBlend  = EBlendFactor::BLEND_ZERO;
+        EBlendOp alphaBlendOp       = EBlendOp::BLEND_OP_ADD;
+        bool writeR                 = true;
+        bool writeG                 = true;
+        bool writeB                 = true;
+        bool writeA                 = true;
+
+        bool operator==(const BlendAttachmentState& other) const = default;
+    };
+
+    struct BlendState {
+        std::vector<BlendAttachmentState> attachments;
+        glm::vec4 blendConstants = glm::vec4(0.0f);
+
+        BlendState() {
+            attachments.resize(1);
+        }
+
+        bool operator==(const BlendState& other) const = default;
+    };
+
+    struct PipelineState {
+        RasterizerState rasterizer;
+        DepthStencilState depthStencil;
+        BlendState blend;
+        EPrimitiveTopology topology = EPrimitiveTopology::TRIANGLES;
+
+        bool operator==(const PipelineState& other) const = default;
+    };
+
+    enum class ELoadOp {
+        LOAD,
+        CLEAR,
+        DONT_CARE
+    };
+
+    enum class EStoreOp {
+        STORE,
+        DONT_CARE
+    };
+
+    struct ClearValue {
+        union {
+            struct {
+                float r, g, b, a;
+            } color;
+            struct {
+                float depth;
+                uint32_t stencil;
+            } depthStencil;
+        };
+
+        ClearValue() : color{0.0f, 0.0f, 0.0f, 1.0f} {}
+        
+        static ClearValue Color(float r, float g, float b, float a = 1.0f) {
+            ClearValue val;
+            val.color = {r, g, b, a};
+            return val;
+        }
+
+        static ClearValue Color(const glm::vec4& col) {
+            return Color(col.r, col.g, col.b, col.a);
+        }
+
+        static ClearValue DepthStencil(float depth, uint32_t stencil = 0) {
+            ClearValue val;
+            val.depthStencil = {depth, stencil};
+            return val;
+        }
+    };
+
+    struct RenderPassBeginInfo {
+        Framebuffer* framebuffer = nullptr;
+        std::vector<ClearValue> clearValues;
+        Viewport viewport;
+        Scissor scissor;
+        ELoadOp colorLoadOp = ELoadOp::CLEAR;
+        EStoreOp colorStoreOp = EStoreOp::STORE;
+        ELoadOp depthLoadOp = ELoadOp::CLEAR;
+        EStoreOp depthStoreOp = EStoreOp::STORE;
     };
 
     ETextureFormat TextureFormatFromChannels(int channels);

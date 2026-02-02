@@ -36,11 +36,15 @@ namespace golias {
     };
 
     struct DirectionalLightCommand {
+        static constexpr int NUM_CASCADES = 4;
+        
         glm::vec3 direction        = glm::vec3(0.5f, -1.0f, 0.3f);
         glm::vec3 color            = glm::vec3(1.0f, 1.0f, 1.0f);
         float intensity            = 1.0f;
         bool castShadows           = true;
-        glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
+        
+        std::array<glm::mat4, NUM_CASCADES> lightSpaceMatrices;
+        std::array<float, NUM_CASCADES> cascadeSplits = {0.0f, 0.0f, 0.0f, 0.0f};
     };
 
     struct PointLightCommand {
@@ -88,6 +92,11 @@ namespace golias {
         bool useBillboarding = false;
     };
 
+    /**
+     * @brief High-level scene renderer using modern rendering patterns
+     * 
+     * Manages rendering pipelines and coordinates draw calls.
+     */
     class SceneRenderer {
     public:
         bool Initialize(SDL_Window* pWindow, ERenderingDeviceType deviceType);
@@ -141,8 +150,28 @@ namespace golias {
             bool shadowsEnabled          = true;
             bool occlusionCullingEnabled = false;
             bool iblEnabled              = true;
+            glm::vec4 clearColor         = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
+            bool debugCascades          = false;
+            int debugPass               = 0; 
         } renderContext{};
 
+        PipelineState pipeline_opaque;
+        PipelineState pipeline_transparent;
+        PipelineState pipeline_shadow;
+        PipelineState pipeline_skybox;
+        PipelineState pipeline_canvas;
+        PipelineState pipeline_2d;
+
+        void InitializePipelines();
+        PipelineState CreateOpaquePipeline();
+        PipelineState CreateTransparentPipeline();
+        PipelineState CreateShadowPipeline();
+        PipelineState CreateSkyboxPipeline();
+        PipelineState CreateCanvasPipeline();
+        PipelineState Create2DPipeline();
+
+        void BeginMainRenderPass();
+        void EndMainRenderPass();
         void ShadowPass();
         void GeometryOpaquePass(const std::vector<DrawCommand>& opaqueCommands);
         void SkyboxPass();
@@ -154,6 +183,9 @@ namespace golias {
 
         void RenderObject(const DrawCommand& command);
         void CalculateLightSpaceMatrices();
+        void CalculateFrustumCorners(const glm::mat4& proj, const glm::mat4& view, 
+                                    float nearPlane, float farPlane, 
+                                    glm::vec3 frustumCorners[8]);
         void SetupMaterialUniforms(const DrawCommand& command);
         void SetupLightingUniforms(Shader* shader);
         void SetupShadowUniforms(Shader* shader);

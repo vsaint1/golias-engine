@@ -74,7 +74,144 @@ namespace golias {
         physicsDebug3D = std::make_unique<PhysicsDebugDrawerGLES3>();
 
         glEnable(GL_DEPTH_TEST);
+
+        pipeline_state_dirty = true;
+
         return true;
+    }
+
+  
+
+    void RenderingDeviceGLES3::ApplyPipelineState(const PipelineState& state) {
+       
+        if (!pipeline_state_dirty && state == current_pipeline_state) {
+            return;
+        }
+
+        ApplyRasterizerState(state.rasterizer);
+        ApplyDepthStencilState(state.depthStencil);
+        ApplyBlendState(state.blend);
+
+        current_pipeline_state = state;
+        pipeline_state_dirty   = false;
+    }
+
+    void RenderingDeviceGLES3::ApplyRasterizerState(const RasterizerState& state) {
+
+        if (state.cullMode == ECullMode::CULL_MODE_DISABLED) {
+            glDisable(GL_CULL_FACE);
+        } else {
+            glEnable(GL_CULL_FACE);
+            glCullFace(ToGLCullMode(state.cullMode));
+        }
+
+        glFrontFace(state.frontFaceCCW ? GL_CCW : GL_CW);
+
+        // Polygon mode (not supported in GLES, only desktop GL)
+#ifndef SDL_PLATFORM_ANDROID
+    #ifndef SDL_PLATFORM_IOS
+        #ifndef SDL_PLATFORM_EMSCRIPTEN
+        glPolygonMode(GL_FRONT_AND_BACK, ToGLPolygonMode(state.polygonMode));
+        #endif
+    #endif
+#endif
+
+        if (state.depthBiasEnable) {
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(state.depthBiasSlopeFactor, state.depthBiasConstant);
+        } else {
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
+    }
+
+    void RenderingDeviceGLES3::ApplyDepthStencilState(const DepthStencilState& state) {
+        // Depth test
+        if (state.depthTestEnable) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(ToGLComparisonFunc(state.depthFunc));
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+
+        // Depth write
+        glDepthMask(state.depthWriteEnable ? GL_TRUE : GL_FALSE);
+
+        // Stencil test
+        if (state.stencilTestEnable) {
+            glEnable(GL_STENCIL_TEST);
+            glStencilFunc(ToGLComparisonFunc(state.stencilFunc), state.stencilRef, state.stencilReadMask);
+            glStencilOp(ToGLStencilOp(state.stencilFailOp), ToGLStencilOp(state.depthFailOp), ToGLStencilOp(state.passOp));
+            glStencilMask(state.stencilWriteMask);
+        } else {
+            glDisable(GL_STENCIL_TEST);
+        }
+    }
+
+    void RenderingDeviceGLES3::ApplyBlendState(const BlendState& state) {
+        if (state.attachments.empty()) {
+            return;
+        }
+
+        const auto& attachment = state.attachments[0]; // OpenGL ES 3.0 typically supports one blend state
+
+        if (attachment.blendEnable) {
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(ToGLBlendFactor(attachment.srcColorBlend),
+                                ToGLBlendFactor(attachment.dstColorBlend),
+                                ToGLBlendFactor(attachment.srcAlphaBlend),
+                                ToGLBlendFactor(attachment.dstAlphaBlend));
+            glBlendEquationSeparate(ToGLBlendOp(attachment.colorBlendOp), ToGLBlendOp(attachment.alphaBlendOp));
+        } else {
+            glDisable(GL_BLEND);
+        }
+
+        // Color write mask
+        glColorMask(attachment.writeR ? GL_TRUE : GL_FALSE,
+                    attachment.writeG ? GL_TRUE : GL_FALSE,
+                    attachment.writeB ? GL_TRUE : GL_FALSE,
+                    attachment.writeA ? GL_TRUE : GL_FALSE);
+    }
+
+
+    void RenderingDeviceGLES3::BeginRenderPass(const RenderPassBeginInfo& info) {
+        if (info.framebuffer) {
+            info.framebuffer->Bind();
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        SetViewport(info.viewport);
+        SetScissor(info.scissor);
+
+        GLbitfield clearFlags = 0;
+
+        if (info.colorLoadOp == ELoadOp::CLEAR) {
+            clearFlags |= GL_COLOR_BUFFER_BIT;
+            if (!info.clearValues.empty()) {
+                const auto& clearColor = info.clearValues[0].color;
+                glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+            }
+        }
+
+        if (info.depthLoadOp == ELoadOp::CLEAR) {
+            clearFlags |= GL_DEPTH_BUFFER_BIT;
+
+            /// NOTE: this doesnt work on Webgl
+            //     if (info.clearValues.size() > 1) {
+            //         glClearDepth(info.clearValues[1].depthStencil.depth);
+            //     } else {
+            //         glClearDepth(1.0f);
+            //     }
+            // }
+
+            if (clearFlags != 0) {
+                glClear(clearFlags);
+            }
+        }
+    }
+
+    void RenderingDeviceGLES3::EndRenderPass() {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     void RenderingDeviceGLES3::BindShader(Shader* shader) {
@@ -182,7 +319,7 @@ namespace golias {
 
 
     std::shared_ptr<TextureCubemap> RenderingDeviceGLES3::GetWhiteTextureCubemap() const {
-        
+
         return whiteTextureCubemap;
     }
 
@@ -327,20 +464,28 @@ namespace golias {
 
 
     bool RenderingDeviceGLES3::CreateDefaultFramebuffers() {
-        FramebufferSpec shadowFboSpec;
-        shadowFboSpec.width       = 4096;
-        shadowFboSpec.height      = 4096;
-        shadowFboSpec.attachments = {
-            FramebufferAttachmentSpec(EFramebufferAttachment::DEPTH_ATTACHMENT, ETextureFormat::DEPTH32F)};
+        // Create cascade shadow map framebuffers
+        // Cascade 0: 4096x4096 (closest)
+        // Cascade 1: 2048x2048
+        // Cascade 2: 1024x1024
+        // Cascade 3: 1024x1024 (farthest)
+        const std::array<int, NUM_SHADOW_CASCADES> cascadeResolutions = {4096, 2048, 1024, 1024};
 
-        shadowFBO = std::make_shared<OpenglFramebuffer>(shadowFboSpec);
+        for (int i = 0; i < NUM_SHADOW_CASCADES; ++i) {
+            FramebufferSpec shadowFboSpec;
+            shadowFboSpec.width       = cascadeResolutions[i];
+            shadowFboSpec.height      = cascadeResolutions[i];
+            shadowFboSpec.attachments = {FramebufferAttachmentSpec(EFramebufferAttachment::DEPTH_ATTACHMENT, ETextureFormat::DEPTH32F)};
 
-        if (!shadowFBO) {
-            spdlog::error("RenderingDeviceGLES3::CreateDefaultFramebuffers Failed to create shadow map Framebuffer");
-            return false;
+            cascadeShadowFBOs[i] = std::make_shared<OpenglFramebuffer>(shadowFboSpec);
+
+            if (!cascadeShadowFBOs[i]) {
+                spdlog::error("RenderingDeviceGLES3::CreateDefaultFramebuffers Failed to create cascade {} shadow map", i);
+                return false;
+            }
         }
 
-        spdlog::info("RenderingDeviceGLES3::CreateDefaultFramebuffers Created shadow map Framebuffer");
+        spdlog::info("RenderingDeviceGLES3::CreateDefaultFramebuffers Created {} cascade shadow map framebuffers", NUM_SHADOW_CASCADES);
 
         return true;
     }
@@ -384,10 +529,10 @@ namespace golias {
         }
 
         Uint8* whiteCubemapPixel = new Uint8[6 * 4]{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-                                                   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+                                                    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
         whiteTextureCubemap = std::make_shared<OpenglTextureCubemap>(1, 1, ETextureFormat::RGBA8, whiteCubemapPixel);
-       
+
         if (!whiteTextureCubemap) {
             spdlog::error("RenderingDeviceGLES3::CreateDefaultTextures Failed to create white cubemap texture.");
             return false;
@@ -426,10 +571,9 @@ namespace golias {
         return nullptr;
     }
 
-    std::shared_ptr<Framebuffer> RenderingDeviceGLES3::GetDefaultShadowMapFramebuffer() {
-        return shadowFBO;
+    std::shared_ptr<Framebuffer> RenderingDeviceGLES3::GetCascadeShadowMapFramebuffer(int index) {
+        return cascadeShadowFBOs[index];
     }
-
 
     void RenderingDeviceGLES3::SetScissor(const Scissor& scissor) {
         glEnable(GL_SCISSOR_TEST);
@@ -540,4 +684,4 @@ namespace golias {
     }
 
 
-}; // namespace golias
+} // namespace golias

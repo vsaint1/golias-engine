@@ -25,11 +25,16 @@ GLbitfield ToGLClearFlags(EClearFlags flags);
 
 std::string GetShaderHeaderVersion();
 
+GLenum ToGLCullMode(ECullMode mode);
+
+GLenum ToGLPolygonMode(EPolygonMode mode);
+
+
 struct GLTextureFormatDesc {
     GLenum internalFormat;
     GLenum format;
     GLenum type;
-    bool   isDepth;
+    bool isDepth;
 };
 
 GLTextureFormatDesc GetGLTextureFormatDesc(ETextureFormat format);

@@ -2,7 +2,11 @@ in vec3 v_color;
 in vec2 v_texcoord;
 in vec3 v_normal;
 in vec3 v_frag_pos;
-in vec4 v_frag_pos_light_space;
+in float v_view_depth;
+in vec4 v_frag_pos_light_space_cascade0;
+in vec4 v_frag_pos_light_space_cascade1;
+in vec4 v_frag_pos_light_space_cascade2;
+in vec4 v_frag_pos_light_space_cascade3;
 
 out vec4 FRAG_COLOR;
 
@@ -16,7 +20,18 @@ uniform sampler2D ROUGHNESS_TEXTURE;
 uniform sampler2D NORMAL_TEXTURE;
 uniform sampler2D AO_TEXTURE;
 uniform sampler2D EMISSIVE_TEXTURE;
-uniform sampler2D SHADOW_MAP;
+
+// Cascade Shadow Maps
+uniform sampler2D SHADOW_MAP_CASCADE_0;
+uniform sampler2D SHADOW_MAP_CASCADE_1;
+uniform sampler2D SHADOW_MAP_CASCADE_2;
+uniform sampler2D SHADOW_MAP_CASCADE_3;
+
+// Cascade split distances
+uniform float CASCADE_SPLIT_0;
+uniform float CASCADE_SPLIT_1;
+uniform float CASCADE_SPLIT_2;
+uniform float CASCADE_SPLIT_3;
 
 uniform samplerCube IRRADIANCE_MAP;
 uniform samplerCube PREFILTER_MAP;
@@ -223,31 +238,66 @@ vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness) {
 }
 
 /* ============================================================================
-   Shadow Calculation
+   Cascade Shadow Mapping
    ============================================================================ */
-float CalculateShadow(vec4 fragPosLightSpace, vec3 N, vec3 L) {
+float SampleCascadeShadowMap(
+    sampler2D shadowMap,
+    vec4 fragPosLightSpace,
+    vec3 N,
+    vec3 L
+) {
     vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;
     proj = proj * 0.5 + 0.5;
 
-    if(proj.z > 1.0 || proj.x < 0.0 || proj.x > 1.0 || proj.y < 0.0 || proj.y > 1.0)
+    if(proj.z > 1.0 ||
+        proj.x < 0.0 || proj.x > 1.0 ||
+        proj.y < 0.0 || proj.y > 1.0)
         return 1.0;
 
     float currentDepth = proj.z;
     float NdotL = max(dot(N, L), 0.0);
 
-    float bias = clamp(0.0005 * tan(acos(NdotL)), 0.00001, 0.0003);
+    float bias = max(0.00015 * (1.0 - NdotL), 0.00002);
 
-    vec2 texelSize = 1.0 / vec2(textureSize(SHADOW_MAP, 0));
+    vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
     float shadow = 0.0;
 
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(SHADOW_MAP, proj.xy + vec2(x, y) * texelSize).r;
+            float pcfDepth = texture(shadowMap, proj.xy + vec2(x, y) * texelSize).r;
+
             shadow += (currentDepth - bias <= pcfDepth) ? 1.0 : 0.0;
         }
     }
 
-    return shadow * 0.1111111111111111; // 1.0 / 9.0 pre-calculated
+    return shadow / 9.0;
+}
+
+float CalculateCascadeShadow(vec3 N, vec3 L) {
+    // Select cascade based on view-space depth
+    int cascadeIndex = 3;
+
+    if(v_view_depth < CASCADE_SPLIT_0) {
+        cascadeIndex = 0;
+    } else if(v_view_depth < CASCADE_SPLIT_1) {
+        cascadeIndex = 1;
+    } else if(v_view_depth < CASCADE_SPLIT_2) {
+        cascadeIndex = 2;
+    }
+
+    float shadow = 1.0;
+
+    if(cascadeIndex == 0) {
+        shadow = SampleCascadeShadowMap(SHADOW_MAP_CASCADE_0, v_frag_pos_light_space_cascade0, N, L);
+    } else if(cascadeIndex == 1) {
+        shadow = SampleCascadeShadowMap(SHADOW_MAP_CASCADE_1, v_frag_pos_light_space_cascade1, N, L);
+    } else if(cascadeIndex == 2) {
+        shadow = SampleCascadeShadowMap(SHADOW_MAP_CASCADE_2, v_frag_pos_light_space_cascade2, N, L);
+    } else {
+        shadow = SampleCascadeShadowMap(SHADOW_MAP_CASCADE_3, v_frag_pos_light_space_cascade3, N, L);
+    }
+
+    return shadow;
 }
 
 Material SampleMaterial() {
@@ -437,6 +487,8 @@ vec3 CalculateIBL(
     float ao,
     float NdotV
 ) {
+    return vec3(0.0); // Temporary disable IBL for testing
+
     if(USE_IBL == 0)
         return vec3(0.0);
 
@@ -507,7 +559,7 @@ void main() {
 
         if(light.castShadows && i == 0) {
             vec3 L = normalize(-light.direction);
-            shadow = CalculateShadow(v_frag_pos_light_space, N, L);
+            shadow = CalculateCascadeShadow(N, L);
         }
 
         Lo += CalculateDirectionalLight(light, N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, shadow, NdotV);

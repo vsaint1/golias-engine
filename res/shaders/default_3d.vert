@@ -11,12 +11,20 @@ out vec3 v_color;
 out vec2 v_texcoord;
 out vec3 v_normal;
 out vec3 v_frag_pos;
-out vec4 v_frag_pos_light_space;
+out float v_view_depth;
+out vec4 v_frag_pos_light_space_cascade0;
+out vec4 v_frag_pos_light_space_cascade1;
+out vec4 v_frag_pos_light_space_cascade2;
+out vec4 v_frag_pos_light_space_cascade3;
 
 uniform mat4 MODEL_MATRIX;
 uniform mat4 VIEW_MATRIX;
 uniform mat4 PROJECTION_MATRIX;
-uniform mat4 LIGHT_SPACE_MATRIX;
+
+uniform mat4 LIGHT_SPACE_MATRIX_CASCADE_0;
+uniform mat4 LIGHT_SPACE_MATRIX_CASCADE_1;
+uniform mat4 LIGHT_SPACE_MATRIX_CASCADE_2;
+uniform mat4 LIGHT_SPACE_MATRIX_CASCADE_3;
 
 uniform int USE_SKINNING;
 const int MAX_BONES = 128;
@@ -51,7 +59,16 @@ void main() {
     
     vec4 worldPos = MODEL_MATRIX * localPos;
     v_frag_pos = worldPos.xyz;
-    v_frag_pos_light_space = LIGHT_SPACE_MATRIX * worldPos;
+    
+    vec4 viewPos = VIEW_MATRIX * worldPos;
+    v_view_depth = -viewPos.z;
+    
+    v_frag_pos_light_space_cascade0 = LIGHT_SPACE_MATRIX_CASCADE_0 * worldPos;
+    v_frag_pos_light_space_cascade1 = LIGHT_SPACE_MATRIX_CASCADE_1 * worldPos;
+    v_frag_pos_light_space_cascade2 = LIGHT_SPACE_MATRIX_CASCADE_2 * worldPos;
+    v_frag_pos_light_space_cascade3 = LIGHT_SPACE_MATRIX_CASCADE_3 * worldPos;
+
+  
     
     if (length(localNormal) > 0.01) {
         mat3 normalMatrix = transpose(inverse(mat3(MODEL_MATRIX)));

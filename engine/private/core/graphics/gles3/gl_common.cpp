@@ -111,32 +111,32 @@ GLTextureFormatDesc GetGLTextureFormatDesc(ETextureFormat format) {
 
     switch (format) {
     case ETextureFormat::DEPTH24:
-        desc.format = GL_DEPTH_COMPONENT;
-        desc.type   = GL_UNSIGNED_INT;
+        desc.format  = GL_DEPTH_COMPONENT;
+        desc.type    = GL_UNSIGNED_INT;
         desc.isDepth = true;
         break;
 
     case ETextureFormat::DEPTH32F:
-        desc.format = GL_DEPTH_COMPONENT;
-        desc.type   = GL_FLOAT;
+        desc.format  = GL_DEPTH_COMPONENT;
+        desc.type    = GL_FLOAT;
         desc.isDepth = true;
         break;
 
     case ETextureFormat::DEPTH24_STENCIL8:
-        desc.format = GL_DEPTH_STENCIL;
-        desc.type   = GL_UNSIGNED_INT_24_8;
+        desc.format  = GL_DEPTH_STENCIL;
+        desc.type    = GL_UNSIGNED_INT_24_8;
         desc.isDepth = true;
         break;
 
     case ETextureFormat::DEPTH32F_STENCIL8:
-        desc.format = GL_DEPTH_STENCIL;
-        desc.type   = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+        desc.format  = GL_DEPTH_STENCIL;
+        desc.type    = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
         desc.isDepth = true;
         break;
 
     default:
-        desc.format = GL_RGBA;
-        desc.type   = GL_UNSIGNED_BYTE;
+        desc.format  = GL_RGBA;
+        desc.type    = GL_UNSIGNED_BYTE;
         desc.isDepth = false;
         break;
     }
@@ -203,19 +203,6 @@ GLenum ToGLBlendOp(EBlendOp op) {
         return GL_MAX;
     default:
         return GL_FUNC_ADD;
-    }
-}
-
-GLenum ToGLCullMode(ECullMode mode) {
-    switch (mode) {
-    case ECullMode::CULL_MODE_FRONT:
-        return GL_FRONT;
-    case ECullMode::CULL_MODE_BACK:
-        return GL_BACK;
-    case ECullMode::CULL_MODE_DISABLED:
-        return GL_FRONT_AND_BACK; // Special case: disable culling
-    default:
-        return GL_BACK;
     }
 }
 
@@ -301,4 +288,36 @@ std::string GetShaderHeaderVersion() {
 #else
     return "#version 330 core\n";
 #endif
+}
+
+
+GLenum ToGLCullMode(ECullMode mode) {
+    switch (mode) {
+    case ECullMode::CULL_MODE_FRONT:
+        return GL_FRONT;
+    case ECullMode::CULL_MODE_BACK:
+        return GL_BACK;
+    case ECullMode::CULL_MODE_FRONT_AND_BACK:
+        return GL_FRONT_AND_BACK;
+    default:
+        return GL_BACK;
+    }
+}
+
+GLenum ToGLPolygonMode(EPolygonMode mode) {
+    switch (mode) {
+#ifndef SDL_PLATFORM_ANDROID
+    #ifndef SDL_PLATFORM_IOS
+        #ifndef SDL_PLATFORM_EMSCRIPTEN
+    case EPolygonMode::LINE:
+        return GL_LINE;
+    case EPolygonMode::POINT:
+        return GL_POINT;
+        #endif
+    #endif
+#endif
+    case EPolygonMode::FILL:
+    default:
+        return GL_FILL;
+    }
 }
