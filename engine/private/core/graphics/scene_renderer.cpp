@@ -29,6 +29,8 @@ namespace golias {
 
 
     void SceneRenderer::Draw(const CameraCommand& camera) {
+        UpdateUIScale();
+        
         renderContext.camera = camera;
 
         CalculateLightSpaceMatrices();
@@ -706,8 +708,7 @@ namespace golias {
     PipelineState SceneRenderer::CreateShadowPipeline() {
         PipelineState state;
         
-        // Rasterizer (front-face culling for shadow acne)
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_FRONT;
+        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
         state.rasterizer.polygonMode = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
         state.rasterizer.depthBiasEnable = true;
@@ -837,6 +838,38 @@ namespace golias {
     
     bool SceneRenderer::IsImageBasedLightingEnabled() const {
         return renderContext.iblEnabled;
+    }
+    
+    void SceneRenderer::SetScreenScaleMode(EScreenScaleMode mode) {
+        renderContext.canvasScaling.mode = mode;
+    }
+    
+    EScreenScaleMode SceneRenderer::GetScreenScaleMode() const {
+        return renderContext.canvasScaling.mode;
+    }
+    
+    void SceneRenderer::SetReferenceResolution(const glm::vec2& resolution) {
+        renderContext.canvasScaling.referenceResolution = resolution;
+    }
+    
+    glm::vec2 SceneRenderer::GetReferenceResolution() const {
+        return renderContext.canvasScaling.referenceResolution;
+    }
+    
+    float SceneRenderer::GetUIScale() const {
+        return renderContext.canvasScaling.scale;
+    }
+    
+    void SceneRenderer::UpdateUIScale() {
+        const auto& viewport = rendering_device->GetViewport();
+        
+        if (renderContext.canvasScaling.mode == EScreenScaleMode::VIEWPORT) {
+            float scaleX = static_cast<float>(viewport.width) / renderContext.canvasScaling.referenceResolution.x;
+            float scaleY = static_cast<float>(viewport.height) / renderContext.canvasScaling.referenceResolution.y;
+            renderContext.canvasScaling.scale = glm::min(scaleX, scaleY);
+        } else {
+            renderContext.canvasScaling.scale = 1.0f;
+        }
     }
 
     SceneRenderer::~SceneRenderer() {

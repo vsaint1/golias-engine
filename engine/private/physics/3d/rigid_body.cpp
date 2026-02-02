@@ -36,6 +36,9 @@ namespace golias {
             rigidBody->setActivationState(ACTIVE_TAG);
         }
 
+        rigidBody->setCcdMotionThreshold(0.5f);
+        rigidBody->setCcdSweptSphereRadius(0.2f);
+
         UpdatePhysicsProperties();
     }
 
@@ -335,5 +338,5 @@ namespace golias {
     void RigidBody::ApplyImpulse(const glm::vec3& impulse) {
         rigidBody->applyCentralImpulse(btVector3(btScalar(impulse.x), btScalar(impulse.y), btScalar(impulse.z)));
     }
-    
+
 } // namespace golias
