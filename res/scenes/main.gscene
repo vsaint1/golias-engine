@@ -335,9 +335,7 @@
                     "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/glass.mat",
-                        "parameters": {
-                            
-                        }
+                        "parameters": {}
                     },
                     "mesh": {
                         "type": "box",
@@ -393,9 +391,7 @@
                     "type": "MeshRendererComponent",
                     "material": {
                         "path": "materials/mirror.mat",
-                        "parameters": {
-                            
-                        }
+                        "parameters": {}
                     },
                     "mesh": {
                         "type": "box",
@@ -475,7 +471,6 @@
                         }
                     }
                 },
-
                 {
                     "type": "PhysicsComponent",
                     "collider": {
@@ -726,9 +721,6 @@
             },
             "components": [
                 {
-                    "type": "CameraComponent"
-                },
-                {
                     "type": "CharacterControllerComponent"
                 },
                 {
@@ -748,13 +740,11 @@
             ],
             "children": [
                 {
-                    "name": "Gun",
-                    "type": "model",
-                    "path": "models/carbine/scene.gltf",
+                    "name": "MainCamera",
                     "position": {
-                        "x": 0.75,
-                        "y": -0.5,
-                        "z": -0.75
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
                     },
                     "rotation": {
                         "x": 0.0,
@@ -763,10 +753,41 @@
                         "w": 1.0
                     },
                     "scale": {
-                        "x": -1.0,
+                        "x": 1.0,
                         "y": 1.0,
                         "z": 1.0
-                    }
+                    },
+                    "components": [
+                        {
+                            "type": "CameraComponent",
+                            "fov": 60.0,
+                            "near_clip": 0.1,
+                            "far_clip": 1000.0
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "Gun",
+                            "type": "model",
+                            "path": "models/carbine/scene.gltf",
+                            "position": {
+                                "x": 0.75,
+                                "y": -0.5,
+                                "z": -0.75
+                            },
+                            "rotation": {
+                                "x": 0.0,
+                                "y": 0.0,
+                                "z": 0.0,
+                                "w": 1.0
+                            },
+                            "scale": {
+                                "x": -1.0,
+                                "y": 1.0,
+                                "z": 1.0
+                            }
+                        }
+                    ]
                 }
             ]
         },
@@ -792,6 +813,6 @@
             }
         }
     ],
-    "main_camera": "MainPlayer",
+    "main_camera": "MainCamera",
     "version": "0.0.1"
 }

@@ -40,6 +40,8 @@ namespace golias {
         void Draw(CanvasComponent* pCanvas) override;
         glm::vec2 GetPivotPos() const;
         
+        glm::vec2 MeasureText() const;
+        
     protected:
         std::string text;
         glm::vec4 textColor = glm::vec4(1.0f);

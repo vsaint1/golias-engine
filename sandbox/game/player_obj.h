@@ -14,6 +14,7 @@ public:
     Player();
     ~Player() = default;
 
+    void Awake() override;
     void Start() override;
     void Update(float deltaTime) override;
 
@@ -22,15 +23,19 @@ private:
     golias::CharacterControllerComponent* characterController = nullptr;
     golias::AudioComponent* audioComp                         = nullptr;
     golias::AudioListenerComponent* audioListenerComp         = nullptr;
+    golias::GameObject* cameraObject                          = nullptr;
+    golias::GameObject* gunObject                             = nullptr;
 
-    void ApplyGravity();
     void Move(float deltaTime);
 
     float lastDeltaTime    = 0.0f;
-    float moveSpeed        = 5.0f;
+    float moveSpeed        = 10.0f;
     float jumpForce        = 6.0f;
     float gravity          = -25.0f;
     float verticalVelocity = 0.0f;
-    float yaw              = 0.0f;
+  
+    float yaw  = 0.0f;
+    float pitch = 0.0f;
+
     bool wasMousePressed   = false;
 };

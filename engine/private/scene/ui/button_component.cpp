@@ -1,16 +1,11 @@
 #include "scene/ui/button_component.h"
 
+#include "core/engine.h"
 #include "scene/game_object.h"
 #include "scene/ui/canvas_component.h"
+#include "scene/ui/rect_transform_component.h"
 
 namespace golias {
-    void ButtonWidgetComponent::SetRect(const glm::vec2& size) {
-        rect = size;
-    }
-
-    glm::vec2 ButtonWidgetComponent::GetRect() const {
-        return rect;
-    }
 
     void ButtonWidgetComponent::SetColor(const glm::vec4& value) {
         normalColor = value;
@@ -23,16 +18,26 @@ namespace golias {
 
     void ButtonWidgetComponent::Draw(CanvasComponent* pCanvas) {
 
-        auto pos = GetOwner()->GetWorldPosition2D();
-        pos.x -= rect.x * pivot.x;
-        pos.y -= rect.y * pivot.y;
+        if (!pCanvas) {
+            return;
+        }
 
-        pCanvas->DrawTexture2D(glm::vec3(pos.x, pos.y, 0.0f),
-                               glm::vec3(pos.x + rect.x, pos.y + rect.y, 0.0f),
-                               glm::vec2(0.0f, 1.0f),
-                               glm::vec2(1.0f, 0.0f),
-                               nullptr,
-                               color);
+        auto rt = GetOwner()->GetComponent<RectTransformComponent>();
+
+        if (!rt) {
+            return;
+        }
+
+        auto pos = rt->GetScreenPosition();
+        float uiScale = Engine::GetInstance().GetSceneRenderer().GetUIScale();
+        glm::vec2 scaledSize = rt->GetSize() * uiScale;
+
+        pCanvas->DrawTexture2D(glm::vec3(pos, 0.0f),
+                             glm::vec3(pos.x + scaledSize.x, pos.y + scaledSize.y, 0.0f),
+                             glm::vec2(0.0f, 0.0f),
+                             glm::vec2(1.0f, 1.0f),
+                             nullptr,
+                             color);
     }
 
     void ButtonWidgetComponent::Start() {
@@ -42,15 +47,20 @@ namespace golias {
     }
 
     bool ButtonWidgetComponent::HitTest(const glm::vec2& point) const {
-        auto ownerPosition = GetOwner()->GetWorldPosition2D();
 
-        float x1 = ownerPosition.x - rect.x * pivot.x;
-        float y1 = ownerPosition.y - rect.y * pivot.y;
+        auto rt = GetOwner()->GetComponent<RectTransformComponent>();
 
-        float x2 = x1 + rect.x;
-        float y2 = y1 + rect.y;
+        if (!rt) {
+            return false;
+        }
+        
+        float uiScale = Engine::GetInstance().GetSceneRenderer().GetUIScale();
 
-        bool inside = (point.x >= x1 && point.x <= x2 && point.y >= y1 && point.y <= y2);
+        auto p1 = rt->GetScreenPosition();
+        glm::vec2 scaledSize = rt->GetSize() * uiScale;
+        auto p2 = p1 + scaledSize;
+
+        bool inside = (point.x >= p1.x) && (point.x <= p2.x) && (point.y >= p1.y) && (point.y <= p2.y);
 
         return inside;
     }
@@ -72,8 +82,8 @@ namespace golias {
     }
 
     void ButtonWidgetComponent::OnClick() {
-        if (onClick) {
-            onClick();
+        if (OnButtonClick) {
+            OnButtonClick();
         }
     }
 } // namespace golias

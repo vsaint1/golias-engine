@@ -22,6 +22,10 @@ namespace golias {
         // Override in derived classes
     }
 
+    void GameObject::Awake() {
+        // Override in derived classes
+    }
+
     void GameObject::Start() {
         // Override in derived classes
     }
@@ -55,7 +59,15 @@ namespace golias {
     }
 
     void GameObject::Destroy() {
+        if (!isAlive) {
+            return; // Already destroyed
+        }
+        OnDestroy();
         isAlive = false;
+    }
+
+    void GameObject::OnDestroy() {
+        // Override in derived classes
     }
 
     bool GameObject::IsAlive() const {

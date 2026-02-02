@@ -27,6 +27,13 @@ namespace golias {
         glm::vec2 upperRightUV = glm::vec2(1.0f, 1.0f);
         glm::vec2 pivot        = glm::vec2(0.5f, 0.5f);
     };
+    
+    /// @brief Defines how Screen elements scale with viewport changes
+    enum class EScreenScaleMode {
+        NONE,           /// No scaling - UI elements keep their original size
+        VIEWPORT,       /// Scale based on viewport vs reference resolution
+        CANVAS_ITEMS    /// Scale only canvas items (not implemented yet)
+    };
 
     struct CameraCommand {
         glm::mat4 viewMatrix;
@@ -127,6 +134,15 @@ namespace golias {
 
         void SetImageBasedLightingEnabled(bool enabled);
         bool IsImageBasedLightingEnabled() const;
+        
+        void SetScreenScaleMode(EScreenScaleMode mode);
+        EScreenScaleMode GetScreenScaleMode() const;
+        
+        void SetReferenceResolution(const glm::vec2& resolution);
+        glm::vec2 GetReferenceResolution() const;
+        
+        float GetUIScale() const;
+        void UpdateUIScale();
 
         ~SceneRenderer();
 
@@ -145,6 +161,12 @@ namespace golias {
         std::shared_ptr<Mesh> quad        = nullptr;
         RenderingDevice* rendering_device = nullptr;
 
+        struct CanvasScaling {
+            glm::vec2 referenceResolution = glm::vec2(1920.0f, 1080.0f);
+            float scale = 1.0f;
+            EScreenScaleMode mode = EScreenScaleMode::VIEWPORT;
+        };
+
         struct RenderContext {
             CameraCommand camera;
             bool shadowsEnabled          = true;
@@ -152,7 +174,8 @@ namespace golias {
             bool iblEnabled              = true;
             glm::vec4 clearColor         = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
             bool debugCascades          = false;
-            int debugPass               = 0; 
+            int debugPass               = 0;
+            CanvasScaling canvasScaling;
         } renderContext{};
 
         PipelineState pipeline_opaque;

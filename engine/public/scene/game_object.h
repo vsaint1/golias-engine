@@ -16,8 +16,10 @@ namespace golias {
     public:
         virtual void LoadProperties(const nlohmann::json& json);
 
+        virtual void Awake();
         virtual void Start();
         virtual void Update(float deltaTime);
+        virtual void OnDestroy();
         virtual ~GameObject() = default;
 
         bool IsActive() const;
@@ -40,7 +42,7 @@ namespace golias {
 
         Scene* GetScene() const;
 
-        void Destroy();
+        virtual void Destroy();
 
         bool IsAlive() const;
 
@@ -84,6 +86,7 @@ namespace golias {
         std::string name;
         GameObject* parent = nullptr;
         bool isAlive       = true;
+        bool hasAwoken     = false;
 
         friend class Scene;
         Scene* scene = nullptr;

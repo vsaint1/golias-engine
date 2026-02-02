@@ -10,9 +10,7 @@ namespace golias {
     class ButtonWidgetComponent : public WidgetComponent {
         COMPONENT_DERIVED(ButtonWidgetComponent, WidgetComponent)
     public:
-        void SetRect(const glm::vec2& size);
-        glm::vec2 GetRect() const;
-
+ 
         void SetColor(const glm::vec4& value);
         glm::vec4 GetColor() const;
 
@@ -27,10 +25,9 @@ namespace golias {
         void Start() override;
         void Update(float deltaTime) override;
 
-        Delegate onClick;
+        Delegate OnButtonClick;
 
     private:
-        glm::vec2 rect;
         
         glm::vec4 normalColor  = glm::vec4(1.0f);
         glm::vec4 hoverColor   = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);

@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "scene/game_object.h"
+#include "scene/ui/rect_transform_component.h"
 
 namespace golias {
 
@@ -51,6 +52,17 @@ namespace golias {
 
     void CanvasComponent::Update(float deltaTime) {
 
+
+        auto& renderer = Engine::GetInstance().GetSceneRenderer();
+        const auto& viewport = renderer.GetRenderingDevice()->GetViewport();
+
+        if(auto rt = GetOwner()->GetComponent<RectTransformComponent>(); rt && canvasMode == ECanvasMode::SCREEN_SPACE) {
+            glm::vec2 newSize(viewport.width, viewport.height);
+            if (rt->GetSize() != newSize) {
+                rt->SetSize(newSize);
+            }
+        }
+
         vertices.clear();
         indices.clear();
         batches.clear();
@@ -70,7 +82,7 @@ namespace golias {
                 ScreenCanvasCommand command;
                 command.mesh    = mesh.get();
                 command.batches = batches;
-                Engine::GetInstance().GetSceneRenderer().Submit(command);
+                renderer.Submit(command);
             } else {
                 WorldCanvasCommand command;
                 command.mesh            = mesh.get();
@@ -78,7 +90,7 @@ namespace golias {
                 command.modelMatrix     = GetOwner()->GetWorldTransform();
                 command.useBillboarding = useBillboarding;
                 command.scale           = worldSpaceScale;
-                Engine::GetInstance().GetSceneRenderer().Submit(command);
+                renderer.Submit(command);
             }
         }
     }

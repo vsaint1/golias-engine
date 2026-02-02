@@ -24,6 +24,7 @@
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/text_component.h"
 #include "scene/ui/button_component.h"
+#include "scene/ui/rect_transform_component.h"
 #pragma endregion
 
 namespace golias {
@@ -125,6 +126,10 @@ namespace golias {
                     game_objects.push_back(std::move(*it));
                     pGameObject->parent = nullptr;
                     currentParent->children.erase(it);
+                    if (!pGameObject->hasAwoken) {
+                        pGameObject->Awake();
+                        pGameObject->hasAwoken = true;
+                    }
                     result = true;
                 }
             }
@@ -139,6 +144,10 @@ namespace golias {
                 if (it == game_objects.end()) {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
                     game_objects.push_back(std::move(objHolder));
+                    if (!pGameObject->hasAwoken) {
+                        pGameObject->Awake();
+                        pGameObject->hasAwoken = true;
+                    }
                     result = true;
                 }
             }
@@ -165,6 +174,10 @@ namespace golias {
                         pParent->children.push_back(std::move(*it));
                         pGameObject->parent = pParent;
                         currentParent->children.erase(it);
+                        if (!pGameObject->hasAwoken) {
+                            pGameObject->Awake();
+                            pGameObject->hasAwoken = true;
+                        }
                         result = true;
                     }
                 }
@@ -182,6 +195,10 @@ namespace golias {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
                     pParent->children.push_back(std::move(objHolder));
                     pGameObject->parent = pParent;
+                    if (!pGameObject->hasAwoken) {
+                        pGameObject->Awake();
+                        pGameObject->hasAwoken = true;
+                    }
                     result              = true;
                 } else {
                     bool found          = false;
@@ -198,6 +215,10 @@ namespace golias {
                         pParent->children.push_back(std::move(*it));
                         pGameObject->parent = pParent;
                         game_objects.erase(it);
+                        if (!pGameObject->hasAwoken) {
+                            pGameObject->Awake();
+                            pGameObject->hasAwoken = true;
+                        }
                         result = true;
                     }
                 }
@@ -419,6 +440,7 @@ namespace golias {
         CanvasComponent::Register();
         TextWidgetComponent::Register();
         ButtonWidgetComponent::Register();
+        RectTransformComponent::Register();
     }
 
 } // namespace golias

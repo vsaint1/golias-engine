@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "scene/ui/canvas_component.h"
+#include "scene/ui/rect_transform_component.h"
 
 namespace golias {
 
@@ -58,11 +59,10 @@ namespace golias {
 
     void TextWidgetComponent::SetFontSize(int size) {
         fontSize = size;
-      
+
         if (font) {
             font->SetSize(size);
         }
-
     }
 
     int TextWidgetComponent::GetFontSize() const {
@@ -176,9 +176,12 @@ namespace golias {
             return;
         }
 
-        auto pos          = GetPivotPos();
+        auto pos           = GetPivotPos();
         auto& assetManager = Engine::GetInstance().GetAssetManager();
-        float lineHeight  = static_cast<float>(font->GetSize());
+        float lineHeight   = static_cast<float>(font->GetSize());
+        
+        float uiScale = Engine::GetInstance().GetSceneRenderer().GetUIScale();
+        lineHeight *= uiScale;
 
         auto draw_text_internal = [&](const glm::vec2& basePos, const glm::vec4& color, float zOffset) {
             float cursorX   = basePos.x;
@@ -211,16 +214,16 @@ namespace golias {
                 int glyphH = glyphFont->GetTexture()->GetHeight();
 
                 float x1 = cursorX;
-                float y1 = cursorY - glyph->height + glyph->yOffset;
-                float x2 = x1 + static_cast<float>(glyph->width);
-                float y2 = y1 + static_cast<float>(glyph->height);
+                float y1 = cursorY - glyph->height * uiScale + glyph->yOffset * uiScale;
+                float x2 = x1 + static_cast<float>(glyph->width) * uiScale;
+                float y2 = y1 + static_cast<float>(glyph->height) * uiScale;
 
                 float u1 = static_cast<float>(glyph->x0) / static_cast<float>(glyphW);
                 float v1 = static_cast<float>(glyph->y0) / static_cast<float>(glyphH);
                 float u2 = static_cast<float>(glyph->x1) / static_cast<float>(glyphW);
                 float v2 = static_cast<float>(glyph->y1) / static_cast<float>(glyphH);
 
-                cursorX += static_cast<float>(glyph->advance);
+                cursorX += static_cast<float>(glyph->advance) * uiScale;
 
                 pCanvas->DrawTexture2D(glm::vec3(x1, y1, zOffset),
                                        glm::vec3(x2, y2, zOffset),
@@ -232,7 +235,7 @@ namespace golias {
         };
 
         if (shadowEnabled) {
-            draw_text_internal(pos + shadowOffset, shadowColor, -0.002f);
+            draw_text_internal(pos + shadowOffset * uiScale, shadowColor, -0.002f);
         }
 
         if (outlineEnabled) {
@@ -248,7 +251,7 @@ namespace golias {
             };
 
             for (const auto& offset : offsets) {
-                draw_text_internal(pos + offset, outlineColor, -0.001f);
+                draw_text_internal(pos + offset * uiScale, outlineColor, -0.001f);
             }
         }
 
@@ -256,12 +259,54 @@ namespace golias {
     }
 
     glm::vec2 TextWidgetComponent::GetPivotPos() const {
-        auto pos = GetOwner()->GetWorldPosition2D();
 
-        glm::vec2 rect(0.0f);
+        auto rt = GetOwner()->GetComponent<RectTransformComponent>();
+        glm::vec2 textSize = MeasureText();
+
+        if (rt) {
+           
+            auto parent = GetOwner()->GetParent();
+            if (!parent || !parent->GetComponent<RectTransformComponent>()) {
+                return GetOwner()->GetPosition2D();
+            }
+            
+            float uiScale = Engine::GetInstance().GetSceneRenderer().GetUIScale();
+
+            auto parentRect = parent->GetComponent<RectTransformComponent>();
+            glm::vec2 parentPos = parentRect->GetScreenPosition();
+            
+           
+            bool parentIsCanvas = parent->GetComponent<CanvasComponent>() != nullptr;
+            
+            glm::vec2 parentSize = parentRect->GetSize();
+            if (!parentIsCanvas) {
+                parentSize *= uiScale;
+            }
+            
+            glm::vec2 anchorPos = parentPos + rt->GetAnchor() * parentSize;
+            
+            glm::vec2 localPos = GetOwner()->GetPosition2D() * uiScale; 
+            glm::vec2 textPivotOffset = rt->GetPivot() * textSize * uiScale;
+            
+            return anchorPos + localPos - textPivotOffset;
+        } else {
+            // No RectTransform - use world position and center the text
+            auto pos = GetOwner()->GetWorldPosition2D();
+            pos.x -= SDL_roundf(textSize.x * 0.5f);
+            pos.y -= SDL_roundf(textSize.y * 0.5f);
+            return pos;
+        }
+    }
+
+    glm::vec2 TextWidgetComponent::MeasureText() const {
+        if (text.empty() || !font) {
+            return glm::vec2(0.0f);
+        }
+
+        glm::vec2 size(0.0f);
         float currentLineWidth = 0.0f;
-        float lineHeight       = font ? static_cast<float>(font->GetSize()) : 0.0f;
-        int lineCount          = 1;
+        float lineHeight = static_cast<float>(font->GetSize());
+        int lineCount = 1;
 
         const char* ptr = text.c_str();
         const char* end = ptr + text.length();
@@ -272,14 +317,14 @@ namespace golias {
             uint32_t codepoint = DecodeUTF8(ptr);
 
             if (codepoint == '\n') {
-                rect.x           = glm::max(rect.x, currentLineWidth);
+                size.x = glm::max(size.x, currentLineWidth);
                 currentLineWidth = 0.0f;
                 lineCount++;
                 continue;
             }
 
             if (codepoint == '\r') {
-                rect.x           = glm::max(rect.x, currentLineWidth);
+                size.x = glm::max(size.x, currentLineWidth);
                 currentLineWidth = 0.0f;
                 continue;
             }
@@ -292,14 +337,10 @@ namespace golias {
             }
         }
 
+        size.x = glm::max(size.x, currentLineWidth);
+        size.y = lineHeight * lineCount;
 
-        rect.x = glm::max(rect.x, currentLineWidth);
-        rect.y = lineHeight * lineCount;
-
-        pos.x -= SDL_roundf(rect.x * pivot.x);
-        pos.y -= SDL_roundf(rect.y * pivot.y);
-
-        return pos;
+        return size;
     }
 
 

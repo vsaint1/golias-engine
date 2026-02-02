@@ -2,12 +2,13 @@
 
 #include "scene/2d/sprite_component_2d.h"
 #include "scene/3d/directional_light_component.h"
+#include "scene/3d/pointlight_component.h"
 #include "scene/3d/skeleton_animation_component.h"
 #include "scene/3d/spotlight_component.h"
-#include "scene/3d/pointlight_component.h"
 #include "scene/3d/world_environment_component.h"
 #include "scene/ui/button_component.h"
 #include "scene/ui/canvas_component.h"
+#include "scene/ui/rect_transform_component.h"
 #include "scene/ui/text_component.h"
 
 std::shared_ptr<golias::Material> mat = nullptr;
@@ -167,6 +168,9 @@ bool SandboxApplication::Initialize() {
     canvasComp2D->SetCanvasMode(golias::ECanvasMode::SCREEN_SPACE);
     canvas_2d->AddComponent(canvasComp2D);
 
+    auto canvasRt = new golias::RectTransformComponent();
+    canvas_2d->AddComponent(canvasRt);
+
     auto text2             = Tscene->CreateObject("Text2D", canvas_2d);
     auto textComp2         = new golias::TextWidgetComponent();
     std::string infoString = R"(First Person Demo
@@ -175,17 +179,25 @@ Press 'T' to toggle physics debug draw
 WASD to move, Mouse to look around)";
 
     textComp2->SetText(infoString);
-    text2->SetPosition2D({300.0f, 200.0f});
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
+    
+    auto text2Rt = new golias::RectTransformComponent();
+    text2Rt->SetAnchor({0.0f, 0.0f}); // Bottom-left anchor
+    text2Rt->SetPivot({0.0f, 0.0f});  // Pivot at bottom-left of text
+    text2->SetPosition({10.0f, 150.0f,0.0f});
+    text2->AddComponent(text2Rt);
 
     auto button     = Tscene->CreateObject("Button2D", canvas_2d);
     auto buttonComp = new golias::ButtonWidgetComponent();
-    buttonComp->SetRect({180.0f, 50.0f});
-    // buttonComp->SetColor({0.0f, 0.0f, 0.0f, 0.5f});
-    button->SetPosition2D({500.0f, 150.0f});
     button->AddComponent(buttonComp);
-    buttonComp->onClick = []() { spdlog::info("Button Clicked!"); };
+    buttonComp->OnButtonClick = []() { spdlog::info("Button Clicked!"); };
+
+    auto buttonRt = new golias::RectTransformComponent();
+    buttonRt->SetSize({180.0f, 50.0f});
+    buttonRt->SetAnchor({0.5f, 0.5f}); 
+    buttonRt->SetPivot({0.5f, 0.5f}); 
+    button->AddComponent(buttonRt);
 
     golias::Cursor::SetCursorLockState(golias::ECursorLockState::CURSOR_LOCKED);
     // golias::Cursor::SetCursorEnabled(false);
@@ -194,17 +206,27 @@ WASD to move, Mouse to look around)";
     auto buttonTextComp = new golias::TextWidgetComponent();
     buttonTextComp->SetText("Click Me");
     buttonTextComp->SetTextColor({0.0f, 0.0f, 0.0f, 1.0f});
-    // buttonTextComp->SetShadowEnabled(true);
-    buttonText->SetPosition2D({4.0f, 8.0f});
     buttonText->AddComponent(buttonTextComp);
+
+    auto buttonTextRt = new golias::RectTransformComponent();
+    buttonTextRt->SetAnchor({0.5f, 0.5f}); // Center within button
+    buttonTextRt->SetPivot({0.5f, 0.5f});  // Center pivot
+    buttonText->SetPosition({0.0f, 0.0f, 0.0f}); // No offset
+    buttonText->AddComponent(buttonTextRt);
 
     auto textAmmo     = Tscene->CreateObject("TextAmmo", canvas_2d);
     auto textCompAmmo = new golias::TextWidgetComponent();
     textCompAmmo->SetText("9/10");
     textCompAmmo->SetFont("fonts/Minecraft.ttf", 32);
     textCompAmmo->SetShadowEnabled(true);
-    textAmmo->SetPosition2D({1000.0f, 100.0f});
     textAmmo->AddComponent(textCompAmmo);
+
+    auto textAmmoRt = new golias::RectTransformComponent();
+    textAmmoRt->SetAnchor({1.0f, 0.0f}); // Bottom-right anchor
+    textAmmoRt->SetPivot({1.0f, 0.0f});  // Pivot at bottom-right of text
+    textAmmo->SetPosition({-10.0f, 10.0f, 0.0f}); // 10px offset from bottom-right
+    textAmmo->AddComponent(textAmmoRt);
+
 
     auto& canvasInputManager = golias::Engine::GetInstance().GetCanvasInputManager();
     canvasInputManager.SetActive(true);

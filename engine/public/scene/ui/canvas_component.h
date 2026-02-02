@@ -12,6 +12,7 @@ namespace golias {
         WORLD_SPACE /// 3D world rendering (with depth testing and transforms)
     };
 
+
     class CanvasComponent : public Component {
         COMPONENT(CanvasComponent)
     public:
@@ -39,15 +40,15 @@ namespace golias {
 
         void CollectWidget(WidgetComponent* pWidget, std::vector<WidgetComponent*>& outWidgets);
 
+
     private:
         std::vector<CanvasBatch> batches;
         std::vector<float> vertices;
         std::vector<Uint32> indices;
-        std::shared_ptr<Mesh> mesh = nullptr;
+        std::shared_ptr<Mesh> mesh    = nullptr;
         ECanvasMode canvasMode     = ECanvasMode::SCREEN_SPACE;
         bool useBillboarding       = false;
         float worldSpaceScale      = 1.0f; // Scale factor for world space (1px = 0.01 units)
-
     };
 
 } // namespace golias
