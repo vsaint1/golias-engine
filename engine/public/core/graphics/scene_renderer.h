@@ -162,7 +162,7 @@ namespace golias {
         RenderingDevice* rendering_device = nullptr;
 
         struct CanvasScaling {
-            glm::vec2 referenceResolution = glm::vec2(1920.0f, 1080.0f);
+            glm::vec2 referenceResolution = glm::vec2(1280.0f, 720.0f);
             float scale = 1.0f;
             EScreenScaleMode mode = EScreenScaleMode::VIEWPORT;
         };

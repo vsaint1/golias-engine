@@ -24,6 +24,10 @@ namespace golias {
         bool IsMouseButtonJustReleased(int button) const;
         glm::vec2 GetMousePosition() const;
         glm::vec2 GetMouseDelta() const;
+        float GetMouseWheelDelta() const;
+
+        // Text Input (for UI input fields)
+        const std::string& GetTextInput() const;
 
         // Controller
         bool IsControllerButtonPressed(int button) const;
@@ -66,6 +70,10 @@ namespace golias {
         std::array<KeyState, MAX_MOUSE_BUTTONS> mouse_states_{};
         glm::vec2 mouse_pos_{0.0f};
         glm::vec2 mouse_delta_{0.0f};
+        float mouse_wheel_delta_{0.0f};
+
+        // Text input
+        std::string text_input_;
 
         SDL_Gamepad* gamepad_ = nullptr;
         std::array<KeyState, SDL_GAMEPAD_BUTTON_COUNT> controller_states_{};

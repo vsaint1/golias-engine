@@ -122,8 +122,11 @@ namespace golias {
     }
 
     void TextWidgetComponent::Start() {
-        font = Engine::GetInstance().GetAssetManager().EnsureFont("fonts/NotoSans.ttf", 32);
-        spdlog::info("TextWidgetComponent::Start Default font set to 'NotoSans.ttf' with size 32");
+        // Only set default font if no font has been set yet
+        if (!font) {
+            font = Engine::GetInstance().GetAssetManager().EnsureFont("fonts/NotoSans.ttf", 32);
+            spdlog::info("TextWidgetComponent::Start Default font set to 'NotoSans.ttf' with size 32");
+        }
     }
 
     void TextWidgetComponent::LoadProperties(const nlohmann::json& json) {

@@ -8,6 +8,15 @@ namespace golias {
     }
 
     glm::vec2 RectTransformComponent::GetSize() const {
+        // If stretch mode is enabled, dynamically match parent's size
+        if (mStretchToParent) {
+            auto parent = GetOwner()->GetParent();
+            if (parent) {
+                if (auto parentRect = parent->GetComponent<RectTransformComponent>()) {
+                    return parentRect->GetSize();
+                }
+            }
+        }
         return mSize;
     }
 
@@ -31,13 +40,42 @@ namespace golias {
         mPivot = pivot;
     }
 
+    void RectTransformComponent::SetStretchToParent(bool stretch) {
+        mStretchToParent = stretch;
+    }
+
+    bool RectTransformComponent::GetStretchToParent() const {
+        return mStretchToParent;
+    }
+
     void RectTransformComponent::Start() {
     }
 
     void RectTransformComponent::Update(float deltaTime) {
+        // If stretch mode is enabled, match parent's size
+        if (mStretchToParent) {
+            auto parent = GetOwner()->GetParent();
+            if (parent) {
+                if (auto parentRect = parent->GetComponent<RectTransformComponent>()) {
+                    mSize = parentRect->GetSize();
+                }
+            }
+        }
     }
 
     void RectTransformComponent::LoadProperties(const nlohmann::json& json) {
+        if (json.contains("size")) {
+            mSize = glm::vec2(json["size"]["x"], json["size"]["y"]);
+        }
+        if (json.contains("anchor")) {
+            mAnchor = glm::vec2(json["anchor"]["x"], json["anchor"]["y"]);
+        }
+        if (json.contains("pivot")) {
+            mPivot = glm::vec2(json["pivot"]["x"], json["pivot"]["y"]);
+        }
+        if (json.contains("stretchToParent")) {
+            mStretchToParent = json["stretchToParent"];
+        }
     }
 
 
@@ -60,8 +98,9 @@ namespace golias {
         float uiScale = Engine::GetInstance().GetSceneRenderer().GetUIScale();
         
         // Add local offset (scaled) and adjust for pivot (scaled)
+        // Use GetSize() instead of mSize to handle stretchToParent correctly
         glm::vec2 localPos = GetOwner()->GetPosition2D() * uiScale;
-        glm::vec2 pivotOffset = mPivot * mSize * uiScale;
+        glm::vec2 pivotOffset = mPivot * GetSize() * uiScale;
         
         return anchorPos + localPos - pivotOffset;
     }

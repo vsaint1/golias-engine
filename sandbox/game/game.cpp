@@ -33,35 +33,51 @@ void SpawnBox(const glm::vec3& position) {
     auto collider = std::make_shared<golias::BoxCollider>(boxExtents);
     auto body     = std::make_shared<golias::RigidBody>(golias::EBodyType::DYNAMIC, collider, 50.0f);
 
-    // body->SetFriction(0.6f);
-    // body->SetRestitution(0.0f);
-    // body->SetDragging(0.1f);
-    // body->SetAngularDragging(0.05f);
-
     obj->AddComponent(new golias::PhysicsComponent(body));
 }
 
 
 void SandboxApplication::RegisterTypes() {
+    // Register custom NativeBehaviour types
     Player::Register();
+    MainMenu::Register();
 }
 
-bool SandboxApplication::Initialize() {
+// Forward declaration for the game scene setup callback
+void SetupGameScene(golias::Scene* scene);
 
+bool SandboxApplication::Initialize() {
     std::srand((unsigned) std::time(nullptr));
 
+    // Register scene transition callback to setup the game scene when loaded
+    golias::SceneManager::GetInstance().OnSceneLoaded = [](golias::Scene* scene) {
+        if (scene && scene->GetName() == "Main") {
+            SetupGameScene(scene);
+        } else {
+            // Reset game state when going back to menu
+            porsche = nullptr;
+        }
+    };
 
-#if defined(SCENE_LOAD_FROM_FILE)
+    // Start with main menu scene
+    golias::Scene::ChangeTo("scenes/menu.gscene");
 
-    auto Tscene   = golias::Scene::Load("scenes/main.gscene");
+    spdlog::info("SandboxApplication Initialized with Main Menu.");
+    return true;
+}
+
+// Called when the game scene (main.gscene) is loaded
+void SetupGameScene(golias::Scene* Tscene) {
+    spdlog::info("Setting up game scene...");
+
     auto material = golias::Material::Load("materials/brick.mat");
     mat           = material;
-    // auto Tscene = std::make_shared<golias::Scene>();
-    porsche = golias::Model::Load("models/pbr/porsche/scene.gltf", Tscene.get());
+
+    porsche = golias::Model::Load("models/pbr/porsche/scene.gltf", Tscene);
     porsche->SetPosition({10.0f, 1.0f, 0.0f});
     porsche->SetScale({100.0f, 100.0f, 100.0f});
 
-    auto godette = golias::Model::Load("models/godette/godette.glb", Tscene.get());
+    auto godette = golias::Model::Load("models/godette/godette.glb", Tscene);
     godette->SetPosition({0.0f, 1.0f, -1.0f});
 
 
@@ -258,94 +274,47 @@ WASD to move, Mouse to look around)";
     pointLightComp->SetIntensity(10.0f);
     pointLight->AddComponent(pointLightComp);
 
-    auto torus = golias::Model::Load("models/torus.obj", Tscene.get());
+    auto torus = golias::Model::Load("models/torus.obj", Tscene);
     torus->SetPosition({5.0f, 2.0f, -2.0f});
 
-    golias::Engine::GetInstance().SetScene(Tscene);
-#else
-    auto& fs = golias::Engine::GetInstance().GetFileSystem();
+    // Lock cursor for FPS controls
+    golias::Cursor::SetCursorLockState(golias::ECursorLockState::CURSOR_LOCKED);
 
-    auto rd = golias::Engine::GetInstance().GetRenderingDevice();
-
-
-    auto mesh = golias::Mesh::CreateBox();
-
-    auto scene = std::make_shared<golias::Scene>();
-    golias::Engine::GetInstance().SetScene(scene);
-
-    auto player = scene->CreateObject<Player>("Player");
-    player->Start();
-
-    auto monkey = golias::Model::Load("models/suzanne/Suzanne.gltf", scene.get());
-    monkey->SetPosition({0.0f, 2.0f, -2.0f});
-
-    auto avocado = golias::Model::Load("models/avocado/Avocado.gltf", scene.get());
-    avocado->SetPosition({-2.0f, 2.0f, -2.0f});
-    avocado->SetScale({25.0f, 25.0f, 25.0f});
-
-    auto torus = golias::Model::Load("models/torus.obj", scene.get());
-    torus->SetPosition({5.0f, 2.0f, -2.0f});
-
-    mat = material;
-
-    auto godette = golias::Model::Load("models/godette/godette.gltf", scene.get());
-    godette->SetPosition({-5.0f, 2.0f, -6.0f});
-
-    auto nagonford = golias::Model::Load("models/nagonford/Nagonford_Animated.glb", scene.get());
-    nagonford->SetPosition({0.0f, 2.0f, -6.0f});
-
-    auto ground = scene->CreateObject("Ground");
-    ground->SetPosition({0.0f, 0.0f, -1.0f});
-
-    auto groundExtents = glm::vec3(50.0f, 2.0f, 50.0f);
-    auto groundMesh    = golias::Mesh::CreateBox(groundExtents);
-    ground->AddComponent(new golias::MeshRendererComponent(groundMesh, material));
-
-    auto groundCollider = std::make_shared<golias::BoxCollider>(groundExtents);
-
-    auto groundBody = std::make_shared<golias::RigidBody>(golias::EBodyType::STATIC, groundCollider);
-
-    ground->AddComponent(new golias::PhysicsComponent(groundBody));
-
-
-#endif
-
-
-    spdlog::info("GameApplication Initialized successfully.");
-    return true;
+    spdlog::info("Game scene setup complete.");
 }
 
 void SandboxApplication::Update(float deltaTime) {
     auto& input = golias::Engine::GetInstance().GetInputManager();
+    auto* scene = golias::Engine::GetInstance().GetScene();
+    
+    // Game-specific input (only in Main scene)
+    if (scene && scene->GetName() == "Main") {
+        if (input.IsKeyJustPressed(SDLK_E)) {
+            float x = (std::rand() % 10 - 5);
+            float z = (std::rand() % 10 - 5);
+            SpawnBox({x, 8.0f, z});
+            spdlog::info("Spawned box at {}, {}, {}", x, 8.0f, z);
+        }
 
-    if (input.IsKeyJustPressed(SDLK_E)) {
+        static float rotation = 0.0f;
+        rotation += glm::radians(15.0f) * deltaTime;
+        if (porsche) {
+            porsche->SetRotation(glm::quat(glm::vec3(0.0f, rotation, 0.0f)));
+        }
 
-        float x = (std::rand() % 10 - 5);
-        float z = (std::rand() % 10 - 5);
+        if (input.IsKeyJustPressed(SDLK_T)) {
+            auto& physicsDebugDrawer = golias::Engine::GetInstance().GetPhysicsManager();
+            physicsDebugDrawer.SetDebugDrawEnabled(!physicsDebugDrawer.IsDebugDrawEnabled());
+            spdlog::info("Toggled Physics Debug Draw: {}", physicsDebugDrawer.IsDebugDrawEnabled() ? "ON" : "OFF");
+        }
 
-        SpawnBox({x, 8.0f, z});
-
-        spdlog::info("Spawned box at {}, {}, {}", x, 8.0f, z);
-    }
-
-    static float rotation = 0.0f;
-    rotation += glm::radians(15.0f) * deltaTime;
-    if (porsche) {
-        porsche->SetRotation(glm::quat(glm::vec3(0.0f, rotation, 0.0f)));
-    }
-
-    if (input.IsKeyJustPressed(SDLK_T)) {
-        auto& physicsDebugDrawer = golias::Engine::GetInstance().GetPhysicsManager();
-        physicsDebugDrawer.SetDebugDrawEnabled(!physicsDebugDrawer.IsDebugDrawEnabled());
-        spdlog::info("Toggled Physics Debug Draw: {}", physicsDebugDrawer.IsDebugDrawEnabled() ? "ON" : "OFF");
-    }
-
-    if (auto scene = golias::Engine::GetInstance().GetScene()) {
-        scene->Update(deltaTime);
+        if (input.IsKeyJustPressed(SDLK_ESCAPE)) {
+            spdlog::info("Returning to main menu...");
+            golias::Scene::ChangeTo("scenes/menu.gscene");
+        }
     }
 }
 
 void SandboxApplication::Destroy() {
-
     spdlog::info("GameApplication Destroy called.");
 }

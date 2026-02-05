@@ -46,6 +46,14 @@ namespace golias {
         return mouse_delta_;
     }
 
+    float InputManager::GetMouseWheelDelta() const {
+        return mouse_wheel_delta_;
+    }
+
+    const std::string& InputManager::GetTextInput() const {
+        return text_input_;
+    }
+
     InputManager::KeyState InputManager::GetMouseState(int button) const {
         if (!IsValidMouseButton(button)) {
             return KeyState::UP;
@@ -189,6 +197,8 @@ namespace golias {
             }
         }
         mouse_delta_ = glm::vec2(0.0f);
+        mouse_wheel_delta_ = 0.0f;
+        text_input_.clear();
 
         if (gamepad_) {
             for (auto& state : controller_states_) {
@@ -288,6 +298,16 @@ namespace golias {
                 }
                 break;
             }
+        case SDL_EVENT_MOUSE_WHEEL:
+            {
+                mouse_wheel_delta_ = event.wheel.y;
+                break;
+            }
+        case SDL_EVENT_TEXT_INPUT:
+            {
+                text_input_ = event.text.text;
+                break;
+            }
         }
     }
 
@@ -296,6 +316,8 @@ namespace golias {
         mouse_states_.fill(KeyState::UP);
         mouse_pos_   = glm::vec2(0.0f);
         mouse_delta_ = glm::vec2(0.0f);
+        mouse_wheel_delta_ = 0.0f;
+        text_input_.clear();
 
         if (gamepad_) {
             SDL_CloseGamepad(gamepad_);

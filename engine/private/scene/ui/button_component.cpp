@@ -62,6 +62,14 @@ namespace golias {
 
         bool inside = (point.x >= p1.x) && (point.x <= p2.x) && (point.y >= p1.y) && (point.y <= p2.y);
 
+        // Debug: Log button bounds on first check
+        static bool logged = false;
+        if (!logged && GetOwner()) {
+            spdlog::info("Button '{}' bounds: ({:.0f}, {:.0f}) to ({:.0f}, {:.0f})", 
+                GetOwner()->GetName(), p1.x, p1.y, p2.x, p2.y);
+            logged = true;
+        }
+
         return inside;
     }
 

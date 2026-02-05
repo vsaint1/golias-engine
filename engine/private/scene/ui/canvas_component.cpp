@@ -1,8 +1,10 @@
 #include "scene/ui/canvas_component.h"
 
 #include "core/engine.h"
+#include "core/input/canvas_input_manager.h"
 #include "scene/game_object.h"
 #include "scene/ui/rect_transform_component.h"
+#include <json.hpp>
 
 namespace golias {
 
@@ -46,6 +48,50 @@ namespace golias {
         mesh = Engine::GetInstance().GetSceneRenderer().GetRenderingDevice()->CreateMeshFromData(layout, vertices, indices);
         if (!mesh) {
             spdlog::error("CanvasComponent::Start Failed to create canvas mesh.");
+        }
+
+        if (receivesInput) {
+            auto& canvasInputManager = Engine::GetInstance().GetCanvasInputManager();
+            canvasInputManager.SetActive(true);
+            canvasInputManager.SetActiveCanvas(this);
+            spdlog::info("CanvasComponent::Start - Enabled input for canvas '{}'", GetOwner() ? GetOwner()->GetName() : "unknown");
+        }
+    }
+
+    void CanvasComponent::SetReceivesInput(bool receives) {
+        receivesInput = receives;
+        if (receivesInput) {
+            auto& canvasInputManager = Engine::GetInstance().GetCanvasInputManager();
+            canvasInputManager.SetActive(true);
+            canvasInputManager.SetActiveCanvas(this);
+            spdlog::info("CanvasComponent::SetReceivesInput - Enabled input for canvas '{}'", GetOwner() ? GetOwner()->GetName() : "unknown");
+        }
+    }
+
+    bool CanvasComponent::GetReceivesInput() const {
+        return receivesInput;
+    }
+
+    void CanvasComponent::LoadProperties(const nlohmann::json& json) {
+        if (json.contains("canvasMode")) {
+            std::string mode = json["canvasMode"];
+            if (mode == "WORLD_SPACE") {
+                canvasMode = ECanvasMode::WORLD_SPACE;
+            } else {
+                canvasMode = ECanvasMode::SCREEN_SPACE;
+            }
+        }
+        
+        if (json.contains("useBillboarding")) {
+            useBillboarding = json["useBillboarding"];
+        }
+        
+        if (json.contains("worldSpaceScale")) {
+            worldSpaceScale = json["worldSpaceScale"];
+        }
+        
+        if (json.contains("receivesInput")) {
+            receivesInput = json["receivesInput"];
         }
     }
 

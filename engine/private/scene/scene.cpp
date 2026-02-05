@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "scene/behaviour.h"
+#include "scene/scene_manager.h"
 #include <SDL3/SDL_stdinc.h>
 
 #pragma region COMPONENTS_3D
@@ -26,6 +27,15 @@
 #include "scene/ui/text_component.h"
 #include "scene/ui/button_component.h"
 #include "scene/ui/rect_transform_component.h"
+#include "scene/ui/image_component.h"
+#include "scene/ui/slider_component.h"
+#include "scene/ui/toggle_component.h"
+#include "scene/ui/inputfield_component.h"
+#include "scene/ui/panel_component.h"
+#include "scene/ui/scrollrect_component.h"
+#include "scene/ui/layout_group_component.h"
+#include "scene/ui/progressbar_component.h"
+#include "scene/ui/dropdown_component.h"
 #pragma endregion
 
 namespace golias {
@@ -327,6 +337,24 @@ namespace golias {
         return scene;
     }
 
+    void Scene::ChangeTo(const std::string& scenePath, bool withTransition) {
+        if (withTransition) {
+            SceneManager::GetInstance().LoadScene(
+                scenePath,
+                ELoadSceneMode::SINGLE,
+                ESceneTransitionType::FADE,
+                0.5f
+            );
+        } else {
+            SceneManager::GetInstance().LoadScene(
+                scenePath,
+                ELoadSceneMode::SINGLE,
+                ESceneTransitionType::NONE,
+                0.0f
+            );
+        }
+    }
+
     void Scene::LoadObject(const nlohmann::json& object, GameObject* pParent) {
 
         const std::string name = object.value("name", "GameObject");
@@ -448,12 +476,27 @@ namespace golias {
 
         SpriteComponent2D::Register();
 
-
+        // UI Components
         WidgetComponent::Register();
         CanvasComponent::Register();
         TextWidgetComponent::Register();
         ButtonWidgetComponent::Register();
         RectTransformComponent::Register();
+        ImageWidgetComponent::Register();
+        SliderWidgetComponent::Register();
+        ToggleWidgetComponent::Register();
+        InputFieldWidgetComponent::Register();
+        PanelWidgetComponent::Register();
+        ScrollRectWidgetComponent::Register();
+        
+        // Layout Components (base LayoutGroupComponent is abstract, don't register it)
+        HorizontalLayoutGroupComponent::Register();
+        VerticalLayoutGroupComponent::Register();
+        GridLayoutGroupComponent::Register();
+        
+        // Additional UI Components
+        ProgressBarWidgetComponent::Register();
+        DropdownWidgetComponent::Register();
     }
 
 } // namespace golias

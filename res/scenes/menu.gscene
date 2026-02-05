@@ -1,0 +1,161 @@
+{
+    "name": "Menu",
+    "version": "1.0.0",
+    "objects": [
+        {
+            "name": "MenuCanvas",
+            "components": [
+                {
+                    "type": "CanvasComponent",
+                    "receivesInput": true
+                },
+                {
+                    "type": "RectTransformComponent",
+                    "size": { "x": 1280, "y": 720 }
+                }
+            ],
+            "children": [
+                {
+                    "name": "Background",
+                    "components": [
+                        {
+                            "type": "PanelWidgetComponent",
+                            "color": { "r": 0.05, "g": 0.05, "b": 0.1, "a": 0.95 },
+                            "raycastTarget": false
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "size": { "x": 1280, "y": 720 },
+                            "anchor": { "x": 0, "y": 0 },
+                            "pivot": { "x": 0, "y": 0 },
+                            "stretchToParent": true
+                        }
+                    ]
+                },
+                {
+                    "name": "TitleText",
+                    "position": { "x": 0, "y": 250, "z": 0 },
+                    "components": [
+                        {
+                            "type": "TextWidgetComponent",
+                            "text": "GOLIAS ENGINE",
+                            "color": { "r": 1.0, "g": 0.8, "b": 0.2, "a": 1.0 },
+                            "font": {
+                                "path": "fonts/NotoSans.ttf",
+                                "size": 48
+                            },
+                            "shadow": {
+                                "enabled": true,
+                                "color": { "r": 0, "g": 0, "b": 0, "a": 0.8 },
+                                "offset": { "x": 3, "y": -3 }
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": { "x": 0.5, "y": 0.5 },
+                            "pivot": { "x": 0.5, "y": 0.5 }
+                        }
+                    ]
+                },
+                {
+                    "name": "PlayButton",
+                    "position": { "x": 0, "y": 80, "z": 0 },
+                    "components": [
+                        {
+                            "type": "ButtonWidgetComponent",
+                            "color": { "r": 0.2, "g": 0.6, "b": 0.2, "a": 1.0 }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "size": { "x": 200, "y": 50 },
+                            "anchor": { "x": 0.5, "y": 0.5 },
+                            "pivot": { "x": 0.5, "y": 0.5 }
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "PlayButtonText",
+                            "components": [
+                                {
+                                    "type": "TextWidgetComponent",
+                                    "text": "PLAY",
+                                    "color": { "r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0 },
+                                    "font": {
+                                        "path": "fonts/NotoSans.ttf",
+                                        "size": 20
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": { "x": 0.5, "y": 0.5 },
+                                    "pivot": { "x": 0.5, "y": 0.5 }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "QuitButton",
+                    "position": { "x": 0, "y": 0, "z": 0 },
+                    "components": [
+                        {
+                            "type": "ButtonWidgetComponent",
+                            "color": { "r": 0.6, "g": 0.2, "b": 0.2, "a": 1.0 }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "size": { "x": 200, "y": 50 },
+                            "anchor": { "x": 0.5, "y": 0.5 },
+                            "pivot": { "x": 0.5, "y": 0.5 }
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "QuitButtonText",
+                            "components": [
+                                {
+                                    "type": "TextWidgetComponent",
+                                    "text": "QUIT",
+                                    "color": { "r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0 },
+                                    "font": {
+                                        "path": "fonts/NotoSans.ttf",
+                                        "size": 20
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": { "x": 0.5, "y": 0.5 },
+                                    "pivot": { "x": 0.5, "y": 0.5 }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "VersionText",
+                    "position": { "x": 10, "y": 10, "z": 0 },
+                    "components": [
+                        {
+                            "type": "TextWidgetComponent",
+                            "text": "v0.1.0 - Sandbox Demo",
+                            "color": { "r": 0.5, "g": 0.5, "b": 0.5, "a": 1.0 },
+                            "font": {
+                                "path": "fonts/NotoSans.ttf",
+                                "size": 12
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": { "x": 0, "y": 0 },
+                            "pivot": { "x": 0, "y": 0 }
+                        }
+                    ]
+                },
+                {
+                    "name": "MenuController",
+                    "type": "MainMenu"
+                }
+            ]
+        }
+    ]
+}

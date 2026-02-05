@@ -1,8 +1,9 @@
+#pragma once
+
 #include "core/application.h"
+#include "main_menu.h"
 #include "player_obj.h"
 
-
-#define SCENE_LOAD_FROM_FILE 1
 
 class SandboxApplication : public golias::Application {
 public:
@@ -17,6 +18,4 @@ public:
     void Update(float deltaTime) override;
 
     void Destroy() override;
-
-
 };

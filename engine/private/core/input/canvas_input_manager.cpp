@@ -2,11 +2,13 @@
 
 #include "core/engine.h"
 #include "scene/ui/canvas_component.h"
+#include <spdlog/spdlog.h>
 
 namespace golias {
 
     void CanvasInputManager::SetActive(bool active) {
         isActive = active;
+        spdlog::info("CanvasInputManager::SetActive({})", active);
     }
 
     bool CanvasInputManager::IsActive() const {
@@ -17,6 +19,7 @@ namespace golias {
         activeCanvas  = pCanvas;
         hoveredWidget = nullptr;
         pressedWidget = nullptr;
+        spdlog::info("CanvasInputManager::SetActiveCanvas({})", pCanvas ? "valid" : "null");
     }
 
     CanvasComponent* CanvasInputManager::GetActiveCanvas() const {
@@ -28,6 +31,13 @@ namespace golias {
             return;
         }
 
+        if (!activeCanvas->GetOwner()) {
+            activeCanvas = nullptr;
+            hoveredWidget = nullptr;
+            pressedWidget = nullptr;
+            return;
+        }
+
         auto& engine       = Engine::GetInstance();
         auto& inputManager = engine.GetInputManager();
 
@@ -35,11 +45,16 @@ namespace golias {
         const bool mouseReleased = inputManager.IsMouseButtonJustReleased(SDL_BUTTON_LEFT);
 
         glm::vec2 pos = inputManager.GetMousePosition();
-        pos.y         = engine.GetSceneRenderer().GetRenderingDevice()->GetViewport().height - pos.y;
-
+        float viewportHeight = engine.GetSceneRenderer().GetRenderingDevice()->GetViewport().height;
+        pos.y         = viewportHeight - pos.y;
 
         WidgetComponent* hitWidget = nullptr;
         auto widgets               = CollectWidgets(activeCanvas);
+
+        // Debug: Log once on click
+        if (mousePressed) {
+            spdlog::info("CanvasInputManager: Click at ({}, {}), {} widgets collected", pos.x, pos.y, widgets.size());
+        }
 
         for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
             WidgetComponent* w = *it;
@@ -50,6 +65,9 @@ namespace golias {
 
             if (w->HitTest(pos)) {
                 hitWidget = w;
+                if (mousePressed) {
+                    spdlog::info("CanvasInputManager: Hit widget '{}'", w->GetOwner() ? w->GetOwner()->GetName() : "unknown");
+                }
                 break;
             }
         }

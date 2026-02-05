@@ -20,6 +20,8 @@ namespace golias {
 
         void Update(float deltaTime) override;
 
+        void LoadProperties(const nlohmann::json& json) override;
+
         void Draw(WidgetComponent* pWidget);
 
         void DrawTexture2D(const glm::vec3& p1,
@@ -40,6 +42,9 @@ namespace golias {
 
         void CollectWidget(WidgetComponent* pWidget, std::vector<WidgetComponent*>& outWidgets);
 
+        /// @brief If true, this canvas will automatically register with the canvas input manager
+        void SetReceivesInput(bool receives);
+        bool GetReceivesInput() const;
 
     private:
         std::vector<CanvasBatch> batches;
@@ -49,6 +54,7 @@ namespace golias {
         ECanvasMode canvasMode     = ECanvasMode::SCREEN_SPACE;
         bool useBillboarding       = false;
         float worldSpaceScale      = 1.0f; // Scale factor for world space (1px = 0.01 units)
+        bool receivesInput         = false; // Auto-register with canvas input manager
     };
 
 } // namespace golias

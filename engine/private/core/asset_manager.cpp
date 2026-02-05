@@ -358,7 +358,8 @@ namespace golias {
             loadedGlyphs++;
         }
 
-        auto texture = EnsureTexture2D(path, textureWidth, textureHeight, ETextureFormat::RGBA8, atlas);
+        std::string textureKey = std::string(path) + "_size" + std::to_string(size);
+        auto texture = EnsureTexture2D(textureKey, textureWidth, textureHeight, ETextureFormat::RGBA8, atlas);
 
 
         font->SetTexture(texture);

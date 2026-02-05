@@ -22,6 +22,10 @@ namespace golias {
         glm::vec2 GetPivot() const;
         void SetPivot(const glm::vec2& pivot);
 
+        /// @brief When true, automatically stretches to fill parent's size
+        void SetStretchToParent(bool stretch);
+        bool GetStretchToParent() const;
+
         void Start();
         void Update(float deltaTime);
         void LoadProperties(const nlohmann::json& json);
@@ -32,5 +36,6 @@ namespace golias {
         glm::vec2 mSize   = glm::vec2(100.0f, 100.0f);
         glm::vec2 mAnchor = glm::vec2(0.0f, 0.0f);
         glm::vec2 mPivot  = glm::vec2(0.5f, 0.5f);
+        bool mStretchToParent = false;
     };
 } // namespace golias

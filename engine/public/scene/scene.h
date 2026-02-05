@@ -36,6 +36,11 @@ namespace golias {
 
         static std::shared_ptr<Scene> Load(const std::string_view pPath);
 
+        /// @brief Change to a new scene using the SceneManager
+        /// @param scenePath Path to the scene file (e.g., "scenes/main.gscene")
+        /// @param withTransition If true, use a fade transition
+        static void ChangeTo(const std::string& scenePath, bool withTransition = true);
+
         void SetName(const std::string_view pName);
         const std::string& GetName() const;
 

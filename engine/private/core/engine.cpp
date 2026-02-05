@@ -1,6 +1,7 @@
 #include "core/engine.h"
 
 #include "scene/3d/camera_component.h"
+#include "scene/scene_manager.h"
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
     #include <emscripten/emscripten.h>
@@ -103,16 +104,33 @@ namespace golias {
             engine.GetInputManager().ProcessEvent(event);
         }
 
+        engine.GetPhysicsManager().StepSimulation(delta_time);
+
+        // Update scene manager for transitions
+        SceneManager::GetInstance().Update(delta_time);
+
+        // Update the current scene (GameObjects, Behaviours, etc.)
+        // This MUST happen BEFORE canvas input so widget bounds are up-to-date after resize
+        if (engine.GetScene()) {
+            engine.GetScene()->Update(delta_time);
+        }
+
+        // Process canvas input AFTER scene update so widget positions are current
         if (engine.GetCanvasInputManager().IsActive()) {
             engine.GetCanvasInputManager().Update(delta_time);
         }
-
-        engine.GetPhysicsManager().StepSimulation(delta_time);
 
         engine.GetApplication()->Update(delta_time);
 
 
         CameraCommand cameraData;
+        
+        // Always set up orthographic matrix for UI, even without a 3D camera
+        cameraData.orthographicMatrix = glm::ortho(0.0f,
+                                                   static_cast<float>(engine.GetApplication()->GetWidth()),
+                                                   0.0f,
+                                                   static_cast<float>(engine.GetApplication()->GetHeight()));
+        
         if (engine.GetScene() && engine.GetScene()->GetMainCamera()) {
             auto pCameraComponent = engine.GetScene()->GetMainCamera()->GetComponent<CameraComponent>();
 
@@ -121,11 +139,7 @@ namespace golias {
 
                 float aspect =
                     static_cast<float>(engine.GetApplication()->GetWidth()) / static_cast<float>(engine.GetApplication()->GetHeight());
-                cameraData.projectionMatrix   = pCameraComponent->GetProjectionMatrix(aspect);
-                cameraData.orthographicMatrix = glm::ortho(0.0f,
-                                                           static_cast<float>(engine.GetApplication()->GetWidth()),
-                                                           0.0f,
-                                                           static_cast<float>(engine.GetApplication()->GetHeight()));
+                cameraData.projectionMatrix = pCameraComponent->GetProjectionMatrix(aspect);
 
                 cameraData.position = engine.GetScene()->GetMainCamera()->GetWorldPosition();
             }
@@ -196,6 +210,9 @@ namespace golias {
 
 
     void Engine::SetScene(const std::shared_ptr<Scene>& pScene) {
+        // Note: Canvas input manager is NOT cleared here.
+        // The new scene should set up its own active canvas.
+        // Old canvas references become invalid but are checked in Update.
         scene = pScene;
     }
 
