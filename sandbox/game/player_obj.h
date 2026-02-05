@@ -7,8 +7,9 @@
 #include "scene/3d/character_controller_component.h"
 #include "scene/3d/mesh_component.h"
 #include "scene/3d/physics_component.h"
+#include "scene/native_behaviour.h"
 
-class Player : public golias::GameObject {
+class Player : public golias::NativeBehaviour {
     GCLASS(Player)
 public:
     Player();

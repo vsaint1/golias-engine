@@ -22,14 +22,6 @@ namespace golias {
         // Override in derived classes
     }
 
-    void GameObject::Awake() {
-        // Override in derived classes
-    }
-
-    void GameObject::Start() {
-        // Override in derived classes
-    }
-
     void GameObject::Update(float deltaTime) {
         if (!IsActive()) {
             return;
@@ -58,16 +50,23 @@ namespace golias {
         name = newName;
     }
 
-    void GameObject::Destroy() {
-        if (!isAlive) {
-            return; // Already destroyed
-        }
-        OnDestroy();
-        isAlive = false;
+    const std::string& GameObject::GetTag() const {
+        return tag;
     }
 
-    void GameObject::OnDestroy() {
-        // Override in derived classes
+    void GameObject::SetTag(const std::string& newTag) {
+        tag = newTag;
+    }
+
+    bool GameObject::CompareTag(const std::string& otherTag) const {
+        return tag == otherTag;
+    }
+
+    void GameObject::Destroy() {
+        if (!isAlive) {
+            return; 
+        }
+        isAlive = false;
     }
 
     bool GameObject::IsAlive() const {

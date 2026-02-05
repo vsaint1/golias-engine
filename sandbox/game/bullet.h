@@ -1,8 +1,8 @@
 #pragma once
 #include "scene/3d/physics_component.h"
-#include "scene/game_object.h"
+#include "scene/native_behaviour.h"
 
-class Bullet : public golias::GameObject {
+class Bullet : public golias::NativeBehaviour {
     GCLASS(Bullet)
 public:
     Bullet();

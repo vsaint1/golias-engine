@@ -1,6 +1,7 @@
 #include "scene/scene.h"
 
 #include "core/engine.h"
+#include "scene/behaviour.h"
 #include <SDL3/SDL_stdinc.h>
 
 #pragma region COMPONENTS_3D
@@ -126,9 +127,11 @@ namespace golias {
                     game_objects.push_back(std::move(*it));
                     pGameObject->parent = nullptr;
                     currentParent->children.erase(it);
-                    if (!pGameObject->hasAwoken) {
-                        pGameObject->Awake();
-                        pGameObject->hasAwoken = true;
+                    if (!pGameObject->didAwake) {
+                        if (auto* behaviour = dynamic_cast<Behaviour*>(pGameObject)) {
+                            behaviour->Awake();
+                        }
+                        pGameObject->didAwake = true;
                     }
                     result = true;
                 }
@@ -144,9 +147,11 @@ namespace golias {
                 if (it == game_objects.end()) {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
                     game_objects.push_back(std::move(objHolder));
-                    if (!pGameObject->hasAwoken) {
-                        pGameObject->Awake();
-                        pGameObject->hasAwoken = true;
+                    if (!pGameObject->didAwake) {
+                        if (auto* behaviour = dynamic_cast<Behaviour*>(pGameObject)) {
+                            behaviour->Awake();
+                        }
+                        pGameObject->didAwake = true;
                     }
                     result = true;
                 }
@@ -174,9 +179,11 @@ namespace golias {
                         pParent->children.push_back(std::move(*it));
                         pGameObject->parent = pParent;
                         currentParent->children.erase(it);
-                        if (!pGameObject->hasAwoken) {
-                            pGameObject->Awake();
-                            pGameObject->hasAwoken = true;
+                        if (!pGameObject->didAwake) {
+                            if (auto* behaviour = dynamic_cast<Behaviour*>(pGameObject)) {
+                                behaviour->Awake();
+                            }
+                            pGameObject->didAwake = true;
                         }
                         result = true;
                     }
@@ -195,9 +202,11 @@ namespace golias {
                     std::unique_ptr<GameObject> objHolder(pGameObject);
                     pParent->children.push_back(std::move(objHolder));
                     pGameObject->parent = pParent;
-                    if (!pGameObject->hasAwoken) {
-                        pGameObject->Awake();
-                        pGameObject->hasAwoken = true;
+                    if (!pGameObject->didAwake) {
+                        if (auto* behaviour = dynamic_cast<Behaviour*>(pGameObject)) {
+                            behaviour->Awake();
+                        }
+                        pGameObject->didAwake = true;
                     }
                     result              = true;
                 } else {
@@ -215,9 +224,11 @@ namespace golias {
                         pParent->children.push_back(std::move(*it));
                         pGameObject->parent = pParent;
                         game_objects.erase(it);
-                        if (!pGameObject->hasAwoken) {
-                            pGameObject->Awake();
-                            pGameObject->hasAwoken = true;
+                        if (!pGameObject->didAwake) {
+                            if (auto* behaviour = dynamic_cast<Behaviour*>(pGameObject)) {
+                                behaviour->Awake();
+                            }
+                            pGameObject->didAwake = true;
                         }
                         result = true;
                     }
@@ -410,7 +421,9 @@ namespace golias {
         }
 
 
-        gameObject->Start();
+        if (auto* behaviour = dynamic_cast<Behaviour*>(gameObject)) {
+            behaviour->Start();
+        }
     }
 
     void Scene::SetName(const std::string_view pName) {
