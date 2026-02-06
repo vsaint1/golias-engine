@@ -5,26 +5,33 @@
 
 namespace golias {
 
-    bool InputManager::IsKeyPressed(int keycode) const {
+    // ================================================================
+    //  Keyboard
+    // ================================================================
+    bool InputManager::IsKeyPressed(SDL_Keycode keycode) const {
         auto state = GetKeyState(keycode);
         return state == KeyState::PRESSED || state == KeyState::JUST_PRESSED;
     }
 
-    bool InputManager::IsKeyJustPressed(int keycode) const {
+    bool InputManager::IsKeyJustPressed(SDL_Keycode keycode) const {
         return GetKeyState(keycode) == KeyState::JUST_PRESSED;
     }
 
-    bool InputManager::IsKeyJustReleased(int keycode) const {
+    bool InputManager::IsKeyJustReleased(SDL_Keycode keycode) const {
         return GetKeyState(keycode) == KeyState::JUST_RELEASED;
     }
 
-    InputManager::KeyState InputManager::GetKeyState(int keycode) const {
-        if (!IsValidKeycode(keycode)) {
+    InputManager::KeyState InputManager::GetKeyState(SDL_Keycode keycode) const {
+        auto it = key_states_.find(keycode);
+        if (it == key_states_.end()) {
             return KeyState::UP;
         }
-        return key_states_[keycode];
+        return it->second;
     }
 
+    // ================================================================
+    //  Mouse
+    // ================================================================
     bool InputManager::IsMouseButtonPressed(int button) const {
         auto state = GetMouseState(button);
         return state == KeyState::PRESSED || state == KeyState::JUST_PRESSED;
@@ -61,6 +68,9 @@ namespace golias {
         return mouse_states_[button];
     }
 
+    // ================================================================
+    //  Controller
+    // ================================================================
     bool InputManager::IsControllerButtonPressed(int button) const {
         auto state = GetControllerState(button);
         return state == KeyState::PRESSED || state == KeyState::JUST_PRESSED;
@@ -88,8 +98,11 @@ namespace golias {
         return controller_states_[button];
     }
 
-    void InputManager::BindAction(const std::string& action, int keycode) {
-        actions_[action].push_back({BindingType::KEYBOARD, keycode});
+    // ================================================================
+    //  Actions
+    // ================================================================
+    void InputManager::BindAction(const std::string& action, SDL_Keycode keycode) {
+        actions_[action].push_back({BindingType::KEYBOARD, static_cast<int>(keycode)});
     }
 
     void InputManager::BindActionMouse(const std::string& action, int button) {
@@ -102,131 +115,210 @@ namespace golias {
 
     bool InputManager::IsActionPressed(const std::string& action) const {
         auto it = actions_.find(action);
-        if (it == actions_.end()) {
-            return false;
-        }
-
+        if (it == actions_.end()) return false;
         for (const auto& binding : it->second) {
-            if (CheckBinding(binding)) {
-                return true;
-            }
+            if (CheckBinding(binding)) return true;
         }
         return false;
     }
 
     bool InputManager::IsActionJustPressed(const std::string& action) const {
         auto it = actions_.find(action);
-        if (it == actions_.end()) {
-            return false;
-        }
-
+        if (it == actions_.end()) return false;
         for (const auto& binding : it->second) {
-            if (CheckBindingJustPressed(binding)) {
-                return true;
-            }
+            if (CheckBindingJustPressed(binding)) return true;
         }
         return false;
     }
 
     bool InputManager::IsActionJustReleased(const std::string& action) const {
         auto it = actions_.find(action);
-        if (it == actions_.end()) {
-            return false;
-        }
-
+        if (it == actions_.end()) return false;
         for (const auto& binding : it->second) {
-            if (CheckBindingJustReleased(binding)) {
-                return true;
-            }
+            if (CheckBindingJustReleased(binding)) return true;
         }
         return false;
     }
 
     bool InputManager::CheckBinding(const Binding& b) const {
         switch (b.type) {
-        case BindingType::KEYBOARD:
-            return IsKeyPressed(b.code);
-        case BindingType::MOUSE:
-            return IsMouseButtonPressed(b.code);
-        case BindingType::CONTROLLER:
-            return IsControllerButtonPressed(b.code);
+        case BindingType::KEYBOARD:   return IsKeyPressed(static_cast<SDL_Keycode>(b.code));
+        case BindingType::MOUSE:      return IsMouseButtonPressed(b.code);
+        case BindingType::CONTROLLER: return IsControllerButtonPressed(b.code);
         }
         return false;
     }
 
     bool InputManager::CheckBindingJustPressed(const Binding& b) const {
         switch (b.type) {
-        case BindingType::KEYBOARD:
-            return IsKeyJustPressed(b.code);
-        case BindingType::MOUSE:
-            return IsMouseButtonJustPressed(b.code);
-        case BindingType::CONTROLLER:
-            return IsControllerButtonJustPressed(b.code);
+        case BindingType::KEYBOARD:   return IsKeyJustPressed(static_cast<SDL_Keycode>(b.code));
+        case BindingType::MOUSE:      return IsMouseButtonJustPressed(b.code);
+        case BindingType::CONTROLLER: return IsControllerButtonJustPressed(b.code);
         }
         return false;
     }
 
     bool InputManager::CheckBindingJustReleased(const Binding& b) const {
         switch (b.type) {
-        case BindingType::KEYBOARD:
-            return IsKeyJustReleased(b.code);
-        case BindingType::MOUSE:
-            return IsMouseButtonJustReleased(b.code);
-        case BindingType::CONTROLLER:
-            return IsControllerButtonJustReleased(b.code);
+        case BindingType::KEYBOARD:   return IsKeyJustReleased(static_cast<SDL_Keycode>(b.code));
+        case BindingType::MOUSE:      return IsMouseButtonJustReleased(b.code);
+        case BindingType::CONTROLLER: return IsControllerButtonJustReleased(b.code);
         }
         return false;
     }
 
-    // Update
+    // ================================================================
+    //  Virtual axes  (Unity-style "Horizontal", "Vertical", "Mouse X", "Mouse Y")
+    // ================================================================
+    float InputManager::GetAxis(const std::string& axisName) const {
+        // Built-in axis names
+        if (axisName == "Horizontal") {
+            float raw = 0.0f;
+            if (IsKeyPressed(SDLK_D) || IsKeyPressed(SDLK_RIGHT)) raw += 1.0f;
+            if (IsKeyPressed(SDLK_A) || IsKeyPressed(SDLK_LEFT))  raw -= 1.0f;
+            // Smooth toward target
+            float& val = axis_values_[axisName];
+            float speed = 6.0f; // units per second  approximate
+            if (std::abs(raw - val) < 0.01f) {
+                val = raw;
+            } else {
+                val += (raw - val) * std::min(1.0f, speed * 0.016f);
+            }
+            if (gamepad_) {
+                float stick = GetControllerAxis(SDL_GAMEPAD_AXIS_LEFTX);
+                if (std::abs(stick) > std::abs(val)) val = stick;
+            }
+            return val;
+        }
+
+        if (axisName == "Vertical") {
+            float raw = 0.0f;
+            if (IsKeyPressed(SDLK_W) || IsKeyPressed(SDLK_UP))   raw += 1.0f;
+            if (IsKeyPressed(SDLK_S) || IsKeyPressed(SDLK_DOWN))  raw -= 1.0f;
+            float& val = axis_values_[axisName];
+            float speed = 6.0f;
+            if (std::abs(raw - val) < 0.01f) {
+                val = raw;
+            } else {
+                val += (raw - val) * std::min(1.0f, speed * 0.016f);
+            }
+            if (gamepad_) {
+                float stick = -GetControllerAxis(SDL_GAMEPAD_AXIS_LEFTY);
+                if (std::abs(stick) > std::abs(val)) val = stick;
+            }
+            return val;
+        }
+
+        if (axisName == "Mouse X") return mouse_delta_.x;
+        if (axisName == "Mouse Y") return mouse_delta_.y;
+        if (axisName == "Mouse ScrollWheel") return mouse_wheel_delta_;
+
+        // Controller axes
+        if (axisName == "RightStickHorizontal" && gamepad_) return GetControllerAxis(SDL_GAMEPAD_AXIS_RIGHTX);
+        if (axisName == "RightStickVertical"   && gamepad_) return -GetControllerAxis(SDL_GAMEPAD_AXIS_RIGHTY);
+
+        return 0.0f;
+    }
+
+    float InputManager::GetAxisRaw(const std::string& axisName) const {
+        if (axisName == "Horizontal") {
+            float val = 0.0f;
+            if (IsKeyPressed(SDLK_D) || IsKeyPressed(SDLK_RIGHT)) val += 1.0f;
+            if (IsKeyPressed(SDLK_A) || IsKeyPressed(SDLK_LEFT))  val -= 1.0f;
+            if (gamepad_) {
+                float stick = GetControllerAxis(SDL_GAMEPAD_AXIS_LEFTX);
+                if (std::abs(stick) > std::abs(val)) val = stick;
+            }
+            return val;
+        }
+        if (axisName == "Vertical") {
+            float val = 0.0f;
+            if (IsKeyPressed(SDLK_W) || IsKeyPressed(SDLK_UP))   val += 1.0f;
+            if (IsKeyPressed(SDLK_S) || IsKeyPressed(SDLK_DOWN))  val -= 1.0f;
+            if (gamepad_) {
+                float stick = -GetControllerAxis(SDL_GAMEPAD_AXIS_LEFTY);
+                if (std::abs(stick) > std::abs(val)) val = stick;
+            }
+            return val;
+        }
+        if (axisName == "Mouse X") return mouse_delta_.x;
+        if (axisName == "Mouse Y") return mouse_delta_.y;
+        if (axisName == "Mouse ScrollWheel") return mouse_wheel_delta_;
+        return 0.0f;
+    }
+
+    // ================================================================
+    //  Any key
+    // ================================================================
+    bool InputManager::AnyKey() const {
+        return anyKey_;
+    }
+
+    bool InputManager::AnyKeyDown() const {
+        return anyKeyDown_;
+    }
+
+    // ================================================================
+    //  Per-frame update
+    // ================================================================
     void InputManager::Update() {
-        // Update keyboard
-        for (auto& state : key_states_) {
+        anyKeyDown_ = false;
+        bool hasAnyPressed = false;
+
+        // Keyboard  iterate the map and advance states
+        for (auto it = key_states_.begin(); it != key_states_.end(); ) {
+            auto& state = it->second;
             if (state == KeyState::JUST_PRESSED) {
                 state = KeyState::PRESSED;
             } else if (state == KeyState::JUST_RELEASED) {
-                state = KeyState::UP;
+                // Remove entries that are UP to keep the map lean
+                it = key_states_.erase(it);
+                continue;
             }
+            if (state == KeyState::PRESSED || state == KeyState::JUST_PRESSED) {
+                hasAnyPressed = true;
+            }
+            ++it;
         }
 
         for (auto& state : mouse_states_) {
-            if (state == KeyState::JUST_PRESSED) {
-                state = KeyState::PRESSED;
-            } else if (state == KeyState::JUST_RELEASED) {
-                state = KeyState::UP;
-            }
+            if (state == KeyState::JUST_PRESSED)  state = KeyState::PRESSED;
+            else if (state == KeyState::JUST_RELEASED) state = KeyState::UP;
         }
-        mouse_delta_ = glm::vec2(0.0f);
+        mouse_delta_       = glm::vec2(0.0f);
         mouse_wheel_delta_ = 0.0f;
         text_input_.clear();
 
         if (gamepad_) {
             for (auto& state : controller_states_) {
-                if (state == KeyState::JUST_PRESSED) {
-                    state = KeyState::PRESSED;
-                } else if (state == KeyState::JUST_RELEASED) {
-                    state = KeyState::UP;
-                }
+                if (state == KeyState::JUST_PRESSED)  state = KeyState::PRESSED;
+                else if (state == KeyState::JUST_RELEASED) state = KeyState::UP;
             }
         }
+
+        anyKey_ = hasAnyPressed || IsMouseButtonPressed(SDL_BUTTON_LEFT) || 
+                  IsMouseButtonPressed(SDL_BUTTON_RIGHT);
     }
 
+    // ================================================================
+    //  Event processing
+    // ================================================================
     void InputManager::ProcessEvent(const SDL_Event& event) {
         switch (event.type) {
         case SDL_EVENT_KEY_DOWN:
             {
-                int k = static_cast<int>(event.key.key);
-                if (IsValidKeycode(k) && key_states_[k] == KeyState::UP) {
+                SDL_Keycode k = event.key.key;
+                auto it = key_states_.find(k);
+                if (it == key_states_.end() || it->second == KeyState::UP) {
                     key_states_[k] = KeyState::JUST_PRESSED;
+                    anyKeyDown_ = true;
                 }
                 break;
             }
         case SDL_EVENT_KEY_UP:
             {
-                int k = static_cast<int>(event.key.key);
-                if (IsValidKeycode(k)) {
-                    key_states_[k] = KeyState::JUST_RELEASED;
-                }
+                SDL_Keycode k = event.key.key;
+                key_states_[k] = KeyState::JUST_RELEASED;
                 break;
             }
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -234,6 +326,7 @@ namespace golias {
                 int b = event.button.button;
                 if (IsValidMouseButton(b) && mouse_states_[b] == KeyState::UP) {
                     mouse_states_[b] = KeyState::JUST_PRESSED;
+                    anyKeyDown_ = true;
                 }
                 break;
             }
@@ -249,6 +342,11 @@ namespace golias {
             {
                 mouse_pos_   = glm::vec2(event.motion.x, event.motion.y);
                 mouse_delta_ = glm::vec2(event.motion.xrel, event.motion.yrel);
+                break;
+            }
+        case SDL_EVENT_MOUSE_WHEEL:
+            {
+                mouse_wheel_delta_ = event.wheel.y;
                 break;
             }
         case SDL_EVENT_GAMEPAD_ADDED:
@@ -274,6 +372,7 @@ namespace golias {
                     int b = event.gbutton.button;
                     if (IsValidControllerButton(b) && controller_states_[b] == KeyState::UP) {
                         controller_states_[b] = KeyState::JUST_PRESSED;
+                        anyKeyDown_ = true;
                     }
                 }
                 break;
@@ -298,11 +397,6 @@ namespace golias {
                 }
                 break;
             }
-        case SDL_EVENT_MOUSE_WHEEL:
-            {
-                mouse_wheel_delta_ = event.wheel.y;
-                break;
-            }
         case SDL_EVENT_TEXT_INPUT:
             {
                 text_input_ = event.text.text;
@@ -311,11 +405,14 @@ namespace golias {
         }
     }
 
+    // ================================================================
+    //  Reset
+    // ================================================================
     void InputManager::Reset() {
-        key_states_.fill(KeyState::UP);
+        key_states_.clear();
         mouse_states_.fill(KeyState::UP);
-        mouse_pos_   = glm::vec2(0.0f);
-        mouse_delta_ = glm::vec2(0.0f);
+        mouse_pos_         = glm::vec2(0.0f);
+        mouse_delta_       = glm::vec2(0.0f);
         mouse_wheel_delta_ = 0.0f;
         text_input_.clear();
 
@@ -327,6 +424,9 @@ namespace golias {
         controller_axes_.fill(0.0f);
 
         actions_.clear();
+        axis_values_.clear();
+        anyKeyDown_ = false;
+        anyKey_     = false;
     }
 
 } // namespace golias

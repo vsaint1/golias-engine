@@ -14,9 +14,9 @@ namespace golias {
         ~InputManager() = default;
 
         // Keyboard
-        bool IsKeyPressed(int keycode) const;
-        bool IsKeyJustPressed(int keycode) const;
-        bool IsKeyJustReleased(int keycode) const;
+        bool IsKeyPressed(SDL_Keycode keycode) const;
+        bool IsKeyJustPressed(SDL_Keycode keycode) const;
+        bool IsKeyJustReleased(SDL_Keycode keycode) const;
 
         // Mouse
         bool IsMouseButtonPressed(int button) const;
@@ -36,12 +36,20 @@ namespace golias {
         float GetControllerAxis(int axis) const;
 
         // Actions (can bind keyboard, mouse, or controller)
-        void BindAction(const std::string& action, int keycode);
+        void BindAction(const std::string& action, SDL_Keycode keycode);
         void BindActionMouse(const std::string& action, int button);
         void BindActionController(const std::string& action, int button);
         bool IsActionPressed(const std::string& action) const;
         bool IsActionJustPressed(const std::string& action) const;
         bool IsActionJustReleased(const std::string& action) const;
+
+        // Unity-style virtual axes  (returns -1..1)
+        float GetAxis(const std::string& axisName) const;
+        float GetAxisRaw(const std::string& axisName) const;
+
+        // Any key
+        bool AnyKey() const;
+        bool AnyKeyDown() const;
 
         void Update();
         void ProcessEvent(const SDL_Event& event);
@@ -58,12 +66,13 @@ namespace golias {
 
         struct Binding {
             BindingType type;
-            int code;
+            int code;  // SDL_Keycode for keyboard, button index for mouse/controller
         };
 
-        // Keyboard
-        static constexpr size_t MAX_KEYS = 512;
-        std::array<KeyState, MAX_KEYS> key_states_{};
+        // Keyboard  hashmap to support all SDL_Keycode values (modifier keys, arrows, F-keys etc.)
+        std::unordered_map<SDL_Keycode, KeyState> key_states_;
+        bool anyKeyDown_ = false;
+        bool anyKey_     = false;
 
         // Mouse
         static constexpr size_t MAX_MOUSE_BUTTONS = 8;
@@ -81,9 +90,8 @@ namespace golias {
 
         std::unordered_map<std::string, std::vector<Binding>> actions_;
 
-        bool IsValidKeycode(int k) const {
-            return k >= 0 && k < MAX_KEYS;
-        }
+        // Virtual axes (smoothed values)
+        mutable std::unordered_map<std::string, float> axis_values_;
         
         bool IsValidMouseButton(int b) const {
             return b >= 0 && b < MAX_MOUSE_BUTTONS;
@@ -92,7 +100,7 @@ namespace golias {
             return b >= 0 && b < SDL_GAMEPAD_BUTTON_COUNT;
         }
 
-        KeyState GetKeyState(int keycode) const;
+        KeyState GetKeyState(SDL_Keycode keycode) const;
         KeyState GetMouseState(int button) const;
         KeyState GetControllerState(int button) const;
         bool CheckBinding(const Binding& b) const;

@@ -23,6 +23,8 @@ add_subdirectory(stb_image)
 add_subdirectory(SDL EXCLUDE_FROM_ALL)
 add_subdirectory(glm)
 add_subdirectory(spdlog)
+add_subdirectory(sol2)
+add_subdirectory(lua)
 
 add_subdirectory(json)
 
@@ -42,7 +44,6 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 add_compile_definitions(ASSIMP_BUILD_NO_GLTF1_IMPORTER=0)
 add_subdirectory(assimp)
 
-add_subdirectory(entt)
 
 add_library(thirdparty INTERFACE)
 
@@ -63,5 +64,6 @@ target_link_libraries(${PROJECT_NAME}  INTERFACE
         mini_audio
         freetype
         assimp
-        entt
+        sol2
+        lua
 )

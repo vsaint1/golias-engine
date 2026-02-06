@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "scene/behaviour.h"
+#include "scene/lua_behaviour.h"
 #include "scene/scene_manager.h"
 #include <SDL3/SDL_stdinc.h>
 
@@ -497,6 +498,9 @@ namespace golias {
         // Additional UI Components
         ProgressBarWidgetComponent::Register();
         DropdownWidgetComponent::Register();
+
+        // Scripting
+        LuaBehaviour::Register();
     }
 
 } // namespace golias

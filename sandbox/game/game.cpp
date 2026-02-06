@@ -40,7 +40,7 @@ void SpawnBox(const glm::vec3& position) {
 void SandboxApplication::RegisterTypes() {
     // Register custom NativeBehaviour types
     Player::Register();
-    MainMenu::Register();
+    // MainMenu::Register();
 }
 
 // Forward declaration for the game scene setup callback

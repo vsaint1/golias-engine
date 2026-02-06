@@ -195,18 +195,15 @@ namespace golias {
 
         if (info.depthLoadOp == ELoadOp::CLEAR) {
             clearFlags |= GL_DEPTH_BUFFER_BIT;
+        }
 
-            /// NOTE: this doesnt work on Webgl
-            //     if (info.clearValues.size() > 1) {
-            //         glClearDepth(info.clearValues[1].depthStencil.depth);
-            //     } else {
-            //         glClearDepth(1.0f);
-            //     }
-            // }
-
-            if (clearFlags != 0) {
-                glClear(clearFlags);
+        if (clearFlags != 0) {
+     
+            if (clearFlags & GL_DEPTH_BUFFER_BIT) {
+                glDepthMask(GL_TRUE);
             }
+
+            glClear(clearFlags);
         }
     }
 

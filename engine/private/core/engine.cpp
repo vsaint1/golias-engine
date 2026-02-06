@@ -1,5 +1,6 @@
 #include "core/engine.h"
 
+#include "core/time.h"
 #include "scene/3d/camera_component.h"
 #include "scene/scene_manager.h"
 
@@ -70,6 +71,8 @@ namespace golias {
             return false;
         }
 
+        Time::Initialize();
+
         spdlog::info("Engine::Initialize Golias Engine Initialized successfully.");
 
         return true;
@@ -79,12 +82,8 @@ namespace golias {
 
         Engine& engine = Engine::GetInstance();
 
-        Uint64 current_time_point = SDL_GetPerformanceCounter();
-        Uint64 time_delta         = current_time_point - engine.GetLastTimePoint();
-
-        float delta_time = static_cast<float>(time_delta) / SDL_GetPerformanceFrequency();
-
-        engine.SetLastTimePoint(current_time_point);
+        Time::Update();
+        float delta_time = Time::GetDeltaTime();
 
         engine.GetInputManager().Update();
 
@@ -163,8 +162,6 @@ namespace golias {
             return;
         }
 
-        last_time_point = SDL_GetPerformanceCounter();
-
 
 #if defined(SDL_PLATFORM_EMSCRIPTEN)
         emscripten_set_main_loop(engine_core_loop, 0, 1);
@@ -198,14 +195,6 @@ namespace golias {
         }
 
         application.reset(pApplication);
-    }
-
-
-    Uint64 Engine::GetLastTimePoint() const {
-        return last_time_point;
-    }
-    void Engine::SetLastTimePoint(Uint64 timePoint) {
-        last_time_point = timePoint;
     }
 
 

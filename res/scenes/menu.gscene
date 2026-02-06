@@ -153,7 +153,8 @@
                 },
                 {
                     "name": "MenuController",
-                    "type": "MainMenu"
+                    "type": "LuaBehaviour",
+                    "script": "scripts/main_menu.lua"
                 }
             ]
         }

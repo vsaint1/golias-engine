@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "scene/ui/canvas_component.h"
+#include "scene/ui/inputfield_component.h"
 #include <spdlog/spdlog.h>
 
 namespace golias {
@@ -89,6 +90,28 @@ namespace golias {
         if (mousePressed && hoveredWidget && !pressedWidget) {
             pressedWidget = hoveredWidget;
             pressedWidget->OnPointerDown();
+
+            // Unfocus any InputField that is NOT the clicked widget
+            for (auto* w : widgets) {
+                if (w != hitWidget) {
+                    if (auto* inputField = dynamic_cast<InputFieldWidgetComponent*>(w)) {
+                        if (inputField->IsFocused()) {
+                            inputField->Unfocus();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Click on empty space — unfocus all input fields
+        if (mousePressed && !hoveredWidget) {
+            for (auto* w : widgets) {
+                if (auto* inputField = dynamic_cast<InputFieldWidgetComponent*>(w)) {
+                    if (inputField->IsFocused()) {
+                        inputField->Unfocus();
+                    }
+                }
+            }
         }
 
 

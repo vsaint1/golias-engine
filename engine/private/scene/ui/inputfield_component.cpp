@@ -6,6 +6,7 @@
 #include "scene/game_object.h"
 #include "scene/ui/canvas_component.h"
 #include "scene/ui/rect_transform_component.h"
+#include <SDL3/SDL_clipboard.h>
 
 namespace golias {
 
@@ -470,12 +471,61 @@ namespace golias {
     void InputFieldWidgetComponent::ProcessKeyInput(float deltaTime) {
         auto& input = Engine::GetInstance().GetInputManager();
 
-        // Handle backspace with proper repeat delay
-        if (input.IsKeyJustPressed(SDL_SCANCODE_BACKSPACE)) {
+        bool ctrlHeld = input.IsKeyPressed(SDLK_LCTRL) || input.IsKeyPressed(SDLK_RCTRL);
+
+        // ---- Clipboard: Ctrl+C / Ctrl+V / Ctrl+X ----
+        if (ctrlHeld && input.IsKeyJustPressed(SDLK_C)) {
+            // Copy selection (or full text if no selection)
+            if (selectionStart != selectionEnd) {
+                int s = std::min(selectionStart, selectionEnd);
+                int e = std::max(selectionStart, selectionEnd);
+                SDL_SetClipboardText(text.substr(s, e - s).c_str());
+            } else {
+                SDL_SetClipboardText(text.c_str());
+            }
+        }
+
+        if (ctrlHeld && input.IsKeyJustPressed(SDLK_X)) {
+            // Cut
+            if (!readOnly && selectionStart != selectionEnd) {
+                int s = std::min(selectionStart, selectionEnd);
+                int e = std::max(selectionStart, selectionEnd);
+                SDL_SetClipboardText(text.substr(s, e - s).c_str());
+                text.erase(s, e - s);
+                caretPosition = s;
+                selectionStart = selectionEnd = caretPosition;
+                UpdateScrollOffset();
+                caretVisible = true;
+                caretBlinkTimer = 0.0f;
+                if (OnValueChanged) OnValueChanged(text);
+            }
+        }
+
+        if (ctrlHeld && input.IsKeyJustPressed(SDLK_V)) {
+            // Paste
+            if (!readOnly && SDL_HasClipboardText()) {
+                char* clip = SDL_GetClipboardText();
+                if (clip) {
+                    ProcessTextInput(std::string(clip));
+                    SDL_free(clip);
+                }
+            }
+        }
+
+        // ---- Ctrl+A: Select All ----
+        if (ctrlHeld && input.IsKeyJustPressed(SDLK_A)) {
+            selectionStart = 0;
+            selectionEnd = static_cast<int>(text.length());
+            caretPosition = selectionEnd;
+            UpdateScrollOffset();
+        }
+
+        // ---- Backspace with repeat ----
+        if (input.IsKeyJustPressed(SDLK_BACKSPACE)) {
             HandleBackspace();
             keyRepeatTimer = 0.0f;
-            keyRepeatKey = SDL_SCANCODE_BACKSPACE;
-        } else if (input.IsKeyPressed(SDL_SCANCODE_BACKSPACE) && keyRepeatKey == SDL_SCANCODE_BACKSPACE) {
+            keyRepeatKey = SDLK_BACKSPACE;
+        } else if (input.IsKeyPressed(SDLK_BACKSPACE) && keyRepeatKey == SDLK_BACKSPACE) {
             keyRepeatTimer += deltaTime;
             if (keyRepeatTimer >= keyRepeatDelay) {
                 HandleBackspace();
@@ -483,12 +533,12 @@ namespace golias {
             }
         }
 
-        // Handle delete with proper repeat delay
-        if (input.IsKeyJustPressed(SDL_SCANCODE_DELETE)) {
+        // ---- Delete with repeat ----
+        if (input.IsKeyJustPressed(SDLK_DELETE)) {
             HandleDelete();
             keyRepeatTimer = 0.0f;
-            keyRepeatKey = SDL_SCANCODE_DELETE;
-        } else if (input.IsKeyPressed(SDL_SCANCODE_DELETE) && keyRepeatKey == SDL_SCANCODE_DELETE) {
+            keyRepeatKey = SDLK_DELETE;
+        } else if (input.IsKeyPressed(SDLK_DELETE) && keyRepeatKey == SDLK_DELETE) {
             keyRepeatTimer += deltaTime;
             if (keyRepeatTimer >= keyRepeatDelay) {
                 HandleDelete();
@@ -496,12 +546,12 @@ namespace golias {
             }
         }
 
-        // Handle left arrow with proper repeat delay
-        if (input.IsKeyJustPressed(SDL_SCANCODE_LEFT)) {
+        // ---- Left arrow with repeat ----
+        if (input.IsKeyJustPressed(SDLK_LEFT)) {
             MoveCaret(-1);
             keyRepeatTimer = 0.0f;
-            keyRepeatKey = SDL_SCANCODE_LEFT;
-        } else if (input.IsKeyPressed(SDL_SCANCODE_LEFT) && keyRepeatKey == SDL_SCANCODE_LEFT) {
+            keyRepeatKey = SDLK_LEFT;
+        } else if (input.IsKeyPressed(SDLK_LEFT) && keyRepeatKey == SDLK_LEFT) {
             keyRepeatTimer += deltaTime;
             if (keyRepeatTimer >= keyRepeatDelay) {
                 MoveCaret(-1);
@@ -509,12 +559,12 @@ namespace golias {
             }
         }
 
-        // Handle right arrow with proper repeat delay
-        if (input.IsKeyJustPressed(SDL_SCANCODE_RIGHT)) {
+        // ---- Right arrow with repeat ----
+        if (input.IsKeyJustPressed(SDLK_RIGHT)) {
             MoveCaret(1);
             keyRepeatTimer = 0.0f;
-            keyRepeatKey = SDL_SCANCODE_RIGHT;
-        } else if (input.IsKeyPressed(SDL_SCANCODE_RIGHT) && keyRepeatKey == SDL_SCANCODE_RIGHT) {
+            keyRepeatKey = SDLK_RIGHT;
+        } else if (input.IsKeyPressed(SDLK_RIGHT) && keyRepeatKey == SDLK_RIGHT) {
             keyRepeatTimer += deltaTime;
             if (keyRepeatTimer >= keyRepeatDelay) {
                 MoveCaret(1);
@@ -528,33 +578,24 @@ namespace golias {
             keyRepeatTimer = 0.0f;
         }
 
-        // Handle home
-        if (input.IsKeyJustPressed(SDL_SCANCODE_HOME)) {
+        // ---- Home ----
+        if (input.IsKeyJustPressed(SDLK_HOME)) {
             caretPosition = 0;
             UpdateScrollOffset();
             caretVisible = true;
             caretBlinkTimer = 0.0f;
         }
 
-        // Handle end
-        if (input.IsKeyJustPressed(SDL_SCANCODE_END)) {
+        // ---- End ----
+        if (input.IsKeyJustPressed(SDLK_END)) {
             caretPosition = static_cast<int>(text.length());
             UpdateScrollOffset();
             caretVisible = true;
             caretBlinkTimer = 0.0f;
         }
 
-        // Handle Ctrl+A to select all
-        if ((input.IsKeyPressed(SDL_SCANCODE_LCTRL) || input.IsKeyPressed(SDL_SCANCODE_RCTRL)) && 
-            input.IsKeyJustPressed(SDL_SCANCODE_A)) {
-            selectionStart = 0;
-            selectionEnd = static_cast<int>(text.length());
-            caretPosition = selectionEnd;
-            UpdateScrollOffset();
-        }
-
-        // Handle enter
-        if (input.IsKeyJustPressed(SDL_SCANCODE_RETURN) || input.IsKeyJustPressed(SDL_SCANCODE_KP_ENTER)) {
+        // ---- Enter ----
+        if (input.IsKeyJustPressed(SDLK_RETURN) || input.IsKeyJustPressed(SDLK_KP_ENTER)) {
             if (lineType == EInputFieldLineType::SINGLE_LINE) {
                 if (OnSubmit) {
                     OnSubmit(text);
@@ -572,8 +613,8 @@ namespace golias {
             }
         }
 
-        // Handle escape to unfocus
-        if (input.IsKeyJustPressed(SDL_SCANCODE_ESCAPE)) {
+        // ---- Escape ----
+        if (input.IsKeyJustPressed(SDLK_ESCAPE)) {
             Unfocus();
         }
 

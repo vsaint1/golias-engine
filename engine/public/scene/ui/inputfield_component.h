@@ -1,5 +1,6 @@
 #pragma once
 #include "scene/ui/ui_base.h"
+#include <SDL3/SDL_keycode.h>
 #include <functional>
 #include <glm/vec4.hpp>
 
@@ -153,7 +154,7 @@ namespace golias {
         float keyRepeatDelay = 0.4f;  // Initial delay before repeat starts
         float keyRepeatRate = 0.05f;  // Rate at which keys repeat
         float keyRepeatTimer = 0.0f;
-        int keyRepeatKey = 0;
+        SDL_Keycode keyRepeatKey = 0;
         
         // Text scrolling for overflow
         float scrollOffset = 0.0f;
