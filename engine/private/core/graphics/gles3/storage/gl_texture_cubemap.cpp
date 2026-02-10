@@ -369,16 +369,25 @@ namespace golias {
     }
 
     void OpenglTextureCubemap::SetupTextureParameters() {
+
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+#endif
+
+        /// NOTE: Mipmap cubemap on Webgl crashes
+#if !defined(SDL_PLATFORM_EMSCRIPTEN)
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+#else
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#endif
+
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-#if defined(SDL_PLATFORM_EMSCRIPTEN)
-        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-#endif
         if (GLAD_GL_EXT_texture_filter_anisotropic) {
             GLfloat maxAnisotropy = 1.0f;
             glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);

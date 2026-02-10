@@ -30,7 +30,7 @@ namespace golias {
 
     void SceneRenderer::Draw(const CameraCommand& camera) {
         UpdateUIScale();
-        
+
         renderContext.camera = camera;
 
         CalculateLightSpaceMatrices();
@@ -60,6 +60,10 @@ namespace golias {
             }
         }
 
+        if (!opaqueCommands.empty()) {
+            std::ranges::sort(opaqueCommands, [](const DrawCommand& a, const DrawCommand& b) { return a.material < b.material; });
+        }
+
         if (!transparentCommands.empty()) {
             std::ranges::sort(transparentCommands, [this](const DrawCommand& a, const DrawCommand& b) {
                 glm::vec3 posA = glm::vec3(a.modelMatrix[3]);
@@ -69,16 +73,16 @@ namespace golias {
                 return distA > distB;
             });
         }
-        
+
         BeginMainRenderPass();
-        
+
         GeometryOpaquePass(opaqueCommands);
         SkyboxPass();
         GeometryTransparentPass(transparentCommands);
         WorldCanvasPass();
         Sprite2DPass();
         ScreenCanvasPass();
-        
+
         rendering_device->EndRenderPass();
     }
 
@@ -98,10 +102,12 @@ namespace golias {
             shader->SetUniform("u_exposure", world_environment_command.environmentComponent->GetExposure());
         }
 
+        shader->SetUniform("DEBUG_PASS", renderContext.debugPass);
+
         if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
             shader->SetUniform("USE_SKINNING", true);
             const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
-            int count = std::min<int>(jointMatrices.size(), 128);
+            int count                 = std::min<int>(jointMatrices.size(), 128);
             shader->SetUniform("BONE_MATRICES", jointMatrices.data(), count);
         } else {
             shader->SetUniform("USE_SKINNING", false);
@@ -158,22 +164,21 @@ namespace golias {
 
     void SceneRenderer::SetupShadowUniforms(Shader* shader) {
         if (renderContext.shadowsEnabled && !directional_lights.empty()) {
-            
-            
+
+
             // Bind all cascade shadow maps
             for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
                 std::string uniformName = "SHADOW_MAP_CASCADE_" + std::to_string(i);
                 rendering_device->BindTexture(
-                    shader, uniformName, 6 + i, 
-                    rendering_device->GetCascadeShadowMapFramebuffer(i)->GetDepthAttachment().get());
+                    shader, uniformName, 6 + i, rendering_device->GetCascadeShadowMapFramebuffer(i)->GetDepthAttachment().get());
             }
-            
+
             // Set cascade matrices
             for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
                 std::string uniformName = "LIGHT_SPACE_MATRIX_CASCADE_" + std::to_string(i);
                 shader->SetUniform(uniformName, directional_lights[0].lightSpaceMatrices[i]);
             }
-            
+
             // Set cascade split distances as individual floats
             for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
                 std::string uniformName = "CASCADE_SPLIT_" + std::to_string(i);
@@ -195,8 +200,8 @@ namespace golias {
         if (!renderContext.iblEnabled || !useIBL) {
             shader->SetUniform("USE_IBL", false);
             auto cubemap = rendering_device->GetWhiteTextureCubemap().get();
-            rendering_device->BindCubemap(shader, "IRRADIANCE_MAP", 7, cubemap);
-            rendering_device->BindCubemap(shader, "PREFILTER_MAP", 8, cubemap);
+            rendering_device->BindCubemap(shader, "IRRADIANCE_MAP", 10, cubemap);
+            rendering_device->BindCubemap(shader, "PREFILTER_MAP", 11, cubemap);
             shader->SetUniform("AMBIENT_STRENGTH", 0.5f);
             return;
         }
@@ -204,8 +209,8 @@ namespace golias {
         if (useIBL) {
             auto cubemap = world_environment_command.environmentComponent->GetTextureCubemap().get();
 
-            rendering_device->BindCubemap(shader, "IRRADIANCE_MAP", 7, cubemap);
-            rendering_device->BindCubemap(shader, "PREFILTER_MAP", 8, cubemap);
+            rendering_device->BindCubemap(shader, "IRRADIANCE_MAP", 10, cubemap);
+            rendering_device->BindCubemap(shader, "PREFILTER_MAP", 11, cubemap);
 
             shader->SetUniform("USE_IBL", true);
             shader->SetUniform("AMBIENT_STRENGTH", 0.3f);
@@ -236,112 +241,102 @@ namespace golias {
             }
 
             const float camera_near = 0.1f;
-            const float camera_far = 150.0f;
-            
+            const float camera_far  = 150.0f;
+
             // Calculate cascade split distances using practical split scheme
             // Blend between logarithmic and uniform distribution
             const float lambda = 0.75f; // Blending factor
-            
+
             for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
-                float p = static_cast<float>(i + 1) / DirectionalLightCommand::NUM_CASCADES;
-                float log_split = camera_near * std::pow(camera_far / camera_near, p);
+                float p             = static_cast<float>(i + 1) / DirectionalLightCommand::NUM_CASCADES;
+                float log_split     = camera_near * std::pow(camera_far / camera_near, p);
                 float uniform_split = camera_near + (camera_far - camera_near) * p;
-                
+
                 directional_light.cascadeSplits[i] = lambda * log_split + (1.0f - lambda) * uniform_split;
             }
-            
-        
+
 
             glm::vec3 lightDir = glm::normalize(directional_light.direction);
-            
+
             float lastSplitDist = camera_near;
             for (int i = 0; i < DirectionalLightCommand::NUM_CASCADES; ++i) {
                 float splitDist = directional_light.cascadeSplits[i];
-                
+
                 glm::vec3 frustumCorners[8];
-                CalculateFrustumCorners(renderContext.camera.projectionMatrix,
-                                       renderContext.camera.viewMatrix,
-                                       lastSplitDist,
-                                       splitDist,
-                                       frustumCorners);
-                
+                CalculateFrustumCorners(
+                    renderContext.camera.projectionMatrix, renderContext.camera.viewMatrix, lastSplitDist, splitDist, frustumCorners);
+
                 // Calculate frustum center
                 glm::vec3 frustumCenter = glm::vec3(0.0f);
                 for (int j = 0; j < 8; ++j) {
                     frustumCenter += frustumCorners[j];
                 }
                 frustumCenter /= 8.0f;
-                
+
                 // Calculate radius (bounding sphere of frustum)
                 float radius = 0.0f;
                 for (int j = 0; j < 8; ++j) {
                     float distance = glm::length(frustumCorners[j] - frustumCenter);
-                    radius = std::max(radius, distance);
+                    radius         = std::max(radius, distance);
                 }
-                
+
                 // Round radius to reduce shimmering
                 radius = std::ceil(radius * 16.0f) / 16.0f;
-                
+
                 // Calculate light view matrix
-                glm::vec3 lightPos = frustumCenter - lightDir * radius;
+                glm::vec3 lightPos  = frustumCenter - lightDir * radius;
                 glm::mat4 lightView = glm::lookAt(lightPos, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
-                
+
                 // Calculate orthographic projection
                 glm::mat4 lightProjection = glm::ortho(-radius, radius, -radius, radius, 0.0f, radius * 2.0f);
-                
+
                 // Stabilize shadow maps by snapping to texel grid
                 glm::mat4 shadowMatrix = lightProjection * lightView;
                 glm::vec4 shadowOrigin = shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-                const float texelSize = (radius * 2.0f) / 2048.0f; // Assuming 2048 resolution
+                const float texelSize  = (radius * 2.0f) / 2048.0f; // Assuming 2048 resolution
                 shadowOrigin *= (1.0f / texelSize);
                 shadowOrigin = glm::floor(shadowOrigin);
                 shadowOrigin *= texelSize;
-                
+
                 glm::vec4 roundOffset = shadowOrigin - (shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
                 lightProjection[3][0] += roundOffset.x;
                 lightProjection[3][1] += roundOffset.y;
-                
+
                 directional_light.lightSpaceMatrices[i] = lightProjection * lightView;
-                
+
                 lastSplitDist = splitDist;
             }
         }
     }
 
-    void SceneRenderer::CalculateFrustumCorners(const glm::mat4& proj, const glm::mat4& view, 
-                                                float nearPlane, float farPlane, 
-                                                glm::vec3 frustumCorners[8]) {
+    void SceneRenderer::CalculateFrustumCorners(
+        const glm::mat4& proj, const glm::mat4& view, float nearPlane, float farPlane, glm::vec3 frustumCorners[8]) {
         glm::mat4 invViewProj = glm::inverse(proj * view);
-        
+
         // For perspective projection: ndc_z = (far + near) / (far - near) + (2 * far * near) / ((far - near) * view_z)
-        
+
         // Get camera near and far from projection matrix
         float cam_near = proj[3][2] / (proj[2][2] - 1.0f);
-        float cam_far = proj[3][2] / (proj[2][2] + 1.0f);
-        
+        float cam_far  = proj[3][2] / (proj[2][2] + 1.0f);
+
         // Convert view-space depths to NDC Z
         float ndcNear, ndcFar;
-        
+
         if (proj[3][3] == 0.0f) {
             // Perspective projection
             ndcNear = (cam_far + cam_near) / (cam_far - cam_near) + (2.0f * cam_far * cam_near) / ((cam_far - cam_near) * -nearPlane);
-            ndcFar = (cam_far + cam_near) / (cam_far - cam_near) + (2.0f * cam_far * cam_near) / ((cam_far - cam_near) * -farPlane);
+            ndcFar  = (cam_far + cam_near) / (cam_far - cam_near) + (2.0f * cam_far * cam_near) / ((cam_far - cam_near) * -farPlane);
         } else {
             // Orthographic projection
             ndcNear = (2.0f * nearPlane - cam_far - cam_near) / (cam_far - cam_near);
-            ndcFar = (2.0f * farPlane - cam_far - cam_near) / (cam_far - cam_near);
+            ndcFar  = (2.0f * farPlane - cam_far - cam_near) / (cam_far - cam_near);
         }
-        
+
         int index = 0;
         for (int z = 0; z < 2; ++z) {
             for (int y = 0; y < 2; ++y) {
                 for (int x = 0; x < 2; ++x) {
-                    glm::vec4 corner = invViewProj * glm::vec4(
-                        2.0f * x - 1.0f,
-                        2.0f * y - 1.0f,
-                        z == 0 ? ndcNear : ndcFar,
-                        1.0f
-                    );
+                    glm::vec4 corner        = invViewProj * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, z == 0 ? ndcNear : ndcFar, 1.0f);
                     frustumCorners[index++] = glm::vec3(corner) / corner.w;
                 }
             }
@@ -377,26 +372,26 @@ namespace golias {
                 }
 
                 auto cascadeFBO = rendering_device->GetCascadeShadowMapFramebuffer(cascadeIndex);
-                
+
                 RenderPassBeginInfo rpInfo;
-                rpInfo.framebuffer = cascadeFBO.get();
-                rpInfo.colorLoadOp = ELoadOp::DONT_CARE;
+                rpInfo.framebuffer  = cascadeFBO.get();
+                rpInfo.colorLoadOp  = ELoadOp::DONT_CARE;
                 rpInfo.colorStoreOp = EStoreOp::DONT_CARE;
-                rpInfo.depthLoadOp = ELoadOp::CLEAR;
+                rpInfo.depthLoadOp  = ELoadOp::CLEAR;
                 rpInfo.depthStoreOp = EStoreOp::STORE;
                 rpInfo.clearValues.push_back(ClearValue::DepthStencil(1.0f, 0));
 
-                const auto& spec = rpInfo.framebuffer->GetSpecification();
-                rpInfo.viewport.x = 0;
-                rpInfo.viewport.y = 0;
-                rpInfo.viewport.width = spec.width;
-                rpInfo.viewport.height = spec.height;
+                const auto& spec          = rpInfo.framebuffer->GetSpecification();
+                rpInfo.viewport.x         = 0;
+                rpInfo.viewport.y         = 0;
+                rpInfo.viewport.width     = spec.width;
+                rpInfo.viewport.height    = spec.height;
                 rpInfo.viewport.min_depth = 0.0f;
                 rpInfo.viewport.max_depth = 1.0f;
-                rpInfo.scissor.x = 0;
-                rpInfo.scissor.y = 0;
-                rpInfo.scissor.width = spec.width;
-                rpInfo.scissor.height = spec.height;
+                rpInfo.scissor.x          = 0;
+                rpInfo.scissor.y          = 0;
+                rpInfo.scissor.width      = spec.width;
+                rpInfo.scissor.height     = spec.height;
 
                 rendering_device->BeginRenderPass(rpInfo);
 
@@ -424,7 +419,7 @@ namespace golias {
                 }
 
                 rendering_device->EndRenderPass();
-                
+
                 break;
             }
         }
@@ -432,16 +427,16 @@ namespace golias {
 
     void SceneRenderer::BeginMainRenderPass() {
         RenderPassBeginInfo rpInfo;
-        rpInfo.framebuffer = nullptr; // nullptr means default framebuffer (screen)
-        rpInfo.colorLoadOp = ELoadOp::CLEAR;
+        rpInfo.framebuffer  = nullptr; // nullptr means default framebuffer (screen)
+        rpInfo.colorLoadOp  = ELoadOp::CLEAR;
         rpInfo.colorStoreOp = EStoreOp::STORE;
-        rpInfo.depthLoadOp = ELoadOp::CLEAR;
+        rpInfo.depthLoadOp  = ELoadOp::CLEAR;
         rpInfo.depthStoreOp = EStoreOp::STORE;
-        
+
         if (world_environment_command.environmentComponent) {
             EWorldEnvironmentMode envMode = world_environment_command.environmentComponent->GetEnvironmentMode();
-            if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR ||
-                envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
+            if (envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CLEAR_COLOR
+                || envMode == EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_CUSTOM_COLOR) {
                 glm::vec4 clearColor = world_environment_command.environmentComponent->GetClearColor();
                 rpInfo.clearValues.push_back(ClearValue::Color(clearColor));
             } else {
@@ -451,23 +446,23 @@ namespace golias {
             rpInfo.clearValues.push_back(ClearValue::Color(renderContext.clearColor));
         }
         rpInfo.clearValues.push_back(ClearValue::DepthStencil(1.0f, 0));
-        
+
         int windowWidth, windowHeight;
         SDL_GetWindowSize(rendering_device->GetWindow(), &windowWidth, &windowHeight);
-        
-        
-        rpInfo.viewport.x = 0;
-        rpInfo.viewport.y = 0;
-        rpInfo.viewport.width = windowWidth;
-        rpInfo.viewport.height = windowHeight;
+
+
+        rpInfo.viewport.x         = 0;
+        rpInfo.viewport.y         = 0;
+        rpInfo.viewport.width     = windowWidth;
+        rpInfo.viewport.height    = windowHeight;
         rpInfo.viewport.min_depth = 0.0f;
         rpInfo.viewport.max_depth = 1.0f;
-        
-        rpInfo.scissor.x = 0;
-        rpInfo.scissor.y = 0;
-        rpInfo.scissor.width = windowWidth;
+
+        rpInfo.scissor.x      = 0;
+        rpInfo.scissor.y      = 0;
+        rpInfo.scissor.width  = windowWidth;
         rpInfo.scissor.height = windowHeight;
-        
+
         rendering_device->BeginRenderPass(rpInfo);
     }
 
@@ -479,8 +474,46 @@ namespace golias {
 
         rendering_device->ApplyPipelineState(pipeline_opaque);
 
+        Material* lastMaterial = nullptr;
+
         for (const auto& command : opaqueCommands) {
-            RenderObject(command);
+            if (command.material != lastMaterial) {
+                rendering_device->BindMaterial(command.material);
+                auto shader = command.material->GetShader();
+
+                shader->SetUniform("VIEW_MATRIX", renderContext.camera.viewMatrix);
+                shader->SetUniform("PROJECTION_MATRIX", renderContext.camera.projectionMatrix);
+                shader->SetUniform("CAMERA_POSITION", renderContext.camera.position);
+                shader->SetUniform("u_specularStrength", 0.5f);
+                shader->SetUniform("u_shininess", 32.0f);
+
+                if (world_environment_command.environmentComponent) {
+                    shader->SetUniform("u_tonemap", static_cast<int>(world_environment_command.environmentComponent->GetToneMappingMode()));
+                    shader->SetUniform("u_exposure", world_environment_command.environmentComponent->GetExposure());
+                }
+
+                SetupLightingUniforms(shader.get());
+                SetupShadowUniforms(shader.get());
+                SetupIBLUniforms(shader.get(), command);
+
+                lastMaterial = command.material;
+            }
+
+            // Per-object uniforms (always needed)
+            auto shader = command.material->GetShader();
+            shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+
+            if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+                shader->SetUniform("USE_SKINNING", true);
+                const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+                int count                 = std::min<int>(static_cast<int>(jointMatrices.size()), 128);
+                shader->SetUniform("BONE_MATRICES", jointMatrices.data(), count);
+            } else {
+                shader->SetUniform("USE_SKINNING", false);
+            }
+
+            rendering_device->BindMesh(command.mesh);
+            rendering_device->DrawMesh(command.mesh);
         }
     }
 
@@ -516,8 +549,46 @@ namespace golias {
     void SceneRenderer::GeometryTransparentPass(const std::vector<DrawCommand>& transparentCommands) {
         rendering_device->ApplyPipelineState(pipeline_transparent);
 
+        // Transparent maintains back-to-front sort order but tracks material to skip redundant binds
+        Material* lastMaterial = nullptr;
+
         for (const auto& command : transparentCommands) {
-            RenderObject(command);
+            if (command.material != lastMaterial) {
+                rendering_device->BindMaterial(command.material);
+                auto shader = command.material->GetShader();
+
+                shader->SetUniform("VIEW_MATRIX", renderContext.camera.viewMatrix);
+                shader->SetUniform("PROJECTION_MATRIX", renderContext.camera.projectionMatrix);
+                shader->SetUniform("CAMERA_POSITION", renderContext.camera.position);
+                shader->SetUniform("u_specularStrength", 0.5f);
+                shader->SetUniform("u_shininess", 32.0f);
+
+                if (world_environment_command.environmentComponent) {
+                    shader->SetUniform("u_tonemap", static_cast<int>(world_environment_command.environmentComponent->GetToneMappingMode()));
+                    shader->SetUniform("u_exposure", world_environment_command.environmentComponent->GetExposure());
+                }
+
+                SetupLightingUniforms(shader.get());
+                SetupShadowUniforms(shader.get());
+                SetupIBLUniforms(shader.get(), command);
+
+                lastMaterial = command.material;
+            }
+
+            auto shader = command.material->GetShader();
+            shader->SetUniform("MODEL_MATRIX", command.modelMatrix);
+
+            if (command.skeletonAnimation && command.skeletonAnimation->GetSkeleton()) {
+                shader->SetUniform("USE_SKINNING", true);
+                const auto& jointMatrices = command.skeletonAnimation->GetJointMatrices();
+                int count                 = std::min<int>(static_cast<int>(jointMatrices.size()), 128);
+                shader->SetUniform("BONE_MATRICES", jointMatrices.data(), count);
+            } else {
+                shader->SetUniform("USE_SKINNING", false);
+            }
+
+            rendering_device->BindMesh(command.mesh);
+            rendering_device->DrawMesh(command.mesh);
         }
     }
 
@@ -567,21 +638,108 @@ namespace golias {
         const auto shader_2d = rendering_device->GetDefaultShader2D();
         rendering_device->BindShader(shader_2d.get());
 
-        quad->Bind();
-        for (const auto& command : command_queue_2d) {
-            shader_2d->SetUniform("MODEL_MATRIX", command.modelMatrix);
-            shader_2d->SetUniform("VIEW_MATRIX", renderContext.camera.viewMatrix);
-            shader_2d->SetUniform("PROJECTION_MATRIX", renderContext.camera.orthographicMatrix);
-            shader_2d->SetUniform("TEXTURE_SIZE", command.size);
-            shader_2d->SetUniform("TEXTURE_PIVOT", command.pivot);
-            shader_2d->SetUniform("TEXTURE_UV_MIN", command.lowerLeftUV);
-            shader_2d->SetUniform("TEXTURE_UV_MAX", command.upperRightUV);
-            shader_2d->SetUniform("COLOR", command.color);
-            shader_2d->SetUniform("TEXTURE", command.texture != nullptr ? command.texture : rendering_device->GetWhiteTexture2D().get());
+        // Set shared uniforms once for all batches
+        shader_2d->SetUniform("VIEW_MATRIX", renderContext.camera.viewMatrix);
+        shader_2d->SetUniform("PROJECTION_MATRIX", renderContext.camera.orthographicMatrix);
 
-            quad->Draw();
+        // Build batched vertex data: position(3) + uv(2) + color(4) = 9 floats per vertex
+        std::vector<float> vertices;
+        std::vector<uint32_t> indices;
+        vertices.reserve(command_queue_2d.size() * 4 * 9);
+        indices.reserve(command_queue_2d.size() * 6);
+
+        struct SpriteBatch {
+            Texture2D* texture;
+            uint32_t startIndex;
+            uint32_t indexCount;
+        };
+        std::vector<SpriteBatch> batches;
+
+        Texture2D* defaultTex = rendering_device->GetWhiteTexture2D().get();
+        Texture2D* currentTex = nullptr;
+        uint32_t vertexOffset = 0;
+
+        // Build batches preserving draw order (batch consecutive same-texture sprites)
+        for (const auto& cmd : command_queue_2d) {
+            Texture2D* tex = cmd.texture ? cmd.texture : defaultTex;
+
+            if (tex != currentTex) {
+                batches.push_back({tex, static_cast<uint32_t>(indices.size()), 0});
+                currentTex = tex;
+            }
+
+            // Quad corners: (0,0), (1,0), (1,1), (0,1)
+            const glm::vec2 corners[4] = {
+                {0.0f, 0.0f},
+                {1.0f, 0.0f},
+                {1.0f, 1.0f},
+                {0.0f, 1.0f}
+            };
+
+            for (int i = 0; i < 4; i++) {
+                glm::vec2 local    = (corners[i] - cmd.pivot) * cmd.size;
+                glm::vec4 worldPos = cmd.modelMatrix * glm::vec4(local, 0.0f, 1.0f);
+                glm::vec2 uv       = cmd.lowerLeftUV + (cmd.upperRightUV - cmd.lowerLeftUV) * corners[i];
+
+                // Position (vec3)
+                vertices.push_back(worldPos.x);
+                vertices.push_back(worldPos.y);
+                vertices.push_back(worldPos.z);
+                // UV (vec2)
+                vertices.push_back(uv.x);
+                vertices.push_back(uv.y);
+                // Color (vec4)
+                vertices.push_back(cmd.color.r);
+                vertices.push_back(cmd.color.g);
+                vertices.push_back(cmd.color.b);
+                vertices.push_back(cmd.color.a);
+            }
+
+            // Two triangles per quad
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 1);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 0);
+            indices.push_back(vertexOffset + 2);
+            indices.push_back(vertexOffset + 3);
+
+            batches.back().indexCount += 6;
+            vertexOffset += 4;
         }
-        quad->Unbind();
+
+        if (vertices.empty()) {
+            return;
+        }
+
+        // Create or update batch mesh with per-vertex attributes
+        VertexLayout layout;
+        Uint32 layoutOffset = 0;
+        layout.elements.push_back({0, 3, EDataType::FLOAT, false, layoutOffset});
+        layoutOffset += 12; // position
+        layout.elements.push_back({1, 2, EDataType::FLOAT, false, layoutOffset});
+        layoutOffset += 8; // uv
+        layout.elements.push_back({2, 4, EDataType::FLOAT, false, layoutOffset});
+        layoutOffset += 16; // color
+        layout.stride = layoutOffset;
+
+        if (!sprite_batch_mesh) {
+            sprite_batch_mesh = rendering_device->CreateMeshFromData(layout, vertices, indices);
+        } else {
+            sprite_batch_mesh->Update(vertices, indices);
+        }
+
+        if (!sprite_batch_mesh) {
+            return;
+        }
+
+        rendering_device->BindMesh(sprite_batch_mesh.get());
+
+        for (const auto& batch : batches) {
+            rendering_device->BindTexture(shader_2d.get(), "TEXTURE", 0, batch.texture);
+            sprite_batch_mesh->DrawIndexed(batch.startIndex, batch.indexCount);
+        }
+
+        rendering_device->UnbindMesh(sprite_batch_mesh.get());
     }
 
     void SceneRenderer::ScreenCanvasPass() {
@@ -649,156 +807,156 @@ namespace golias {
     }
 
     void SceneRenderer::InitializePipelines() {
-        pipeline_opaque = CreateOpaquePipeline();
+        pipeline_opaque      = CreateOpaquePipeline();
         pipeline_transparent = CreateTransparentPipeline();
-        pipeline_shadow = CreateShadowPipeline();
-        pipeline_skybox = CreateSkyboxPipeline();
-        pipeline_canvas = CreateCanvasPipeline();
-        pipeline_2d = Create2DPipeline();
+        pipeline_shadow      = CreateShadowPipeline();
+        pipeline_skybox      = CreateSkyboxPipeline();
+        pipeline_canvas      = CreateCanvasPipeline();
+        pipeline_2d          = Create2DPipeline();
     }
 
     PipelineState SceneRenderer::CreateOpaquePipeline() {
         PipelineState state;
-        
+
         // Rasterizer
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.cullMode     = ECullMode::CULL_MODE_BACK;
+        state.rasterizer.polygonMode  = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
-        
+
         // Depth-stencil
-        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthTestEnable  = true;
         state.depthStencil.depthWriteEnable = true;
-        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
-        
+        state.depthStencil.depthFunc        = EComparisonFunc::COMPARISON_LESS;
+
         // Blend (disabled for opaque)
         state.blend.attachments[0].blendEnable = false;
-        
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
     PipelineState SceneRenderer::CreateTransparentPipeline() {
         PipelineState state;
-        
+
         // Rasterizer
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.cullMode     = ECullMode::CULL_MODE_BACK;
+        state.rasterizer.polygonMode  = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
-        
+
         // Depth-stencil (read but don't write)
-        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthTestEnable  = true;
         state.depthStencil.depthWriteEnable = false;
-        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
-        
+        state.depthStencil.depthFunc        = EComparisonFunc::COMPARISON_LESS;
+
         // Blend (alpha blending)
-        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].blendEnable   = true;
         state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
         state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].colorBlendOp  = EBlendOp::BLEND_OP_ADD;
         state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
         state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
-        
+        state.blend.attachments[0].alphaBlendOp  = EBlendOp::BLEND_OP_ADD;
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
     PipelineState SceneRenderer::CreateShadowPipeline() {
         PipelineState state;
-        
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_BACK;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
-        state.rasterizer.frontFaceCCW = true;
-        state.rasterizer.depthBiasEnable = true;
-        state.rasterizer.depthBiasConstant = 1.25f;
+
+        state.rasterizer.cullMode             = ECullMode::CULL_MODE_BACK;
+        state.rasterizer.polygonMode          = EPolygonMode::FILL;
+        state.rasterizer.frontFaceCCW         = true;
+        state.rasterizer.depthBiasEnable      = true;
+        state.rasterizer.depthBiasConstant    = 1.25f;
         state.rasterizer.depthBiasSlopeFactor = 1.75f;
-        
+
         // Depth-stencil
-        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthTestEnable  = true;
         state.depthStencil.depthWriteEnable = true;
-        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
-        
+        state.depthStencil.depthFunc        = EComparisonFunc::COMPARISON_LESS;
+
         // Blend (disabled)
         state.blend.attachments[0].blendEnable = false;
-        
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
     PipelineState SceneRenderer::CreateSkyboxPipeline() {
         PipelineState state;
-        
+
         // Rasterizer (no culling for skybox)
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.cullMode     = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode  = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
-        
+
         // Depth-stencil (equal test, no write)
-        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthTestEnable  = true;
         state.depthStencil.depthWriteEnable = false;
-        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS_EQUAL;
-        
+        state.depthStencil.depthFunc        = EComparisonFunc::COMPARISON_LESS_EQUAL;
+
         // Blend (disabled)
         state.blend.attachments[0].blendEnable = false;
-        
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
     PipelineState SceneRenderer::CreateCanvasPipeline() {
         PipelineState state;
-        
+
         // Rasterizer (no culling)
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.cullMode     = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode  = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
-        
+
         // Depth-stencil (test but don't write for world canvas)
-        state.depthStencil.depthTestEnable = true;
+        state.depthStencil.depthTestEnable  = true;
         state.depthStencil.depthWriteEnable = false;
-        state.depthStencil.depthFunc = EComparisonFunc::COMPARISON_LESS;
-        
+        state.depthStencil.depthFunc        = EComparisonFunc::COMPARISON_LESS;
+
         // Blend (alpha blending)
-        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].blendEnable   = true;
         state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
         state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].colorBlendOp  = EBlendOp::BLEND_OP_ADD;
         state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
         state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
-        
+        state.blend.attachments[0].alphaBlendOp  = EBlendOp::BLEND_OP_ADD;
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
     PipelineState SceneRenderer::Create2DPipeline() {
         PipelineState state;
-        
+
         // Rasterizer (no culling)
-        state.rasterizer.cullMode = ECullMode::CULL_MODE_DISABLED;
-        state.rasterizer.polygonMode = EPolygonMode::FILL;
+        state.rasterizer.cullMode     = ECullMode::CULL_MODE_DISABLED;
+        state.rasterizer.polygonMode  = EPolygonMode::FILL;
         state.rasterizer.frontFaceCCW = true;
-        
+
         // Depth-stencil (disabled for 2D)
-        state.depthStencil.depthTestEnable = false;
+        state.depthStencil.depthTestEnable  = false;
         state.depthStencil.depthWriteEnable = false;
-        
+
         // Blend (alpha blending)
-        state.blend.attachments[0].blendEnable = true;
+        state.blend.attachments[0].blendEnable   = true;
         state.blend.attachments[0].srcColorBlend = EBlendFactor::BLEND_SRC_ALPHA;
         state.blend.attachments[0].dstColorBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].colorBlendOp = EBlendOp::BLEND_OP_ADD;
+        state.blend.attachments[0].colorBlendOp  = EBlendOp::BLEND_OP_ADD;
         state.blend.attachments[0].srcAlphaBlend = EBlendFactor::BLEND_ONE;
         state.blend.attachments[0].dstAlphaBlend = EBlendFactor::BLEND_INV_SRC_ALPHA;
-        state.blend.attachments[0].alphaBlendOp = EBlendOp::BLEND_OP_ADD;
-        
+        state.blend.attachments[0].alphaBlendOp  = EBlendOp::BLEND_OP_ADD;
+
         state.topology = EPrimitiveTopology::TRIANGLES;
-        
+
         return state;
     }
 
@@ -809,7 +967,7 @@ namespace golias {
     void SceneRenderer::BeginFrame(const glm::vec4& color) {
         // Store the clear color in render context for use in BeginMainRenderPass
         renderContext.clearColor = color;
-        
+
         // Note: Actual clearing happens in BeginMainRenderPass now,
         // which is called at the start of Draw() after shadow pass
     }
@@ -835,37 +993,45 @@ namespace golias {
     void SceneRenderer::SetImageBasedLightingEnabled(bool enabled) {
         renderContext.iblEnabled = enabled;
     }
-    
+
     bool SceneRenderer::IsImageBasedLightingEnabled() const {
         return renderContext.iblEnabled;
     }
-    
+
+    void SceneRenderer::SetDebugPass(int pass) {
+        renderContext.debugPass = pass;
+    }
+
+    int SceneRenderer::GetDebugPass() const {
+        return renderContext.debugPass;
+    }
+
     void SceneRenderer::SetScreenScaleMode(EScreenScaleMode mode) {
         renderContext.canvasScaling.mode = mode;
     }
-    
+
     EScreenScaleMode SceneRenderer::GetScreenScaleMode() const {
         return renderContext.canvasScaling.mode;
     }
-    
+
     void SceneRenderer::SetReferenceResolution(const glm::vec2& resolution) {
         renderContext.canvasScaling.referenceResolution = resolution;
     }
-    
+
     glm::vec2 SceneRenderer::GetReferenceResolution() const {
         return renderContext.canvasScaling.referenceResolution;
     }
-    
+
     float SceneRenderer::GetUIScale() const {
         return renderContext.canvasScaling.scale;
     }
-    
+
     void SceneRenderer::UpdateUIScale() {
         const auto& viewport = rendering_device->GetViewport();
-        
+
         if (renderContext.canvasScaling.mode == EScreenScaleMode::VIEWPORT) {
-            float scaleX = static_cast<float>(viewport.width) / renderContext.canvasScaling.referenceResolution.x;
-            float scaleY = static_cast<float>(viewport.height) / renderContext.canvasScaling.referenceResolution.y;
+            float scaleX                      = static_cast<float>(viewport.width) / renderContext.canvasScaling.referenceResolution.x;
+            float scaleY                      = static_cast<float>(viewport.height) / renderContext.canvasScaling.referenceResolution.y;
             renderContext.canvasScaling.scale = glm::min(scaleX, scaleY);
         } else {
             renderContext.canvasScaling.scale = 1.0f;

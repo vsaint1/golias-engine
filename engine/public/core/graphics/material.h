@@ -58,6 +58,7 @@ namespace golias {
         EComparisonFunc depthFunc = EComparisonFunc::COMPARISON_LESS;
         ECullMode cullMode        = ECullMode::CULL_MODE_BACK;
         bool useIBL               = false;
+        float iblStrength           = 1.0f;
 
         std::unordered_map<std::string, UniformValue> parameters;
     };

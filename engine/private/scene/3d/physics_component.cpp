@@ -1,8 +1,21 @@
 #include "scene/3d/physics_component.h"
 
 #include "core/engine.h"
+#include <btBulletDynamicsCommon.h>
 
 namespace golias {
+
+    PhysicsComponent::~PhysicsComponent() {
+        if (rigidBody) {
+            // Remove from physics world before destruction to prevent dangling pointers
+            Engine::GetInstance().GetPhysicsManager().RemoveRigidBody(rigidBody.get());
+
+            // Clear the user pointer so Bullet never dereferences a dead GameObject
+            if (rigidBody->GetRigidBody()) {
+                rigidBody->GetRigidBody()->setUserPointer(nullptr);
+            }
+        }
+    }
 
     PhysicsComponent::PhysicsComponent(const std::shared_ptr<RigidBody>& pRigidBody) : rigidBody(pRigidBody) {
     }
@@ -26,6 +39,12 @@ namespace golias {
 
         rigidBody->SetPosition(pos);
         rigidBody->SetRotation(rot);
+
+        // Store the owning GameObject pointer on the btRigidBody so collision
+        // callbacks can look up the GameObject from the Bullet contact manifold.
+        if (rigidBody->GetRigidBody()) {
+            rigidBody->GetRigidBody()->setUserPointer(static_cast<void*>(GetOwner()));
+        }
 
         Engine::GetInstance().GetPhysicsManager().AddRigidBody(rigidBody.get());
         spdlog::info("PhysicsComponent::Start added RigidBody to PhysicsManager");

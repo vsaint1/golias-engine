@@ -42,6 +42,11 @@ namespace golias {
         void Update(float deltaTime) override;
         void OnDestroy() override;
 
+        // ---- Physics collision callbacks ----
+        void OnCollisionEnter(const struct CollisionInfo& collision) override;
+        void OnCollisionStay(const struct CollisionInfo& collision) override;
+        void OnCollisionExit(const struct CollisionInfo& collision) override;
+
         // ---- Property loading from .gscene ----
         void LoadProperties(const nlohmann::json& json) override;
 
@@ -62,6 +67,7 @@ namespace golias {
 
         void CallMethod(const char* name);
         void CallMethod(const char* name, float arg);
+        void CallMethod(const char* name, sol::table arg);
 
         sol::state lua;
         std::string scriptPath;

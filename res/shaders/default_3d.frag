@@ -62,6 +62,20 @@ uniform int TEXTURE_FLAGS;
 uniform int u_tonemap;
 uniform float u_exposure;
 
+/* Debug render pass modes */
+#define DEBUG_PASS_NONE      0
+#define DEBUG_PASS_ALBEDO    1
+#define DEBUG_PASS_NORMALS   2
+#define DEBUG_PASS_METALLIC  3
+#define DEBUG_PASS_ROUGHNESS 4
+#define DEBUG_PASS_AO        5
+#define DEBUG_PASS_EMISSIVE  6
+#define DEBUG_PASS_WORLDPOS  7
+#define DEBUG_PASS_DEPTH     8
+#define DEBUG_PASS_IBL       9
+
+uniform int DEBUG_PASS;
+
 /* ============================================================================
    Material & Light Structures
    ============================================================================ */
@@ -73,6 +87,7 @@ struct Material {
     float ao;
     vec3 emissive;
     vec3 normal;
+    float iblStrength; 
 };
 
 struct MaterialProperties {
@@ -257,7 +272,9 @@ float SampleCascadeShadowMap(
     float currentDepth = proj.z;
     float NdotL = max(dot(N, L), 0.0);
 
-    float bias = max(0.00015 * (1.0 - NdotL), 0.00002);
+    // Slope-scaled bias to combat shadow acne; larger bias for
+    // surfaces nearly parallel to the light direction.
+    float bias = max(0.005 * (1.0 - NdotL), 0.0005);
 
     vec2 texelSize = 1.0 / vec2(textureSize(shadowMap, 0));
     float shadow = 0.0;
@@ -335,6 +352,7 @@ Material SampleMaterial() {
         mat.normal = normalize(mat.normal + tangentNormal * 0.4);
     }
 
+    mat.iblStrength = 0.8; // TODO: Allow setting this from material parameters
     return mat;
 }
 
@@ -477,6 +495,34 @@ vec3 CalculateSpotLight(
     return (diffuse + specular) * radiance * NdotL;
 }
 
+/* Analytical BRDF integration approximation (Karis 2014, UE4)
+   Avoids the need for a precomputed BRDF LUT texture */
+vec2 IntegrateBRDFApprox(float NdotV, float roughness) {
+    const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+    vec4 r = roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
+    return vec2(-1.04, 1.04) * a004 + r.zw;
+}
+
+vec3 SampleCubemapSafe(samplerCube cubemap, vec3 dir, float lod) {
+    vec3 c = textureLod(cubemap, dir, lod).rgb;
+
+    if(any(isnan(c)) || any(isinf(c))) {
+        return vec3(0.0);
+    }
+
+    return c;
+}
+
+/* Specular occlusion from AO (Lagarde & de Rousiers, Frostbite / Filament).
+   Reduces specular IBL contribution on occluded surfaces so that
+   enclosed geometry (car interiors, crevices, etc.) does not receive
+   spurious environment reflections. */
+float ComputeSpecularOcclusion(float NdotV, float ao, float roughness) {
+    return clamp(pow(NdotV + ao, exp2(-16.0 * roughness - 1.0)) - 1.0 + ao, 0.0, 1.0);
+}
+
 vec3 CalculateIBL(
     vec3 N,
     vec3 V,
@@ -487,8 +533,6 @@ vec3 CalculateIBL(
     float ao,
     float NdotV
 ) {
-    return vec3(0.0); // Temporary disable IBL for testing
-
     if(USE_IBL == 0)
         return vec3(0.0);
 
@@ -498,15 +542,37 @@ vec3 CalculateIBL(
     vec3 kS = F;
     vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
-    vec3 irradiance = texture(IRRADIANCE_MAP, N).rgb;
+    // Diffuse IBL
+    vec3 irradiance = SampleCubemapSafe(IRRADIANCE_MAP, N, 3.0);
     vec3 diffuse = irradiance * albedo;
 
-    const float MAX_LOD = 4.0;
-    vec3 prefiltered = textureLod(PREFILTER_MAP, R, roughness * MAX_LOD).rgb;
+    // Specular IBL
+    float specularLod = roughness * 3.0;
+    vec3 prefiltered = SampleCubemapSafe(PREFILTER_MAP, R, specularLod);
 
-    vec3 specular = prefiltered * F;
+    vec2 envBRDF = IntegrateBRDFApprox(NdotV, roughness);
+    vec3 specular = prefiltered * (F * envBRDF.x + envBRDF.y);
 
-    return (kD * diffuse + specular) * ao;
+    // Horizon occlusion
+    float horizonFade = clamp(1.0 + dot(R, N), 0.0, 1.0);
+    horizonFade *= horizonFade;
+    specular *= horizonFade;
+
+    // Specular occlusion - squared for more aggressive interior occlusion
+    float specOcclusion = ComputeSpecularOcclusion(NdotV, ao, roughness);
+    specular *= specOcclusion * specOcclusion; 
+
+    // Diffuse occlusion - cubed for very dark interiors
+    float diffuseOcclusion = ao * ao * ao;
+
+    // Sky visibility - more aggressive cutoff for interior surfaces
+    float upDot = dot(N, vec3(0.0, 1.0, 0.0));
+    float skyVisibility = smoothstep(-0.2, 0.3, upDot); // 
+
+    // Combine visibility factors
+    float totalVisibility = skyVisibility * diffuseOcclusion;
+
+    return kD * diffuse * totalVisibility + specular;
 }
 
 /* ============================================================================
@@ -541,6 +607,41 @@ vec3 StudioLighting(vec3 N, vec3 V, vec3 albedo, float roughness) {
 
 void main() {
     Material mat = SampleMaterial();
+
+    // Debug render modes - early out for visualization passes
+    if(DEBUG_PASS == DEBUG_PASS_ALBEDO) {
+        FRAG_COLOR = vec4(ApplyGamma(mat.albedo.rgb), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_NORMALS) {
+        FRAG_COLOR = vec4(mat.normal * 0.5 + 0.5, 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_METALLIC) {
+        FRAG_COLOR = vec4(vec3(mat.metallic), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_ROUGHNESS) {
+        FRAG_COLOR = vec4(vec3(mat.roughness), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_AO) {
+        FRAG_COLOR = vec4(vec3(mat.ao), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_EMISSIVE) {
+        FRAG_COLOR = vec4(ApplyGamma(mat.emissive), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_WORLDPOS) {
+        FRAG_COLOR = vec4(fract(v_frag_pos * 0.1), 1.0);
+        return;
+    }
+    if(DEBUG_PASS == DEBUG_PASS_DEPTH) {
+        float d = v_view_depth / 100.0;
+        FRAG_COLOR = vec4(vec3(d), 1.0);
+        return;
+    }
 
     vec3 N = mat.normal;
     vec3 V = normalize(CAMERA_POSITION - v_frag_pos);
@@ -582,6 +683,7 @@ void main() {
     if(USE_IBL == 1) {
         // PBR path with IBL
         ambient = CalculateIBL(N, V, F0, mat.albedo.rgb, mat.metallic, mat.roughness, mat.ao, NdotV);
+        ambient *= mat.iblStrength;
     } else if(!hasLights) {
         // No lights - use simplified studio lighting (non-PBR look)
         Lo = StudioLighting(N, V, mat.albedo.rgb, mat.roughness);
@@ -593,6 +695,12 @@ void main() {
         vec3 groundColor = vec3(0.2, 0.22, 0.25);
         vec3 ambientColor = mix(groundColor, skyColor, upDot) * AMBIENT_STRENGTH;
         ambient = ambientColor * mat.albedo.rgb * mat.ao;
+        ambient *= mat.iblStrength;
+    }
+
+    if(DEBUG_PASS == DEBUG_PASS_IBL) {
+        FRAG_COLOR = vec4(ApplyGamma(ambient), 1.0);
+        return;
     }
 
     vec3 color = ambient + Lo + mat.emissive;

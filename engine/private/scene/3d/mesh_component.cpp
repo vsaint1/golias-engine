@@ -62,8 +62,7 @@ namespace golias {
             if (materialObject.contains("path")) {
                 std::string materialPath = materialObject.value("path", "");
                 
-                const nlohmann::json* params = materialObject.contains("parameters") ? &materialObject["parameters"] : nullptr;
-                auto mat = Material::Load(materialPath, params);
+                auto mat = Material::Load(materialPath);
                 
                 if (mat) {
                     SetMaterial(mat);

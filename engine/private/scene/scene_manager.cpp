@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "core/input/canvas_input_manager.h"
+#include "physics/3d/physics_manager.h"
 #include "scene/scene.h"
 #include "core/graphics/scene_renderer.h"
 #include "core/graphics/rendering_device.h"
@@ -198,6 +199,7 @@ namespace golias {
             
             if (newScene) {
                 if (load.mode == ELoadSceneMode::SINGLE) {
+                    Engine::GetInstance().GetPhysicsManager().ClearCollisionState();
                     loadedScenes.clear();
                 }
                 
@@ -264,6 +266,9 @@ namespace golias {
                 
                 if (newScene) {
                     if (load.mode == ELoadSceneMode::SINGLE) {
+                        // Clear physics collision tracking before destroying old scene
+                        // objects to prevent dangling GameObject* pointers
+                        Engine::GetInstance().GetPhysicsManager().ClearCollisionState();
                         loadedScenes.clear();
                     }
                     

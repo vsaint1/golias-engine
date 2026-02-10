@@ -134,6 +134,9 @@ namespace golias {
 
         void SetImageBasedLightingEnabled(bool enabled);
         bool IsImageBasedLightingEnabled() const;
+
+        void SetDebugPass(int pass);
+        int GetDebugPass() const;
         
         void SetScreenScaleMode(EScreenScaleMode mode);
         EScreenScaleMode GetScreenScaleMode() const;
@@ -158,8 +161,9 @@ namespace golias {
         std::vector<ScreenCanvasCommand> canvas_commands;
         std::vector<WorldCanvasCommand> world_canvas_commands;
 
-        std::shared_ptr<Mesh> quad        = nullptr;
-        RenderingDevice* rendering_device = nullptr;
+        std::shared_ptr<Mesh> quad              = nullptr;
+        std::shared_ptr<Mesh> sprite_batch_mesh = nullptr;
+        RenderingDevice* rendering_device       = nullptr;
 
         struct CanvasScaling {
             glm::vec2 referenceResolution = glm::vec2(1280.0f, 720.0f);
@@ -174,7 +178,7 @@ namespace golias {
             bool iblEnabled              = true;
             glm::vec4 clearColor         = glm::vec4(0.2f, 0.3f, 0.3f, 1.0f);
             bool debugCascades          = false;
-            int debugPass               = 0;
+            int debugPass               = 9;
             CanvasScaling canvasScaling;
         } renderContext{};
 

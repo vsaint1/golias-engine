@@ -48,6 +48,13 @@ namespace golias {
 
         void SetUseIBL(bool value);
 
+        /// Called on the first frame two colliders start touching
+        virtual void OnCollisionEnter(const struct CollisionInfo& collision);
+        /// Called every frame while two colliders remain in contact
+        virtual void OnCollisionStay(const struct CollisionInfo& collision);
+        /// Called on the frame two colliders stop touching
+        virtual void OnCollisionExit(const struct CollisionInfo& collision);
+
         glm::vec3 GetWorldPosition() const;
         glm::vec3 GetPosition() const;
         glm::vec2 GetPosition2D() const;

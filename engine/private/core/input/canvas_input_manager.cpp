@@ -52,10 +52,9 @@ namespace golias {
         WidgetComponent* hitWidget = nullptr;
         auto widgets               = CollectWidgets(activeCanvas);
 
-        // Debug: Log once on click
-        if (mousePressed) {
-            spdlog::info("CanvasInputManager: Click at ({}, {}), {} widgets collected", pos.x, pos.y, widgets.size());
-        }
+        // if (mousePressed) {
+        //     spdlog::info("CanvasInputManager: Click at ({}, {}), {} widgets collected", pos.x, pos.y, widgets.size());
+        // }
 
         for (auto it = widgets.rbegin(); it != widgets.rend(); ++it) {
             WidgetComponent* w = *it;
@@ -66,9 +65,9 @@ namespace golias {
 
             if (w->HitTest(pos)) {
                 hitWidget = w;
-                if (mousePressed) {
-                    spdlog::info("CanvasInputManager: Hit widget '{}'", w->GetOwner() ? w->GetOwner()->GetName() : "unknown");
-                }
+                // if (mousePressed) {
+                //     spdlog::info("CanvasInputManager: Hit widget '{}'", w->GetOwner() ? w->GetOwner()->GetName() : "unknown");
+                // }
                 break;
             }
         }

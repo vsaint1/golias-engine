@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "core/model.h"
+#include "physics/3d/collision_info.h"
 #include <scene/3d/mesh_component.h>
 
 namespace golias {
@@ -256,6 +257,18 @@ namespace golias {
         for (const auto& child : GetChildren()) {
             child->SetUseIBL(value);
         }
+    }
+
+    void GameObject::OnCollisionEnter(const CollisionInfo& collision) {
+        // Override in Behaviour / NativeBehaviour / LuaBehaviour
+    }
+
+    void GameObject::OnCollisionStay(const CollisionInfo& collision) {
+        // Override in Behaviour / NativeBehaviour / LuaBehaviour
+    }
+
+    void GameObject::OnCollisionExit(const CollisionInfo& collision) {
+        // Override in Behaviour / NativeBehaviour / LuaBehaviour
     }
 
     ObjectRegistry& ObjectRegistry::GetInstance() {

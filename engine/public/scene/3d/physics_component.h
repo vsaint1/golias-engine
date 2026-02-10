@@ -12,6 +12,7 @@ namespace golias {
         COMPONENT(PhysicsComponent)
     public:
         PhysicsComponent()                    = default;
+        ~PhysicsComponent() override;
         PhysicsComponent(const std::shared_ptr<RigidBody>& pRigidBody);
 
         RigidBody* GetRigidBody() const;

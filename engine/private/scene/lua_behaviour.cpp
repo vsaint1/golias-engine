@@ -5,6 +5,7 @@
 #include "core/engine.h"
 #include "core/input/cursor.h"
 #include "core/time.h"
+#include "physics/3d/collision_info.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 
@@ -194,6 +195,55 @@ end
     }
 
     // ================================================================
+    //  Collision callbacks -> Lua
+    // ================================================================
+    static sol::table BuildCollisionTable(sol::state& lua, const CollisionInfo& collision) {
+        sol::table t = lua.create_table();
+
+        // Other game object
+        if (collision.gameObject) {
+            t["gameObject"] = collision.gameObject;
+            t["name"]       = collision.gameObject->GetName();
+            t["tag"]        = collision.gameObject->GetTag();
+        }
+
+        t["relativeVelocity"] = collision.relativeVelocity;
+
+        // Contact points array
+        sol::table contacts = lua.create_table();
+        for (size_t i = 0; i < collision.contacts.size(); ++i) {
+            sol::table cp = lua.create_table();
+            cp["point"]    = collision.contacts[i].point;
+            cp["normal"]   = collision.contacts[i].normal;
+            cp["impulse"]  = collision.contacts[i].impulse;
+            cp["distance"] = collision.contacts[i].distance;
+            contacts[i + 1] = cp;
+        }
+        t["contacts"] = contacts;
+        t["contactCount"] = static_cast<int>(collision.contacts.size());
+
+        return t;
+    }
+
+    void LuaBehaviour::OnCollisionEnter(const CollisionInfo& collision) {
+        if (!isScriptLoaded) return;
+        sol::table t = BuildCollisionTable(lua, collision);
+        CallMethod("OnCollisionEnter", t);
+    }
+
+    void LuaBehaviour::OnCollisionStay(const CollisionInfo& collision) {
+        if (!isScriptLoaded) return;
+        sol::table t = BuildCollisionTable(lua, collision);
+        CallMethod("OnCollisionStay", t);
+    }
+
+    void LuaBehaviour::OnCollisionExit(const CollisionInfo& collision) {
+        if (!isScriptLoaded) return;
+        sol::table t = BuildCollisionTable(lua, collision);
+        CallMethod("OnCollisionExit", t);
+    }
+
+    // ================================================================
     //  Properties
     // ================================================================
     void LuaBehaviour::LoadProperties(const nlohmann::json& json) {
@@ -244,6 +294,26 @@ end
     }
 
     void LuaBehaviour::CallMethod(const char* name, float arg) {
+        sol::object instObj = lua["_instance"];
+        if (!instObj.valid() || instObj.get_type() != sol::type::table) {
+            return;
+        }
+
+        sol::table inst   = instObj.as<sol::table>();
+        sol::object fnObj = inst[name];
+        if (!fnObj.valid() || !fnObj.is<sol::protected_function>()) {
+            return;
+        }
+
+        sol::protected_function fn = fnObj.as<sol::protected_function>();
+        auto result                = fn(inst, arg);
+        if (!result.valid()) {
+            sol::error err = result;
+            spdlog::error("[Lua {}::{}] {}", scriptPath, name, err.what());
+        }
+    }
+
+    void LuaBehaviour::CallMethod(const char* name, sol::table arg) {
         sol::object instObj = lua["_instance"];
         if (!instObj.valid() || instObj.get_type() != sol::type::table) {
             return;

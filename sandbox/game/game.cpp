@@ -97,11 +97,10 @@ void SetupGameScene(golias::Scene* Tscene) {
     // auto textureCubemap   = golias::TextureCubemap::LoadProcedural();
     auto textureCubemap = golias::TextureCubemap::Load("textures/FrozenWaterfall.hdr");
 
-    auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_ACES, 1.0f);
+    auto worldEnvComp = new golias::WorldEnvironmentComponent(textureCubemap, golias::EToneMappingMode::TONE_MAPPING_ACES, 0.3f);
     worldEnvComp->SetEnvironmentMode(golias::EWorldEnvironmentMode::WORLD_ENVIRONMENT_MODE_SKYBOX);
     // auto worldEnvComp = new golias::WorldEnvironmentComponent();
     worldEnvironment->AddComponent(worldEnvComp);
-    worldEnvComp->SetExposure(0.3f);
     // worldEnvComp->SetClearColor({0.8f, 0.7f, 0.6f, 1.0f});
 
     if (godette) {
@@ -197,11 +196,11 @@ WASD to move, Mouse to look around)";
     textComp2->SetText(infoString);
     textComp2->SetShadowEnabled(true);
     text2->AddComponent(textComp2);
-    
+
     auto text2Rt = new golias::RectTransformComponent();
     text2Rt->SetAnchor({0.0f, 0.0f}); // Bottom-left anchor
-    text2Rt->SetPivot({0.0f, 0.0f});  // Pivot at bottom-left of text
-    text2->SetPosition({10.0f, 150.0f,0.0f});
+    text2Rt->SetPivot({0.0f, 0.0f}); // Pivot at bottom-left of text
+    text2->SetPosition({10.0f, 150.0f, 0.0f});
     text2->AddComponent(text2Rt);
 
     auto button     = Tscene->CreateObject("Button2D", canvas_2d);
@@ -211,8 +210,8 @@ WASD to move, Mouse to look around)";
 
     auto buttonRt = new golias::RectTransformComponent();
     buttonRt->SetSize({180.0f, 50.0f});
-    buttonRt->SetAnchor({0.5f, 0.5f}); 
-    buttonRt->SetPivot({0.5f, 0.5f}); 
+    buttonRt->SetAnchor({0.5f, 0.5f});
+    buttonRt->SetPivot({0.5f, 0.5f});
     button->AddComponent(buttonRt);
 
     golias::Cursor::SetCursorLockState(golias::ECursorLockState::CURSOR_LOCKED);
@@ -226,7 +225,7 @@ WASD to move, Mouse to look around)";
 
     auto buttonTextRt = new golias::RectTransformComponent();
     buttonTextRt->SetAnchor({0.5f, 0.5f}); // Center within button
-    buttonTextRt->SetPivot({0.5f, 0.5f});  // Center pivot
+    buttonTextRt->SetPivot({0.5f, 0.5f}); // Center pivot
     buttonText->SetPosition({0.0f, 0.0f, 0.0f}); // No offset
     buttonText->AddComponent(buttonTextRt);
 
@@ -239,7 +238,7 @@ WASD to move, Mouse to look around)";
 
     auto textAmmoRt = new golias::RectTransformComponent();
     textAmmoRt->SetAnchor({1.0f, 0.0f}); // Bottom-right anchor
-    textAmmoRt->SetPivot({1.0f, 0.0f});  // Pivot at bottom-right of text
+    textAmmoRt->SetPivot({1.0f, 0.0f}); // Pivot at bottom-right of text
     textAmmo->SetPosition({-10.0f, 10.0f, 0.0f}); // 10px offset from bottom-right
     textAmmo->AddComponent(textAmmoRt);
 
@@ -286,7 +285,7 @@ WASD to move, Mouse to look around)";
 void SandboxApplication::Update(float deltaTime) {
     auto& input = golias::Engine::GetInstance().GetInputManager();
     auto* scene = golias::Engine::GetInstance().GetScene();
-    
+
     // Game-specific input (only in Main scene)
     if (scene && scene->GetName() == "Main") {
         if (input.IsKeyJustPressed(SDLK_E)) {
