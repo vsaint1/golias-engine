@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['c_3630',['C',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca0d61f8370cad1d412f80b84d143e1257',1,'golias']]],
+  ['capslock_3631',['CapsLock',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca8d0f4171170104d094d8b6d4f8bf49e6',1,'golias']]],
+  ['capsule_3632',['Capsule',['../namespacegolias.html#ac494022027a8eac8fc08c58996ab9fa7a4880c0f12c06dd6d142e7a40b041bf1a',1,'golias']]],
+  ['center_3633',['Center',['../namespacegolias.html#afea6c7b1446f7b8c4cbcafdb63874dd7a4f1f6016fc9f3f2353c0cc7c67b292bd',1,'golias']]],
+  ['clamptoedge_3634',['ClampToEdge',['../namespacegolias.html#a9da361846d0224a2220848d53407ecbaa74556551231333c36debc3d373261134',1,'golias']]],
+  ['clear_3635',['Clear',['../namespacegolias.html#a8aee748c5ba843be8a7e39991583c196adc30bc0c7914db5918da4263fce93ad2',1,'golias']]],
+  ['clip_3636',['Clip',['../namespacegolias.html#a6ca3039aa6d9077017a2ce8e5d5aa5aea6adac929b615be2e0d213eb9d1ad15ba',1,'golias']]],
+  ['clockwise_3637',['Clockwise',['../namespacegolias.html#a42d46f51a21233f279d2028e0f116d0caba360a794737bcc8657a5b6e870d7ba8',1,'golias']]],
+  ['colortarget_3638',['ColorTarget',['../namespacegolias.html#a4612b1e24b87dc5c6db84193515671d8aa193782000bdf049b37403d15e7b0e88',1,'golias']]],
+  ['comma_3639',['Comma',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca58be47db9455679e6a44df2eff9c9fa6',1,'golias']]],
+  ['compatibility_3640',['Compatibility',['../namespacegolias.html#a849e42252e3912bb10bbbc1417d49a92adf9c715f20aaf58fb3926cc02b08ec53',1,'golias']]],
+  ['compute_3641',['Compute',['../namespacegolias.html#a62ed3bce53561ab9e050dfa2ae6ec32baa623a8d0366bf079411aa30be45b2d10',1,'golias']]],
+  ['computewrite_3642',['ComputeWrite',['../namespacegolias.html#a4612b1e24b87dc5c6db84193515671d8acf5ab0c938a7707ddf460fc806957661',1,'golias']]],
+  ['convexhull_3643',['ConvexHull',['../namespacegolias.html#ac494022027a8eac8fc08c58996ab9fa7a3e1ee9920ed982b5da9becaf4b5463e5',1,'golias']]],
+  ['count1_3644',['Count1',['../namespacegolias.html#ad5eeca3a9c13b8491afb2840a8b1cd47aa5aaa4b27a5599b39b0d126f25cb59b0',1,'golias']]],
+  ['count2_3645',['Count2',['../namespacegolias.html#ad5eeca3a9c13b8491afb2840a8b1cd47a2c7cef64398f1d42476b1f5840b57c65',1,'golias']]],
+  ['count4_3646',['Count4',['../namespacegolias.html#ad5eeca3a9c13b8491afb2840a8b1cd47a45229fc4a2af8b6cb0ac8462c406a1f6',1,'golias']]],
+  ['count8_3647',['Count8',['../namespacegolias.html#ad5eeca3a9c13b8491afb2840a8b1cd47afad65b085ab088e725a269bd3d6bf89e',1,'golias']]],
+  ['counterclockwise_3648',['CounterClockwise',['../namespacegolias.html#a42d46f51a21233f279d2028e0f116d0ca8f23635f9ec49db2161fc5cddf033a79',1,'golias']]],
+  ['create_3649',['CREATE',['../classgolias_1_1FileAccess.html#ac6c7d2e0b23a6b32b6c7d1860ad85216a294ce20cdefa29be3be0735cb62e715d',1,'golias::FileAccess']]],
+  ['cube_3650',['Cube',['../namespacegolias.html#add7a48bb0918e7881d8988f622ff81e0aa296104f0c61a9cf39f4824d05315e12',1,'golias']]],
+  ['cur_3651',['CUR',['../classgolias_1_1FileAccess.html#af6f8182506249d1b866021d51856b49daf32924c53f864144ab34d1f7c12a0d4a',1,'golias::FileAccess']]],
+  ['custom_3652',['Custom',['../namespacegolias.html#aea38bd416d30ede12e50732f3d1890f4a90589c47f06eb971d548591f23c285af',1,'golias']]]
+];

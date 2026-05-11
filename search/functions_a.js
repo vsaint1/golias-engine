@@ -1,0 +1,17 @@
+var searchData=
+[
+  ['magenta_2629',['Magenta',['../structgolias_1_1Color.html#ad1b066490c8da1649da8862125099f4a',1,'golias::Color']]],
+  ['makebttransform_2630',['MakeBtTransform',['../namespacegolias.html#ae94281d8694989c9d89616dccf5a4234',1,'golias']]],
+  ['material_2631',['Material',['../classgolias_1_1Material.html#ac70ffff9da8c55bfa19544995631884e',1,'golias::Material::Material()=default'],['../classgolias_1_1Material.html#a560656f1be84b8987a1a85822611431b',1,'golias::Material::Material(Material &amp;&amp;o) noexcept'],['../classgolias_1_1Material.html#a3b95339d46cbafade85fd737fe420dd4',1,'golias::Material::Material(const Material &amp;)=delete']]],
+  ['max_2632',['Max',['../namespacegolias_1_1Math.html#afc60c0a8ede44ac9396680e68b7bb4d9',1,'golias::Math::Max(Real a, Real b)'],['../namespacegolias_1_1Math.html#a3c04842ce7ef078de4f9ac948475872d',1,'golias::Math::Max(const Vec4 &amp;a, const Vec4 &amp;b)'],['../namespacegolias_1_1Math.html#ac34940017c6cd8c15bd21e31e56c6cdf',1,'golias::Math::Max(const Vec3 &amp;a, const Vec3 &amp;b)'],['../namespacegolias_1_1Math.html#ad6be7c47d03c0112fb681e3272962215',1,'golias::Math::Max(const Vec2 &amp;a, const Vec2 &amp;b)'],['../structgolias_1_1Rect.html#a69f35a41b5e6ab7acca973ca5f09e2bc',1,'golias::Rect::Max()']]],
+  ['maxaxis_2633',['MaxAxis',['../classgolias_1_1AABB.html#a8f8e42aa208156e58096263689ae76a3',1,'golias::AABB']]],
+  ['maximumdeltatime_2634',['MaximumDeltaTime',['../classgolias_1_1Time.html#a2a9de1f272b632b97775deff771e7d55',1,'golias::Time']]],
+  ['measurerun_2635',['MeasureRun',['../namespacegolias.html#a9a2ed5f8bbb17eed11e0794267bbc198',1,'golias']]],
+  ['measuretext_2636',['MeasureText',['../classgolias_1_1Font.html#aa5bb6677694b442ec657788d5620ed09',1,'golias::Font']]],
+  ['measuretextmultiline_2637',['MeasureTextMultiline',['../classgolias_1_1Font.html#ac11f5f2c87cee85d5a7a816c064633c3',1,'golias::Font']]],
+  ['mesh_2638',['Mesh',['../classgolias_1_1Mesh.html#a30ac11ca2a5dfa687fd4b1f757d6cbed',1,'golias::Mesh::Mesh(Mesh &amp;&amp;o) noexcept'],['../classgolias_1_1Mesh.html#a8bc13fa933c53bb2794264c94cbe53ee',1,'golias::Mesh::Mesh(const Mesh &amp;)=delete'],['../classgolias_1_1Mesh.html#a146830cf7cd99d8a551c1e1f2173db7d',1,'golias::Mesh::Mesh()=default']]],
+  ['meshtypefromstring_2639',['MeshTypeFromString',['../namespacegolias.html#a4fe2899f3edafc8922fb09b1bdc91cc9',1,'golias']]],
+  ['meshtypetostring_2640',['MeshTypeToString',['../namespacegolias.html#a033055310a6cdec4886cba71f07b8289',1,'golias']]],
+  ['min_2641',['Min',['../structgolias_1_1Rect.html#a0fec63ea6a577c1d9ee3d06b3ada9384',1,'golias::Rect::Min()'],['../namespacegolias_1_1Math.html#a1d42be97a7f122aa3ed0a02884e365d5',1,'golias::Math::Min(Real a, Real b)'],['../namespacegolias_1_1Math.html#a58328b06460c1e82972c295135a6775f',1,'golias::Math::Min(const Vec2 &amp;a, const Vec2 &amp;b)'],['../namespacegolias_1_1Math.html#a3aadb054ed71331cdb33bd51f30227a3',1,'golias::Math::Min(const Vec3 &amp;a, const Vec3 &amp;b)'],['../namespacegolias_1_1Math.html#a12eba9acb5e34deb5de16cc43ad6cb14',1,'golias::Math::Min(const Vec4 &amp;a, const Vec4 &amp;b)']]],
+  ['mix_2642',['Mix',['../namespacegolias_1_1Math.html#a75a8a12d7a2dda0ce667a5db9594226a',1,'golias::Math::Mix(const Vec2 &amp;a, const Vec2 &amp;b, Real t)'],['../namespacegolias_1_1Math.html#acd5372943f4126d7d88ed67eab38239c',1,'golias::Math::Mix(const Vec3 &amp;a, const Vec3 &amp;b, Real t)'],['../namespacegolias_1_1Math.html#a68784ba325b35cf2c8d685c126d034fe',1,'golias::Math::Mix(const Vec4 &amp;a, const Vec4 &amp;b, Real t)']]]
+];

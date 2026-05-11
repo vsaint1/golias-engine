@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['r_3812',['R',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003cae1e1d3d40573127e9ee0480caf1283d6',1,'golias::R()'],['../namespacegolias.html#a14a84e45263bee3d4281ccd3af12a66cae1e1d3d40573127e9ee0480caf1283d6',1,'golias::R()']]],
+  ['r1_3813',['R1',['../namespacegolias.html#a75582239dced81ff3945a94157888cb7acda522d4353b166cc2dee84673307b4e',1,'golias']]],
+  ['r16g16b16a16_5ffloat_3814',['R16G16B16A16_FLOAT',['../namespacegolias.html#a0b7024646f3987a28398b197a62878c8a8877c88854b09a122f3533a4de543629',1,'golias']]],
+  ['r3_3815',['R3',['../namespacegolias.html#a75582239dced81ff3945a94157888cb7a5c108ce0fe89d0632cfce75f650b36c2',1,'golias']]],
+  ['r32g32b32a32_5ffloat_3816',['R32G32B32A32_FLOAT',['../namespacegolias.html#a0b7024646f3987a28398b197a62878c8a82bb90f92345314d9299d3e77d87f259',1,'golias']]],
+  ['r8_5funorm_3817',['R8_UNORM',['../namespacegolias.html#a0b7024646f3987a28398b197a62878c8a6ee77dd485809c93542e95acf222420c',1,'golias']]],
+  ['r8g8b8a8_5fsrgb_3818',['R8G8B8A8_SRGB',['../namespacegolias.html#a0b7024646f3987a28398b197a62878c8a5c835c7ea238d0796853827ce416a5e2',1,'golias']]],
+  ['r8g8b8a8_5funorm_3819',['R8G8B8A8_UNORM',['../namespacegolias.html#a0b7024646f3987a28398b197a62878c8af55c1c722034e92213df328d31e33c62',1,'golias']]],
+  ['read_3820',['READ',['../classgolias_1_1FileAccess.html#ac6c7d2e0b23a6b32b6c7d1860ad85216a3466fab4975481651940ed328aa990e4',1,'golias::FileAccess']]],
+  ['read_5fwrite_3821',['READ_WRITE',['../classgolias_1_1FileAccess.html#ac6c7d2e0b23a6b32b6c7d1860ad85216aa7b843fb734e3b3fea8e5f902d3f4144',1,'golias::FileAccess']]],
+  ['reinhard_3822',['Reinhard',['../namespacegolias.html#a56b4ccd06d01ed147fb5d4e4546229c4a9e6d3d22124e1f0626b77fa3b7994a9b',1,'golias']]],
+  ['repeat_3823',['Repeat',['../namespacegolias.html#a9da361846d0224a2220848d53407ecbaa7020426cfb0a204051be4b3053d2acc8',1,'golias']]],
+  ['res_3824',['RES',['../classgolias_1_1FileSystem.html#a52a0a3077d0ddc1aed66a714f6954c68af8af55aaebfbde59fb3954b42cedcf60',1,'golias::FileSystem']]],
+  ['return_3825',['Return',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca988fd738de9c6d177440c5dcf69e73ce',1,'golias']]],
+  ['reversesubtract_3826',['ReverseSubtract',['../namespacegolias.html#a7478e47dca457bbfbb2a8fdd64855d02abd5458190996e76988cb2f27a820c685',1,'golias']]],
+  ['right_3827',['Right',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca92b09c7c48c520c3c55e497875da437c',1,'golias::Right()'],['../namespacegolias.html#abedd7b1e2775cb6541919896222ae8cba92b09c7c48c520c3c55e497875da437c',1,'golias::Right()'],['../namespacegolias.html#afea6c7b1446f7b8c4cbcafdb63874dd7a92b09c7c48c520c3c55e497875da437c',1,'golias::Right()']]],
+  ['rightalt_3828',['RightAlt',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003cad88bad98046b623323aa6ca28eefa6d5',1,'golias']]],
+  ['rightbracket_3829',['RightBracket',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca455364d8991395f71ef9ccc5cc449e5c',1,'golias']]],
+  ['rightcontrol_3830',['RightControl',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca857bb13bb233ca520283eb9886509b65',1,'golias']]],
+  ['rightshift_3831',['RightShift',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca317d4a7487ee62605713987d4a037f83',1,'golias']]],
+  ['rightsuper_3832',['RightSuper',['../namespacegolias.html#afcb0b23dee50a21850b8fbf33476003ca0cc5a9f113dc1147c8eeae2f0199f9f2',1,'golias']]],
+  ['root_3833',['ROOT',['../classgolias_1_1FileSystem.html#a52a0a3077d0ddc1aed66a714f6954c68aea2adde5c377cb5e09d14b71935c6f32',1,'golias::FileSystem']]]
+];
