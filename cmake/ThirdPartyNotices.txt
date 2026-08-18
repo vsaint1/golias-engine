@@ -1,0 +1,41 @@
+This project includes third-party libraries under the following licenses:
+
+------------------------------------------------------------
+GLFW
+License: Zlib
+https://www.glfw.org/
+
+------------------------------------------------------------
+GLM
+License: MIT
+https://glm.g-truc.net/
+
+------------------------------------------------------------
+stb_image
+License: Public Domain / MIT
+https://github.com/nothings/stb
+
+------------------------------------------------------------
+stb_truetype
+License: Public Domain / MIT
+https://github.com/nothings/stb
+
+------------------------------------------------------------
+Bullet Physics
+License: Zlib
+https://github.com/bulletphysics/bullet3
+
+------------------------------------------------------------
+tinygltf
+License: MIT
+https://github.com/syoyo/tinygltf
+
+------------------------------------------------------------
+tinyobjloader
+License: MIT
+https://github.com/tinyobjloader/tinyobjloader
+
+------------------------------------------------------------
+nlohmann-json
+License: MIT
+https://github.com/nlohmann/json

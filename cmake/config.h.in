@@ -1,0 +1,6 @@
+#pragma once
+
+
+#define ASSETS_ROOT "@ASSETS_DIR@"
+
+#define ENGINE_VERSION_STRING "@ENGINE_VERSION@"
