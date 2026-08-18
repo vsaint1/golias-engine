@@ -67,21 +67,24 @@
 #endif
 
 
-#define GOLIAS_LOG_TRACE(...) std::printf("[Trace] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_TRACE(fmt, ...) std::printf("[Trace] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_INFO(...) std::printf("[Info] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_INFO(fmt, ...) std::printf("[Info] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_WARN(...) std::printf("[Warn] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_WARN(fmt, ...) std::printf("[Warn] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_DEBUG(...) std::printf("[Debug] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_DEBUG(fmt, ...) std::printf("[Debug] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_ERROR(...) std::printf("[Error] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_ERROR(fmt, ...) std::printf("[Error] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_CRITICAL(...) std::printf("[Critical] %s - " __VA_ARGS__ "\n", __FUNCTION__)
+#define GOLIAS_LOG_CRITICAL(fmt, ...) std::printf("[Critical] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
 
-#define GOLIAS_LOG_FATAL(...)                                    \
-    std::printf("[Fatal] %s - " __VA_ARGS__ "\n", __FUNCTION__); \
-    std::abort()
+#define GOLIAS_LOG_FATAL(fmt, ...)                                          \
+    do {                                                                    \
+        std::printf("[Fatal] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
+        std::abort();                                                       \
+    } while (false)
+
 
 // OS helper
 

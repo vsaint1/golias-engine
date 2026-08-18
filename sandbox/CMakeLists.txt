@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
 
-set(ASSETS_FOLDER "${CMAKE_SOURCE_DIR}/res")
+set(ASSETS_FOLDER "${CMAKE_SOURCE_DIR}/Assets")
 
 if (NOT EXISTS ${ASSETS_FOLDER})
     message(STATUS "Copy the default resources folder to ${ASSETS_FOLDER}")
@@ -74,7 +74,7 @@ if (APPLE)
     if (CMAKE_OSX_SYSROOT MATCHES ".*iPhoneOS.*" OR CMAKE_OSX_SYSROOT MATCHES ".*iPhoneSimulator.*")
         set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
         set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
-        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/res")
+        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/Assets")
 
         add_executable(${PROJECT_NAME} MACOSX_BUNDLE
                 ${SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
@@ -115,7 +115,7 @@ if (APPLE)
     else ()
 
         # macOS (x86_64/ARM64)
-        set(RESOURCES "${CMAKE_SOURCE_DIR}/res")
+        set(RESOURCES "${CMAKE_SOURCE_DIR}/Assets")
 
         find_library(APPKIT AppKit)
         find_library(QUARTZ QuartzCore)
@@ -145,7 +145,7 @@ if (WIN32)
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res)
+            ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
     target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
@@ -171,7 +171,7 @@ if (EMSCRIPTEN)
             "-sFORCE_FILESYSTEM=1"
             "-sSTACK_SIZE=10MB"
             "-sINITIAL_MEMORY=128MB"
-            "--preload-file ${CMAKE_SOURCE_DIR}/res@/res"
+            "--preload-file ${CMAKE_SOURCE_DIR}/Assets@/Assets"
     )
 
     target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -199,7 +199,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/res ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/res)
+            ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC dl pthread)
 endif ()
