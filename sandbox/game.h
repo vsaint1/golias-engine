@@ -1,5 +1,5 @@
-#include "core/application.h"
-#include "stdafx.h"
+#pragma once
+#include "golias.h"
 
 using namespace golias;
 
@@ -11,4 +11,8 @@ public:
     void Update(float deltaTime) override;
 
     void Shutdown() override;
+
+private:
+    Material mMaterial;
+    Ref<Mesh> mMesh;
 };
