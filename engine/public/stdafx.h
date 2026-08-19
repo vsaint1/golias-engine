@@ -24,6 +24,7 @@
 #include <glm/gtx/norm.hpp>
 #include <json/json.hpp>
 
+#include <glad.h>
 
 #ifdef _WIN32
 
@@ -160,6 +161,8 @@ namespace golias {
     using WeakRef = std::weak_ptr<T>;
 
     using String = std::string;
+
+    using CString = std::string_view;
 
     using Json = nlohmann::json;
 
