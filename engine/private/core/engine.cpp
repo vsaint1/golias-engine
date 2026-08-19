@@ -13,10 +13,14 @@ namespace golias {
         Engine& engine             = Engine::GetInstance();
         InputManager& inputManager = engine.GetInputManager();
 
+        KeyCode keyCode = inputManager.Translate(key);
+
         if (action == GLFW_PRESS) {
-            inputManager.SetKeyPressed(key, true);
+            inputManager.SetKeyPressed(keyCode, true);
         } else if (action == GLFW_RELEASE) {
-            inputManager.SetKeyPressed(key, false);
+            inputManager.SetKeyPressed(keyCode, false);
+        } else if (action == GLFW_REPEAT) {
+            // TODO: Handle key repeat if needed
         }
     }
 
@@ -73,6 +77,7 @@ namespace golias {
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
 
+
         GOLIAS_LOG_INFO("OpenGL version: %s", glGetString(GL_VERSION));
 
         return mApplication->Initialize();
@@ -89,14 +94,17 @@ namespace golias {
 
             glfwPollEvents();
 
-            glClearColor(0.25f, 0.45f, 0.75f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             auto currentTime = std::chrono::high_resolution_clock::now();
             float deltaTime  = (currentTime - mLastTime).count();
             mLastTime        = currentTime;
 
             mApplication->Update(deltaTime);
+
+            mGraphicsDevice.SetClearColor();
+            mGraphicsDevice.ClearBuffers();
+
+            mCommandQueue.Execute();
 
             glfwSwapBuffers(mWindow);
         }
@@ -132,6 +140,14 @@ namespace golias {
 
     InputManager& Engine::GetInputManager() {
         return mInputManager;
+    }
+
+    GraphicsDevice& Engine::GetGraphicsDevice() {
+        return mGraphicsDevice;
+    }
+
+    CommandQueue& Engine::GetCommandQueue() {
+        return mCommandQueue;
     }
 
 

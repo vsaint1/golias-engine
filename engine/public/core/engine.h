@@ -1,6 +1,8 @@
 #pragma once
-#include "core/input/input_manager.h"
 #include "stdafx.h"
+#include "core/input/input_manager.h"
+#include "graphics/graphics_device.h"
+#include "render/command_queue.h"
 
 struct GLFWwindow;
 
@@ -25,6 +27,10 @@ namespace golias {
 
         InputManager& GetInputManager();
 
+        GraphicsDevice& GetGraphicsDevice();
+
+        CommandQueue& GetCommandQueue();
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -40,5 +46,9 @@ namespace golias {
         GLFWwindow* mWindow = nullptr;
 
         InputManager mInputManager;
+
+        GraphicsDevice mGraphicsDevice;
+
+        CommandQueue mCommandQueue;
     };
 } // namespace golias
