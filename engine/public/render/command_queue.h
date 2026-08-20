@@ -9,6 +9,7 @@ namespace golias {
     struct RenderCommand {
         Mesh* Mesh = nullptr;
         Material* Material = nullptr;
+        glm::mat4 Model = glm::mat4(1.0f);
     };
 
     class CommandQueue {

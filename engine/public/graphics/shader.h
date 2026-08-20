@@ -21,6 +21,10 @@ namespace golias {
 
         void SetUniform(CString name, const glm::vec4& value);
 
+        void SetUniform(CString name, const glm::mat3& value);
+        
+        void SetUniform(CString name, const glm::mat4& value);
+
         ~Shader();
 
     private:

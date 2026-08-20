@@ -71,4 +71,14 @@ namespace golias {
         glUniform4fv(location, 1, &value[0]);
     }
 
+    void Shader::SetUniform(CString name, const glm::mat3& value) {
+        GLuint location = GetUniformLocation(name);
+        glUniformMatrix3fv(location, 1, GL_FALSE, &value[0][0]);
+    }
+
+    void Shader::SetUniform(CString name, const glm::mat4& value) {
+        GLuint location = GetUniformLocation(name);
+        glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
+    }
+    
 } // namespace golias
