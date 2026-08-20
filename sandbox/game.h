@@ -13,6 +13,6 @@ public:
     void Shutdown() override;
 
 private:
-    Material mMaterial;
-    Ref<Mesh> mMesh;
+   
+    Scene mScene;
 };
