@@ -10,7 +10,4 @@ public:
 
     void Update(float deltaTime) override;
 
-private:
-    Ref<Mesh> mMesh = nullptr;
-    Material mMaterial;
 };

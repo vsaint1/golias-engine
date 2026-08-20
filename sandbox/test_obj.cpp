@@ -8,10 +8,11 @@ TestObject::TestObject() {
         layout(location = 0) in vec3 aPos;
         layout(location = 1) in vec3 aColor;
 
+        uniform mat4 uModel;
         out vec3 vColor;
 
         void main() {
-            gl_Position = vec4(aPos, 1.0);
+            gl_Position = uModel * vec4(aPos, 1.0);
             vColor = aColor;
         }
     )";
@@ -29,7 +30,8 @@ TestObject::TestObject() {
 
     auto shader = Engine::GetInstance().GetGraphicsDevice().CreateShader(vertexShaderSource, fragmentShaderSource);
 
-    mMaterial.SetShader(shader);
+    auto material = std::make_shared<Material>();
+    material->SetShader(shader);
 
     std::vector<float> vertices = {
         0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, // Top Right
@@ -47,16 +49,44 @@ TestObject::TestObject() {
     layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
     layout.Stride = 6 * sizeof(float);
 
-    mMesh = std::make_shared<Mesh>(layout, vertices, indices);
+    auto mesh = std::make_shared<Mesh>(layout, vertices, indices);
+
+    StaticMeshComponent* meshComponent = new StaticMeshComponent(mesh, material);
+
+    AddComponent(meshComponent);
 }
 
 
 void TestObject::Update(float deltaTime) {
     GameObject::Update(deltaTime);
 
-    RenderCommand command;
-    command.Mesh     = mMesh.get();
-    command.Material = &mMaterial;
+    InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
-    Engine::GetInstance().GetCommandQueue().Submit(command);
+    auto position = GetPosition();
+
+    if (inputManager.IsKeyPressed(KeyCode::W)) {
+        position.y += 0.001f;
+    }
+
+    if (inputManager.IsKeyPressed(KeyCode::S)) {
+        position.y -= 0.001f;
+    }
+
+    if (inputManager.IsKeyPressed(KeyCode::A)) {
+        position.x -= 0.001f;
+    }
+
+    if (inputManager.IsKeyPressed(KeyCode::D)) {
+        position.x += 0.001f;
+    }
+
+    if (inputManager.IsKeyPressed(KeyCode::Q)) {
+        RotateLocal(glm::vec3(0.0f, 0.0f, 1.0f), 0.001f);
+    }
+
+    if (inputManager.IsKeyPressed(KeyCode::E)) {
+        RotateLocal(glm::vec3(0.0f, 0.0f, 1.0f), -0.001f);
+    }
+
+    SetPosition(position);
 }

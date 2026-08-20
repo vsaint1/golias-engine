@@ -28,7 +28,9 @@ namespace golias {
                             mShader->SetUniform(name, arg);
                         } else if constexpr (std::is_same_v<T, glm::vec3>) {
                             mShader->SetUniform(name, arg);
-                        } else if constexpr (std::is_same_v<T, glm::vec4>) {
+                        } else if constexpr (std::is_same_v<T, glm::mat3>) {
+                            mShader->SetUniform(name, arg);
+                        } else if constexpr (std::is_same_v<T, glm::mat4>) {
                             mShader->SetUniform(name, arg);
                         }
                     },

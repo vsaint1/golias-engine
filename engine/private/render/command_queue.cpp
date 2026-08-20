@@ -1,7 +1,8 @@
 #include "render/command_queue.h"
+
+#include "core/engine.h"
 #include "render/material.h"
 #include "render/mesh.h"
-#include "core/engine.h"
 
 namespace golias {
 
@@ -10,12 +11,13 @@ namespace golias {
     }
 
     void CommandQueue::Execute() {
-       
+
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         for (const auto& command : mCommands) {
             if (command.Material) {
                 device.BindMaterial(command.Material);
+                command.Material->SetParameter("uModel", command.Model);
             }
 
             if (command.Mesh) {

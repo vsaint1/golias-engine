@@ -15,3 +15,6 @@
 
 #include "scene/scene.h"
 #include "scene/game_object.h"
+
+#include "scene/components/component.h"
+#include "scene/components/static_mesh_component.h"
