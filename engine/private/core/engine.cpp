@@ -13,7 +13,7 @@ namespace golias {
         Engine& engine             = Engine::GetInstance();
         InputManager& inputManager = engine.GetInputManager();
 
-        KeyCode keyCode = inputManager.Translate(key);
+        KeyCode keyCode = inputManager.TranslateKeyCode(key);
 
         if (action == GLFW_PRESS) {
             inputManager.SetKeyPressed(keyCode, true);
@@ -24,12 +24,34 @@ namespace golias {
         }
     }
 
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+        Engine& engine             = Engine::GetInstance();
+        InputManager& inputManager = engine.GetInputManager();
+
+        MouseButton mouseButton = inputManager.TranslateMouseButton(button);
+
+        if (action == GLFW_PRESS) {
+            inputManager.SetMouseButtonPressed(mouseButton, true);
+        } else if (action == GLFW_RELEASE) {
+            inputManager.SetMouseButtonPressed(mouseButton, false);
+        }
+    }
+
+    static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+        Engine& engine             = Engine::GetInstance();
+        InputManager& inputManager = engine.GetInputManager();
+
+        inputManager.SetScrollOffset(static_cast<float>(xoffset), static_cast<float>(yoffset));
+    }
+
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     }
 
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
         Engine& engine             = Engine::GetInstance();
         InputManager& inputManager = engine.GetInputManager();
+
+        inputManager.SetMousePosition(static_cast<float>(xpos), static_cast<float>(ypos));
     }
 
     bool Engine::Initialize(int width, int height, const String& title) {
@@ -78,6 +100,8 @@ namespace golias {
 #endif
 
         glfwSetKeyCallback(mWindow, key_callback);
+        glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
+        glfwSetScrollCallback(mWindow, scroll_callback);
         glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
         glfwSetCursorPosCallback(mWindow, cursor_position_callback);
 
@@ -104,6 +128,8 @@ namespace golias {
             mLastTime        = currentTime;
 
             mApplication->Update(deltaTime);
+
+            mInputManager.ResetTransientState();
 
             mGraphicsDevice.SetClearColor();
             mGraphicsDevice.ClearBuffers();
