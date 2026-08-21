@@ -87,6 +87,13 @@ namespace golias {
         return true;
     }
 
+    GameObject* Scene::GetMainCamera() const {
+        return mMainCamera;
+    }
+
+    void Scene::SetMainCamera(GameObject* camera) {
+        mMainCamera = camera;
+    }
 
     void Scene::Update(float deltaTime) {
         for (auto it = mObjects.begin(); it != mObjects.end();) {

@@ -14,5 +14,5 @@ public:
 
 private:
    
-    Scene mScene;
+    Scene* mScene = nullptr;
 };

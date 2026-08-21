@@ -17,7 +17,7 @@ namespace golias {
         T* CreateGameObject(CString name, GameObject* parent = nullptr) {
             T* gameObject = new T();
             gameObject->SetName(name);
-         
+
             if (!SetParent(gameObject, parent)) {
                 GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
                 return nullptr;
@@ -28,11 +28,16 @@ namespace golias {
 
         bool SetParent(GameObject* object, GameObject* parent);
 
+        GameObject* GetMainCamera() const;
+        void SetMainCamera(GameObject* camera);
+
         void Update(float deltaTime);
 
         void Clear();
 
     private:
         std::vector<std::unique_ptr<GameObject>> mObjects = {};
+
+        GameObject* mMainCamera = nullptr;
     };
 } // namespace golias

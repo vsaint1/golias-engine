@@ -10,6 +10,8 @@ namespace golias {
     class Material;
 
     class StaticMeshComponent : public Component {
+
+        COMPONENT(StaticMeshComponent)
     public:
 
         StaticMeshComponent(const Ref<Mesh>& mesh, const Ref<Material>& material);

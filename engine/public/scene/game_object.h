@@ -1,6 +1,6 @@
 #pragma once
-#include "stdafx.h"
 #include "components/component.h"
+#include "stdafx.h"
 
 namespace golias {
 
@@ -42,8 +42,20 @@ namespace golias {
         glm::vec3 GetForward() const;
 
 
+        template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
+        T* GetComponent() {
+           
+            for (const auto& component : mComponents) {
+                if (component->GetTypeId() == Component::StaticTypeId<T>()) {
+                    return static_cast<T*>(component.get());
+                }
+            }
+
+            return nullptr;
+        }
+
         /// @brief  Adds a component to the game object. The game object takes ownership of the component and will manage its lifetime.
-        /// @param component 
+        /// @param component
         void AddComponent(Component* component);
 
     protected:
