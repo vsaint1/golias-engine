@@ -9,10 +9,13 @@ TestObject::TestObject() {
         layout(location = 1) in vec3 aColor;
 
         uniform mat4 uModel;
+        uniform mat4 uView;
+        uniform mat4 uProjection;
+
         out vec3 vColor;
 
         void main() {
-            gl_Position = uModel * vec4(aPos, 1.0);
+            gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
             vColor = aColor;
         }
     )";
@@ -52,6 +55,7 @@ TestObject::TestObject() {
     auto mesh = std::make_shared<Mesh>(layout, vertices, indices);
 
     StaticMeshComponent* meshComponent = new StaticMeshComponent(mesh, material);
+
 
     AddComponent(meshComponent);
 }

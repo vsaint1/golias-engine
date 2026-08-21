@@ -6,8 +6,12 @@ namespace golias {
     class Shader;
     class Material;
 
+    struct Viewport {
+        int X = 0, Y = 0, Width = 0, Height = 0;
+    };
+
     struct Color {
-        float r, g, b, a;
+        float R = 0.0f, G = 0.0f, B = 0.0f, A = 1.0f;
 
         static Color White() {
             return {1.0f, 1.0f, 1.0f, 1.0f};
@@ -26,6 +30,8 @@ namespace golias {
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
         void ClearBuffers(GLbitfield mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        void SetViewport(const Viewport& viewport);
 
         void BindShader(Shader* shader);
 

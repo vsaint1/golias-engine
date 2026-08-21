@@ -3,6 +3,7 @@
 #include "core/input/input_manager.h"
 #include "graphics/graphics_device.h"
 #include "render/command_queue.h"
+#include "scene/scene.h"
 
 struct GLFWwindow;
 
@@ -22,6 +23,9 @@ namespace golias {
         void Shutdown();
 
         void SetApplication(Application* app);
+
+        Scene* GetScene() const;
+        void SetScene(Scene* scene);
 
         Application* GetApplication() const;
 
@@ -50,5 +54,7 @@ namespace golias {
         GraphicsDevice mGraphicsDevice;
 
         CommandQueue mCommandQueue;
+
+        Scope<Scene> mScene = nullptr;
     };
 } // namespace golias

@@ -15,7 +15,7 @@ namespace golias {
         void Close();
         
     private:
-        bool mIsRunning = false;
+        bool mIsRunning = true;
     };
 
 } // namespace golias

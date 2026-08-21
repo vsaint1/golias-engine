@@ -100,11 +100,15 @@ namespace golias {
     }
 
     void GraphicsDevice::SetClearColor(const Color& color) {
-        glClearColor(color.r, color.g, color.b, color.a);
+        glClearColor(color.R, color.G, color.B, color.A);
     }
 
     void GraphicsDevice::ClearBuffers(GLbitfield mask) {
         glClear(mask);
+    }
+
+    void GraphicsDevice::SetViewport(const Viewport& viewport) {
+        glViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
     }
 
     void GraphicsDevice::BindShader(Shader* shader) {

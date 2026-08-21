@@ -3,9 +3,9 @@
 #include "core/application.h"
 
 #define GLFW_INCLUDE_NONE
+#include "scene/components/camera_component.h"
 #include <glad.h>
 #include <glfw/glfw3.h>
-
 
 namespace golias {
 
@@ -25,9 +25,12 @@ namespace golias {
     }
 
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-        glViewport(0, 0, width, height);
     }
 
+    static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+        Engine& engine             = Engine::GetInstance();
+        InputManager& inputManager = engine.GetInputManager();
+    }
 
     bool Engine::Initialize(int width, int height, const String& title) {
 
@@ -76,6 +79,7 @@ namespace golias {
 
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
+        glfwSetCursorPosCallback(mWindow, cursor_position_callback);
 
 
         GOLIAS_LOG_INFO("OpenGL version: %s", glGetString(GL_VERSION));
@@ -90,7 +94,7 @@ namespace golias {
 
         mLastTime = std::chrono::high_resolution_clock::now();
 
-        while (!mApplication->ShouldClose() || !glfwWindowShouldClose(mWindow)) {
+        while (!mApplication->ShouldClose() && !glfwWindowShouldClose(mWindow)) {
 
             glfwPollEvents();
 
@@ -104,7 +108,27 @@ namespace golias {
             mGraphicsDevice.SetClearColor();
             mGraphicsDevice.ClearBuffers();
 
+
+            int fbWidth, fbHeight;
+            glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
+
+            CameraCommand cameraCommand;
+            if (GameObject* camera = Engine::GetInstance().GetScene()->GetMainCamera()) {
+                if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
+
+                    cameraComponent->SetAspectRatio(static_cast<float>(fbWidth) / static_cast<float>(fbHeight));
+
+                    cameraCommand.View       = cameraComponent->GetViewMatrix();
+                    cameraCommand.Projection = cameraComponent->GetProjectionMatrix();
+                    cameraCommand.Viewport   = {.X = 0, .Y = 0, .Width = fbWidth, .Height = fbHeight};
+
+                    mCommandQueue.Submit(cameraCommand);
+                }
+            }
+
+            mCommandQueue.BeginFrame();
             mCommandQueue.Execute();
+            mCommandQueue.EndFrame();
 
             glfwSwapBuffers(mWindow);
         }
@@ -132,6 +156,14 @@ namespace golias {
     Engine& Engine::GetInstance() {
         static Engine instance;
         return instance;
+    }
+
+    Scene* Engine::GetScene() const {
+        return mScene.get();
+    }
+
+    void Engine::SetScene(Scene* scene) {
+        mScene.reset(scene);
     }
 
     Application* Engine::GetApplication() const {
