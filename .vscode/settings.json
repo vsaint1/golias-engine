@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "*.gshader": "glsl",
+        "*.gmat": "json",
+        "*.gmesh": "json",
+        "*.gtheme": "json",
+        "*.comp": "glsl",
+        "*.gscene": "json",
+        "*.prefab": "json",
+        "*.gproj": "json",
+    }
+}

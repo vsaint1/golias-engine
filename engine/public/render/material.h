@@ -12,7 +12,10 @@ namespace golias {
 
     class Material {
     public:
+        Material() = default;
 
+        static Ref<Material> Load(CString path);
+        
         void SetShader(const Ref<Shader>& shader);
 
         Ref<Shader> GetShader() const;

@@ -5,7 +5,7 @@
 
 bool GameApplication::Initialize() {
 
-    mScene = new Scene();
+    mScene                           = new Scene();
     CameraComponent* cameraComponent = new CameraComponent(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
     GameObject* cameraObject = mScene->CreateGameObject("Main Camera");
@@ -36,5 +36,4 @@ void GameApplication::Update(float deltaTime) {
 }
 
 void GameApplication::Shutdown() {
-   
 }

@@ -18,5 +18,12 @@ namespace golias {
 
         bool FileExists(const Path& path) const;
 
+        std::vector<char> LoadFile(const Path& path) const;
+
+        std::vector<char> LoadAssetFile(CString path) const;
+
+        String LoadAssetFileText(CString path) const;
+
+
     };
 } // namespace golias

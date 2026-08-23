@@ -1,0 +1,14 @@
+{
+    "shader": {
+        "vertex": "shaders/default.vert",
+        "fragment": "shaders/default.frag"
+    },
+    "parameters": {
+        "textures": [
+            {
+                "name": "uTexture",
+                "path": "textures/brick.png"
+            }
+        ]
+    }
+}
