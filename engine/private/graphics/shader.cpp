@@ -1,12 +1,15 @@
 #include "graphics/shader.h"
 
+#include "graphics/texture.h"
+
 namespace golias {
 
     Shader::Shader(GLuint programID) : mProgramID(programID) {
     }
 
-    void Shader::Bind() const {
+    void Shader::Bind()  {
         glUseProgram(mProgramID);
+        mUnitIndex = 0; // Reset
     }
 
     Shader::~Shader() {
@@ -80,5 +83,14 @@ namespace golias {
         GLuint location = GetUniformLocation(name);
         glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
     }
-    
+
+    void Shader::SetUniform(CString name, const Texture2D* texture) {
+
+        GLuint location = GetUniformLocation(name);
+
+        glActiveTexture(GL_TEXTURE0 + mUnitIndex);
+        glBindTexture(GL_TEXTURE_2D, texture->GetHandle());
+        glUniform1i(location, mUnitIndex);
+        mUnitIndex++;
+    }
 } // namespace golias

@@ -1,6 +1,7 @@
 #include "render/material.h"
 
 #include "graphics/shader.h"
+#include "graphics/texture.h"
 
 namespace golias {
 
@@ -32,6 +33,8 @@ namespace golias {
                             mShader->SetUniform(name, arg);
                         } else if constexpr (std::is_same_v<T, glm::mat4>) {
                             mShader->SetUniform(name, arg);
+                        } else if constexpr (std::is_same_v<T, Ref<Texture2D>>) {
+                            mShader->SetUniform(name, arg.get());
                         }
                     },
                     value);
@@ -45,9 +48,11 @@ namespace golias {
 
     ParamType Material::GetParameter(const std::string& name) const {
         auto it = mParameters.find(name);
+       
         if (it != mParameters.end()) {
             return it->second;
         }
+
         return {};
     }
 

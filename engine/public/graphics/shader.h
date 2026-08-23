@@ -3,13 +3,15 @@
 
 namespace golias {
 
+    class Texture2D;
+    
     class Shader {
 
     public:
 
         Shader(GLuint programID);
 
-        void Bind() const;
+        void Bind();
 
         void SetUniform(CString name, int value);
 
@@ -25,6 +27,8 @@ namespace golias {
         
         void SetUniform(CString name, const glm::mat4& value);
 
+        void SetUniform(CString name, const Texture2D* texture);
+
         ~Shader();
 
     private:
@@ -37,6 +41,7 @@ namespace golias {
         Shader& operator=(Shader&&)      = delete;
 
     private:
+        uint32_t mUnitIndex = 0;
         std::unordered_map<size_t, GLuint> mUniformLocations = {};
         GLuint mProgramID                                    = 0;
     };

@@ -4,6 +4,7 @@
 #include "graphics/graphics_device.h"
 #include "render/command_queue.h"
 #include "scene/scene.h"
+#include "core/io/file_system.h"
 
 struct GLFWwindow;
 
@@ -35,6 +36,8 @@ namespace golias {
 
         CommandQueue& GetCommandQueue();
 
+        FileSystem& GetFileSystem();
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -50,10 +53,9 @@ namespace golias {
         GLFWwindow* mWindow = nullptr;
 
         InputManager mInputManager;
-
         GraphicsDevice mGraphicsDevice;
-
         CommandQueue mCommandQueue;
+        FileSystem mFileSystem;
 
         Scope<Scene> mScene = nullptr;
     };

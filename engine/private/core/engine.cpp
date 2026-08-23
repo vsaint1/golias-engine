@@ -187,5 +187,8 @@ namespace golias {
         return mCommandQueue;
     }
 
+    FileSystem& Engine::GetFileSystem() {
+        return mFileSystem;
+    }
 
 } // namespace golias
