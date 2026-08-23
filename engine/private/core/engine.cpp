@@ -4,7 +4,6 @@
 
 #define GLFW_INCLUDE_NONE
 #include "scene/components/camera_component.h"
-#include <glad.h>
 #include <glfw/glfw3.h>
 
 namespace golias {
@@ -76,37 +75,17 @@ namespace golias {
 
         glfwMakeContextCurrent(mWindow);
 
-#if defined(GOLIAS_PLATFORM_WINDOWS) || defined(GOLIAS_PLATFORM_LINUX) || defined(GOLIAS_PLATFORM_OSX)
-
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
-            return false;
-        }
-#else
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-
-        if (!gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress)) {
-            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
+        if (!mGraphicsDevice.Initialize()) {
+            GOLIAS_LOG_ERROR("Failed to initialize GraphicsDevice");
             return false;
         }
 
-#endif
 
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
         glfwSetScrollCallback(mWindow, scroll_callback);
         glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
         glfwSetCursorPosCallback(mWindow, cursor_position_callback);
-
-
-        GOLIAS_LOG_INFO("OpenGL version: %s", glGetString(GL_VERSION));
 
         return mApplication->Initialize();
     }
@@ -124,7 +103,7 @@ namespace golias {
 
 
             auto currentTime = std::chrono::high_resolution_clock::now();
-            float deltaTime  = (currentTime - mLastTime).count();
+            float deltaTime  = std::chrono::duration<float>(currentTime - mLastTime).count();
             mLastTime        = currentTime;
 
             mApplication->Update(deltaTime);

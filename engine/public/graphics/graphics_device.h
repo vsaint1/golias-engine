@@ -21,6 +21,9 @@ namespace golias {
     class GraphicsDevice {
 
     public:
+
+        bool Initialize();
+        
         Ref<Shader> CreateShader(const std::string& vertexSource, const std::string& fragmentSource);
 
         GLuint CreateVertexBuffer(const std::vector<float>& vertices);

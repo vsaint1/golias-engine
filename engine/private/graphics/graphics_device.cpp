@@ -2,8 +2,47 @@
 
 #include "graphics/shader.h"
 #include "render/material.h"
+#include <glad.h>
+#include <glfw/glfw3.h>
 
 namespace golias {
+
+    bool GraphicsDevice::Initialize() {
+
+#if defined(GOLIAS_PLATFORM_WINDOWS) || defined(GOLIAS_PLATFORM_LINUX) || defined(GOLIAS_PLATFORM_OSX)
+
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
+            return false;
+        }
+#else
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+
+        if (!gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress)) {
+            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
+            return false;
+        }
+
+#endif
+
+        glEnable(GL_DEPTH_TEST);
+
+        const char* version  = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+        const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+        const char* vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+
+        GOLIAS_LOG_INFO("OpenGL Vendor: %s | Device: %s", vendor, renderer);
+        GOLIAS_LOG_INFO("OpenGL Version: %s", version);
+
+        return true;
+    }
 
     Ref<Shader> GraphicsDevice::CreateShader(const std::string& vertexSource, const std::string& fragmentSource) {
 
