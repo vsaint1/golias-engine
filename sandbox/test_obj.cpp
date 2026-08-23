@@ -37,14 +37,25 @@ TestObject::TestObject() {
     material->SetShader(shader);
 
     std::vector<float> vertices = {
-        0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, // Top Right
-        -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, 0.0f, // Top Left
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, // Bottom Left
-        0.5f,  -0.5f, 0.0f, 1.0f, 1.0f, 0.0f // Bottom Right
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f, // Top Right
+        -0.5f, 0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // Top Left
+        -0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, // Bottom Left
+        0.5f,  -0.5f, 0.5f,  1.0f, 1.0f, 0.0f, // Bottom Right
+
+        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f, 0.0f, // Top Right
+        -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // Top Left
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom Left
+        0.5f,  -0.5f, -0.5f, 1.0f, 1.0f, 0.0f // Bottom Right
 
     };
 
-    std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+    std::vector<uint32_t> indices = {
+        0, 1, 2, 0, 2, 3, // Front face
+        4, 5, 1, 4, 1, 0, // top face
+        4, 0, 3, 4, 3, 7, // right face
+        3, 2, 6, 3, 6, 7, // bottom face
+        4, 5, 6, 4, 6, 7 // Back face
+    };
 
 
     VertexLayout layout;
@@ -64,33 +75,5 @@ TestObject::TestObject() {
 void TestObject::Update(float deltaTime) {
     GameObject::Update(deltaTime);
 
-    InputManager& inputManager = Engine::GetInstance().GetInputManager();
-
-    auto position = GetPosition();
-
-    if (inputManager.IsKeyPressed(KeyCode::W)) {
-        position.y += 0.001f;
-    }
-
-    if (inputManager.IsKeyPressed(KeyCode::S)) {
-        position.y -= 0.001f;
-    }
-
-    if (inputManager.IsKeyPressed(KeyCode::A)) {
-        position.x -= 0.001f;
-    }
-
-    if (inputManager.IsKeyPressed(KeyCode::D)) {
-        position.x += 0.001f;
-    }
-
-    if (inputManager.IsKeyPressed(KeyCode::Q)) {
-        RotateLocal(glm::vec3(0.0f, 0.0f, 1.0f), 0.001f);
-    }
-
-    if (inputManager.IsKeyPressed(KeyCode::E)) {
-        RotateLocal(glm::vec3(0.0f, 0.0f, 1.0f), -0.001f);
-    }
-
-    SetPosition(position);
+    RotateLocal(glm::vec3(0.0f, 1.0f, 0.5f), 0.01f);
 }

@@ -10,7 +10,9 @@ bool GameApplication::Initialize() {
 
     GameObject* cameraObject = mScene->CreateGameObject("Main Camera");
     cameraObject->AddComponent(cameraComponent);
-    cameraObject->SetPosition(glm::vec3(0.0f, 0.0f, 2.0f));
+    cameraObject->SetPosition(glm::vec3(0.0f, 0.0f, -5.0f));
+
+    cameraObject->AddComponent(new PlayerControllerComponent());
 
     mScene->SetMainCamera(cameraObject);
 

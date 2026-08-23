@@ -6,7 +6,6 @@
 namespace golias {
 
 
-
     class InputManager {
 
     public:
@@ -56,16 +55,16 @@ namespace golias {
         InputManager& operator=(InputManager&&)      = delete;
 
     private:
-        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyStates{};
-        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyJustPressed{};
-        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyJustReleased{};
-        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonStates{};
-        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonJustPressed{};
-        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonJustReleased{};
+        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyStates                   = {};
+        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyJustPressed              = {};
+        std::array<bool, static_cast<size_t>(KeyCode::Count)> mKeyJustReleased             = {};
+        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonStates       = {};
+        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonJustPressed  = {};
+        std::array<bool, static_cast<size_t>(MouseButton::Count)> mMouseButtonJustReleased = {};
 
-        glm::vec2 mMousePosition{0.0f};
-        glm::vec2 mMouseDelta{0.0f};
-        glm::vec2 mScrollOffset{0.0f};
+        glm::vec2 mMousePosition = glm::vec2(0.0f, 0.0f);
+        glm::vec2 mMouseDelta    = glm::vec2(0.0f, 0.0f);
+        glm::vec2 mScrollOffset  = glm::vec2(0.0f, 0.0f);
 
         friend class Engine;
     };
