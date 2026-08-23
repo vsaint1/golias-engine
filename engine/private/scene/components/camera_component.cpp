@@ -19,7 +19,7 @@ namespace golias {
 
     glm::mat4 CameraComponent::GetProjectionMatrix() const {
         
-        return glm::perspective(glm::radians(mFOV), mAspectRatio, mNearPlane, mFarPlane);
+        return glm::perspectiveLH_ZO(glm::radians(mFOV), mAspectRatio, mNearPlane, mFarPlane);
     }
 
     float CameraComponent::GetFOV() const {

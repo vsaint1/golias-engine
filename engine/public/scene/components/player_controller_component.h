@@ -9,6 +9,11 @@ namespace golias {
     public:
         void Update(float deltaTime) override;
 
+        float GetMoveSpeed() const;
+        void SetMoveSpeed(float speed);
+
+        float GetSensitivity() const;
+        void SetSensitivity(float sensitivity);
 
     private:
         float mMoveSpeed   = 1.0f;

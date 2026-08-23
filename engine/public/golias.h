@@ -19,3 +19,4 @@
 #include "scene/components/component.h"
 #include "scene/components/static_mesh_component.h"
 #include "scene/components/camera_component.h"
+#include "scene/components/player_controller_component.h"
