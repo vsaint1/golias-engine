@@ -50,7 +50,7 @@ namespace golias {
     }
 
     std::vector<char> FileSystem::LoadAssetFile(CString path) const {
-        return LoadFile(GetAssetsFolder() / Path(std::string(path)));
+        return LoadFile(GetAssetsFolder() / Path(path));
     }
 
     String FileSystem::LoadAssetFileText(CString path) const {

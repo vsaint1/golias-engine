@@ -43,12 +43,11 @@ namespace golias {
     }
 
     void GameObject::AddComponent(Component* component) {
-        
+
         if (component) {
             component->mOwner = this;
             mComponents.emplace_back(component);
         }
-
     }
 
     bool GameObject::IsAlive() const {
@@ -63,12 +62,21 @@ namespace golias {
         mPosition = position;
     }
 
+    glm::vec3 GameObject::GetWorldPosition() const {
+        glm::vec4 hom = GetWorldTransform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        return glm::vec3(hom) / hom.w;
+    }
+
     glm::quat GameObject::GetRotation() const {
         return mRotation;
     }
 
     void GameObject::SetRotation(const glm::quat& rotation) {
         mRotation = rotation;
+    }
+
+    void GameObject::SetRotation(const glm::vec3& eulerAngles) {
+        mRotation = glm::quat(eulerAngles);
     }
 
     glm::vec3 GameObject::GetScale() const {

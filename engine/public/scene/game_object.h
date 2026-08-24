@@ -26,6 +26,9 @@ namespace golias {
 
         glm::vec3 GetPosition() const;
         void SetPosition(const glm::vec3& position);
+        void SetRotation(const glm::vec3& eulerAngles);
+
+        glm::vec3 GetWorldPosition() const;
 
         glm::quat GetRotation() const;
         void SetRotation(const glm::quat& rotation);

@@ -7,6 +7,8 @@
 
 namespace golias {
 
+    GraphicsDevice::~GraphicsDevice() = default;
+
     bool GraphicsDevice::Initialize() {
 
 #if defined(GOLIAS_PLATFORM_WINDOWS) || defined(GOLIAS_PLATFORM_LINUX) || defined(GOLIAS_PLATFORM_OSX)
@@ -159,6 +161,31 @@ namespace golias {
     void GraphicsDevice::BindMaterial(Material* material) {
         if (material) {
             material->Bind();
+        }
+    }
+
+    GLuint GraphicsDevice::CreateUniformBuffer(size_t size) {
+        GLuint buffer = 0;
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+        glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        return buffer;
+    }
+
+    void GraphicsDevice::UpdateUniformBuffer(GLuint buffer, const void* data, size_t size, size_t offset) {
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+        glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
+    void GraphicsDevice::BindUniformBuffer(GLuint buffer, uint32_t binding) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer);
+    }
+
+    void GraphicsDevice::DestroyBuffer(GLuint buffer) {
+        if (buffer) {
+            glDeleteBuffers(1, &buffer);
         }
     }
 } // namespace golias
