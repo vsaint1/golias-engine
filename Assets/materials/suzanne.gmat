@@ -1,0 +1,14 @@
+{
+    "shader": {
+        "vertex": "shaders/default.vert",
+        "fragment": "shaders/default.frag"
+    },
+    "parameters": {
+        "textures": [
+            {
+                "name": "uTexture",
+                "path": "models/suzanne/Suzanne_BaseColor.png"
+            }
+        ]
+    }
+}
