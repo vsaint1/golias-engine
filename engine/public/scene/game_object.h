@@ -11,7 +11,7 @@ namespace golias {
     public:
         virtual ~GameObject() = default;
 
-        static GameObject* Load(CString modelPath, Scene* scene);
+        static GameObject* Load(CString modelPath, Scene* scene, CString name = "");
 
         virtual void Update(float deltaTime);
 
@@ -23,9 +23,14 @@ namespace golias {
 
         GameObject* GetParent() const;
 
+        GameObject* FindChildByName(CString name) const;
+
         void Destroy();
 
         bool IsAlive() const;
+
+        bool IsActive() const;
+        void SetActive(bool active);
 
         glm::vec3 GetPosition() const;
         void SetPosition(const glm::vec3& position);
@@ -79,6 +84,7 @@ namespace golias {
         std::vector<std::unique_ptr<Component>> mComponents = {};
 
         bool mIsAlive = true;
+        bool mIsActive = true;
 
         glm::vec3 mPosition = glm::vec3(0.0f);
         glm::quat mRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);

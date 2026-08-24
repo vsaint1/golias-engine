@@ -120,6 +120,27 @@ namespace golias {
             }
         }
 
+        bool animation_value(const tinygltf::Model& model, int accessorIndex, size_t index, int expected, float* output) {
+            if (accessorIndex < 0 || accessorIndex >= static_cast<int>(model.accessors.size())) {
+                return false;
+            }
+
+            const auto& accessor      = model.accessors[accessorIndex];
+            int stride                = 0;
+            int components            = 0;
+            const unsigned char* data = accessor_data(model, accessor, stride, components);
+            if (!data || components < expected || index >= accessor.count) {
+                return false;
+            }
+
+            const size_t componentSize = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(accessor.componentType));
+            data += index * static_cast<size_t>(stride);
+            for (int i = 0; i < expected; ++i) {
+                output[i] = component(data + i * componentSize, accessor.componentType, accessor.normalized);
+            }
+            return true;
+        }
+
         // https://www.khronos.org/registry/glTF/specs/2.0/glTF-2.0.html
         bool is_json_gltf(const std::vector<char>& data) {
             const Json json = Json::parse(data.begin(), data.end());
@@ -264,6 +285,14 @@ namespace golias {
         return mSceneRoots;
     }
 
+    bool Model::HasAnimations() const {
+        return !mAnimations.empty();
+    }
+
+    const std::vector<Ref<AnimationClip>>& Model::GetAnimations() const {
+        return mAnimations;
+    }
+
     void Model::AppendVertex(const float* position, const float* color, const float* texCoord, const float* normal) {
         mVertices.insert(mVertices.end(), position, position + 3);
         mVertices.insert(mVertices.end(), color, color + 3);
@@ -388,12 +417,91 @@ namespace golias {
                     mSceneRoots.push_back(static_cast<size_t>(nodeIndex));
                 }
             }
-            
+
         } else if (!model.scenes.empty()) {
             for (int nodeIndex : model.scenes.front().nodes) {
                 if (nodeIndex >= 0 && nodeIndex < static_cast<int>(mNodes.size())) {
                     mSceneRoots.push_back(static_cast<size_t>(nodeIndex));
                 }
+            }
+        }
+
+        for (const auto& sourceAnimation : model.animations) {
+            Ref<AnimationClip> clip = std::make_shared<AnimationClip>();
+            clip->Name              = sourceAnimation.name;
+            if (clip->Name.empty()) {
+                char buffer[256];
+                std::snprintf(buffer, sizeof(buffer), "Animation_%04zu", mAnimations.size());
+            }
+
+            std::unordered_map<int, size_t> trackIndices;
+            for (const auto& channel : sourceAnimation.channels) {
+                if (channel.target_node < 0 || channel.target_node >= static_cast<int>(mNodes.size()) || channel.sampler < 0
+                    || channel.sampler >= static_cast<int>(sourceAnimation.samplers.size())) {
+                    continue;
+                }
+
+                const auto& sampler = sourceAnimation.samplers[channel.sampler];
+                if (sampler.interpolation != "" && sampler.interpolation != "LINEAR") {
+                    GOLIAS_LOG_WARN("Skipping unsupported animation interpolation '%s' in clip '%s'",
+                                    sampler.interpolation.c_str(),
+                                    clip->Name.c_str());
+                    continue;
+                }
+
+                if (trackIndices.find(channel.target_node) == trackIndices.end()) {
+                    TransformTrack track;
+                    track.Name = mNodes[channel.target_node].name.empty() ? "Node" : mNodes[channel.target_node].name;
+                    clip->Tracks.push_back(std::move(track));
+                    trackIndices[channel.target_node] = clip->Tracks.size() - 1;
+                }
+
+                TransformTrack& track = clip->Tracks[trackIndices[channel.target_node]];
+                if (sampler.input < 0 || sampler.input >= static_cast<int>(model.accessors.size()) || sampler.output < 0
+                    || sampler.output >= static_cast<int>(model.accessors.size())) {
+                    continue;
+                }
+
+                const auto& inputAccessor  = model.accessors[sampler.input];
+                const auto& outputAccessor = model.accessors[sampler.output];
+                const size_t keyCount      = std::min(inputAccessor.count, outputAccessor.count);
+                for (size_t key = 0; key < keyCount; ++key) {
+                    float timeValue = 0.0f;
+                    if (!animation_value(model, sampler.input, key, 1, &timeValue)) {
+                        continue;
+                    }
+
+                    clip->Duration = std::max(clip->Duration, timeValue);
+                    if (channel.target_path == "translation" || channel.target_path == "scale") {
+                        float value[3] = {};
+                        if (!animation_value(model, sampler.output, key, 3, value)) {
+                            continue;
+                        }
+
+
+                        value[2] = channel.target_path == "translation" ? -value[2] : value[2];
+                        KeyFrameVec3 keyFrame{glm::vec3(value[0], value[1], value[2]), timeValue};
+
+                        if (channel.target_path == "translation") {
+                            track.PositionKeyFrames.push_back(keyFrame);
+                        } else {
+                            track.ScaleKeyFrames.push_back(keyFrame);
+                        }
+
+                    } else if (channel.target_path == "rotation") {
+                        float value[4] = {};
+                        if (!animation_value(model, sampler.output, key, 4, value)) {
+                            continue;
+                        }
+
+                        // Convert from glTF's (x, y, z, w) to glm's (w, x, y, z) and flip the x and y axes for left-handed coordinate system
+                        track.RotationKeyFrames.push_back({glm::quat(value[3], -value[0], -value[1], value[2]), timeValue});
+                    }
+                }
+            }
+
+            if (!clip->Tracks.empty()) {
+                mAnimations.push_back(std::move(clip));
             }
         }
 

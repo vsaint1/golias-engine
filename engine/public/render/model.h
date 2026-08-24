@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/vertex_layout.h"
+#include "scene/components/animation_component.h"
 #include "stdafx.h"
 
 namespace golias {
@@ -48,6 +49,10 @@ namespace golias {
 
         const std::vector<size_t>& GetSceneRoots() const;
 
+        bool HasAnimations() const;
+
+        const std::vector<Ref<AnimationClip>>& GetAnimations() const;
+
     protected:
         void AppendVertex(const float* position, const float* color, const float* texCoord, const float* normal);
 
@@ -58,6 +63,7 @@ namespace golias {
         std::vector<ModelMaterial> mMaterials;
         std::vector<ModelNode> mNodes;
         std::vector<size_t> mSceneRoots;
+        std::vector<Ref<AnimationClip>> mAnimations;
     };
 
     /// @brief  Loads a glTF model based on 2.0 specification.

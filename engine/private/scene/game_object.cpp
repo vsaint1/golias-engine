@@ -6,12 +6,13 @@
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"
+#include "scene/components/animation_component.h"
 #include "scene/components/static_mesh_component.h"
 #include "scene/scene.h"
 
 namespace golias {
 
-    GameObject* GameObject::Load(CString modelPath, Scene* scene) {
+    GameObject* GameObject::Load(CString modelPath, Scene* scene, CString name) {
         if (!scene) {
             return nullptr;
         }
@@ -21,9 +22,17 @@ namespace golias {
             return nullptr;
         }
 
-        GameObject* root = scene->CreateGameObject(Path(modelPath).stem().string());
+        GameObject* root = scene->CreateGameObject(name.empty() ? Path(modelPath).stem().string() : name);
         if (!root) {
             return nullptr;
+        }
+
+        if (model->HasAnimations()) {
+            auto* animation = new AnimationComponent();
+            root->AddComponent(animation);
+            for (const Ref<AnimationClip>& clip : model->GetAnimations()) {
+                animation->RegisterClip(clip->Name, clip);
+            }
         }
 
         auto add_primitive = [&](GameObject* parent, const ModelPrimitive& primitive) {
@@ -115,7 +124,7 @@ namespace golias {
         for (auto it = mChildren.begin(); it != mChildren.end();) {
             GameObject* child = it->get();
 
-            if (child->IsAlive()) {
+            if (child->IsAlive() && child->IsActive()) {
 
                 child->Update(deltaTime);
                 ++it;
@@ -124,6 +133,31 @@ namespace golias {
                 it = mChildren.erase(it);
             }
         }
+    }
+
+    GameObject* GameObject::FindChildByName(CString name) const {
+
+        if (mName == name) {
+            return const_cast<GameObject*>(this);
+        }
+
+        for (const auto& child : mChildren) {
+            GameObject* found = child->FindChildByName(name);
+            if (found) {
+                return found;
+            }
+        }
+
+
+        return nullptr;
+    }
+
+    bool GameObject::IsActive() const {
+        return mIsActive;
+    }
+
+    void GameObject::SetActive(bool active) {
+        mIsActive = active;
     }
 
     void GameObject::SetName(CString name) {
