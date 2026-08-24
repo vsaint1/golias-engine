@@ -24,7 +24,23 @@ namespace golias {
         int32_t mWidth    = 0;
         int32_t mHeight   = 0;
         int32_t mChannels = 0;
-        
+
         GLuint mTextureID = 0;
+    };
+
+
+    class TextureManager {
+    public:
+        Ref<Texture2D> TryGet(CString path);
+
+        Ref<Texture2D> AcquireWhiteTexture();
+
+        Ref<Texture2D> AcquireErrorTexture();
+
+    private:
+        std::unordered_map<String, Ref<Texture2D>> mTextures;
+
+        Ref<Texture2D> mWhiteTexture = nullptr;
+        Ref<Texture2D> mErrorTexture = nullptr;
     };
 } // namespace golias

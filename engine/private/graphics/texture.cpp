@@ -13,10 +13,26 @@ namespace golias {
             return;
         }
 
+        GLint internalFormat = GL_RGB;
+        GLenum format        = GL_RGB;
+
+        if (mChannels == 4) {
+            internalFormat = GL_RGBA;
+            format         = GL_RGBA;
+        } else if (mChannels == 3) {
+            internalFormat = GL_RGB;
+            format         = GL_RGB;
+        } else if (mChannels == 1) {
+            internalFormat = GL_RED;
+            format         = GL_RED;
+        } else {
+            GOLIAS_LOG_WARN("Unsupported number of channels: %d | Using RGB", mChannels);
+        }
+
         glGenTextures(1, &mTextureID);
         glBindTexture(GL_TEXTURE_2D, mTextureID);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWidth, mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, mWidth, mHeight, 0, format, GL_UNSIGNED_BYTE, data);
 
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -83,5 +99,41 @@ namespace golias {
 
     GLuint Texture2D::GetHandle() const {
         return mTextureID;
+    }
+
+
+    Ref<Texture2D> TextureManager::TryGet(CString path) {
+        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
+        Path fullPath          = fileSystem.GetAssetsFolder() / path.data();
+
+        auto it = mTextures.find(fullPath.string());
+        if (it != mTextures.end()) {
+            return it->second;
+        }
+
+        Ref<Texture2D> texture = Texture2D::Load(fullPath.string());
+        if (texture) {
+            mTextures[fullPath.string()] = texture;
+        }
+
+        return texture;
+    }
+
+    Ref<Texture2D> TextureManager::AcquireWhiteTexture() {
+        if (!mWhiteTexture) {
+            unsigned char white[] = {255, 255, 255, 255};
+            mWhiteTexture         = std::make_shared<Texture2D>(1, 1, 4, white);
+        }
+
+        return mWhiteTexture;
+    }
+
+    Ref<Texture2D> TextureManager::AcquireErrorTexture() {
+        if (!mErrorTexture) {
+            unsigned char magenta[] = {255, 0, 255, 255};
+            mErrorTexture           = std::make_shared<Texture2D>(1, 1, 4, magenta);
+        }
+
+        return mErrorTexture;
     }
 } // namespace golias
