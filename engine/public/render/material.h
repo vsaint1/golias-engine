@@ -15,7 +15,13 @@ namespace golias {
         Material() = default;
 
         static Ref<Material> Load(CString path);
-        
+
+        static Ref<Material> Create(const Ref<Shader>& shader);
+
+        static Ref<Material> CreateDefault();
+
+        Ref<Material> Clone() const;
+
         void SetShader(const Ref<Shader>& shader);
 
         Ref<Shader> GetShader() const;
@@ -30,5 +36,17 @@ namespace golias {
         Ref<Shader> mShader = nullptr;
 
         std::unordered_map<std::string, ParamType> mParameters = {};
+    };
+
+
+    class MaterialManager {
+    public:
+        Ref<Material> TryGet(CString path);
+
+        Ref<Material> TryGetDefault();
+
+    private:
+        std::unordered_map<String, Ref<Material>> mMaterials;
+        Ref<Material> mDefaultMaterial;
     };
 } // namespace golias

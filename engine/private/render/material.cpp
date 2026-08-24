@@ -10,18 +10,26 @@ namespace golias {
         Ref<Material> material = std::make_shared<Material>();
         material->SetShader(shader);
         material->SetParameter("_BaseColor", glm::vec4(1.0f));
+        material->SetParameter("_MainTexture", Engine::GetInstance().GetTextureManager().AcquireWhiteTexture());
         return material;
     }
 
     Ref<Material> Material::CreateDefault() {
         FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-        
-        String vertex = fileSystem.LoadAssetFileText("shaders/default.vert");
+
+        String vertex   = fileSystem.LoadAssetFileText("shaders/default.vert");
         String fragment = fileSystem.LoadAssetFileText("shaders/default.frag");
-        
+
         Ref<Shader> shader = Engine::GetInstance().GetGraphicsDevice().CreateShader(vertex, fragment);
 
         return shader ? Create(shader) : nullptr;
+    }
+
+    Ref<Material> Material::Clone() const {
+        Ref<Material> material = std::make_shared<Material>();
+        material->mShader      = mShader;
+        material->mParameters  = mParameters;
+        return material;
     }
 
     Ref<Material> Material::Load(CString path) {
@@ -37,6 +45,7 @@ namespace golias {
 
         Ref<Material> mat = std::make_shared<Material>();
         mat->SetParameter("_BaseColor", glm::vec4(1.0f));
+        mat->SetParameter("_MainTexture", Engine::GetInstance().GetTextureManager().AcquireWhiteTexture());
         if (json.contains("shader")) {
             auto shader = json["shader"];
 
@@ -103,14 +112,18 @@ namespace golias {
 
                     String path = p.value("path", "");
 
-                    Ref<Texture2D> texture = Texture2D::Load(path);
+                    Ref<Texture2D> texture = Engine::GetInstance().GetTextureManager().TryGet(path);
 
                     if (!texture) {
                         GOLIAS_LOG_ERROR("Failed to load texture from path: %s", path.data());
-                        continue;
+                        texture = Engine::GetInstance().GetTextureManager().AcquireErrorTexture();
                     }
 
-                    mat->SetParameter(name, texture);
+                    if (texture) {
+                        mat->SetParameter(name, texture);
+                    } else {
+                        continue;
+                    }
                 }
             }
         }
@@ -172,4 +185,29 @@ namespace golias {
         return {};
     }
 
+
+    Ref<Material> MaterialManager::TryGet(CString path) {
+        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
+        Path fullPath          = fileSystem.GetAssetsFolder() / path.data();
+
+        auto it = mMaterials.find(fullPath.string());
+        if (it != mMaterials.end()) {
+            return it->second;
+        }
+
+        Ref<Material> material = Material::Load(path);
+        if (material) {
+            mMaterials[fullPath.string()] = material;
+        }
+
+        return material;
+    }
+
+    Ref<Material> MaterialManager::TryGetDefault() {
+        if (!mDefaultMaterial) {
+            mDefaultMaterial = Material::CreateDefault();
+        }
+
+        return mDefaultMaterial ? mDefaultMaterial->Clone() : nullptr;
+    }
 } // namespace golias

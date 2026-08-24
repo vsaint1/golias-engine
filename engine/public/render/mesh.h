@@ -4,6 +4,8 @@
 
 namespace golias {
 
+    class Model;
+    struct ModelPrimitive;
 
     class Mesh {
     public:
@@ -14,6 +16,10 @@ namespace golias {
         ~Mesh();
 
         static Ref<Mesh> Load(CString path);
+
+        static Ref<Mesh> Create(const Model& model, const ModelPrimitive& primitive);
+
+        static Ref<Mesh> CreateCube();
 
         void Bind() const;
 

@@ -192,4 +192,12 @@ namespace golias {
         return mFileSystem;
     }
 
+    TextureManager& Engine::GetTextureManager() {
+        return mTextureManager;
+    }
+
+    MaterialManager& Engine::GetMaterialManager() {
+        return mMaterialManager;
+    }
+
 } // namespace golias

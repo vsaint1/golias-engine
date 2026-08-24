@@ -1,10 +1,12 @@
 #pragma once
-#include "stdafx.h"
 #include "core/input/input_manager.h"
-#include "graphics/graphics_device.h"
-#include "render/command_queue.h"
-#include "scene/scene.h"
 #include "core/io/file_system.h"
+#include "graphics/graphics_device.h"
+#include "graphics/texture.h"
+#include "render/command_queue.h"
+#include "render/material.h"
+#include "scene/scene.h"
+#include "stdafx.h"
 
 struct GLFWwindow;
 
@@ -38,6 +40,10 @@ namespace golias {
 
         FileSystem& GetFileSystem();
 
+        TextureManager& GetTextureManager();
+
+        MaterialManager& GetMaterialManager();
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -56,6 +62,10 @@ namespace golias {
         GraphicsDevice mGraphicsDevice;
         CommandQueue mCommandQueue;
         FileSystem mFileSystem;
+
+
+        TextureManager mTextureManager;
+        MaterialManager mMaterialManager;
 
         Scope<Scene> mScene = nullptr;
     };
