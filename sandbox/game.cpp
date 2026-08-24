@@ -6,7 +6,7 @@
 bool GameApplication::Initialize() {
 
     mScene                           = new Scene();
-    CameraComponent* cameraComponent = new CameraComponent(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+    CameraComponent* cameraComponent = new CameraComponent(60.0f, 800.0f / 600.0f, 0.1f, 1000.0f);
 
     GameObject* cameraObject = mScene->CreateGameObject("Main Camera");
     cameraObject->AddComponent(cameraComponent);
@@ -22,12 +22,21 @@ bool GameApplication::Initialize() {
 
     mScene->CreateGameObject<TestObject>("Test Object");
 
-    Ref<Mesh> suzanneMesh         = Mesh::Load("models/suzanne/Suzanne.gltf");
-    Ref<Material> suzanneMaterial = Material::Load("materials/suzanne.gmat");
-
-    GameObject* suzanneObject = mScene->CreateGameObject("Suzanne");
-    suzanneObject->AddComponent(new StaticMeshComponent(suzanneMesh, suzanneMaterial));
+    GameObject* suzanneObject = GameObject::Load("models/suzanne/Suzanne.gltf", mScene);
     suzanneObject->SetPosition(glm::vec3(2.0f, 0.0f, 0.0f));
+
+    GameObject* gun = GameObject::Load("models/gun_carbine/scene.gltf", mScene);
+    gun->SetParent(cameraObject);
+    gun->SetPosition(glm::vec3(0.5f, -0.6f, 0.75f));
+
+    Ref<Material> material = Material::Load("materials/checker.gmat");
+
+    Ref<Mesh> cube = Mesh::CreateCube();
+
+    GameObject* planeObj = mScene->CreateGameObject("Plane");
+    planeObj->AddComponent(new StaticMeshComponent(cube, material));
+    planeObj->SetScale(glm::vec3(30.0f, 1.0f, 30.0f));
+    planeObj->SetPosition(glm::vec3(0.0f, -3.0f, 0.0f));
 
     // GameObject* redLight  = mScene->CreateGameObject("Red Light");
     // LightComponent* lightComp = new LightComponent();

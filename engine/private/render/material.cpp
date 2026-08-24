@@ -70,43 +70,82 @@ namespace golias {
         }
 
         if (json.contains("parameters")) {
-            auto param = json["parameters"];
+            const auto& param = json["parameters"];
 
             if (param.contains("float")) {
-                for (auto& [name, value] : param["float"].items()) {
-                    mat->SetParameter(name, value.get<float>());
+
+                for(const auto& p : param["float"]) {
+                    String name  = p.value("name", "");
+                    float value  = p.value("value", 0.0f);
+
+                    mat->SetParameter(name, value);
                 }
             }
 
             if (param.contains("int")) {
-                for (auto& [name, value] : param["int"].items()) {
-                    mat->SetParameter(name, value.get<int>());
+           
+                for(const auto& p : param["int"]) {
+                    String name  = p.value("name", "");
+                    int value    = p.value("value", 0);
+
+                    mat->SetParameter(name, value);
                 }
+
             }
 
             if (param.contains("float2")) {
-                for (auto& [name, value] : param["float2"].items()) {
-                    glm::vec2 vecValue = glm::vec2(value[0].get<float>(), value[1].get<float>());
-                    mat->SetParameter(name, vecValue);
+             
+                for (const auto& p : param["float2"]) {
+                    String name       = p.value("name", "");
+                    const auto& value = p["value"];
+
+                    if (value.is_array() && value.size() == 2) {
+                        glm::vec2 vecValue(value[0].get<float>(), value[1].get<float>());
+
+                        mat->SetParameter(name, vecValue);
+                    } else {
+                        GOLIAS_LOG_ERROR("Invalid float2 parameter value for name: %s", name.data());
+                    }
                 }
+
             }
 
             if (param.contains("float3")) {
-                for (auto& [name, value] : param["float3"].items()) {
-                    glm::vec3 vecValue = glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
-                    mat->SetParameter(name, vecValue);
+
+                for (const auto& p : param["float3"]) {
+                    String name       = p.value("name", "");
+                    const auto& value = p["value"];
+
+                    if (value.is_array() && value.size() == 3) {
+                        glm::vec3 vecValue(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
+
+                        mat->SetParameter(name, vecValue);
+                    } else {
+                        GOLIAS_LOG_ERROR("Invalid float3 parameter value for name: %s", name.data());
+                    }
                 }
+
             }
 
             if (param.contains("float4")) {
-                for (auto& [name, value] : param["float4"].items()) {
-                    glm::vec4 vecValue =
-                        glm::vec4(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>());
-                    mat->SetParameter(name, vecValue);
+
+                for (const auto& p : param["float4"]) {
+                    String name       = p.value("name", "");
+                    const auto& value = p["value"];
+
+                    if (value.is_array() && value.size() == 4) {
+                        glm::vec4 vecValue(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>());
+
+                        mat->SetParameter(name, vecValue);
+                    } else {
+                        GOLIAS_LOG_ERROR("Invalid float4 parameter value for name: %s", name.data());
+                    }
                 }
+
             }
 
             if (param.contains("textures")) {
+                
                 for (const auto& p : param["textures"]) {
                     String name = p.value("name", "");
 
@@ -125,6 +164,7 @@ namespace golias {
                         continue;
                     }
                 }
+
             }
         }
 

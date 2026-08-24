@@ -3,13 +3,6 @@
 
 
 TestObject::TestObject() {
-
-
-
-
-
-    FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-
     Ref<Material> material = Material::Load("materials/brick.gmat");
 
     Ref<Mesh> mesh = Mesh::CreateCube();
