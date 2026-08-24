@@ -1,6 +1,7 @@
 #pragma once
 
 #include "input.h"
+#include <glm/vec2.hpp>
 #include <array>
 
 namespace golias {
