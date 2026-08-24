@@ -15,6 +15,7 @@
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "render/mesh.h"
+#include "render/model.h"
 
 #include "scene/scene.h"
 #include "scene/game_object.h"
@@ -23,3 +24,4 @@
 #include "scene/components/static_mesh_component.h"
 #include "scene/components/camera_component.h"
 #include "scene/components/player_controller_component.h"
+#include "scene/components/light_component.h"
