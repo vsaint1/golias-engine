@@ -25,9 +25,19 @@ bool GameApplication::Initialize() {
     GameObject* suzanneObject = GameObject::Load("models/suzanne/Suzanne.gltf", mScene);
     suzanneObject->SetPosition(glm::vec3(2.0f, 0.0f, 0.0f));
 
-    GameObject* gun = GameObject::Load("models/gun_carbine/scene.gltf", mScene);
+    GameObject* gun = GameObject::Load("models/gun_carbine/scene.gltf", mScene, "gun_carbine");
     gun->SetParent(cameraObject);
     gun->SetPosition(glm::vec3(0.5f, -0.6f, 0.75f));
+
+    if (AnimationComponent* animComp = gun->GetComponent<AnimationComponent>()) {
+        if (GameObject* bullet = gun->FindChildByName("bullet_33")) {
+            bullet->SetActive(false);
+        }
+
+        if (GameObject* fire = gun->FindChildByName("BOOM_35")) {
+            fire->SetActive(false);
+        }
+    }
 
     Ref<Material> material = Material::Load("materials/checker.gmat");
 
@@ -67,7 +77,15 @@ void GameApplication::Update(float deltaTime) {
         GOLIAS_LOG_INFO("Escape key pressed. Closing the application.");
     }
 
-    mScene->Update(deltaTime);
+    if (inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
+        if (GameObject* gun = mScene->FindGameObjectByName("gun_carbine")) {
+            if (AnimationComponent* animComp = gun->GetComponent<AnimationComponent>()) {
+                animComp->Play("shoot", false);
+            }
+        }
+    }
+
+    Engine::GetInstance().GetScene()->Update(deltaTime);
 }
 
 void GameApplication::Shutdown() {
