@@ -4,11 +4,14 @@
 
 namespace golias {
 
+    class Scene;
 
     class GameObject {
 
     public:
         virtual ~GameObject() = default;
+
+        static GameObject* Load(CString modelPath, Scene* scene);
 
         virtual void Update(float deltaTime);
 
@@ -79,6 +82,6 @@ namespace golias {
 
         glm::vec3 mPosition = glm::vec3(0.0f);
         glm::quat mRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-        glm::vec3 mScale    = glm::vec3(1.0f);
+        glm::vec3 mScale = glm::vec3(1.0f);
     };
 } // namespace golias

@@ -158,7 +158,7 @@ namespace golias {
         // workaround fixing the coordinate system from right-handed to left-handed
         void convert_to_left_handed(float* position, float* normal) {
             position[2] = -position[2];
-            normal[2] = -normal[2];
+            normal[2]   = -normal[2];
         }
 
         // workaround reversing the triangle winding order for left-handed coordinate system
@@ -166,6 +166,43 @@ namespace golias {
             for (size_t i = start; i + 2 < indices.size(); i += 3) {
                 std::swap(indices[i + 1], indices[i + 2]);
             }
+        }
+
+        glm::mat4 gltf_transform(const tinygltf::Node& node) {
+            glm::mat4 transform(1.0f);
+            if (node.matrix.size() == 16) {
+
+                for (size_t column = 0; column < 4; ++column) {
+                    for (size_t row = 0; row < 4; ++row) {
+                        transform[column][row] = static_cast<float>(node.matrix[column * 4 + row]);
+                    }
+                }
+
+            } else {
+                if (node.translation.size() == 3) {
+                    transform = glm::translate(transform,
+                                               glm::vec3(static_cast<float>(node.translation[0]),
+                                                         static_cast<float>(node.translation[1]),
+                                                         static_cast<float>(node.translation[2])));
+                }
+
+                if (node.rotation.size() == 4) {
+                    transform *= glm::mat4_cast(glm::quat(static_cast<float>(node.rotation[3]),
+                                                          static_cast<float>(node.rotation[0]),
+                                                          static_cast<float>(node.rotation[1]),
+                                                          static_cast<float>(node.rotation[2])));
+                }
+
+                if (node.scale.size() == 3) {
+                    transform = glm::scale(
+                        transform,
+                        glm::vec3(static_cast<float>(node.scale[0]), static_cast<float>(node.scale[1]), static_cast<float>(node.scale[2])));
+                }
+            }
+
+            // Reflect both sides of the local transform when changing handedness.
+            const glm::mat4 reflection = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -1.0f));
+            return reflection * transform * reflection;
         }
     } // namespace
 
@@ -211,6 +248,22 @@ namespace golias {
         return mIndices;
     }
 
+    const std::vector<ModelPrimitive>& Model::GetPrimitives() const {
+        return mPrimitives;
+    }
+
+    const std::vector<ModelMaterial>& Model::GetMaterials() const {
+        return mMaterials;
+    }
+
+    const std::vector<ModelNode>& Model::GetNodes() const {
+        return mNodes;
+    }
+
+    const std::vector<size_t>& Model::GetSceneRoots() const {
+        return mSceneRoots;
+    }
+
     void Model::AppendVertex(const float* position, const float* color, const float* texCoord, const float* normal) {
         mVertices.insert(mVertices.end(), position, position + 3);
         mVertices.insert(mVertices.end(), color, color + 3);
@@ -241,7 +294,9 @@ namespace golias {
             return;
         }
 
-        for (const auto& mesh : model.meshes) {
+        std::vector<std::vector<size_t>> meshPrimitives(model.meshes.size());
+        for (size_t meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex) {
+            const auto& mesh = model.meshes[meshIndex];
             for (const auto& primitive : mesh.primitives) {
                 if (primitive.mode != -1 && primitive.mode != TINYGLTF_MODE_TRIANGLES) {
                     continue;
@@ -252,8 +307,9 @@ namespace golias {
                     continue;
                 }
 
-                const size_t base  = mVertices.size() / kVertexStride;
-                const size_t count = model.accessors[position->second].count;
+                const size_t base        = mVertices.size() / kVertexStride;
+                const size_t index_start = mIndices.size();
+                const size_t count       = model.accessors[position->second].count;
                 for (size_t i = 0; i < count; ++i) {
                     float position_value[3]  = {};
                     float color_value[3]     = {1.0f, 1.0f, 1.0f};
@@ -281,7 +337,6 @@ namespace golias {
                     AppendVertex(position_value, color_value, tex_coord_value, normal_value);
                 }
 
-                const size_t index_start = mIndices.size();
                 if (primitive.indices >= 0) {
                     const auto& accessor = model.accessors[primitive.indices];
                     for (size_t i = 0; i < accessor.count; ++i) {
@@ -297,7 +352,72 @@ namespace golias {
                 }
 
                 reverse_triangle_winding(mIndices, index_start);
+
+                ModelPrimitive modelPrimitive;
+                modelPrimitive.vertexOffset  = base;
+                modelPrimitive.vertexCount   = count;
+                modelPrimitive.indexOffset   = index_start;
+                modelPrimitive.indexCount    = mIndices.size() - index_start;
+                modelPrimitive.materialIndex = primitive.material;
+                modelPrimitive.name          = mesh.name;
+                mPrimitives.push_back(std::move(modelPrimitive));
+                meshPrimitives[meshIndex].push_back(mPrimitives.size() - 1);
             }
+        }
+
+        mNodes.resize(model.nodes.size());
+        for (size_t nodeIndex = 0; nodeIndex < model.nodes.size(); ++nodeIndex) {
+            const auto& source  = model.nodes[nodeIndex];
+            ModelNode& node     = mNodes[nodeIndex];
+            node.name           = source.name;
+            node.localTransform = gltf_transform(source);
+            for (int child : source.children) {
+                if (child >= 0 && child < static_cast<int>(mNodes.size())) {
+                    node.children.push_back(static_cast<size_t>(child));
+                }
+            }
+
+            if (source.mesh >= 0 && source.mesh < static_cast<int>(meshPrimitives.size())) {
+                node.primitives = meshPrimitives[source.mesh];
+            }
+        }
+
+        if (model.defaultScene >= 0 && model.defaultScene < static_cast<int>(model.scenes.size())) {
+            for (int nodeIndex : model.scenes[model.defaultScene].nodes) {
+                if (nodeIndex >= 0 && nodeIndex < static_cast<int>(mNodes.size())) {
+                    mSceneRoots.push_back(static_cast<size_t>(nodeIndex));
+                }
+            }
+            
+        } else if (!model.scenes.empty()) {
+            for (int nodeIndex : model.scenes.front().nodes) {
+                if (nodeIndex >= 0 && nodeIndex < static_cast<int>(mNodes.size())) {
+                    mSceneRoots.push_back(static_cast<size_t>(nodeIndex));
+                }
+            }
+        }
+
+        for (const auto& material : model.materials) {
+            ModelMaterial modelMaterial;
+            modelMaterial.name = material.name;
+            if (material.pbrMetallicRoughness.baseColorFactor.size() >= 4) {
+                modelMaterial.baseColor = glm::vec4(static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
+                                                    static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
+                                                    static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
+                                                    static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]));
+            }
+
+            const int textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+            if (textureIndex >= 0 && textureIndex < static_cast<int>(model.textures.size())) {
+                const int imageIndex = model.textures[textureIndex].source;
+                if (imageIndex >= 0 && imageIndex < static_cast<int>(model.images.size())) {
+                    const String uri = model.images[imageIndex].uri;
+                    if (!uri.empty()) {
+                        modelMaterial.baseColorTexture = (Path(path).parent_path() / uri).generic_string();
+                    }
+                }
+            }
+            mMaterials.push_back(std::move(modelMaterial));
         }
     }
 
@@ -318,34 +438,66 @@ namespace golias {
         }
 
         for (const auto& shape : shapes) {
-            for (const auto& index : shape.mesh.indices) {
-                float position_value[3]  = {};
-                float color_value[3]     = {1.0f, 1.0f, 1.0f};
-                float tex_coord_value[2] = {};
-                float normal_value[3]    = {0.0f, 1.0f, 0.0f};
-
-                if (index.vertex_index >= 0) {
-                    for (int i = 0; i < 3; ++i) {
-                        position_value[i] = attrib.vertices[3 * index.vertex_index + i];
-                    }
+            size_t indexOffset               = 0;
+            int currentMaterial              = -2;
+            ModelPrimitive* currentPrimitive = nullptr;
+            for (size_t face = 0; face < shape.mesh.num_face_vertices.size(); ++face) {
+                const int faceMaterial = face < shape.mesh.material_ids.size() ? shape.mesh.material_ids[face] : -1;
+                if (faceMaterial != currentMaterial) {
+                    ModelPrimitive primitive;
+                    primitive.vertexOffset  = mVertices.size() / kVertexStride;
+                    primitive.indexOffset   = mIndices.size();
+                    primitive.materialIndex = faceMaterial;
+                    primitive.name          = shape.name;
+                    mPrimitives.push_back(std::move(primitive));
+                    currentPrimitive = &mPrimitives.back();
+                    currentMaterial  = faceMaterial;
                 }
 
-                if (index.normal_index >= 0) {
-                    for (int i = 0; i < 3; ++i) {
-                        normal_value[i] = attrib.normals[3 * index.normal_index + i];
-                    }
-                }
+                const size_t vertexCount = shape.mesh.num_face_vertices[face];
+                for (size_t vertex = 0; vertex < vertexCount; ++vertex) {
+                    const auto& index        = shape.mesh.indices[indexOffset + vertex];
+                    float position_value[3]  = {};
+                    float color_value[3]     = {1.0f, 1.0f, 1.0f};
+                    float tex_coord_value[2] = {};
+                    float normal_value[3]    = {0.0f, 1.0f, 0.0f};
 
-                if (index.texcoord_index >= 0) {
-                    for (int i = 0; i < 2; ++i) {
-                        tex_coord_value[i] = attrib.texcoords[2 * index.texcoord_index + i];
+                    if (index.vertex_index >= 0) {
+                        for (int i = 0; i < 3; ++i) {
+                            position_value[i] = attrib.vertices[3 * index.vertex_index + i];
+                        }
                     }
-                }
 
-                convert_to_left_handed(position_value, normal_value);
-                AppendVertex(position_value, color_value, tex_coord_value, normal_value);
-                mIndices.push_back(static_cast<uint32_t>(mIndices.size()));
+                    if (index.normal_index >= 0) {
+                        for (int i = 0; i < 3; ++i) {
+                            normal_value[i] = attrib.normals[3 * index.normal_index + i];
+                        }
+                    }
+
+                    if (index.texcoord_index >= 0) {
+                        for (int i = 0; i < 2; ++i) {
+                            tex_coord_value[i] = attrib.texcoords[2 * index.texcoord_index + i];
+                        }
+                    }
+
+                    convert_to_left_handed(position_value, normal_value);
+                    AppendVertex(position_value, color_value, tex_coord_value, normal_value);
+                    mIndices.push_back(static_cast<uint32_t>(mIndices.size()));
+                }
+                indexOffset += vertexCount;
+                currentPrimitive->vertexCount = mVertices.size() / kVertexStride - currentPrimitive->vertexOffset;
+                currentPrimitive->indexCount  = mIndices.size() - currentPrimitive->indexOffset;
             }
+        }
+
+        for (const auto& material : materials) {
+            ModelMaterial modelMaterial;
+            modelMaterial.name      = material.name;
+            modelMaterial.baseColor = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], material.dissolve);
+            if (!material.diffuse_texname.empty()) {
+                modelMaterial.baseColorTexture = (Path(path).parent_path() / material.diffuse_texname).lexically_normal().generic_string();
+            }
+            mMaterials.push_back(std::move(modelMaterial));
         }
 
         reverse_triangle_winding(mIndices, 0);
