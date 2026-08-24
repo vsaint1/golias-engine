@@ -1,15 +1,14 @@
 #include "render/mesh.h"
 
 #include "core/engine.h"
+#include "render/model.h"
 
 namespace golias {
 
-
     Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
         mVertexLayout = layout;
-
-        mVertexCount = vertices.size() / (layout.Stride / sizeof(float));
-        mIndexCount  = indices.size();
+        mVertexCount  = vertices.size() / (layout.Stride / sizeof(float));
+        mIndexCount   = indices.size();
 
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
@@ -21,7 +20,6 @@ namespace golias {
 
         glGenVertexArrays(1, &mVAO);
         glBindVertexArray(mVAO);
-
         glBindBuffer(GL_ARRAY_BUFFER, mVBO);
 
         for (const auto& element : layout.Elements) {
@@ -29,7 +27,7 @@ namespace golias {
             glEnableVertexAttribArray(element.Index);
         }
 
-        if (mIndexCount > 0 && mEBO != 0) {
+        if (mEBO) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
         }
 
@@ -37,7 +35,20 @@ namespace golias {
         glBindVertexArray(0);
     }
 
-    Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices) : Mesh(layout, vertices, std::vector<uint32_t>()) {
+    Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices) : Mesh(layout, vertices, {}) {
+    }
+
+    Ref<Mesh> Mesh::Load(CString path) {
+        const Ref<Model> model = Model::Load(path);
+
+        if (!model || model->GetVertices().empty() || model->GetIndices().empty()) {
+            GOLIAS_LOG_ERROR("Failed to load mesh from model: %s", path.data());
+            return nullptr;
+        }
+
+        Ref<Mesh> mesh = std::make_shared<Mesh>(model->GetVertexLayout(), model->GetVertices(), model->GetIndices());
+
+        return mesh;
     }
 
     void Mesh::Bind() const {
@@ -45,8 +56,7 @@ namespace golias {
     }
 
     void Mesh::Draw() const {
-
-        if (mIndexCount > 0) {
+        if (mIndexCount) {
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr);
         } else {
             glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount));
@@ -54,7 +64,6 @@ namespace golias {
     }
 
     Mesh::~Mesh() {
-
         if (mVAO) {
             glDeleteVertexArrays(1, &mVAO);
         }
@@ -67,6 +76,5 @@ namespace golias {
             glDeleteBuffers(1, &mEBO);
         }
     }
-
 
 } // namespace golias

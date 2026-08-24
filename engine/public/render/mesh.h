@@ -13,6 +13,8 @@ namespace golias {
         
         ~Mesh();
 
+        static Ref<Mesh> Load(CString path);
+
         void Bind() const;
 
         void Draw() const;
