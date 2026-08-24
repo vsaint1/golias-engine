@@ -26,6 +26,8 @@ namespace golias {
             return gameObject;
         }
 
+        GameObject* FindGameObjectByName(CString name) const;
+        
         bool SetParent(GameObject* object, GameObject* parent);
 
         GameObject* GetMainCamera() const;

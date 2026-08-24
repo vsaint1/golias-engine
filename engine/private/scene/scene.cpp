@@ -95,6 +95,16 @@ namespace golias {
         mMainCamera = camera;
     }
 
+    GameObject* Scene::FindGameObjectByName(CString name) const {
+        for (const auto& obj : mObjects) {
+            if (obj->GetName() == name) {
+                return obj.get();
+            }
+        }
+
+        return nullptr;
+    }
+
     void Scene::Update(float deltaTime) {
         for (auto it = mObjects.begin(); it != mObjects.end();) {
             GameObject* obj = it->get();
