@@ -47,6 +47,13 @@ namespace golias {
     }
 
     Ref<Shader> GraphicsDevice::CreateShader(const std::string& vertexSource, const std::string& fragmentSource) {
+        std::string cacheKey = vertexSource;
+        cacheKey.push_back('\0');
+        cacheKey += fragmentSource;
+
+        if (const auto it = mShaderCache.find(cacheKey); it != mShaderCache.end()) {
+            return it->second;
+        }
 
         GLuint vertexShader          = glCreateShader(GL_VERTEX_SHADER);
         const char* vertexSourceCStr = vertexSource.c_str();
@@ -120,7 +127,9 @@ namespace golias {
 
         GOLIAS_LOG_INFO("Shader program created successfully with ID: %u", program);
 
-        return std::make_shared<Shader>(program);
+        Ref<Shader> shader = std::make_shared<Shader>(program);
+        mShaderCache.emplace(std::move(cacheKey), shader);
+        return shader;
     }
 
     GLuint GraphicsDevice::CreateVertexBuffer(const std::vector<float>& vertices) {

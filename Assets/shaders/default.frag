@@ -5,6 +5,7 @@ out vec4 COLOR;
 uniform vec3 _CameraPos;
 
 uniform sampler2D _MainTexture;
+uniform vec4 _BaseColor;
 
 in vec3 vColor;
 in vec2 vTexCoord;
@@ -71,6 +72,6 @@ void main() {
         ambient += 0.4 * lightColor;
     }
 
-    vec3 result = (diffuse + specular + ambient) * tex.rgb * vColor;
+    vec3 result = (diffuse + specular + ambient) * tex.rgb * vColor * _BaseColor.rgb;
     COLOR = vec4(result, 1.0);
 }

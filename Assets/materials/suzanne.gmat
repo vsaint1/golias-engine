@@ -6,7 +6,7 @@
     "parameters": {
         "textures": [
             {
-                "name": "uTexture",
+                "name": "_MainTexture",
                 "path": "models/suzanne/Suzanne_BaseColor.png"
             }
         ]

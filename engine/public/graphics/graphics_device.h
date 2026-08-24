@@ -69,5 +69,8 @@ namespace golias {
         void BindUniformBuffer(GLuint buffer, uint32_t binding);
 
         void DestroyBuffer(GLuint buffer);
+
+    private:
+        std::unordered_map<std::string, Ref<Shader>> mShaderCache = {};
     };
 } // namespace golias

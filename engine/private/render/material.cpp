@@ -6,6 +6,24 @@
 
 namespace golias {
 
+    Ref<Material> Material::Create(const Ref<Shader>& shader) {
+        Ref<Material> material = std::make_shared<Material>();
+        material->SetShader(shader);
+        material->SetParameter("_BaseColor", glm::vec4(1.0f));
+        return material;
+    }
+
+    Ref<Material> Material::CreateDefault() {
+        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
+        
+        String vertex = fileSystem.LoadAssetFileText("shaders/default.vert");
+        String fragment = fileSystem.LoadAssetFileText("shaders/default.frag");
+        
+        Ref<Shader> shader = Engine::GetInstance().GetGraphicsDevice().CreateShader(vertex, fragment);
+
+        return shader ? Create(shader) : nullptr;
+    }
+
     Ref<Material> Material::Load(CString path) {
 
         String content = Engine::GetInstance().GetFileSystem().LoadAssetFileText(path);
@@ -18,6 +36,7 @@ namespace golias {
         Json json = Json::parse(content, nullptr, false);
 
         Ref<Material> mat = std::make_shared<Material>();
+        mat->SetParameter("_BaseColor", glm::vec4(1.0f));
         if (json.contains("shader")) {
             auto shader = json["shader"];
 
@@ -123,6 +142,8 @@ namespace golias {
                         } else if constexpr (std::is_same_v<T, glm::vec2>) {
                             mShader->SetUniform(name, arg);
                         } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                            mShader->SetUniform(name, arg);
+                        } else if constexpr (std::is_same_v<T, glm::vec4>) {
                             mShader->SetUniform(name, arg);
                         } else if constexpr (std::is_same_v<T, glm::mat3>) {
                             mShader->SetUniform(name, arg);
