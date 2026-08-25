@@ -1,6 +1,5 @@
 #pragma once
 #include "components/component.h"
-#include "stdafx.h"
 
 namespace golias {
 
@@ -12,6 +11,10 @@ namespace golias {
         virtual ~GameObject() = default;
 
         static GameObject* Load(CString modelPath, Scene* scene, CString name = "");
+
+        virtual void Start();
+
+        virtual bool LoadProperties(const Json& properties);
 
         virtual void Update(float deltaTime);
 
@@ -42,7 +45,7 @@ namespace golias {
         void SetRotation(const glm::quat& rotation);
         void SetRotation(const glm::vec3& eulerAngles);
 
-        glm::quat GetWorldRotation() const; 
+        glm::quat GetWorldRotation() const;
         void SetWorldRotation(const glm::quat& rotation);
 
         void RotateLocal(const glm::vec3& axis, float angle);
@@ -58,7 +61,7 @@ namespace golias {
 
         template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
         T* GetComponent() {
-           
+
             for (const auto& component : mComponents) {
                 if (component->GetTypeId() == Component::StaticTypeId<T>()) {
                     return static_cast<T*>(component.get());
@@ -86,11 +89,51 @@ namespace golias {
 
         std::vector<std::unique_ptr<Component>> mComponents = {};
 
-        bool mIsAlive = true;
+        bool mIsAlive  = true;
         bool mIsActive = true;
 
         glm::vec3 mPosition = glm::vec3(0.0f);
         glm::quat mRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-        glm::vec3 mScale = glm::vec3(1.0f);
+        glm::vec3 mScale    = glm::vec3(1.0f);
     };
+
+
+    class ObjectFactoryBase {
+    public:
+        virtual ~ObjectFactoryBase()       = default;
+        virtual GameObject* Create() const = 0;
+    };
+
+    template <typename T>
+    class ObjectFactory : public ObjectFactoryBase {
+    public:
+        virtual GameObject* Create() const override {
+            return new T();
+        }
+    };
+
+
+    class ObjectRegistry {
+    public:
+        static ObjectRegistry& GetInstance() {
+            static ObjectRegistry instance;
+            return instance;
+        }
+
+        template <typename T>
+        void RegisterObject(CString pName) {
+            creators.emplace(pName.data(), std::make_unique<ObjectFactory<T>>());
+        }
+
+        GameObject* CreateObject(CString pName) const;
+
+    private:
+        std::unordered_map<std::string, std::unique_ptr<ObjectFactoryBase>> creators;
+    };
+
+#define GCLASS(Clazz)                                                        \
+public:                                                                      \
+    static void Register() {                                                 \
+        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz); \
+    }
 } // namespace golias

@@ -115,6 +115,15 @@ namespace golias {
         return root;
     }
 
+    void GameObject::Start() {
+      
+    }
+
+    bool GameObject::LoadProperties(const Json& properties) {
+
+        return true;
+    }
+
     void GameObject::Update(float deltaTime) {
 
         for (const auto& component : mComponents) {
@@ -283,6 +292,16 @@ namespace golias {
 
     glm::vec3 GameObject::GetForward() const {
         return mRotation * glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+
+    GameObject* ObjectRegistry::CreateObject(CString pName) const {
+        auto it = creators.find(pName.data());
+        if (it != creators.end()) {
+            return it->second->Create();
+        }
+
+        return nullptr;
     }
 
 } // namespace golias

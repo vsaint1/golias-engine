@@ -11,6 +11,8 @@ namespace golias {
     public:
         Scene() = default;
 
+        static Ref<Scene> Load(CString path);
+
         GameObject* CreateGameObject(CString name, GameObject* parent = nullptr);
 
         template <typename T, typename = typename std::enable_if<std::is_base_of<GameObject, T>::value>::type>
@@ -27,19 +29,31 @@ namespace golias {
         }
 
         GameObject* FindGameObjectByName(CString name) const;
-        
+
         bool SetParent(GameObject* object, GameObject* parent);
 
         GameObject* GetMainCamera() const;
         void SetMainCamera(GameObject* camera);
 
+        CString GetName() const;
+        void SetName(CString name);
+        
         void Update(float deltaTime);
 
         void Clear();
+
+        static void RegisterTypes();
+
+        void PrintTree();
+
+    private:
+        void LoadObject(const Json& objectData, GameObject* parent = nullptr);
 
     private:
         std::vector<std::unique_ptr<GameObject>> mObjects = {};
 
         GameObject* mMainCamera = nullptr;
+
+        String mName = "UnnamedScene";
     };
 } // namespace golias
