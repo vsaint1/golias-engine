@@ -20,8 +20,12 @@
 #include "scene/scene.h"
 #include "scene/game_object.h"
 
+#include "physics/collider.h"
+#include "physics/rigid_body.h"
+
 #include "scene/components/component.h"
 #include "scene/components/static_mesh_component.h"
 #include "scene/components/camera_component.h"
 #include "scene/components/player_controller_component.h"
 #include "scene/components/light_component.h"
+#include "scene/components/physics_component.h"

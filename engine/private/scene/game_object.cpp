@@ -185,6 +185,7 @@ namespace golias {
         if (component) {
             component->mOwner = this;
             mComponents.emplace_back(component);
+            component->Start();
         }
     }
 
