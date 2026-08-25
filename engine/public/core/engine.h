@@ -3,6 +3,7 @@
 #include "core/io/file_system.h"
 #include "graphics/graphics_device.h"
 #include "graphics/texture.h"
+#include "physics/physics_manager.h"
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "scene/scene.h"
@@ -44,6 +45,8 @@ namespace golias {
 
         MaterialManager& GetMaterialManager();
 
+        PhysicsManager& GetPhysicsManager();
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -62,7 +65,7 @@ namespace golias {
         GraphicsDevice mGraphicsDevice;
         CommandQueue mCommandQueue;
         FileSystem mFileSystem;
-
+        PhysicsManager mPhysicsManager;
 
         TextureManager mTextureManager;
         MaterialManager mMaterialManager;

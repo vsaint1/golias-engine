@@ -19,7 +19,7 @@ namespace golias {
 
         static Ref<Mesh> Create(const Model& model, const ModelPrimitive& primitive);
 
-        static Ref<Mesh> CreateCube();
+        static Ref<Mesh> CreateCube(const glm::vec3& size = glm::vec3(1.0f));
 
         void Bind() const;
 

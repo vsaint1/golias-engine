@@ -86,44 +86,46 @@ namespace golias {
         }
     }
 
-    Ref<Mesh> Mesh::CreateCube() {
+    Ref<Mesh> Mesh::CreateCube(const glm::vec3& size) {
 
+        const glm::vec3 halfSize = size * 0.5f;
+        
         std::vector<float> vertices = {
             // Front (+Z)
-            0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, 0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
-            0.5f, -0.5f, 0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+            halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, 1.0f,
+            -halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, 1.0f,
+            -halfSize.x, -halfSize.y, halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+            halfSize.x, -halfSize.y, halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, 1.0f,
 
             // Back (-Z)
-            -0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, -1.0f,
-            0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, -1.0f,
-            0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, -1.0f,
-            -0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, -1.0f,
+            -halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, -1.0f,
+            halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, -1.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, -1.0f,
+            -halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, -1.0f,
 
             // Top (+Y)
-            -0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 1.0f, 0.0f,
+            -halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 1.0f, 0.0f,
+            halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 1.0f, 0.0f,
+            halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 1.0f, 0.0f,
+            -halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 1.0f, 0.0f,
 
             // Bottom (-Y)
-            -0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, -1.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, -1.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, -1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, -1.0f, 0.0f,
+            -halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, -1.0f, 0.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, -1.0f, 0.0f,
+            halfSize.x, -halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, -1.0f, 0.0f,
+            -halfSize.x, -halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, -1.0f, 0.0f,
 
             // Right (+X)
-            0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,
+            halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   1.0f, 0.0f, 0.0f,
+            halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   1.0f, 0.0f, 0.0f,
+            halfSize.x, -halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,
 
             // Left (-X)
-            -0.5f,  0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,  -1.0f, 0.0f, 0.0f
+            -halfSize.x,  halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
+            -halfSize.x,  halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
+            -halfSize.x, -halfSize.y, -halfSize.z,       1.0f, 1.0f, 1.0f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
+            -halfSize.x, -halfSize.y,  halfSize.z,       1.0f, 1.0f, 1.0f,  0.0f, 0.0f,  -1.0f, 0.0f, 0.0f
         };
 
         std::vector<uint32_t> indices = {
