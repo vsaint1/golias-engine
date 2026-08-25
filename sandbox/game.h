@@ -6,13 +6,12 @@ using namespace golias;
 class GameApplication : public Application {
 
 public:
+    void RegisterTypes() override;
+    
     bool Initialize() override;
 
     void Update(float deltaTime) override;
 
     void Shutdown() override;
-
-private:
-   
-    Scene* mScene = nullptr;
+    
 };
