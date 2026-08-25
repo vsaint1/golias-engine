@@ -1,24 +1,14 @@
 #include "scene/components/player_controller_component.h"
 
 #include "core/engine.h"
+#include "physics/kinematic_character_controller.h"
 
 namespace golias {
 
-    float PlayerControllerComponent::GetMoveSpeed() const {
-        return mMoveSpeed;
+    void PlayerControllerComponent::Start() {
+        mCharacterController = new KinematicCharacterController(0.4f, 1.2f);
+        mCharacterController->SetPosition(GetOwner()->GetPosition());
     }
-    void PlayerControllerComponent::SetMoveSpeed(float speed) {
-        mMoveSpeed = speed;
-    }
-
-    float PlayerControllerComponent::GetSensitivity() const {
-        return mSensitivity;
-    }
-
-    void PlayerControllerComponent::SetSensitivity(float sensitivity) {
-        mSensitivity = sensitivity;
-    }
-
 
     void PlayerControllerComponent::Update(float deltaTime) {
         InputManager& inputManager = Engine::GetInstance().GetInputManager();
@@ -40,16 +30,15 @@ namespace golias {
 
         glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
 
-       
+
         glm::vec3 forward = glm::vec3(rotationMatrix * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-        forward.y          = 0.0f;
-        forward            = glm::normalize(forward);
+        forward.y         = 0.0f;
+        forward           = glm::normalize(forward);
 
         glm::vec3 right = glm::vec3(rotationMatrix * glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
         right.y         = 0.0f;
         right           = glm::normalize(right);
 
-        glm::vec3 position = GetOwner()->GetPosition();
         glm::vec3 movement(0.0f);
 
         if (inputManager.IsKeyPressed(KeyCode::W)) {
@@ -69,10 +58,27 @@ namespace golias {
         }
 
         if (glm::length2(movement) > 0.0f) {
-            position += glm::normalize(movement) * mMoveSpeed * deltaTime;
+            movement = glm::normalize(movement) * mMoveSpeed * deltaTime;
         }
 
-        GetOwner()->SetPosition(position);
+        mCharacterController->Walk(movement);
+
+        GetOwner()->SetPosition(mCharacterController->GetPosition());
+    }
+
+    float PlayerControllerComponent::GetMoveSpeed() const {
+        return mMoveSpeed;
+    }
+    void PlayerControllerComponent::SetMoveSpeed(float speed) {
+        mMoveSpeed = speed;
+    }
+
+    float PlayerControllerComponent::GetSensitivity() const {
+        return mSensitivity;
+    }
+
+    void PlayerControllerComponent::SetSensitivity(float sensitivity) {
+        mSensitivity = sensitivity;
     }
 
 
