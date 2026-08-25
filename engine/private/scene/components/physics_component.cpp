@@ -29,8 +29,8 @@ namespace golias {
             glm::vec3 position = mRigidBody->GetPosition();
             glm::quat rotation = mRigidBody->GetRotation();
 
-            GetOwner()->SetPosition(position);
-            GetOwner()->SetRotation(rotation);
+            GetOwner()->SetWorldPosition(position);
+            GetOwner()->SetWorldRotation(rotation);
         }
     }
 

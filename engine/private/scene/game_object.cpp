@@ -201,13 +201,43 @@ namespace golias {
         mPosition = position;
     }
 
+    void GameObject::SetWorldPosition(const glm::vec3& position) {
+        if (mParent) {
+            glm::mat4 parentWorldTransform = mParent->GetWorldTransform();
+            glm::mat4 parentInverse        = glm::inverse(parentWorldTransform);
+            glm::vec4 localPos             = parentInverse * glm::vec4(position, 1.0f);
+            mPosition                      = glm::vec3(localPos) / localPos.w;
+        } else {
+            mPosition = position;
+        }
+    }
+
+
     glm::vec3 GameObject::GetWorldPosition() const {
         glm::vec4 hom = GetWorldTransform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
         return glm::vec3(hom) / hom.w;
     }
 
+
     glm::quat GameObject::GetRotation() const {
         return mRotation;
+    }
+
+    glm::quat GameObject::GetWorldRotation() const {
+        if (mParent) {
+            return mParent->GetWorldRotation() * mRotation;
+        } else {
+            return mRotation;
+        }
+    }
+
+    void GameObject::SetWorldRotation(const glm::quat& rotation) {
+        if (mParent) {
+            glm::quat parentWorldRotation = mParent->GetWorldRotation();
+            mRotation                     = glm::inverse(parentWorldRotation) * rotation;
+        } else {
+            mRotation = rotation;
+        }
     }
 
     void GameObject::SetRotation(const glm::quat& rotation) {
