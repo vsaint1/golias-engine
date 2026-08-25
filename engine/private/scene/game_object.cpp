@@ -37,7 +37,7 @@ namespace golias {
 
         auto add_primitive = [&](GameObject* parent, const ModelPrimitive& primitive) {
             Ref<Mesh> mesh         = Mesh::Create(*model, primitive);
-            Ref<Material> material = Engine::GetInstance().GetMaterialManager().TryGetDefault();
+            Ref<Material> material = Engine::GetInstance().GetAssetManager().LoadDefaultMaterial();
             if (!mesh || !material) {
                 return;
             }
@@ -46,13 +46,13 @@ namespace golias {
                 const ModelMaterial& definition = model->GetMaterials()[primitive.materialIndex];
                 material->SetParameter("_BaseColor", definition.baseColor);
                 if (!definition.baseColorTexture.empty()) {
-                    Ref<Texture2D> texture = Engine::GetInstance().GetTextureManager().TryGet(definition.baseColorTexture);
+                    Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(definition.baseColorTexture);
 
                     if (texture) {
                         material->SetParameter("_MainTexture", texture);
                     } else {
                         GOLIAS_LOG_WARN("Failed to load texture: %s", definition.baseColorTexture.c_str());
-                        material->SetParameter("_MainTexture", Engine::GetInstance().GetTextureManager().AcquireErrorTexture());
+                        material->SetParameter("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireErrorTexture());
                     }
                 }
             }

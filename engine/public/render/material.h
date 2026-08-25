@@ -39,14 +39,4 @@ namespace golias {
     };
 
 
-    class MaterialManager {
-    public:
-        Ref<Material> TryGet(CString path);
-
-        Ref<Material> TryGetDefault();
-
-    private:
-        std::unordered_map<String, Ref<Material>> mMaterials;
-        Ref<Material> mDefaultMaterial;
-    };
 } // namespace golias

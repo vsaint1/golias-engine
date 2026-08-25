@@ -48,7 +48,7 @@ namespace golias {
             const auto& materialObj = properties["material"];
             if (materialObj.is_object() && materialObj.contains("path")) {
                 String path = materialObj["path"].get<String>();
-                mMaterial   = Material::Load(path);
+                mMaterial   = Engine::GetInstance().GetAssetManager().Load<Material>(path);
             }
         } else {
             GOLIAS_ASSERT_MSG(false, "StaticMeshComponent: Missing 'material' property in JSON.");

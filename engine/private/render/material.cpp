@@ -10,17 +10,12 @@ namespace golias {
         Ref<Material> material = std::make_shared<Material>();
         material->SetShader(shader);
         material->SetParameter("_BaseColor", glm::vec4(1.0f));
-        material->SetParameter("_MainTexture", Engine::GetInstance().GetTextureManager().AcquireWhiteTexture());
+        material->SetParameter("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireWhiteTexture());
         return material;
     }
 
     Ref<Material> Material::CreateDefault() {
-        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-
-        String vertex   = fileSystem.LoadAssetFileText("shaders/default.vert");
-        String fragment = fileSystem.LoadAssetFileText("shaders/default.frag");
-
-        Ref<Shader> shader = Engine::GetInstance().GetGraphicsDevice().CreateShader(vertex, fragment);
+        Ref<Shader> shader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default.gshader");
 
         return shader ? Create(shader) : nullptr;
     }
@@ -45,24 +40,13 @@ namespace golias {
 
         Ref<Material> mat = std::make_shared<Material>();
         mat->SetParameter("_BaseColor", glm::vec4(1.0f));
-        mat->SetParameter("_MainTexture", Engine::GetInstance().GetTextureManager().AcquireWhiteTexture());
+        mat->SetParameter("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireWhiteTexture());
         if (json.contains("shader")) {
-            auto shader = json["shader"];
-
-            String vertexShaderPath   = shader["vertex"].get<String>();
-            String fragmentShaderPath = shader["fragment"].get<String>();
-
-            FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-
-            String vertexShaderSource   = fileSystem.LoadAssetFileText(vertexShaderPath);
-            String fragmentShaderSource = fileSystem.LoadAssetFileText(fragmentShaderPath);
-
-            GraphicsDevice& graphicsDevice = Engine::GetInstance().GetGraphicsDevice();
-
-            Ref<Shader> shaderProgram = graphicsDevice.CreateShader(vertexShaderSource, fragmentShaderSource);
+            const String shaderPath = json["shader"].get<String>();
+            Ref<Shader> shaderProgram = Engine::GetInstance().GetAssetManager().Load<Shader>(shaderPath);
 
             if (!shaderProgram) {
-                GOLIAS_LOG_ERROR("Failed to create shader program from paths: %s, %s", vertexShaderPath.data(), fragmentShaderPath.data());
+                GOLIAS_LOG_ERROR("Failed to load shader: %s", shaderPath.data());
                 return nullptr;
             }
 
@@ -151,11 +135,11 @@ namespace golias {
 
                     String path = p.value("path", "");
 
-                    Ref<Texture2D> texture = Engine::GetInstance().GetTextureManager().TryGet(path);
+                    Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(path);
 
                     if (!texture) {
                         GOLIAS_LOG_ERROR("Failed to load texture from path: %s", path.data());
-                        texture = Engine::GetInstance().GetTextureManager().AcquireErrorTexture();
+                        texture = Engine::GetInstance().GetAssetManager().AcquireErrorTexture();
                     }
 
                     if (texture) {
@@ -226,28 +210,4 @@ namespace golias {
     }
 
 
-    Ref<Material> MaterialManager::TryGet(CString path) {
-        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-        Path fullPath          = fileSystem.GetAssetsFolder() / path.data();
-
-        auto it = mMaterials.find(fullPath.string());
-        if (it != mMaterials.end()) {
-            return it->second;
-        }
-
-        Ref<Material> material = Material::Load(path);
-        if (material) {
-            mMaterials[fullPath.string()] = material;
-        }
-
-        return material;
-    }
-
-    Ref<Material> MaterialManager::TryGetDefault() {
-        if (!mDefaultMaterial) {
-            mDefaultMaterial = Material::CreateDefault();
-        }
-
-        return mDefaultMaterial ? mDefaultMaterial->Clone() : nullptr;
-    }
 } // namespace golias

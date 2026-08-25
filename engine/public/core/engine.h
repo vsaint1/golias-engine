@@ -1,5 +1,6 @@
 #pragma once
 #include "core/input/input_manager.h"
+#include "core/io/asset_manager.h"
 #include "core/io/file_system.h"
 #include "graphics/graphics_device.h"
 #include "graphics/texture.h"
@@ -41,9 +42,7 @@ namespace golias {
 
         FileSystem& GetFileSystem();
 
-        TextureManager& GetTextureManager();
-
-        MaterialManager& GetMaterialManager();
+        AssetManager& GetAssetManager();
 
         PhysicsManager& GetPhysicsManager();
 
@@ -67,8 +66,7 @@ namespace golias {
         FileSystem mFileSystem;
         PhysicsManager mPhysicsManager;
 
-        TextureManager mTextureManager;
-        MaterialManager mMaterialManager;
+        AssetManager mAssetManager;
 
         Ref<Scene> mScene = nullptr;
     };

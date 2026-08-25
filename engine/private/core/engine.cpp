@@ -214,16 +214,12 @@ namespace golias {
         return mFileSystem;
     }
 
-    TextureManager& Engine::GetTextureManager() {
-        return mTextureManager;
+    AssetManager& Engine::GetAssetManager() {
+        return mAssetManager;
     }
 
     PhysicsManager& Engine::GetPhysicsManager() {
         return mPhysicsManager;
-    }
-
-    MaterialManager& Engine::GetMaterialManager() {
-        return mMaterialManager;
     }
 
 } // namespace golias

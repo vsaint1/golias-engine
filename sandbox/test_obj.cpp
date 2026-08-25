@@ -5,7 +5,7 @@ TestObject::TestObject() {
 }
 
 void TestObject::Start() {
-    Ref<Material> material = Material::Load("materials/brick.gmat");
+    Ref<Material> material = Engine::GetInstance().GetAssetManager().Load<Material>("materials/brick.gmat");
 
     Ref<Mesh> mesh = Mesh::CreateCube();
 

@@ -102,38 +102,4 @@ namespace golias {
     }
 
 
-    Ref<Texture2D> TextureManager::TryGet(CString path) {
-        FileSystem& fileSystem = Engine::GetInstance().GetFileSystem();
-        Path fullPath          = fileSystem.GetAssetsFolder() / path.data();
-
-        auto it = mTextures.find(fullPath.string());
-        if (it != mTextures.end()) {
-            return it->second;
-        }
-
-        Ref<Texture2D> texture = Texture2D::Load(fullPath.string());
-        if (texture) {
-            mTextures[fullPath.string()] = texture;
-        }
-
-        return texture;
-    }
-
-    Ref<Texture2D> TextureManager::AcquireWhiteTexture() {
-        if (!mWhiteTexture) {
-            unsigned char white[] = {255, 255, 255, 255};
-            mWhiteTexture         = std::make_shared<Texture2D>(1, 1, 4, white);
-        }
-
-        return mWhiteTexture;
-    }
-
-    Ref<Texture2D> TextureManager::AcquireErrorTexture() {
-        if (!mErrorTexture) {
-            unsigned char magenta[] = {255, 0, 255, 255};
-            mErrorTexture           = std::make_shared<Texture2D>(1, 1, 4, magenta);
-        }
-
-        return mErrorTexture;
-    }
 } // namespace golias
