@@ -1,8 +1,5 @@
 {
-    "shader": {
-        "vertex": "shaders/default.vert",
-        "fragment": "shaders/default.frag"
-    },
+    "shader": "shaders/default.gshader",
     "parameters": {
         "textures": [
             {

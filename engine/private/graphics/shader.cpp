@@ -1,13 +1,67 @@
 #include "graphics/shader.h"
 
+#include "core/engine.h"
 #include "graphics/texture.h"
 
 namespace golias {
 
+    namespace {
+        String PrepareShaderStage(String source) {
+#if defined(GOLIAS_PLATFORM_WINDOWS) || defined(GOLIAS_PLATFORM_LINUX) || defined(GOLIAS_PLATFORM_OSX)
+            constexpr CString version = "#version 330 core";
+#else
+            constexpr CString version = "#version 300 es";
+#endif
+
+            const size_t versionStart = source.find("#version");
+            if (versionStart == String::npos) {
+                GOLIAS_LOG_ERROR("Shader stage is missing a #version directive.");
+                return {};
+            }
+
+            const size_t versionEnd = source.find('\n', versionStart);
+            source.replace(
+                versionStart, versionEnd == String::npos ? String::npos : versionEnd - versionStart, version.data(), version.size());
+
+#if !defined(GOLIAS_PLATFORM_WINDOWS) && !defined(GOLIAS_PLATFORM_LINUX) && !defined(GOLIAS_PLATFORM_OSX)
+            const size_t precisionEnd = source.find('\n', versionStart);
+            source.insert(precisionEnd == String::npos ? source.size() : precisionEnd, "\nprecision highp float;\nprecision highp int;");
+#endif
+
+            return source;
+        }
+    } // namespace
+
+    Ref<Shader> Shader::Load(CString path) {
+        const String source         = Engine::GetInstance().GetFileSystem().LoadAssetFileText(path);
+        const size_t vertexMarker   = source.find("@vertex");
+        const size_t fragmentMarker = source.find("@fragment");
+
+        if (vertexMarker == String::npos || fragmentMarker == String::npos || vertexMarker >= fragmentMarker) {
+            GOLIAS_LOG_ERROR("Shader '%s' must contain @vertex followed by @fragment.", path.data());
+            return nullptr;
+        }
+
+        const size_t vertexStart   = source.find('\n', vertexMarker);
+        const size_t fragmentStart = source.find('\n', fragmentMarker);
+        if (vertexStart == String::npos || fragmentStart == String::npos) {
+            GOLIAS_LOG_ERROR("Shader '%s' has an invalid stage marker.", path.data());
+            return nullptr;
+        }
+
+        const String vertex   = PrepareShaderStage(source.substr(vertexStart + 1, fragmentMarker - vertexStart - 1));
+        const String fragment = PrepareShaderStage(source.substr(fragmentStart + 1));
+        if (vertex.empty() || fragment.empty()) {
+            return nullptr;
+        }
+
+        return Engine::GetInstance().GetGraphicsDevice().CreateShader(vertex, fragment);
+    }
+
     Shader::Shader(GLuint programID) : mProgramID(programID) {
     }
 
-    void Shader::Bind()  {
+    void Shader::Bind() {
         glUseProgram(mProgramID);
         mUnitIndex = 0; // Reset
     }

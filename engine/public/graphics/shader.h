@@ -11,6 +11,8 @@ namespace golias {
 
         Shader(GLuint programID);
 
+        static Ref<Shader> Load(CString path);
+
         void Bind();
 
         void SetUniform(CString name, int value);
