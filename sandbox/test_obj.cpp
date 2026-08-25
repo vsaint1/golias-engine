@@ -1,8 +1,10 @@
 #include "test_obj.h"
 
 
-
 TestObject::TestObject() {
+}
+
+void TestObject::Start() {
     Ref<Material> material = Material::Load("materials/brick.gmat");
 
     Ref<Mesh> mesh = Mesh::CreateCube();
@@ -12,7 +14,6 @@ TestObject::TestObject() {
 
     AddComponent(meshComponent);
 }
-
 
 void TestObject::Update(float deltaTime) {
     GameObject::Update(deltaTime);

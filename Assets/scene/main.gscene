@@ -1,0 +1,287 @@
+{
+    "name": "TestScene",
+    "version": 1,
+    "objects": [
+        {
+            "name": "Ground",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "StaticMeshComponent",
+                    "material": {
+                        "path": "materials/checker.gmat"
+                    },
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 30,
+                            "y": 1,
+                            "z": 30
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "body": {
+                        "type": "static",
+                        "collider": {
+                            "type": "box",
+                            "size": {
+                                "x": 30,
+                                "y": 1,
+                                "z": 30
+                            }
+                        }
+                    },
+                    "physics_material": {
+                        "mass": 0.0,
+                        "friction": 0.5,
+                        "restitution": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "FallingCube",
+            "position": {
+                "x": -3,
+                "y": 5,
+                "z": 2
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "StaticMeshComponent",
+                    "material": {
+                        "path": "materials/checker.gmat"
+                    },
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 1,
+                            "y": 1,
+                            "z": 1
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "body": {
+                        "type": "dynamic",
+                        "collider": {
+                            "type": "box",
+                            "size": {
+                                "x": 1,
+                                "y": 1,
+                                "z": 1
+                            }
+                        }
+                    },
+                    "physics_material": {
+                        "mass": 1.0,
+                        "friction": 0.5,
+                        "restitution": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "PlayerObject",
+            "type": "Player",
+            "position": {
+                "x": 0,
+                "y": 3,
+                "z": -5
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "CameraComponent"
+                },
+                {
+                    "type": "PlayerControllerComponent"
+                }
+            ],
+            "children": [
+                {
+                    "name": "Gun",
+                    "type": "Model",
+                    "path": "models/gun_carbine/scene.gltf",
+                    "position": {
+                        "x": 0.5,
+                        "y": -0.6,
+                        "z": 0.75
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0,
+                        "w": 1
+                    },
+                    "scale": {
+                        "x": -1,
+                        "y": 1,
+                        "z": 1
+                    }
+                }
+            ]
+        },
+        {
+            "name": "TestObject",
+            "position": {
+                "x": 2,
+                "y": 0,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "StaticMeshComponent",
+                    "material": {
+                        "path": "materials/brick.gmat"
+                    },
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 1,
+                            "y": 1,
+                            "z": 1
+                        }
+                    }
+                },
+                {
+                    "type": "PhysicsComponent",
+                    "body": {
+                        "type": "dynamic",
+                        "collider": {
+                            "type": "box",
+                            "size": {
+                                "x": 1,
+                                "y": 1,
+                                "z": 1
+                            }
+                        }
+                    },
+                    "physics_material": {
+                        "mass": 5.0,
+                        "friction": 0.5,
+                        "restitution": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "SpinningCube",
+            "type": "TestObject",
+            "position": {
+                "x": -2,
+                "y": 2.5,
+                "z": 1
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "StaticMeshComponent",
+                    "material": {
+                        "path": "materials/brick.gmat"
+                    },
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 1,
+                            "y": 1,
+                            "z": 1
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "SunLight",
+            "position": {
+                "x": 0,
+                "y": 10,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "LightComponent",
+                    "light_type": "directional",
+                    "color": {
+                        "r": 1.0,
+                        "g": 1.0,
+                        "b": 1.0
+                    },
+                    "intensity": 1.0
+                }
+            ]
+        }
+    ],
+    "camera": "PlayerObject"
+}
