@@ -91,6 +91,14 @@ namespace golias {
         glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
         glfwSetCursorPosCallback(mWindow, cursor_position_callback);
 
+        glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        double mouseX = 0.0;
+        double mouseY = 0.0;
+        glfwGetCursorPos(mWindow, &mouseX, &mouseY);
+        mInputManager.SetMousePosition(static_cast<float>(mouseX), static_cast<float>(mouseY));
+        mInputManager.ResetTransientState();
+
         return mApplication->Initialize();
     }
 

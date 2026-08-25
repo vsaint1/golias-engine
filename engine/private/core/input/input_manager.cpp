@@ -429,7 +429,7 @@ namespace golias {
 
     void InputManager::SetMousePosition(float x, float y) {
         const glm::vec2 position{x, y};
-        mMouseDelta    = position - mMousePosition;
+        mMouseDelta += position - mMousePosition;
         mMousePosition = position;
     }
 

@@ -41,12 +41,29 @@ bool GameApplication::Initialize() {
 
     Ref<Material> material = Material::Load("materials/checker.gmat");
 
-    Ref<Mesh> cube = Mesh::CreateCube();
+    glm::vec3 groundExtents = glm::vec3(30.0f, 1.0f, 30.0f);
+    Ref<Mesh> cube          = Mesh::CreateCube(groundExtents);
 
     GameObject* planeObj = mScene->CreateGameObject("Plane");
     planeObj->AddComponent(new StaticMeshComponent(cube, material));
-    planeObj->SetScale(glm::vec3(30.0f, 1.0f, 30.0f));
     planeObj->SetPosition(glm::vec3(0.0f, -3.0f, 0.0f));
+
+    Ref<Collider> boxCollider = std::make_shared<BoxCollider>(groundExtents);
+    Ref<RigidBody> rigidBody  = std::make_shared<RigidBody>(RigidBodyType::Static, boxCollider);
+    planeObj->AddComponent(new PhysicsComponent(rigidBody));
+
+    glm::vec3 boxSize  = glm::vec3(1.0f, 1.0f, 1.0f);
+    Ref<Mesh> cubeMesh = Mesh::CreateCube(boxSize);
+
+    Ref<Collider> fallingBox        = std::make_shared<BoxCollider>(boxSize);
+    PhysicsMaterial fallingBoxMaterial = {0.5f, 1.0f, 0.0f};
+    Ref<RigidBody> fallingRigidBody = std::make_shared<RigidBody>(RigidBodyType::Dynamic, fallingBox, fallingBoxMaterial);
+
+    GameObject* fallingBoxObj = mScene->CreateGameObject("Falling Box");
+    fallingBoxObj->AddComponent(new StaticMeshComponent(cubeMesh, material));
+    fallingBoxObj->SetPosition(glm::vec3(-5.0f, 5.0f, 2.0f));
+    fallingBoxObj->AddComponent(new PhysicsComponent(fallingRigidBody));
+
 
     // GameObject* redLight  = mScene->CreateGameObject("Red Light");
     // LightComponent* lightComp = new LightComponent();

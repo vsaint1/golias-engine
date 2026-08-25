@@ -25,8 +25,8 @@ namespace golias {
 
         glm::quat rotation = GetOwner()->GetRotation();
 
-        if (inputManager.IsMouseButtonPressed(MouseButton::Right)) {
-            glm::vec2 mouseDelta = inputManager.GetMouseDelta();
+        const glm::vec2 mouseDelta = inputManager.GetMouseDelta();
+        if (glm::length2(mouseDelta) > 0.0f) {
 
             float yaw   = -mouseDelta.x * mSensitivity;
             float pitch = -mouseDelta.y * mSensitivity;
