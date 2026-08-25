@@ -53,6 +53,35 @@ namespace golias {
         mIsShadowCaster = castsShadows;
     }
 
+    bool LightComponent::LoadProperties(const Json& properties) {
+        if (properties.contains("color")) {
+            const auto& colorObj = properties["color"];
+            mColor.x             = colorObj.value("r", 1.0f);
+            mColor.y             = colorObj.value("g", 1.0f);
+            mColor.z             = colorObj.value("b", 1.0f);
+        }
+
+        mIntensity = properties.value("intensity", 1.0f);
+        mRange     = properties.value("range", 10.0f);
+        mSpotAngle = properties.value("angle", 45.0f);
+
+        String typeStr = properties.value("light_type", "directional");
+        if (typeStr == "directional") {
+            mType = LightType::Directional;
+        } else if (typeStr == "point") {
+            mType = LightType::Point;
+        } else if (typeStr == "spot") {
+            mType = LightType::Spot;
+        } else {
+            GOLIAS_LOG_WARN("LightComponent: Unknown light type '%s'. Defaulting to Directional.", typeStr.data());
+            mType = LightType::Directional;
+        }
+
+        mIsShadowCaster = properties.value("casts_shadows", false);
+
+        return true;
+    }
+    
     void LightComponent::Update(float deltaTime) {
         LightCommand light;
         light.Position       = GetOwner()->GetWorldPosition();

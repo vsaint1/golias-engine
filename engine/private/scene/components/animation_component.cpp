@@ -137,7 +137,7 @@ namespace golias {
 
                 mObjectBindings[object]->TrackIndices.push_back(i);
             } else {
-                GOLIAS_LOG_WARN("Could not find GameObject with name '{}' for track '{}'", track.Name, track.Name);
+                GOLIAS_LOG_WARN("Could not find GameObject with name '%s' for track '%s'", track.Name.c_str(), track.Name.c_str());
             }
         }
     }

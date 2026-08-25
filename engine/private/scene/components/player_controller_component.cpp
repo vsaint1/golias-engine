@@ -18,8 +18,8 @@ namespace golias {
         const glm::vec2 mouseDelta = inputManager.GetMouseDelta();
         if (glm::length2(mouseDelta) > 0.0f) {
 
-            float yaw   = -mouseDelta.x * mSensitivity;
-            float pitch = -mouseDelta.y * mSensitivity;
+            float yaw   = mouseDelta.x * mSensitivity;
+            float pitch = mouseDelta.y * mSensitivity;
 
             glm::quat yawRotation   = glm::angleAxis(glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::quat pitchRotation = glm::angleAxis(glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -81,5 +81,8 @@ namespace golias {
         mSensitivity = sensitivity;
     }
 
+    KinematicCharacterController* PlayerControllerComponent::GetCharacterController() const {
+        return mCharacterController;
+    }
 
 } // namespace golias
