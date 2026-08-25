@@ -62,7 +62,16 @@ namespace golias {
 
     void PhysicsManager::AddRigidBody(RigidBody* rigidBody) {
         if (rigidBody && mWorld) {
-            mWorld->addRigidBody(rigidBody->GetBody(), btBroadphaseProxy::StaticFilter, btBroadphaseProxy::AllFilter);
+
+            short group = btBroadphaseProxy::StaticFilter;
+
+            if (rigidBody->GetType() == RigidBodyType::Dynamic) {
+                group = btBroadphaseProxy::DefaultFilter;
+            } else if (rigidBody->GetType() == RigidBodyType::Kinematic) {
+                group = btBroadphaseProxy::KinematicFilter;
+            }
+
+            mWorld->addRigidBody(rigidBody->GetBody(), group, btBroadphaseProxy::AllFilter);
             rigidBody->SetAddedToWorld(true);
         }
     }
