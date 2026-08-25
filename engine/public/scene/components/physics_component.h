@@ -1,6 +1,5 @@
 #pragma once
 #include "component.h"
-#include "stdafx.h"
 
 namespace golias {
 
@@ -12,9 +11,14 @@ namespace golias {
         PhysicsComponent() = default;
         PhysicsComponent(const Ref<RigidBody>& rigidBody);
 
+        bool LoadProperties(const Json& properties) override;
+        
         void Start() override;
 
         void Update(float deltaTime) override;
+
+        RigidBody* GetRigidBody() const;
+        void SetRigidBody(const Ref<RigidBody>& rigidBody);
 
     private:
         Ref<RigidBody> mRigidBody = nullptr;

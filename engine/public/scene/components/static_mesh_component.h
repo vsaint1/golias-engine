@@ -1,7 +1,6 @@
 #pragma once
 
 #include "component.h"
-#include "stdafx.h"
 
 namespace golias {
 
@@ -13,9 +12,11 @@ namespace golias {
 
         COMPONENT(StaticMeshComponent)
     public:
-
+        StaticMeshComponent() = default;
         StaticMeshComponent(const Ref<Mesh>& mesh, const Ref<Material>& material);
 
+        bool LoadProperties(const Json& properties) override;
+        
         void Update(float deltaTime) override;
 
         Ref<Mesh> GetMesh() const;

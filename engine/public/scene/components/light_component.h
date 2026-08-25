@@ -9,9 +9,11 @@ namespace golias {
 
         COMPONENT(LightComponent)
     public:
-        LightComponent()           = default;
-        ~LightComponent() override = default;
+        LightComponent()  = default;
+        ~LightComponent() = default;
 
+        bool LoadProperties(const Json& properties) override;
+        
         void Update(float deltaTime) override;
 
         const glm::vec3& GetColor() const;

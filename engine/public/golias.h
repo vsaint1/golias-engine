@@ -22,6 +22,7 @@
 
 #include "physics/collider.h"
 #include "physics/rigid_body.h"
+#include "physics/kinematic_character_controller.h"
 
 #include "scene/components/component.h"
 #include "scene/components/static_mesh_component.h"

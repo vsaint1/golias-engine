@@ -1,7 +1,6 @@
 #pragma once
 
 #include "component.h"
-#include "stdafx.h"
 
 namespace golias {
 
@@ -9,7 +8,7 @@ namespace golias {
 
         COMPONENT(CameraComponent)
     public:
-
+        CameraComponent() = default;
         CameraComponent(float fov, float aspectRatio, float nearPlane, float farPlane);
 
         void Update(float deltaTime) override;

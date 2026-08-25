@@ -1,7 +1,6 @@
 #pragma once
 
 #include "component.h"
-#include "stdafx.h"
 
 namespace golias {
 
@@ -39,7 +38,7 @@ namespace golias {
         COMPONENT(AnimationComponent)
     public:
         AnimationComponent()          = default;
-        virtual ~AnimationComponent() = default;
+        ~AnimationComponent() = default;
 
         void Update(float deltaTime) override;
 
