@@ -233,23 +233,7 @@
                 "x": 1,
                 "y": 1,
                 "z": 1
-            },
-            "components": [
-                {
-                    "type": "StaticMeshComponent",
-                    "material": {
-                        "path": "materials/brick.gmat"
-                    },
-                    "mesh": {
-                        "type": "cube",
-                        "size": {
-                            "x": 1,
-                            "y": 1,
-                            "z": 1
-                        }
-                    }
-                }
-            ]
+            }
         },
         {
             "name": "SunLight",

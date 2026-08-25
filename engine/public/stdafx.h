@@ -50,7 +50,7 @@
     #define GOLIAS_ASSERT(x)                                  \
         do {                                                  \
             if (!(x)) {                                       \
-                GOLIAS_LOG_ERROR("Assertion failed: {}", #x); \
+                GOLIAS_LOG_ERROR("Assertion failed: %s", #x); \
                 assert(x);                                    \
             }                                                 \
         } while (0)
@@ -59,7 +59,7 @@
     #define GOLIAS_ASSERT_MSG(x, msg)                          \
         do {                                                   \
             if (!(x)) {                                        \
-                GOLIAS_LOG_ERROR("Assertion failed: {}", msg); \
+                GOLIAS_LOG_ERROR("Assertion failed: %s", msg); \
                 assert(x);                                     \
             }                                                  \
         } while (0)

@@ -29,7 +29,7 @@ namespace golias {
         void SetApplication(Application* app);
 
         Scene* GetScene() const;
-        void SetScene(Scene* scene);
+        void SetScene(const Ref<Scene>& scene);
 
         Application* GetApplication() const;
 
@@ -70,6 +70,6 @@ namespace golias {
         TextureManager mTextureManager;
         MaterialManager mMaterialManager;
 
-        Scope<Scene> mScene = nullptr;
+        Ref<Scene> mScene = nullptr;
     };
 } // namespace golias

@@ -60,6 +60,9 @@ namespace golias {
             return false;
         }
 
+        Scene::RegisterTypes();
+        mApplication->RegisterTypes();
+
         if (!glfwInit()) {
             GOLIAS_LOG_ERROR("Failed to initialize GLFW");
             return false;
@@ -99,7 +102,12 @@ namespace golias {
         mInputManager.SetMousePosition(static_cast<float>(mouseX), static_cast<float>(mouseY));
         mInputManager.ResetTransientState();
 
-        return mApplication->Initialize();
+        if (!mApplication->Initialize()) {
+            GOLIAS_LOG_ERROR("Failed to initialize the application");
+            return false;
+        }
+
+        return true;
     }
 
     void Engine::Run() {
@@ -182,8 +190,8 @@ namespace golias {
         return mScene.get();
     }
 
-    void Engine::SetScene(Scene* scene) {
-        mScene.reset(scene);
+    void Engine::SetScene(const Ref<Scene>& scene) {
+        mScene = scene;
     }
 
     Application* Engine::GetApplication() const {
