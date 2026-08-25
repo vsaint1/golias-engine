@@ -80,6 +80,10 @@ namespace golias {
             return false;
         }
 
+        if (!mPhysicsManager.Initialize()) {
+            GOLIAS_LOG_ERROR("Failed to initialize PhysicsManager");
+            return false;
+        }
 
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
@@ -110,6 +114,8 @@ namespace golias {
 
             mInputManager.ResetTransientState();
 
+            mPhysicsManager.Update(deltaTime);
+
             mGraphicsDevice.SetClearColor();
             mGraphicsDevice.ClearBuffers();
 
@@ -123,10 +129,10 @@ namespace golias {
 
                     cameraComponent->SetAspectRatio(static_cast<float>(fbWidth) / static_cast<float>(fbHeight));
 
-                    cameraCommand.View       = cameraComponent->GetViewMatrix();
-                    cameraCommand.Projection = cameraComponent->GetProjectionMatrix();
+                    cameraCommand.View           = cameraComponent->GetViewMatrix();
+                    cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
                     cameraCommand.CameraPosition = camera->GetWorldPosition();
-                    cameraCommand.Viewport   = {.X = 0, .Y = 0, .Width = fbWidth, .Height = fbHeight};
+                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = fbWidth, .Height = fbHeight};
 
                     mCommandQueue.Submit(cameraCommand);
                 }
@@ -194,6 +200,10 @@ namespace golias {
 
     TextureManager& Engine::GetTextureManager() {
         return mTextureManager;
+    }
+
+    PhysicsManager& Engine::GetPhysicsManager() {
+        return mPhysicsManager;
     }
 
     MaterialManager& Engine::GetMaterialManager() {

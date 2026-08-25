@@ -12,6 +12,8 @@ namespace golias {
 
         virtual size_t GetTypeId() const = 0;
 
+        virtual void Start();
+
         virtual void Update(float deltaTime) = 0;
 
         GameObject* GetOwner() const;
