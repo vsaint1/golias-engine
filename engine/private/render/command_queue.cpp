@@ -74,10 +74,9 @@ namespace golias {
                     device.BindMaterial(command.Material);
                 }
 
-                if (command.Mesh) {
-                    command.Mesh->Bind();
-                    command.Mesh->Draw();
-                }
+                device.BindMesh(command.Mesh);
+                device.DrawMesh(command.Mesh);
+                device.UnbindMesh(command.Mesh);
             }
         }
     }

@@ -77,6 +77,10 @@ namespace golias {
         glBindVertexArray(mVAO);
     }
 
+    void Mesh::Unbind() const {
+        glBindVertexArray(0);
+    }
+
     void Mesh::Draw() const {
         if (mIndexCount) {
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr);

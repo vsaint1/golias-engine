@@ -37,6 +37,8 @@ namespace golias {
 
         void Bind() const;
 
+        void Unbind() const;
+        
         void Draw() const;
 
     private:

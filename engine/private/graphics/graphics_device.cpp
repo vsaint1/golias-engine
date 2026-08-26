@@ -2,6 +2,7 @@
 
 #include "graphics/shader.h"
 #include "render/material.h"
+#include "render/mesh.h"
 #include <glad.h>
 #include <glfw/glfw3.h>
 
@@ -170,6 +171,25 @@ namespace golias {
     void GraphicsDevice::BindMaterial(Material* material) {
         if (material) {
             material->Bind();
+        }
+    }
+
+    
+    void GraphicsDevice::BindMesh(Mesh* mesh) {
+        if (mesh) {
+            mesh->Bind();
+        }
+    }
+
+    void GraphicsDevice::DrawMesh(Mesh* mesh) {
+        if (mesh) {
+            mesh->Draw();
+        }
+    }
+
+    void GraphicsDevice::UnbindMesh(Mesh* mesh) {
+        if(mesh){
+            mesh->Unbind();
         }
     }
 
