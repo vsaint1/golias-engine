@@ -7,28 +7,26 @@ namespace golias {
 
     bool PlayerControllerComponent::LoadProperties(const Json& properties) {
 
-        const auto& j = properties["properties"];
-        if (j.is_null()) {
-            GOLIAS_LOG_WARN("No properties found in JSON.");
-            return false;
-        }
+        if (properties.contains("properties") && properties["properties"].is_object()) {
 
-        if (j.contains("radius")) {
-            mRadius = j["radius"].get<float>();
-        }
+            const Json& prop = properties["properties"];
 
-        if (j.contains("height")) {
-            mHeight = j["height"].get<float>();
-        }
+            if (prop.contains("radius")) {
+                mRadius = prop["radius"].get<float>();
+            }
 
-        if (j.contains("speed")) {
-            mMoveSpeed = j["speed"].get<float>();
-        }
+            if (prop.contains("height")) {
+                mHeight = prop["height"].get<float>();
+            }
 
-        if (j.contains("sensitivity")) {
-            mSensitivity = j["sensitivity"].get<float>();
-        }
+            if (prop.contains("speed")) {
+                mMoveSpeed = prop["speed"].get<float>();
+            }
 
+            if (prop.contains("sensitivity")) {
+                mSensitivity = prop["sensitivity"].get<float>();
+            }
+        }
 
         return true;
     }
