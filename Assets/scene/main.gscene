@@ -273,6 +273,28 @@
                 },
                 {
                     "type": "PlayerControllerComponent"
+                },
+                {
+                    "type": "AudioListenerComponent"
+                },
+                {
+                    "type": "AudioSourceComponent",
+                    "audios": [
+                        {
+                            "name": "gun_shoot",
+                            "path": "audios/FirstPersonTemplateWeaponFire.OGG",
+                            "looping": false,
+                            "play_on_awake": false,
+                            "volume": 0.1
+                        },
+                        {
+                            "name": "music_bg",
+                            "path": "audios/the_entertainer.ogg",
+                            "looping": true,
+                            "play_on_awake": true,
+                            "volume": 0.3
+                        }
+                    ]
                 }
             ],
             "children": [
