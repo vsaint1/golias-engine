@@ -19,4 +19,5 @@ private:
     
     AnimationComponent* mGunAnimation = nullptr;
     PlayerControllerComponent* mPlayerController = nullptr;
+    AudioSourceComponent* mAudioSource = nullptr;
 };

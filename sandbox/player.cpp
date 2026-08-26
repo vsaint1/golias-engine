@@ -25,6 +25,10 @@ void Player::Start() {
     if (PlayerControllerComponent* playerController = GetComponent<PlayerControllerComponent>()) {
         mPlayerController = playerController;
     }
+
+    if (AudioSourceComponent* audioSource = GetComponent<AudioSourceComponent>()) {
+        mAudioSource = audioSource;
+    }
 }
 
 void Player::Update(float deltaTime) {
@@ -39,6 +43,8 @@ void Player::Update(float deltaTime) {
     if (inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
 
         mGunAnimation->Play("shoot", false);
+        
+        mAudioSource->Play("gun_shoot");
     }
 
     if (inputManager.IsKeyJustPressed(KeyCode::Space)) {
