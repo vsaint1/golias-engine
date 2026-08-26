@@ -5,8 +5,36 @@
 
 namespace golias {
 
+    bool PlayerControllerComponent::LoadProperties(const Json& properties) {
+
+        const auto& j = properties["properties"];
+        if (j.is_null()) {
+            GOLIAS_LOG_WARN("No properties found in JSON.");
+            return false;
+        }
+
+        if (j.contains("radius")) {
+            mRadius = j["radius"].get<float>();
+        }
+
+        if (j.contains("height")) {
+            mHeight = j["height"].get<float>();
+        }
+
+        if (j.contains("speed")) {
+            mMoveSpeed = j["speed"].get<float>();
+        }
+
+        if (j.contains("sensitivity")) {
+            mSensitivity = j["sensitivity"].get<float>();
+        }
+
+
+        return true;
+    }
+
     void PlayerControllerComponent::Start() {
-        mCharacterController = new KinematicCharacterController(0.4f, 1.2f);
+        mCharacterController = new KinematicCharacterController(mRadius, mHeight);
         mCharacterController->SetPosition(GetOwner()->GetPosition());
     }
 
@@ -83,6 +111,20 @@ namespace golias {
 
     KinematicCharacterController* PlayerControllerComponent::GetCharacterController() const {
         return mCharacterController;
+    }
+
+    bool PlayerControllerComponent::OnGround() const {
+        if (mCharacterController) {
+            return mCharacterController->IsOnGround();
+        }
+
+        return false;
+    }
+
+    void PlayerControllerComponent::Jump(const glm::vec3& direction) {
+        if (mCharacterController) {
+            mCharacterController->Jump(direction);
+        }
     }
 
 } // namespace golias

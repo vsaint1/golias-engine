@@ -48,6 +48,6 @@ void Player::Update(float deltaTime) {
     }
 
     if (inputManager.IsKeyJustPressed(KeyCode::Space)) {
-        mPlayerController->GetCharacterController()->Jump(glm::vec3(0.0f, 5.0f, 0.0f));
+        mPlayerController->Jump(glm::vec3(0.0f, 5.0f, 0.0f));
     }
 }
