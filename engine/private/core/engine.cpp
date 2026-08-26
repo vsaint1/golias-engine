@@ -88,6 +88,11 @@ namespace golias {
             return false;
         }
 
+        if (!mAudioManager.Initialize()) {
+            GOLIAS_LOG_ERROR("Failed to initialize AudioManager");
+            return false;
+        }
+
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
         glfwSetScrollCallback(mWindow, scroll_callback);
@@ -220,6 +225,10 @@ namespace golias {
 
     PhysicsManager& Engine::GetPhysicsManager() {
         return mPhysicsManager;
+    }
+
+    AudioManager& Engine::GetAudioManager() {
+        return mAudioManager;
     }
 
 } // namespace golias

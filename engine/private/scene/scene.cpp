@@ -2,14 +2,27 @@
 
 #include "core/engine.h"
 #include "scene/components/animation_component.h"
+#include "scene/components/audio_listener_component.h"
+#include "scene/components/audio_source_component.h"
 #include "scene/components/camera_component.h"
 #include "scene/components/light_component.h"
 #include "scene/components/physics_component.h"
 #include "scene/components/player_controller_component.h"
 #include "scene/components/static_mesh_component.h"
 
-
 namespace golias {
+
+    void Scene::RegisterTypes() {
+
+        StaticMeshComponent::Register();
+        CameraComponent::Register();
+        AnimationComponent::Register();
+        PlayerControllerComponent::Register();
+        PhysicsComponent::Register();
+        LightComponent::Register();
+        AudioSourceComponent::Register();
+        AudioListenerComponent::Register();
+    }
 
     Ref<Scene> Scene::Load(CString path) {
 
@@ -330,13 +343,5 @@ namespace golias {
         mObjects.clear();
     }
 
-    void Scene::RegisterTypes() {
 
-        StaticMeshComponent::Register();
-        CameraComponent::Register();
-        AnimationComponent::Register();
-        PlayerControllerComponent::Register();
-        PhysicsComponent::Register();
-        LightComponent::Register();
-    }
 } // namespace golias

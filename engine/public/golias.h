@@ -30,3 +30,5 @@
 #include "scene/components/player_controller_component.h"
 #include "scene/components/light_component.h"
 #include "scene/components/physics_component.h"
+#include "scene/components/audio_listener_component.h"
+#include "scene/components/audio_source_component.h"

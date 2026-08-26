@@ -1,4 +1,5 @@
 #pragma once
+#include "core/audio/audio_manager.h"
 #include "core/input/input_manager.h"
 #include "core/io/asset_manager.h"
 #include "core/io/file_system.h"
@@ -46,6 +47,8 @@ namespace golias {
 
         PhysicsManager& GetPhysicsManager();
 
+        AudioManager& GetAudioManager();
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -65,6 +68,7 @@ namespace golias {
         CommandQueue mCommandQueue;
         FileSystem mFileSystem;
         PhysicsManager mPhysicsManager;
+        AudioManager mAudioManager;
 
         AssetManager mAssetManager;
 
