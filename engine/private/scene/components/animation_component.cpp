@@ -141,6 +141,10 @@ namespace golias {
         }
     }
 
+    bool AnimationComponent::IsPlaying() {
+       return mIsPlaying;
+    }
+
     void AnimationComponent::Play(CString name, bool loop) {
         auto it = mAnimationClips.find(name.data());
 

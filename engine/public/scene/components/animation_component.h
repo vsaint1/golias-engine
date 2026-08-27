@@ -48,6 +48,8 @@ namespace golias {
 
         void Play(CString name, bool loop = true);
 
+        bool IsPlaying();
+
     private:
         void UpdateObjectBindings();
 
