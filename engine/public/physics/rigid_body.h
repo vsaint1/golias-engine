@@ -57,6 +57,10 @@ namespace golias {
         glm::quat GetRotation() const;
         void SetRotation(const glm::quat& rotation);
 
+        void ApplyImpulse(const glm::vec3& force);
+        void ApplyTorque(const glm::vec3& torque);
+        void ApplyForce(const glm::vec3& force);
+
     private:
         PhysicsMaterial mPhysicsMaterial;
 

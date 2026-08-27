@@ -129,4 +129,31 @@ namespace golias {
         transform.setRotation(btQuaternion(rotation.x, rotation.y, rotation.z, rotation.w));
         mRigidBody->setWorldTransform(transform);
     }
+
+    void RigidBody::ApplyImpulse(const glm::vec3& force) {
+        if (!mRigidBody) {
+            return;
+        }
+
+
+        mRigidBody->applyCentralImpulse(btVector3(btScalar(force.x), btScalar(force.y), btScalar(force.z)));
+    }
+
+    void RigidBody::ApplyForce(const glm::vec3& force) {
+        if (!mRigidBody) {
+            return;
+        }
+
+        mRigidBody->applyCentralForce(btVector3(btScalar(force.x), btScalar(force.y), btScalar(force.z)));
+    }
+
+
+    void RigidBody::ApplyTorque(const glm::vec3& torque) {
+        if (!mRigidBody) {
+            return;
+        }
+
+        mRigidBody->applyTorque(btVector3(btScalar(torque.x), btScalar(torque.y), btScalar(torque.z)));
+    }
+
 } // namespace golias

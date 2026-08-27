@@ -5,6 +5,8 @@ namespace golias {
 
     class Shader;
     class Material;
+    class Mesh;
+
     constexpr size_t kMaxLights = 32;
 
     struct alignas(16) GpuLight {
@@ -63,6 +65,12 @@ namespace golias {
         void BindShader(Shader* shader);
 
         void BindMaterial(Material* material);
+
+        void BindMesh(Mesh* mesh);
+
+        void DrawMesh(Mesh* mesh);
+
+        void UnbindMesh(Mesh* mesh);
 
         void UpdateUniformBuffer(GLuint buffer, const void* data, size_t size, size_t offset = 0);
 
