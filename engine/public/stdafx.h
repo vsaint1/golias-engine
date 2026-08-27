@@ -1,12 +1,14 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <chrono>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <limits>
 #include <optional>
 #include <set>
 #include <string>

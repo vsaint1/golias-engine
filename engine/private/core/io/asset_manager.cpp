@@ -2,6 +2,8 @@
 
 #include "graphics/texture.h"
 #include "render/material.h"
+#include "render/mesh.h"
+#include "render/model.h"
 
 namespace golias {
 
@@ -11,6 +13,35 @@ namespace golias {
         }
 
         return mDefaultMaterial ? mDefaultMaterial->Clone() : nullptr;
+    }
+
+    Ref<Mesh> AssetManager::LoadMesh(CString modelPath, const ModelPrimitive& primitive) {
+
+        char buffer[256];
+        std::sprintf(buffer,
+                     "%s#primitive:%zu:%zu:%zu:%d",
+                     modelPath,
+                     primitive.vertexCount,
+                     primitive.indexOffset,
+                     primitive.vertexCount,
+                     primitive.indexOffset,
+                     primitive.indexCount);
+
+        auto& assets        = mAssets[buffer];
+        const auto type     = std::type_index(typeid(Mesh));
+        const auto existing = assets.find(type);
+        if (existing != assets.end()) {
+            return std::get<Ref<Mesh>>(existing->second);
+        }
+
+        Ref<Model> model = Load<Model>(modelPath);
+        Ref<Mesh> mesh   = model ? Mesh::Create(*model, primitive) : nullptr;
+        
+        if (mesh) {
+            assets.emplace(type, mesh);
+        }
+
+        return mesh;
     }
 
     Ref<Texture2D> AssetManager::AcquireWhiteTexture() {
