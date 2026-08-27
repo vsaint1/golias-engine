@@ -92,55 +92,61 @@ namespace golias {
     Ref<Mesh> Mesh::CreateCube(const glm::vec3& size, uint32_t segments) {
         const glm::vec3 halfSize = size * 0.5f;
 
-        // clang-format off
-    std::vector<float> vertices = {
-        // Front (+Z)
-        halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, 1.0f,
-        -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, 1.0f,
-        -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
-        halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, 1.0f,
-        // Back (-Z)
-        -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 0.0f, -1.0f,
-        halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 0.0f, -1.0f,
-        halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 0.0f, -1.0f,
-        -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 0.0f, -1.0f,
-        // Top (+Y)
-        -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, 1.0f, 0.0f,
-        halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, 1.0f, 0.0f,
-        halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, 1.0f, 0.0f,
-        -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, 1.0f, 0.0f,
-        // Bottom (-Y)
-        -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   0.0f, -1.0f, 0.0f,
-        halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   0.0f, -1.0f, 0.0f,
-        halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   0.0f, -1.0f, 0.0f,
-        -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   0.0f, -1.0f, 0.0f,
-        // Right (+X)
-        halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-        halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 1.0f,   1.0f, 0.0f, 0.0f,
-        halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-        halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,
-        // Left (-X)
-        -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-        -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  1.0f, 1.0f,  -1.0f, 0.0f, 0.0f,
-        -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,
-        -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f,  -1.0f, 0.0f, 0.0f
-    };
+        const float sx = size.x;
+        const float sy = size.y;
+        const float sz = size.z;
 
-    std::vector<uint32_t> indices = {
-        0,  1,  2,  0,  2,  3,   // Front
-        4,  5,  6,  4,  6,  7,   // Back
-        8,  9, 10,  8, 10, 11,   // Top
-        12, 13, 14, 12, 14, 15,  // Bottom
-        16, 17, 18, 16, 18, 19,  // Right
-        20, 21, 22, 20, 22, 23   // Left
-    };
-    //  clang-format on
+        // clang-format off
+        std::vector<float> vertices = {
+            // Front (+Z)
+            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sy,   0.0f, 0.0f, 1.0f,
+            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   0.0f, 0.0f, 1.0f,
+            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 0.0f, 1.0f,
+            // Back (-Z)
+            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   0.0f, 0.0f, -1.0f,
+            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sy,   0.0f, 0.0f, -1.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 0.0f, -1.0f,
+            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+            // Top (+Y)
+            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 1.0f, 0.0f,
+            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sz,   0.0f, 1.0f, 0.0f,
+            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sz,   0.0f, 1.0f, 0.0f,
+            // Bottom (-Y)
+            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sz,   0.0f, -1.0f, 0.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sz,   0.0f, -1.0f, 0.0f,
+            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, -1.0f, 0.0f,
+            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+            // Right (+X)
+            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, sy,   1.0f, 0.0f, 0.0f,
+            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sz,   sy,   1.0f, 0.0f, 0.0f,
+            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sz,   0.0f, 1.0f, 0.0f, 0.0f,
+            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+            // Left (-X)
+            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   -1.0f, 0.0f, 0.0f,
+            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  sz,   sy,   -1.0f, 0.0f, 0.0f,
+            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  sz,   0.0f, -1.0f, 0.0f, 0.0f,
+            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f
+        };
+        // clang-format on
+
+
+        std::vector<uint32_t> indices = {
+            0,  1,  2,  0,  2,  3, // Front
+            4,  5,  6,  4,  6,  7, // Back
+            8,  9,  10, 8,  10, 11, // Top
+            12, 13, 14, 12, 14, 15, // Bottom
+            16, 17, 18, 16, 18, 19, // Right
+            20, 21, 22, 20, 22, 23 // Left
+        };
+        //  clang-format on
 
         VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});                     // Position
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});    // Color
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});    // TexCoord
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});    // Normal
+        layout.Elements.push_back({0, 3, GL_FLOAT, 0}); // Position
+        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)}); // Color
+        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)}); // TexCoord
+        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)}); // Normal
         layout.Stride = 11 * sizeof(float);
 
         Ref<Mesh> mesh = std::make_shared<Mesh>(layout, vertices, indices);
@@ -380,14 +386,14 @@ namespace golias {
                 float z          = ringRadius * sinf(angle);
                 glm::vec3 normal = glm::normalize(
                     glm::vec3(normalDir.x != 0 || normalDir.z != 0 ? x : 0, normalDir.y, normalDir.x != 0 || normalDir.z != 0 ? z : 0));
-                
+
                 (void) normal;
                 float u = (float) j / sectorCount;
                 vertices.insert(vertices.end(), {x, y, z, 1.0f, 1.0f, 1.0f, u, v, 0, 0, 0});
             }
         };
 
-        // Top hemisphere 
+        // Top hemisphere
         for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
             float stackAngle = glm::half_pi<float>() * (1.0f - (float) i / ringsPerHemi); // pi/2 -> 0
             float ringRadius = radius * cosf(stackAngle);
@@ -414,7 +420,7 @@ namespace golias {
             vertices.insert(vertices.end(), {x, -halfH, z, 1, 1, 1, u, 0.5f, normal.x, normal.y, normal.z});
         }
 
-        //  Bottom hemisphere 
+        //  Bottom hemisphere
         for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
             float stackAngle = glm::half_pi<float>() * ((float) i / ringsPerHemi); // 0 -> pi/2
             float ringRadius = radius * cosf(stackAngle);
