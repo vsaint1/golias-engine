@@ -10,6 +10,12 @@ namespace golias {
     PhysicsComponent::PhysicsComponent(const Ref<RigidBody>& rigidBody) : mRigidBody(rigidBody) {
     }
 
+    PhysicsComponent::~PhysicsComponent() {
+        if (mRigidBody && mStarted) {
+            mRigidBody->RemoveContactListener(this);
+        }
+    }
+
     bool PhysicsComponent::LoadProperties(const Json& properties) {
         if (properties.contains("body") && properties["body"].is_object()) {
             const auto& rigidBodyObj = properties["body"];
@@ -80,6 +86,7 @@ namespace golias {
         GOLIAS_LOG_ERROR("Missing or invalid 'body' property in JSON.");
         return false;
     }
+    
     void PhysicsComponent::Start() {
         if (!mRigidBody) {
             GOLIAS_LOG_ERROR("PhysicsComponent requires a valid RigidBody to function properly.");
@@ -89,10 +96,13 @@ namespace golias {
         const glm::vec3 position = GetOwner()->GetWorldPosition();
         const glm::quat rotation = GetOwner()->GetRotation();
 
+        mRigidBody->SetGameObject(GetOwner());
         mRigidBody->SetPosition(position);
         mRigidBody->SetRotation(rotation);
 
         Engine::GetInstance().GetPhysicsManager().AddRigidBody(mRigidBody.get());
+        mRigidBody->AddContactListener(this);
+        mStarted = true;
     }
 
     void PhysicsComponent::Update(float deltaTime) {
@@ -110,7 +120,27 @@ namespace golias {
     }
 
     void PhysicsComponent::SetRigidBody(const Ref<RigidBody>& rigidBody) {
+        if (mRigidBody && mStarted) {
+            mRigidBody->RemoveContactListener(this);
+        }
+
         mRigidBody = rigidBody;
+
+        if (mRigidBody && mStarted) {
+            mRigidBody->AddContactListener(this);
+        }
+    }
+
+    void PhysicsComponent::OnCollisionEnter(const Collision& collision) {
+        if (GetOwner()) {
+            GetOwner()->OnCollisionEnter(collision);
+        }
+    }
+
+    void PhysicsComponent::OnCollisionExit(const Collision& collision) {
+        if (GetOwner()) {
+            GetOwner()->OnCollisionExit(collision);
+        }
     }
 
 } // namespace golias

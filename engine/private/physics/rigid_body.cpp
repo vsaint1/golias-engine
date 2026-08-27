@@ -31,6 +31,7 @@ namespace golias {
 
 
         mRigidBody = std::make_unique<btRigidBody>(rbInfo);
+        mRigidBody->setUserPointer(static_cast<CollisionObject*>(this));
 
         mRigidBody->setFriction(mPhysicsMaterial.Friction);
         mRigidBody->setRestitution(mPhysicsMaterial.Restitution);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physics/collision.h"
 #include "stdafx.h"
 
 class btPairCachingGhostObject;
@@ -7,7 +8,7 @@ class btKinematicCharacterController;
 
 
 namespace golias {
-    class KinematicCharacterController {
+    class KinematicCharacterController : public CollisionObject {
     public:
         KinematicCharacterController(float radius, float height);
         ~KinematicCharacterController();

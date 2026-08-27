@@ -1,4 +1,5 @@
 #pragma once
+#include "physics/collision.h"
 #include "stdafx.h"
 
 class btRigidBody;
@@ -22,7 +23,7 @@ namespace golias {
 
 
     /// @brief  Represents a rigid body in the physics simulation, which can be static, dynamic, or kinematic. A rigid body is associated with a collider that defines its shape and collision properties.
-    class RigidBody {
+    class RigidBody : public CollisionObject {
     public:
 
         /// @brief  Creates a new RigidBody with the specified type, collider, mass, friction, and restitution.

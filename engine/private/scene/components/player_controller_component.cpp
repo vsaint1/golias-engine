@@ -5,6 +5,15 @@
 
 namespace golias {
 
+    PlayerControllerComponent::~PlayerControllerComponent() {
+
+        if (mCharacterController) {
+            mCharacterController->RemoveContactListener(this);
+            delete mCharacterController;
+            mCharacterController = nullptr;
+        }
+    }
+
     bool PlayerControllerComponent::LoadProperties(const Json& properties) {
 
         if (properties.contains("properties") && properties["properties"].is_object()) {
@@ -33,6 +42,8 @@ namespace golias {
 
     void PlayerControllerComponent::Start() {
         mCharacterController = new KinematicCharacterController(mRadius, mHeight);
+        mCharacterController->SetGameObject(GetOwner());
+        mCharacterController->AddContactListener(this);
         mCharacterController->SetPosition(GetOwner()->GetPosition());
     }
 
@@ -122,6 +133,18 @@ namespace golias {
     void PlayerControllerComponent::Jump(const glm::vec3& direction) {
         if (mCharacterController) {
             mCharacterController->Jump(direction);
+        }
+    }
+
+    void PlayerControllerComponent::OnCollisionEnter(const Collision& collision) {
+        if (GetOwner()) {
+            GetOwner()->OnCollisionEnter(collision);
+        }
+    }
+
+    void PlayerControllerComponent::OnCollisionExit(const Collision& collision) {
+        if (GetOwner()) {
+            GetOwner()->OnCollisionExit(collision);
         }
     }
 

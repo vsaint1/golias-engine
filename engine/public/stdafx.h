@@ -42,6 +42,7 @@
 
 #endif
 
+#define UNUSED_PARAMETER(x) (void)(x)
 
 #ifdef NDEBUG
 

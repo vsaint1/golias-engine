@@ -4,6 +4,7 @@
 namespace golias {
 
     class Scene;
+    struct Collision;
 
     class GameObject {
 
@@ -17,6 +18,9 @@ namespace golias {
         virtual bool LoadProperties(const Json& properties);
 
         virtual void Update(float deltaTime);
+
+        virtual void OnCollisionEnter(const Collision& collision);
+        virtual void OnCollisionExit(const Collision& collision);
 
         void SetName(CString name);
 

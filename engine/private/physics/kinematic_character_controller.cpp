@@ -21,6 +21,7 @@ namespace golias {
         mGhostObject->setWorldTransform(transform);
         mGhostObject->setCollisionShape(capsuleShape);
         mGhostObject->setCollisionFlags(mGhostObject->getCollisionFlags() | btCollisionObject::CF_CHARACTER_OBJECT);
+        mGhostObject->setUserPointer(static_cast<CollisionObject*>(this));
 
         world->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 
@@ -39,6 +40,8 @@ namespace golias {
 
     KinematicCharacterController::~KinematicCharacterController() {
         btDynamicsWorld* world = Engine::GetInstance().GetPhysicsManager().GetWorld();
+
+        Engine::GetInstance().GetPhysicsManager().ForgetCollisionObject(this);
 
         if (mController) {
             world->removeAction(mController);

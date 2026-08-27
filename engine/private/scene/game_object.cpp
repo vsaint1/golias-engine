@@ -3,6 +3,7 @@
 #include "core/engine.h"
 #include "core/io/file_system.h"
 #include "graphics/texture.h"
+#include "physics/collision.h"
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"
@@ -116,7 +117,6 @@ namespace golias {
     }
 
     void GameObject::Start() {
-      
     }
 
     bool GameObject::LoadProperties(const Json& properties) {
@@ -142,6 +142,14 @@ namespace golias {
                 it = mChildren.erase(it);
             }
         }
+    }
+
+    void GameObject::OnCollisionEnter(const Collision& collision) {
+        UNUSED_PARAMETER(collision);
+    }
+
+    void GameObject::OnCollisionExit(const Collision& collision) {
+        UNUSED_PARAMETER(collision);
     }
 
     GameObject* GameObject::FindChildByName(CString name) const {

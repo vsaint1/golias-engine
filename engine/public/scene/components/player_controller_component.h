@@ -1,21 +1,26 @@
 #pragma once
 #include "component.h"
+#include "physics/collision.h"
 
 namespace golias {
 
     class KinematicCharacterController;
 
-    class PlayerControllerComponent : public Component {
+    class PlayerControllerComponent : public Component, public ContactListener {
 
         COMPONENT(PlayerControllerComponent)
     public:
         PlayerControllerComponent() = default;
+        ~PlayerControllerComponent() override;
 
         bool LoadProperties(const Json& properties) override;
 
         void Start() override;
 
         void Update(float deltaTime) override;
+
+        void OnCollisionEnter(const Collision& collision) override;
+        void OnCollisionExit(const Collision& collision) override;
 
         float GetMoveSpeed() const;
         void SetMoveSpeed(float speed);

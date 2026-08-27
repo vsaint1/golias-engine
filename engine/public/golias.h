@@ -21,6 +21,7 @@
 #include "scene/game_object.h"
 
 #include "physics/collider.h"
+#include "physics/collision.h"
 #include "physics/rigid_body.h"
 #include "physics/kinematic_character_controller.h"
 
