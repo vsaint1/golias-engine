@@ -78,7 +78,22 @@
                 {
                     "type": "StaticMeshComponent",
                     "material": {
-                        "path": "materials/checker.gmat"
+                        "path": "materials/checker.gmat",
+                        "override": {
+                            "parameters": {
+                                "float4": [
+                                    {
+                                        "name": "_BaseColor",
+                                        "value": [
+                                            1.0,
+                                            0.0,
+                                            0.0,
+                                            1.0
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
                     },
                     "mesh": {
                         "type": "sphere",
@@ -124,7 +139,20 @@
                 {
                     "type": "StaticMeshComponent",
                     "material": {
-                        "path": "materials/checker.gmat"
+                        "path": "materials/checker.gmat",
+                        "parameters": {
+                            "float4": [
+                                {
+                                    "name": "_BaseColor",
+                                    "value": [
+                                        0.0,
+                                        1.0,
+                                        0.0,
+                                        1.0
+                                    ]
+                                }
+                            ]
+                        }
                     },
                     "mesh": {
                         "type": "sphere",
@@ -170,7 +198,20 @@
                 {
                     "type": "StaticMeshComponent",
                     "material": {
-                        "path": "materials/checker.gmat"
+                        "path": "materials/checker.gmat",
+                        "parameters": {
+                            "float4": [
+                                {
+                                    "name": "_BaseColor",
+                                    "value": [
+                                        0.0,
+                                        0.0,
+                                        1.0,
+                                        1.0
+                                    ]
+                                }
+                            ]
+                        }
                     },
                     "mesh": {
                         "type": "sphere",
@@ -245,6 +286,1710 @@
                         "friction": 0.5,
                         "restitution": 0.0
                     }
+                }
+            ]
+        },
+        {
+            "name": "TestProps",
+            "children": [
+                {
+                    "name": "LeftWall",
+                    "position": {
+                        "x": -15.5,
+                        "y": 3,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1,
+                                    "y": 5,
+                                    "z": 30
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1,
+                                        "y": 5,
+                                        "z": 30
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "RightWall",
+                    "position": {
+                        "x": 15.5,
+                        "y": 3,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1,
+                                    "y": 5,
+                                    "z": 30
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1,
+                                        "y": 5,
+                                        "z": 30
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "FrontWall",
+                    "position": {
+                        "x": 0,
+                        "y": 3,
+                        "z": -15.5
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 30,
+                                    "y": 5,
+                                    "z": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 30,
+                                        "y": 5,
+                                        "z": 1
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "BackWall",
+                    "position": {
+                        "x": 0,
+                        "y": 3,
+                        "z": 15.5
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 30,
+                                    "y": 5,
+                                    "z": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 30,
+                                        "y": 5,
+                                        "z": 1
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PlatformA",
+                    "position": {
+                        "x": -14,
+                        "y": 1.05,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 2,
+                                    "y": 1.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 2,
+                                        "y": 1.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PlatformB",
+                    "position": {
+                        "x": -14,
+                        "y": 1.05,
+                        "z": -10
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 2,
+                                    "y": 1.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 2,
+                                        "y": 1.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PlatformC",
+                    "position": {
+                        "x": -14,
+                        "y": 1.05,
+                        "z": -3
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 2,
+                                    "y": 1.1,
+                                    "z": 8
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 2,
+                                        "y": 1.1,
+                                        "z": 8
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PlatformD",
+                    "position": {
+                        "x": -7,
+                        "y": 1.05,
+                        "z": -3
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 8,
+                                    "y": 1.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 8,
+                                        "y": 1.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "InternalWall1",
+                    "position": {
+                        "x": -1,
+                        "y": 1.5,
+                        "z": -11
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1,
+                                    "y": 2,
+                                    "z": 8
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1,
+                                        "y": 2,
+                                        "z": 8
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "InternalWall2",
+                    "position": {
+                        "x": 1.5,
+                        "y": 1.5,
+                        "z": -1
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1,
+                                    "y": 2,
+                                    "z": 8
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1,
+                                        "y": 2,
+                                        "z": 8
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "JumpPlatform",
+                    "position": {
+                        "x": -7,
+                        "y": 1.75,
+                        "z": 1
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 2,
+                                    "y": 0.2,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 2,
+                                        "y": 0.2,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_1",
+                    "position": {
+                        "x": -12.85,
+                        "y": 1.35,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_2",
+                    "position": {
+                        "x": -12.55,
+                        "y": 1.25,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_3",
+                    "position": {
+                        "x": -12.25,
+                        "y": 1.15,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_4",
+                    "position": {
+                        "x": -11.95,
+                        "y": 1.05,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_5",
+                    "position": {
+                        "x": -11.65,
+                        "y": 0.95,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_6",
+                    "position": {
+                        "x": -11.35,
+                        "y": 0.85,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_7",
+                    "position": {
+                        "x": -11.05,
+                        "y": 0.75,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_8",
+                    "position": {
+                        "x": -10.75,
+                        "y": 0.65,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "LadderA_9",
+                    "position": {
+                        "x": -10.45,
+                        "y": 0.55,
+                        "z": -14
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 0.3,
+                                    "y": 0.1,
+                                    "z": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 0.3,
+                                        "y": 0.1,
+                                        "z": 2
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Sphere_4",
+                    "position": {
+                        "x": 10,
+                        "y": 1.5,
+                        "z": -8
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "sphere",
+                                "radius": 1.5
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "sphere",
+                                    "radius": 1.5
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Sphere_5",
+                    "position": {
+                        "x": 10,
+                        "y": 1.5,
+                        "z": -6
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "sphere",
+                                "radius": 1.5
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "sphere",
+                                    "radius": 1.5
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Sphere_6",
+                    "position": {
+                        "x": 10,
+                        "y": 1.5,
+                        "z": -4
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat"
+                            },
+                            "mesh": {
+                                "type": "sphere",
+                                "radius": 1.5
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "sphere",
+                                    "radius": 1.5
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube1",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    1.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube2",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 1.51
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.7,
+                                                    0.5,
+                                                    0.2,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube3",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 3.02
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.2,
+                                                    0.5,
+                                                    0.1,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube4",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 4.53
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.2,
+                                                    0.1,
+                                                    0.9,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube5",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 6.04
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    0.0,
+                                                    1.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube6",
+                    "position": {
+                        "x": 10,
+                        "y": 1.25,
+                        "z": 7.55
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.1,
+                                                    0.8,
+                                                    0.7,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube7",
+                    "position": {
+                        "x": 10,
+                        "y": 2.75,
+                        "z": 0.75
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.1,
+                                                    0.8,
+                                                    0.7,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube8",
+                    "position": {
+                        "x": 10,
+                        "y": 2.75,
+                        "z": 2.251
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.9,
+                                                    0.2,
+                                                    0.3,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube9",
+                    "position": {
+                        "x": 10,
+                        "y": 2.75,
+                        "z": 3.752
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.2,
+                                                    0.2,
+                                                    0.3,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube10",
+                    "position": {
+                        "x": 10,
+                        "y": 2.75,
+                        "z": 5.253
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.5,
+                                                    0.1,
+                                                    0.9,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube11",
+                    "position": {
+                        "x": 10,
+                        "y": 2.75,
+                        "z": 6.754
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    1.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube12",
+                    "position": {
+                        "x": 10,
+                        "y": 4.25,
+                        "z": 1.5
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    1.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube13",
+                    "position": {
+                        "x": 10,
+                        "y": 4.25,
+                        "z": 3.01
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    0.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube14",
+                    "position": {
+                        "x": 10,
+                        "y": 4.25,
+                        "z": 4.52
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.0,
+                                                    0.0,
+                                                    1.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PyramidCube15",
+                    "position": {
+                        "x": 10,
+                        "y": 4.25,
+                        "z": 6.03
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/checker.gmat",
+                                "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    0.0,
+                                                    1.0,
+                                                    1.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1.5,
+                                    "y": 1.5,
+                                    "z": 1.5
+                                }
+                            }
+                        },
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "dynamic",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.5,
+                                        "y": 1.5,
+                                        "z": 1.5
+                                    }
+                                },
+                                "physics_material": {
+                                    "mass": 15
+                                }
+                            }
+                        }
+                    ]
                 }
             ]
         },
@@ -422,6 +2167,70 @@
                         "g": 1.0,
                         "b": 1.0
                     },
+                    "intensity": 1.0
+                }
+            ]
+        },
+        {
+            "name": "RedSpotLight",
+            "position": {
+                "x": 1,
+                "y": 5,
+                "z": -15
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "LightComponent",
+                    "light_type": "spot",
+                    "color": {
+                        "r": 1.0,
+                        "g": 0.0,
+                        "b": 0.0
+                    },
+                    "range": 20.0,
+                    "intensity": 1.0
+                }
+            ]
+        },
+        {
+            "name": "GreenPointLight",
+            "position": {
+                "x": 5,
+                "y": 5,
+                "z": 15
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+            },
+            "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "components": [
+                {
+                    "type": "LightComponent",
+                    "light_type": "point",
+                    "color": {
+                        "r": 0.0,
+                        "g": 1.0,
+                        "b": 0.0
+                    },
+                    "range": 10.0,
                     "intensity": 1.0
                 }
             ]

@@ -42,7 +42,7 @@ namespace golias {
         mat->SetParameter("_BaseColor", glm::vec4(1.0f));
         mat->SetParameter("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireWhiteTexture());
         if (json.contains("shader")) {
-            const String shaderPath = json["shader"].get<String>();
+            const String shaderPath   = json["shader"].get<String>();
             Ref<Shader> shaderProgram = Engine::GetInstance().GetAssetManager().Load<Shader>(shaderPath);
 
             if (!shaderProgram) {
@@ -54,108 +54,95 @@ namespace golias {
         }
 
         if (json.contains("parameters")) {
-            const auto& param = json["parameters"];
-
-            if (param.contains("float")) {
-
-                for(const auto& p : param["float"]) {
-                    String name  = p.value("name", "");
-                    float value  = p.value("value", 0.0f);
-
-                    mat->SetParameter(name, value);
-                }
-            }
-
-            if (param.contains("int")) {
-           
-                for(const auto& p : param["int"]) {
-                    String name  = p.value("name", "");
-                    int value    = p.value("value", 0);
-
-                    mat->SetParameter(name, value);
-                }
-
-            }
-
-            if (param.contains("float2")) {
-             
-                for (const auto& p : param["float2"]) {
-                    String name       = p.value("name", "");
-                    const auto& value = p["value"];
-
-                    if (value.is_array() && value.size() == 2) {
-                        glm::vec2 vecValue(value[0].get<float>(), value[1].get<float>());
-
-                        mat->SetParameter(name, vecValue);
-                    } else {
-                        GOLIAS_LOG_ERROR("Invalid float2 parameter value for name: %s", name.data());
-                    }
-                }
-
-            }
-
-            if (param.contains("float3")) {
-
-                for (const auto& p : param["float3"]) {
-                    String name       = p.value("name", "");
-                    const auto& value = p["value"];
-
-                    if (value.is_array() && value.size() == 3) {
-                        glm::vec3 vecValue(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
-
-                        mat->SetParameter(name, vecValue);
-                    } else {
-                        GOLIAS_LOG_ERROR("Invalid float3 parameter value for name: %s", name.data());
-                    }
-                }
-
-            }
-
-            if (param.contains("float4")) {
-
-                for (const auto& p : param["float4"]) {
-                    String name       = p.value("name", "");
-                    const auto& value = p["value"];
-
-                    if (value.is_array() && value.size() == 4) {
-                        glm::vec4 vecValue(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>());
-
-                        mat->SetParameter(name, vecValue);
-                    } else {
-                        GOLIAS_LOG_ERROR("Invalid float4 parameter value for name: %s", name.data());
-                    }
-                }
-
-            }
-
-            if (param.contains("textures")) {
-                
-                for (const auto& p : param["textures"]) {
-                    String name = p.value("name", "");
-
-                    String path = p.value("path", "");
-
-                    Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(path);
-
-                    if (!texture) {
-                        GOLIAS_LOG_ERROR("Failed to load texture from path: %s", path.data());
-                        texture = Engine::GetInstance().GetAssetManager().AcquireErrorTexture();
-                    }
-
-                    if (texture) {
-                        mat->SetParameter(name, texture);
-                    } else {
-                        continue;
-                    }
-                }
-
-            }
+            mat->ApplyParametersFromJson(json["parameters"]);
         }
 
         GOLIAS_LOG_INFO("Material loaded successfully from path: %s", path.data());
 
         return mat;
     }
+
+    bool Material::ApplyParametersFromJson(const Json& parameters) {
+        if (!parameters.is_object()) {
+            GOLIAS_LOG_ERROR("Material parameters must be an object.");
+            return false;
+        }
+
+        bool valid = true;
+
+        if (parameters.contains("float")) {
+            for (const auto& parameter : parameters["float"]) {
+                SetParameter(parameter.value("name", ""), parameter.value("value", 0.0f));
+            }
+        }
+
+        if (parameters.contains("int")) {
+            for (const auto& parameter : parameters["int"]) {
+                SetParameter(parameter.value("name", ""), parameter.value("value", 0));
+            }
+        }
+
+        if (parameters.contains("float2")) {
+            for (const auto& parameter : parameters["float2"]) {
+                const String name = parameter.value("name", "");
+                const Json& value = parameter["value"];
+                if (!value.is_array() || value.size() != 2) {
+                    GOLIAS_LOG_ERROR("Invalid float2 parameter value for name: %s", name.data());
+                    valid = false;
+                    continue;
+                }
+
+                SetParameter(name, glm::vec2(value[0].get<float>(), value[1].get<float>()));
+            }
+        }
+
+        if (parameters.contains("float3")) {
+            for (const auto& parameter : parameters["float3"]) {
+                const String name = parameter.value("name", "");
+                const Json& value = parameter["value"];
+                if (!value.is_array() || value.size() != 3) {
+                    GOLIAS_LOG_ERROR("Invalid float3 parameter value for name: %s", name.data());
+                    valid = false;
+                    continue;
+                }
+
+                SetParameter(name, glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>()));
+            }
+        }
+
+        if (parameters.contains("float4")) {
+            for (const auto& parameter : parameters["float4"]) {
+                const String name = parameter.value("name", "");
+                const Json& value = parameter["value"];
+                if (!value.is_array() || value.size() != 4) {
+                    GOLIAS_LOG_ERROR("Invalid float4 parameter value for name: %s", name.data());
+                    valid = false;
+                    continue;
+                }
+
+                SetParameter(name, glm::vec4(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>()));
+            }
+        }
+
+        if (parameters.contains("textures")) {
+            for (const auto& parameter : parameters["textures"]) {
+                const String name      = parameter.value("name", "");
+                const String path      = parameter.value("path", "");
+                Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(path);
+                if (!texture) {
+                    GOLIAS_LOG_ERROR("Failed to load texture from path: %s", path.data());
+                    texture = Engine::GetInstance().GetAssetManager().AcquireErrorTexture();
+                }
+
+                if (texture) {
+                    SetParameter(name, texture);
+                }
+            }
+        }
+
+        return valid;
+    }
+
     void Material::SetShader(const Ref<Shader>& shader) {
         mShader = shader;
     }

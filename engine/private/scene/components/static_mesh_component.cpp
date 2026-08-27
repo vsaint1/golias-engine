@@ -49,6 +49,14 @@ namespace golias {
             if (materialObj.is_object() && materialObj.contains("path")) {
                 String path = materialObj["path"].get<String>();
                 mMaterial   = Engine::GetInstance().GetAssetManager().Load<Material>(path);
+                if (mMaterial && materialObj.contains("override") && materialObj["override"].is_object()) {
+                    const auto& materialOverride = materialObj["override"];
+
+                    if (materialOverride.contains("parameters")) {
+                        mMaterial = mMaterial->Clone();
+                        mMaterial->ApplyParametersFromJson(materialOverride["parameters"]);
+                    }
+                }
             }
         } else {
             GOLIAS_ASSERT_MSG(false, "StaticMeshComponent: Missing 'material' property in JSON.");
