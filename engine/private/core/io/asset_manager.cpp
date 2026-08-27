@@ -17,17 +17,18 @@ namespace golias {
 
     Ref<Mesh> AssetManager::LoadMesh(CString modelPath, const ModelPrimitive& primitive) {
 
-        char buffer[256];
-        std::sprintf(buffer,
-                     "%s#primitive:%zu:%zu:%zu:%d",
-                     modelPath,
-                     primitive.vertexCount,
-                     primitive.indexOffset,
-                     primitive.vertexCount,
-                     primitive.indexOffset,
-                     primitive.indexCount);
+        String key(modelPath.size() + 128, '\0');
+        const int keyLength = std::sprintf(key.data(),
+                                           "%.*s#primitive:%zu:%zu:%zu:%zu",
+                                           static_cast<int>(modelPath.size()),
+                                           modelPath.data(),
+                                           primitive.vertexOffset,
+                                           primitive.vertexCount,
+                                           primitive.indexOffset,
+                                           primitive.indexCount);
 
-        auto& assets        = mAssets[buffer];
+        key.resize(static_cast<size_t>(keyLength));
+        auto& assets        = mAssets[key];
         const auto type     = std::type_index(typeid(Mesh));
         const auto existing = assets.find(type);
         if (existing != assets.end()) {
@@ -36,7 +37,7 @@ namespace golias {
 
         Ref<Model> model = Load<Model>(modelPath);
         Ref<Mesh> mesh   = model ? Mesh::Create(*model, primitive) : nullptr;
-        
+
         if (mesh) {
             assets.emplace(type, mesh);
         }
