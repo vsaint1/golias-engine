@@ -2,7 +2,7 @@
 
 #include "core/engine.h"
 #include "graphics/shader.h"
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
 
 namespace golias {
 

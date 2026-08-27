@@ -2,7 +2,7 @@
 
 #include "core/engine.h"
 #include "core/io/file_system.h"
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
 #include "physics/collision.h"
 #include "render/material.h"
 #include "render/mesh.h"

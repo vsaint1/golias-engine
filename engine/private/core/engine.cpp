@@ -153,6 +153,8 @@ namespace golias {
                     cameraCommand.View           = cameraComponent->GetViewMatrix();
                     cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
                     cameraCommand.CameraPosition = camera->GetWorldPosition();
+                    cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
+                    cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
                     cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = fbWidth, .Height = fbHeight};
 
                     mCommandQueue.Submit(cameraCommand);

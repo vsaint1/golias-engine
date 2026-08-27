@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <chrono>
 #include <fstream>

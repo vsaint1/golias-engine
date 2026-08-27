@@ -1,6 +1,6 @@
 #include "core/io/asset_manager.h"
 
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"

@@ -2,7 +2,7 @@
 
 #include "core/engine.h"
 #include "graphics/shader_compiler.h"
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
 
 namespace golias {
 
@@ -112,5 +112,12 @@ namespace golias {
         glBindTexture(GL_TEXTURE_2D, texture->GetHandle());
         glUniform1i(location, mUnitIndex);
         mUnitIndex++;
+    }
+
+    void Shader::SetTextureUnit(CString name, GLuint texture, uint32_t unit, GLenum target) {
+        const GLuint location = GetUniformLocation(name);
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(target, texture);
+        glUniform1i(location, static_cast<GLint>(unit));
     }
 } // namespace golias

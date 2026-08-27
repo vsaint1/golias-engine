@@ -1,4 +1,4 @@
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
 
 #include "core/engine.h"
 #include <stb_image.h>

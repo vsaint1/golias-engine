@@ -4,7 +4,6 @@
 #include "core/io/asset_manager.h"
 #include "core/io/file_system.h"
 #include "graphics/graphics_device.h"
-#include "graphics/texture.h"
 #include "physics/physics_manager.h"
 #include "render/command_queue.h"
 #include "render/material.h"
