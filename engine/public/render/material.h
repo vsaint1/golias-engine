@@ -30,6 +30,8 @@ namespace golias {
 
         void SetParameter(const std::string& name, const ParamType& value);
 
+        bool ApplyParametersFromJson(const Json& parameters);
+
         ParamType GetParameter(const std::string& name) const;
 
     private:

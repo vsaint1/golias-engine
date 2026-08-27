@@ -110,6 +110,7 @@ namespace golias {
             } else {
                 gameObject = ObjectRegistry::GetInstance().CreateObject(type);
                 if (gameObject) {
+                    gameObject->mScene = this;
                     gameObject->SetName(name);
                     if (!SetParent(gameObject, parent)) {
                         GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
@@ -217,10 +218,16 @@ namespace golias {
         GameObject* gameObject = new GameObject();
 
         gameObject->SetName(name);
+        gameObject->mScene = this;
 
-        if (!SetParent(gameObject, parent)) {
-            GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
-            return nullptr;
+        if (!mIsUpdating) {
+
+            if (!SetParent(gameObject, parent)) {
+                GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
+                return nullptr;
+            }
+        } else {
+            mObjectsToAdd.emplace_back(gameObject, parent);
         }
 
         return gameObject;
@@ -324,7 +331,24 @@ namespace golias {
         return nullptr;
     }
 
+    void Scene::PreUpdate(float deltaTime) {
+
+        mIsUpdating = false;
+        mObjects.erase(std::remove_if(mObjects.begin(), mObjects.end(), [](auto& obj) { return !obj->IsAlive(); }), mObjects.end());
+
+        for (const auto& obj : mObjectsToAdd) {
+            SetParent(obj.first, obj.second);
+        }
+        mObjectsToAdd.clear();
+
+
+        mIsUpdating = true;
+    }
+
     void Scene::Update(float deltaTime) {
+
+        PreUpdate(deltaTime);
+
         for (auto it = mObjects.begin(); it != mObjects.end();) {
             GameObject* obj = it->get();
 
@@ -337,6 +361,13 @@ namespace golias {
                 it = mObjects.erase(it);
             }
         }
+
+
+        PostUpdate(deltaTime);
+    }
+
+    void Scene::PostUpdate(float deltaTime) {
+        mIsUpdating = false;
     }
 
     void Scene::Clear() {

@@ -173,6 +173,10 @@ namespace golias {
         mName = name;
     }
 
+    Scene* GameObject::GetCurrentScene() const {
+        return mScene;
+    }
+
     String GameObject::GetName() const {
         return mName;
     }

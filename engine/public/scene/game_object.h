@@ -58,6 +58,7 @@ namespace golias {
 
         glm::vec3 GetForward() const;
 
+        Scene* GetCurrentScene() const;
 
         template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
         T* GetComponent() {
@@ -84,6 +85,8 @@ namespace golias {
         String mName;
 
         GameObject* mParent = nullptr;
+
+        Scene* mScene = nullptr;
 
         std::vector<std::unique_ptr<GameObject>> mChildren = {};
 
