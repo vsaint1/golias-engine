@@ -19,10 +19,16 @@ namespace golias {
         T* CreateGameObject(CString name, GameObject* parent = nullptr) {
             T* gameObject = new T();
             gameObject->SetName(name);
+            gameObject->mScene = this;
 
-            if (!SetParent(gameObject, parent)) {
-                GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
-                return nullptr;
+            if (!mIsUpdating) {
+
+                if (!SetParent(gameObject, parent)) {
+                    GOLIAS_LOG_ERROR("Failed to set parent for GameObject '%s'.", name.data());
+                    return nullptr;
+                }
+            } else {
+                mObjectsToAdd.emplace_back(gameObject, parent);
             }
 
             return gameObject;
@@ -37,7 +43,7 @@ namespace golias {
 
         CString GetName() const;
         void SetName(CString name);
-        
+
         void Update(float deltaTime);
 
         void Clear();
@@ -47,13 +53,20 @@ namespace golias {
         void PrintTree();
 
     private:
+        void PreUpdate(float deltaTime);
+
+        void PostUpdate(float deltaTime);
+
         void LoadObject(const Json& objectData, GameObject* parent = nullptr);
 
     private:
-        std::vector<std::unique_ptr<GameObject>> mObjects = {};
+        std::vector<std::unique_ptr<GameObject>> mObjects              = {};
+        std::vector<std::pair<GameObject*, GameObject*>> mObjectsToAdd = {};
 
         GameObject* mMainCamera = nullptr;
 
         String mName = "UnnamedScene";
+
+        bool mIsUpdating = false;
     };
 } // namespace golias
