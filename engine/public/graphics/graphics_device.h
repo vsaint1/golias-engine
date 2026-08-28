@@ -1,45 +1,16 @@
 #pragma once
-#include "stdafx.h"
+#include "graphics/gpu_types.h"
+#include "graphics/render_types.h"
 
 namespace golias {
 
     class Shader;
     class Material;
     class Mesh;
-
-    constexpr size_t kMaxLights = 32;
-
-    struct alignas(16) GpuLight {
-        glm::vec4 Position;
-        glm::vec4 Direction;
-        glm::vec4 ColorIntensity;
-        float Range;
-        float SpotAngle;
-        int Type;
-        int IsShadowCaster;
-    };
-
-    static_assert(sizeof(GpuLight) == 64, "GpuLight must match the std140 light layout");
-
-    struct alignas(16) GpuLighting {
-        int Count;
-        int Padding0;
-        int Padding1;
-        int Padding2;
-        GpuLight Lights[kMaxLights];
-    };
-
-    struct Viewport {
-        int X = 0, Y = 0, Width = 0, Height = 0;
-    };
-
-    struct Color {
-        float R = 0.0f, G = 0.0f, B = 0.0f, A = 1.0f;
-
-        static Color White() {
-            return {1.0f, 1.0f, 1.0f, 1.0f};
-        }
-    };
+    class Texture2DArray;
+    class TextureCube;
+    class Framebuffer;
+    struct TextureDesc;
 
     class GraphicsDevice {
 
@@ -50,6 +21,11 @@ namespace golias {
 
         Ref<Shader> CreateShader(const std::string& vertexSource, const std::string& fragmentSource);
 
+        Ref<Texture2DArray> CreateTexture2DArray(const TextureDesc& desc);
+        Ref<TextureCube> CreateTextureCube(const TextureDesc& desc);
+
+        Ref<Framebuffer> CreateFramebuffer(const TextureDesc& desc);
+
         GLuint CreateVertexBuffer(const std::vector<float>& vertices);
 
         GLuint CreateIndexBuffer(const std::vector<uint32_t>& indices);
@@ -58,9 +34,14 @@ namespace golias {
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
-        void ClearBuffers(GLbitfield mask = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        void SetDepthTestEnabled(bool enabled);
+        void SetDepthWriteEnabled(bool enabled);
+
+        void ClearBuffers(ClearFlag flag = ClearFlag::Color | ClearFlag::Depth);
 
         void SetViewport(const Viewport& viewport);
+
+        void SetCullMode(CullMode mode = CullMode::None);
 
         void BindShader(Shader* shader);
 

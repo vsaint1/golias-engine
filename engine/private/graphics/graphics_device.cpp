@@ -1,6 +1,9 @@
 #include "graphics/graphics_device.h"
 
+#include "graphics/framebuffer.h"
 #include "graphics/shader.h"
+#include "graphics/texture_2d_array.h"
+#include "graphics/texture_cube.h"
 #include "render/material.h"
 #include "render/mesh.h"
 #include <glad.h>
@@ -9,6 +12,18 @@
 namespace golias {
 
     GraphicsDevice::~GraphicsDevice() = default;
+
+    Ref<Texture2DArray> GraphicsDevice::CreateTexture2DArray(const TextureDesc& desc) {
+        return std::make_shared<Texture2DArray>(desc);
+    }
+
+    Ref<Framebuffer> GraphicsDevice::CreateFramebuffer(const TextureDesc& desc) {
+        return std::make_shared<Framebuffer>(desc);
+    }
+
+    Ref<TextureCube> GraphicsDevice::CreateTextureCube(const TextureDesc& desc) {
+        return std::make_shared<TextureCube>(desc);
+    }
 
     bool GraphicsDevice::Initialize() {
 
@@ -154,8 +169,61 @@ namespace golias {
         glClearColor(color.R, color.G, color.B, color.A);
     }
 
-    void GraphicsDevice::ClearBuffers(GLbitfield mask) {
+    void GraphicsDevice::SetCullMode(CullMode mode) {
+        if (mode == CullMode::None) {
+            glDisable(GL_CULL_FACE);
+            return;
+        }
+
+        glEnable(GL_CULL_FACE);
+
+        GLenum faceMode;
+        switch (mode) {
+        case CullMode::Front:
+            faceMode = GL_FRONT;
+            break;
+        case CullMode::Back:
+            faceMode = GL_BACK;
+            break;
+        case CullMode::FrontAndBack:
+            faceMode = GL_FRONT_AND_BACK;
+            break;
+        default:
+            faceMode = GL_BACK;
+            break;
+        }
+
+        glCullFace(faceMode);
+    }
+
+    void GraphicsDevice::ClearBuffers(ClearFlag flag) {
+        GLbitfield mask = 0;
+
+        if (HasFlag(flag, ClearFlag::Color)) {
+            mask |= GL_COLOR_BUFFER_BIT;
+        }
+
+        if (HasFlag(flag, ClearFlag::Depth)) {
+            mask |= GL_DEPTH_BUFFER_BIT;
+        }
+
+        if (HasFlag(flag, ClearFlag::Stencil)) {
+            mask |= GL_STENCIL_BUFFER_BIT;
+        }
+
         glClear(mask);
+    }
+    
+    void GraphicsDevice::SetDepthTestEnabled(bool enabled) {
+        if (enabled) {
+            glEnable(GL_DEPTH_TEST);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+        }
+    }
+
+    void GraphicsDevice::SetDepthWriteEnabled(bool enabled) {
+        glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     }
 
     void GraphicsDevice::SetViewport(const Viewport& viewport) {
@@ -174,7 +242,7 @@ namespace golias {
         }
     }
 
-    
+
     void GraphicsDevice::BindMesh(Mesh* mesh) {
         if (mesh) {
             mesh->Bind();
@@ -188,7 +256,7 @@ namespace golias {
     }
 
     void GraphicsDevice::UnbindMesh(Mesh* mesh) {
-        if(mesh){
+        if (mesh) {
             mesh->Unbind();
         }
     }

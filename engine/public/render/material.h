@@ -6,9 +6,9 @@ namespace golias {
 
     class Shader;
 
-    class Texture2D;
+    class Texture;
 
-    using ParamType = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, Ref<Texture2D>>;
+    using ParamType = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4, Ref<Texture>>;
 
     class Material {
     public:
