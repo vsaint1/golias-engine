@@ -30,10 +30,29 @@ namespace golias {
 
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
-        mVBO = device.CreateVertexBuffer(vertices);
+        // clang-format off
+        BufferDesc desc = {
+            .Target = BufferTarget::Vertex,
+            .Usage = BufferUsage::Static, 
+            .Size = vertices.size() * sizeof(float)
+        };
+        // clang-format on
+
+        mVBO = device.CreateBuffer(desc);
+        device.UpdateBuffer(mVBO, BufferTarget::Vertex, vertices.data(), vertices.size() * sizeof(float));
 
         if (!indices.empty()) {
-            mEBO = device.CreateIndexBuffer(indices);
+
+            // clang-format off
+            BufferDesc desc = {
+                .Target = BufferTarget::Index,
+                .Usage = BufferUsage::Static, 
+                .Size = indices.size() * sizeof(uint32_t)
+            };
+            // clang-format on
+
+            mEBO = device.CreateBuffer(desc);
+            device.UpdateBuffer(mEBO, BufferTarget::Index, indices.data(), indices.size() * sizeof(uint32_t));
         }
 
         glGenVertexArrays(1, &mVAO);

@@ -40,7 +40,16 @@ namespace golias {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         if (!mLightingBuffer) {
-            mLightingBuffer = device.CreateUniformBuffer(sizeof(GpuLighting));
+           
+            // clang-format off
+            BufferDesc desc = {
+                .Target = BufferTarget::Uniform,
+                .Usage = BufferUsage::Dynamic, 
+                .Size = sizeof(GpuLighting)
+            };
+            // clang-format on
+
+            mLightingBuffer = device.CreateBuffer(desc);
             device.BindUniformBuffer(mLightingBuffer, 0);
         }
 
@@ -61,7 +70,7 @@ namespace golias {
             destination.IsShadowCaster = source.IsShadowCaster ? 1 : 0;
         }
 
-        device.UpdateUniformBuffer(mLightingBuffer, &lighting, sizeof(lighting));
+        device.UpdateBuffer(mLightingBuffer, BufferTarget::Uniform, &lighting, sizeof(lighting));
 
         for (const auto& cameraCommand : mCameraCommands) {
 
@@ -154,19 +163,18 @@ namespace golias {
             mShadowFramebuffer->Bind();
             device.ClearBuffers(ClearFlag::Depth);
             mShadowShader->SetUniform("_ViewMatrix", mShadowCsm.GetCascades()[cascade].ViewProjection);
-            
+
             for (const RenderCommand& command : mCommands) {
                 if (!command.Mesh) {
                     continue;
                 }
 
                 mShadowShader->SetUniform("_ModelMatrix", command.Model);
-                
+
                 device.BindMesh(command.Mesh);
                 device.DrawMesh(command.Mesh);
                 device.UnbindMesh(command.Mesh);
             }
-
         }
 
         mShadowFramebuffer->Unbind();

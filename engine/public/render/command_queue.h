@@ -64,7 +64,11 @@ namespace golias {
         std::vector<RenderCommand> mCommands       = {};
         std::vector<CameraCommand> mCameraCommands = {};
         std::vector<LightCommand> mLightCommands = {};
+       
         GLuint mLightingBuffer = 0;
+
+        Ref<Framebuffer> mDefaultFramebuffer = nullptr;
+        
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture = nullptr;
         Ref<Shader> mShadowShader = nullptr;

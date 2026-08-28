@@ -26,11 +26,9 @@ namespace golias {
 
         Ref<Framebuffer> CreateFramebuffer(const TextureDesc& desc);
 
-        GLuint CreateVertexBuffer(const std::vector<float>& vertices);
+        uint32_t CreateBuffer(const BufferDesc& desc);
 
-        GLuint CreateIndexBuffer(const std::vector<uint32_t>& indices);
-
-        GLuint CreateUniformBuffer(size_t size);
+        void UpdateBuffer(uint32_t handle, BufferTarget target, const void* data, const size_t size, const size_t offset = 0);
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
@@ -52,8 +50,6 @@ namespace golias {
         void DrawMesh(Mesh* mesh);
 
         void UnbindMesh(Mesh* mesh);
-
-        void UpdateUniformBuffer(GLuint buffer, const void* data, size_t size, size_t offset = 0);
 
         void BindUniformBuffer(GLuint buffer, uint32_t binding);
 

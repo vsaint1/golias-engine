@@ -148,23 +148,6 @@ namespace golias {
         return shader;
     }
 
-    GLuint GraphicsDevice::CreateVertexBuffer(const std::vector<float>& vertices) {
-        GLuint VBO;
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-        return VBO;
-    }
-
-
-    GLuint GraphicsDevice::CreateIndexBuffer(const std::vector<uint32_t>& indices) {
-        GLuint EBO;
-        glGenBuffers(1, &EBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
-        return EBO;
-    }
-
     void GraphicsDevice::SetClearColor(const Color& color) {
         glClearColor(color.R, color.G, color.B, color.A);
     }
@@ -213,7 +196,7 @@ namespace golias {
 
         glClear(mask);
     }
-    
+
     void GraphicsDevice::SetDepthTestEnabled(bool enabled) {
         if (enabled) {
             glEnable(GL_DEPTH_TEST);
@@ -221,6 +204,60 @@ namespace golias {
             glDisable(GL_DEPTH_TEST);
         }
     }
+
+    uint32_t GraphicsDevice::CreateBuffer(const BufferDesc& desc) {
+        GLuint buffer;
+        glGenBuffers(1, &buffer);
+
+        GLenum target = GL_ARRAY_BUFFER;
+
+        if (HasFlag(desc.Target, BufferTarget::Vertex)) {
+            target = GL_ARRAY_BUFFER;
+        } else if (HasFlag(desc.Target, BufferTarget::Index)) {
+            target = GL_ELEMENT_ARRAY_BUFFER;
+        } else if (HasFlag(desc.Target, BufferTarget::Uniform)) {
+            target = GL_UNIFORM_BUFFER;
+        }
+
+
+        GLenum usage = GL_STATIC_DRAW;
+
+        if (desc.Usage == BufferUsage::Dynamic) {
+            usage = GL_DYNAMIC_DRAW;
+        } else if (desc.Usage == BufferUsage::Stream) {
+            usage = GL_STREAM_DRAW;
+        } else {
+            GOLIAS_LOG_WARN("Unknown type of BufferUsage");
+        }
+
+
+        glBindBuffer(target, buffer);
+        glBufferData(target, desc.Size, nullptr, usage);
+        glBindBuffer(target, 0);
+
+
+        GOLIAS_LOG_INFO("Buffer Handle %zu | Size %zu", buffer, desc.Size);
+
+        return buffer;
+    }
+
+    void GraphicsDevice::UpdateBuffer(uint32_t handle, BufferTarget target, const void* data, const size_t size, const size_t offset) {
+
+        GLenum internalTarget = GL_ARRAY_BUFFER;
+
+        if (HasFlag(target, BufferTarget::Vertex)) {
+            internalTarget = GL_ARRAY_BUFFER;
+        } else if (HasFlag(target, BufferTarget::Index)) {
+            internalTarget = GL_ELEMENT_ARRAY_BUFFER;
+        } else if (HasFlag(target, BufferTarget::Uniform)) {
+            internalTarget = GL_UNIFORM_BUFFER;
+        }
+
+        glBindBuffer(internalTarget, handle);
+        glBufferSubData(internalTarget, offset, size, data);
+        glBindBuffer(internalTarget, 0);
+    }
+
 
     void GraphicsDevice::SetDepthWriteEnabled(bool enabled) {
         glDepthMask(enabled ? GL_TRUE : GL_FALSE);
@@ -261,20 +298,6 @@ namespace golias {
         }
     }
 
-    GLuint GraphicsDevice::CreateUniformBuffer(size_t size) {
-        GLuint buffer = 0;
-        glGenBuffers(1, &buffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-        glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-        return buffer;
-    }
-
-    void GraphicsDevice::UpdateUniformBuffer(GLuint buffer, const void* data, size_t size, size_t offset) {
-        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-        glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
 
     void GraphicsDevice::BindUniformBuffer(GLuint buffer, uint32_t binding) {
         glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer);
