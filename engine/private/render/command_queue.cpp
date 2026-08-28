@@ -8,6 +8,10 @@
 #include "scene/components/camera_component.h"
 
 namespace golias {
+    
+    CommandQueue::CommandQueue() {
+       
+    }
 
     CommandQueue::~CommandQueue() {
         if (mLightingBuffer) {
@@ -40,7 +44,7 @@ namespace golias {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         if (!mLightingBuffer) {
-           
+
             // clang-format off
             BufferDesc desc = {
                 .Target = BufferTarget::Uniform,

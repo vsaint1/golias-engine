@@ -43,6 +43,7 @@ namespace golias {
 
     class CommandQueue {
     public:
+        CommandQueue();
         ~CommandQueue();
 
         void Submit(const RenderCommand& command);
@@ -67,8 +68,9 @@ namespace golias {
        
         GLuint mLightingBuffer = 0;
 
-        Ref<Framebuffer> mDefaultFramebuffer = nullptr;
-        
+        Ref<Framebuffer> mDefaultHdrFramebuffer = nullptr;
+        Ref<Texture> mDefaultHdrTexture = nullptr;
+
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture = nullptr;
         Ref<Shader> mShadowShader = nullptr;

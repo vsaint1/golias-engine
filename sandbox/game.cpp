@@ -2,6 +2,7 @@
 
 #include "player.h"
 #include "test_obj.h"
+#include <random>
 
 void GameApplication::RegisterTypes() {
 
@@ -12,10 +13,10 @@ void GameApplication::RegisterTypes() {
 bool GameApplication::Initialize() {
 
     Ref<Scene> scene = Scene::Load("scene/main.gscene");
+
     scene->PrintTree();
+    
     Engine::GetInstance().SetScene(scene);
-
-
 
 
     // GameObject* redLight  = mScene->CreateGameObject("Red Light");

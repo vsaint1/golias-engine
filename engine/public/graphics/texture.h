@@ -3,7 +3,7 @@
 
 namespace golias {
 
-    enum class TextureFormat { RGBA8, Depth24, Depth32F };
+    enum class TextureFormat { RGBA8, RGBA16F, Depth24, Depth32F };
     enum class TextureFilter { Nearest, Linear };
     enum class TextureWrap { Repeat, ClampToEdge, ClampToBorder };
 
