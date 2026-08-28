@@ -1,5 +1,6 @@
 #pragma once
 #include "graphics/vertex_layout.h"
+#include "math/aabb.h"
 #include "stdafx.h"
 
 namespace golias {
@@ -41,6 +42,8 @@ namespace golias {
         
         void Draw() const;
 
+        const AABB& GetAABB() const;
+
     private:
         Mesh(const Mesh&)            = delete;
         Mesh& operator=(const Mesh&) = delete;
@@ -51,6 +54,7 @@ namespace golias {
         VertexLayout mVertexLayout;
         size_t mVertexCount = 0;
         size_t mIndexCount  = 0;
+        AABB mAABB;
 
         GLuint mVAO = 0;
         GLuint mVBO = 0;

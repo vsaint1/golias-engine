@@ -10,6 +10,24 @@ namespace golias {
         mVertexCount  = vertices.size() / (layout.Stride / sizeof(float));
         mIndexCount   = indices.size();
 
+        for (const auto& element : layout.Elements) {
+            if (element.Index != 0 || element.Size < 3) {
+                continue;
+            }
+            const size_t stride = layout.Stride / sizeof(float);
+            const size_t offset = element.Offset / sizeof(float);
+
+            for (size_t vertex = 0; vertex < mVertexCount && offset + 2 < stride; ++vertex) {
+                const size_t position = vertex * stride + offset;
+
+                if (position + 2 < vertices.size()) {
+                    mAABB.Expand(glm::vec3(vertices[position], vertices[position + 1], vertices[position + 2]));
+                }
+            }
+
+            break;
+        }
+
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         mVBO = device.CreateVertexBuffer(vertices);
@@ -87,6 +105,10 @@ namespace golias {
         } else {
             glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount));
         }
+    }
+
+    const AABB& Mesh::GetAABB() const {
+        return mAABB;
     }
 
     Ref<Mesh> Mesh::CreateCube(const glm::vec3& size, uint32_t segments) {
