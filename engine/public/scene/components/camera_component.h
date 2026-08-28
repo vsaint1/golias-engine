@@ -33,6 +33,6 @@ namespace golias {
         float mFOV         = 45.0f;
         float mAspectRatio = 1.0f;
         float mNearPlane   = 0.1f;
-        float mFarPlane    = 100.0f;
+        float mFarPlane    = 1000.0f;
     };
 } // namespace golias
