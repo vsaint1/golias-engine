@@ -10,12 +10,16 @@
 #include "graphics/graphics_device.h"
 #include "graphics/vertex_layout.h"
 #include "graphics/shader.h"
-#include "graphics/texture.h"
+#include "graphics/texture_2d.h"
+
+#include "math/aabb.h"
+#include "math/frustum.h"
 
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"
+#include "render/csm.h"
 
 #include "scene/scene.h"
 #include "scene/game_object.h"

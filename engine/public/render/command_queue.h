@@ -1,5 +1,9 @@
 #pragma once
 #include "graphics/graphics_device.h"
+#include "graphics/framebuffer.h"
+#include "graphics/texture_2d_array.h"
+#include "math/frustum.h"
+#include "render/csm.h"
 
 namespace golias {
 
@@ -27,7 +31,10 @@ namespace golias {
         glm::mat4 View       = glm::mat4(1.0f);
         glm::mat4 Projection = glm::mat4(1.0f);
         glm::vec3 CameraPosition = glm::vec3(0.0f);
+        float NearPlane = 0.1f;
+        float FarPlane = 100.0f;
         Viewport Viewport    = {0, 0, 800, 600};
+        CascadedShadowMapDesc Shadows = {};
         // RenderTarget* Target = nullptr; // nullptr = default backbuffer
         // uint32_t CullMask    = 0xFFFFFFFF; // which layers this camera renders
         // bool ClearColor      = true;
@@ -52,9 +59,19 @@ namespace golias {
 
 
     private:
+        void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
+
         std::vector<RenderCommand> mCommands       = {};
         std::vector<CameraCommand> mCameraCommands = {};
         std::vector<LightCommand> mLightCommands = {};
         GLuint mLightingBuffer = 0;
+        Ref<Framebuffer> mShadowFramebuffer = nullptr;
+        Ref<Texture2DArray> mShadowTexture = nullptr;
+        Ref<Shader> mShadowShader = nullptr;
+
+        CascadedShadowMap mShadowCsm;
+        CascadedShadowMapDesc mShadowCsmDesc = {};
+
+        bool mHasShadows = false;
     };
 } // namespace golias

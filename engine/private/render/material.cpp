@@ -173,7 +173,7 @@ namespace golias {
                             mShader->SetUniform(name, arg);
                         } else if constexpr (std::is_same_v<T, glm::mat4>) {
                             mShader->SetUniform(name, arg);
-                        } else if constexpr (std::is_same_v<T, Ref<Texture2D>>) {
+                        } else if constexpr (std::is_same_v<T, Ref<Texture>>) {
                             mShader->SetUniform(name, arg.get());
                         }
                     },

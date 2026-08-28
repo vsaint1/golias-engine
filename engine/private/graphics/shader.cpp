@@ -2,7 +2,7 @@
 
 #include "core/engine.h"
 #include "graphics/shader_compiler.h"
-#include "graphics/texture_2d.h"
+#include "graphics/texture.h"
 
 namespace golias {
 
@@ -15,7 +15,7 @@ namespace golias {
         constexpr ShaderTarget target = ShaderTarget::OpenGLES300;
 #endif
         CompiledShaderSource compiled = ShaderCompiler_Compile(source, target, path);
-        
+
         if (!compiled.IsValid()) {
             GOLIAS_LOG_ERROR("Failed to compile shader '%s'.", path.data());
             return nullptr;
@@ -104,20 +104,21 @@ namespace golias {
         glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
     }
 
-    void Shader::SetUniform(CString name, const Texture2D* texture) {
+    void Shader::SetUniform(CString name, const Texture* texture) {
 
         GLuint location = GetUniformLocation(name);
 
         glActiveTexture(GL_TEXTURE0 + mUnitIndex);
-        glBindTexture(GL_TEXTURE_2D, texture->GetHandle());
+        glBindTexture(texture->GetTarget(), texture->GetHandle());
         glUniform1i(location, mUnitIndex);
         mUnitIndex++;
     }
 
-    void Shader::SetTextureUnit(CString name, GLuint texture, uint32_t unit, GLenum target) {
-        const GLuint location = GetUniformLocation(name);
-        glActiveTexture(GL_TEXTURE0 + unit);
-        glBindTexture(target, texture);
-        glUniform1i(location, static_cast<GLint>(unit));
+    void Shader::SetTexture(const TextureBinding& binding, const Texture* texture) {
+        const GLuint location = GetUniformLocation(binding.Sampler);
+        
+        glActiveTexture(GL_TEXTURE0 + binding.Unit);
+        glBindTexture(texture->GetTarget(), texture->GetHandle());
+        glUniform1i(location, static_cast<GLint>(binding.Unit));
     }
 } // namespace golias

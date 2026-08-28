@@ -1,10 +1,10 @@
 #pragma once
-#include "stdafx.h"
+#include "graphics/texture.h"
 
 
 namespace golias {
 
-    class Texture2D {
+    class Texture2D : public Texture {
 
     public:
         Texture2D(int32_t width, int32_t height, int32_t channels, unsigned char* data);
@@ -18,7 +18,13 @@ namespace golias {
 
         int32_t GetChannels() const;
 
-        GLuint GetHandle() const;
+        GLuint GetHandle() const override;
+
+        GLenum GetTarget() const override;
+
+        const TextureDesc& GetDesc() const override;
+        
+        bool Recreate(const TextureDesc& desc) override;
 
     private:
         int32_t mWidth    = 0;
@@ -26,6 +32,7 @@ namespace golias {
         int32_t mChannels = 0;
 
         GLuint mTextureID = 0;
+        TextureDesc mDesc;
     };
 
 

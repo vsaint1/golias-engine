@@ -29,6 +29,10 @@ namespace golias {
             GOLIAS_LOG_WARN("Unsupported number of channels: %d | Using RGB", mChannels);
         }
 
+        mDesc.Width  = static_cast<uint32_t>(mWidth);
+        mDesc.Height = static_cast<uint32_t>(mHeight);
+        mDesc.Format = TextureFormat::RGBA8;
+
         glGenTextures(1, &mTextureID);
         glBindTexture(GL_TEXTURE_2D, mTextureID);
 
@@ -99,6 +103,19 @@ namespace golias {
 
     GLuint Texture2D::GetHandle() const {
         return mTextureID;
+    }
+
+    GLenum Texture2D::GetTarget() const {
+        return GL_TEXTURE_2D;
+    }
+
+    const TextureDesc& Texture2D::GetDesc() const {
+        return mDesc;
+    }
+
+
+    bool Texture2D::Recreate(const TextureDesc& desc) {
+        return desc.Width == static_cast<uint32_t>(mWidth) && desc.Height == static_cast<uint32_t>(mHeight);
     }
 
 

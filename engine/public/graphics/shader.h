@@ -1,9 +1,10 @@
 #pragma once
 #include "stdafx.h"
+#include "graphics/texture_slots.h"
 
 namespace golias {
 
-    class Texture2D;
+    class Texture;
     
     class Shader {
 
@@ -29,7 +30,9 @@ namespace golias {
         
         void SetUniform(CString name, const glm::mat4& value);
 
-        void SetUniform(CString name, const Texture2D* texture);
+        void SetUniform(CString name, const Texture* texture);
+
+        void SetTexture(const TextureBinding& binding, const Texture* texture);
 
         ~Shader();
 
