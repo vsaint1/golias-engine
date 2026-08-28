@@ -8,9 +8,15 @@
 #include "core/input/input_manager.h"
 
 #include "graphics/graphics_device.h"
+#include "graphics/render_types.h"
+#include "graphics/gpu_types.h"
+#include "graphics/texture_slots.h"
 #include "graphics/vertex_layout.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d.h"
+#include "graphics/texture_2d_array.h"
+#include "graphics/texture_cube.h"
+#include "graphics/framebuffer.h"
 
 #include "math/aabb.h"
 #include "math/frustum.h"
