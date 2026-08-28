@@ -2,12 +2,13 @@
 
 #include "player.h"
 #include "test_obj.h"
-#include <random>
+#include "hurt_platform.h"
 
 void GameApplication::RegisterTypes() {
 
     Player::Register();
     TestObject::Register();
+    HurtPlatform::Register();
 }
 
 bool GameApplication::Initialize() {
@@ -15,7 +16,7 @@ bool GameApplication::Initialize() {
     Ref<Scene> scene = Scene::Load("scene/main.gscene");
 
     scene->PrintTree();
-    
+
     Engine::GetInstance().SetScene(scene);
 
 

@@ -14,10 +14,17 @@ public:
 
     void Update(float deltaTime) override;
 
+    void TakeDamage(int amount);
+
+    int GetHealth() const;
+
 private:
     GameObject* mGunObject = nullptr;
-    
-    AnimationComponent* mGunAnimation = nullptr;
+
+    int mHealth    = 100;
+    int mMaxHealth = 100;
+
+    AnimationComponent* mGunAnimation            = nullptr;
     PlayerControllerComponent* mPlayerController = nullptr;
-    AudioSourceComponent* mAudioSource = nullptr;
+    AudioSourceComponent* mAudioSource           = nullptr;
 };

@@ -209,34 +209,35 @@ namespace golias {
         GLuint buffer;
         glGenBuffers(1, &buffer);
 
-        GLenum target = GL_ARRAY_BUFFER;
+        GLenum target         = GL_ARRAY_BUFFER;
+        const char* targetStr = "VERTEX_BUFFER";
 
         if (HasFlag(desc.Target, BufferTarget::Vertex)) {
             target = GL_ARRAY_BUFFER;
         } else if (HasFlag(desc.Target, BufferTarget::Index)) {
-            target = GL_ELEMENT_ARRAY_BUFFER;
+            target    = GL_ELEMENT_ARRAY_BUFFER;
+            targetStr = "INDEX_BUFFER";
         } else if (HasFlag(desc.Target, BufferTarget::Uniform)) {
-            target = GL_UNIFORM_BUFFER;
+            target    = GL_UNIFORM_BUFFER;
+            targetStr = "UNIFORM_BUFFER";
         }
 
 
-        GLenum usage = GL_STATIC_DRAW;
-
+        GLenum usage         = GL_STATIC_DRAW;
+        const char* usageStr = "Static";
         if (desc.Usage == BufferUsage::Dynamic) {
-            usage = GL_DYNAMIC_DRAW;
+            usage    = GL_DYNAMIC_DRAW;
+            usageStr = "Dynamic";
         } else if (desc.Usage == BufferUsage::Stream) {
-            usage = GL_STREAM_DRAW;
-        } else {
-            GOLIAS_LOG_WARN("Unknown type of BufferUsage");
+            usage    = GL_STREAM_DRAW;
+            usageStr = "Streaming";
         }
-
 
         glBindBuffer(target, buffer);
         glBufferData(target, desc.Size, nullptr, usage);
         glBindBuffer(target, 0);
 
-
-        GOLIAS_LOG_INFO("Buffer Handle %zu | Size %zu", buffer, desc.Size);
+        GOLIAS_LOG_TRACE("Target %s | Usage %s | Buffer Handle %#u | Size %zu", targetStr, usageStr, buffer, desc.Size);
 
         return buffer;
     }

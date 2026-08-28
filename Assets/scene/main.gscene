@@ -673,7 +673,8 @@
                     ]
                 },
                 {
-                    "name": "JumpPlatform",
+                    "name": "HurtPlatform",
+                    "type": "HurtPlatform",
                     "position": {
                         "x": -7,
                         "y": 1.75,
@@ -683,7 +684,22 @@
                         {
                             "type": "StaticMeshComponent",
                             "material": {
-                                "path": "materials/checker.gmat"
+                                "path": "materials/checker.gmat",
+                                 "override": {
+                                    "parameters": {
+                                        "float4": [
+                                            {
+                                                "name": "_BaseColor",
+                                                "value": [
+                                                    1.0,
+                                                    0.0,
+                                                    0.0,
+                                                    1.0
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
                             },
                             "mesh": {
                                 "type": "cube",

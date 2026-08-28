@@ -76,6 +76,17 @@ namespace golias {
             return nullptr;
         }
 
+        template <typename T>
+        T* Cast(GameObject* object) {
+            GOLIAS_ASSERT(object != nullptr);
+
+            if (object) {
+                return static_cast<T*>(object);
+            }
+
+            return nullptr;
+        }
+
         /// @brief  Adds a component to the game object. The game object takes ownership of the component and will manage its lifetime.
         /// @param component
         void AddComponent(Component* component);

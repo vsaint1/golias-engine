@@ -33,6 +33,19 @@ void Player::Start() {
     }
 }
 
+int Player::GetHealth() const {
+    return mHealth;
+}
+
+void Player::TakeDamage(int amount) {
+    mHealth -= amount;
+    mHealth = glm::clamp(0, 100, mHealth);
+
+    if (mHealth <= 0) {
+        GOLIAS_LOG_WARN("PLAYER DIED");
+    }
+}
+
 void Player::Update(float deltaTime) {
     GameObject::Update(deltaTime);
 
