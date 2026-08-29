@@ -10,11 +10,14 @@
 #include "scene/components/player_controller_component.h"
 #include "scene/components/sprite_component.h"
 #include "scene/components/static_mesh_component.h"
+#include "scene/components/widget/canvas_component.h"
+#include "scene/components/widget/text_component.h"
 
 namespace golias {
 
     void Scene::RegisterTypes() {
 
+#pragma region CoreComponents
         StaticMeshComponent::Register();
         CameraComponent::Register();
         AnimationComponent::Register();
@@ -24,6 +27,12 @@ namespace golias {
         AudioSourceComponent::Register();
         AudioListenerComponent::Register();
         SpriteComponent::Register();
+#pragma endregion
+
+#pragma region WidgetComponents
+        CanvasComponent::Register();
+        TextComponent::Register();
+#pragma endregion
     }
 
     Ref<Scene> Scene::Load(CString path) {

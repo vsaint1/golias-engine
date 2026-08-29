@@ -25,6 +25,10 @@ namespace golias {
         return mSize;
     }
 
+    int Font::GetLineHeight() const {
+        return mLineHeight;
+    }
+
     const GlyphDesc& Font::GetGlyphDescription(char c) const {
         return mGlyphs[static_cast<unsigned char>(c)];
     }
@@ -71,13 +75,22 @@ namespace golias {
 
         const float scale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(size));
 
+        int ascent = 0;
+        int descent = 0;
+        int lineGap = 0;
+
+        stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
+
+        const int lineHeight = static_cast<int>(std::lround(static_cast<float>(ascent - descent + lineGap) * scale));
+
         constexpr size_t atlasPixelCount = static_cast<size_t>(kAtlasWidth) * static_cast<size_t>(kAtlasHeight);
 
         // Grayscale glyph atlas.
         std::vector<unsigned char> glyphAtlas(atlasPixelCount, 0);
 
         Ref<Font> font = std::make_shared<Font>();
-        font->mSize    = size;
+        font->mSize       = size;
+        font->mLineHeight = std::max(1, lineHeight);
 
         for (int index = 0; index < kCodepointCount; ++index) {
             const int codepoint = kFirstCodepoint + index;

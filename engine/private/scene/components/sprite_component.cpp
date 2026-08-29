@@ -8,46 +8,56 @@ namespace golias {
 
     bool SpriteComponent::LoadProperties(const Json& properties) {
 
-        const String texturePath = properties.value("texture", "");
 
-        if (!texturePath.empty()) {
-            mTexture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(texturePath.c_str());
+        if (properties.contains("texture") && properties["texture"].is_object()) {
+            const Json& textureJson = properties["texture"];
+            const String texturePath = textureJson.value("path", "");
+
+            if (!texturePath.empty()) {
+                mTexture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(texturePath.c_str());
+            }
+
+            if (textureJson.contains("visible")) {
+                mVisible = textureJson["visible"].get<bool>();
+            }
+
+            if (textureJson.contains("lower_left_uv")) {
+                const Json& lowerLeftUVJson = textureJson["lower_left_uv"];
+                const float x = lowerLeftUVJson.value("x", 0.0f);
+                const float y = lowerLeftUVJson.value("y", 0.0f);
+
+                mLowerLeftUV                = glm::vec2(x, y);
+            }
+
+            if (textureJson.contains("upper_right_uv")) {
+                const Json& upperRightUVJson = textureJson["upper_right_uv"];
+                const float x = upperRightUVJson.value("x", 1.0f);
+                const float y = upperRightUVJson.value("y", 1.0f);
+                
+                mUpperRightUV                = glm::vec2(x, y);
+            }
+
+            if (textureJson.contains("pivot")) {
+                
+                const Json& pivotJson = textureJson["pivot"];
+                const float x = pivotJson.value("x", 0.5f);
+                const float y = pivotJson.value("y", 0.5f);
+
+                mPivot                = glm::vec2(x, y);
+            }
+
+            if (textureJson.contains("size")) {
+                const Json& sizeJson = textureJson["size"];
+                const float x = sizeJson.value("x", 100.0f);
+                const float y = sizeJson.value("y", 100.0f);
+
+                mSize                = glm::vec2(x, y);
+            }
+
+            if (properties.contains("description") && properties["description"].is_object()) {
+            }
         }
 
-        if (properties.contains("color")) {
-            const Json& colorJson = properties["color"];
-            glm::vec4 color =
-                glm::vec4(colorJson.value("r", 1.0f), colorJson.value("g", 1.0f), colorJson.value("b", 1.0f), colorJson.value("a", 1.0f));
-            mColor = color;
-        }
-
-        if (properties.contains("visible")) {
-            mVisible = properties["visible"].get<bool>();
-        }
-
-        if (properties.contains("lower_left_uv")) {
-            const Json& lowerLeftUVJson = properties["lower_left_uv"];
-            glm::vec2 lowerLeftUV       = glm::vec2(lowerLeftUVJson.value("x", 0.0f), lowerLeftUVJson.value("y", 0.0f));
-            mLowerLeftUV                = lowerLeftUV;
-        }
-
-        if (properties.contains("upper_right_uv")) {
-            const Json& upperRightUVJson = properties["upper_right_uv"];
-            glm::vec2 upperRightUV       = glm::vec2(upperRightUVJson.value("x", 1.0f), upperRightUVJson.value("y", 1.0f));
-            mUpperRightUV                = upperRightUV;
-        }
-
-        if (properties.contains("pivot")) {
-            const Json& pivotJson = properties["pivot"];
-            glm::vec2 pivot       = glm::vec2(pivotJson.value("x", 0.5f), pivotJson.value("y", 0.5f));
-            mPivot                = pivot;
-        }
-
-        if (properties.contains("size")) {
-            const Json& sizeJson = properties["size"];
-            glm::vec2 size       = glm::vec2(sizeJson.value("x", 100.0f), sizeJson.value("y", 100.0f));
-            mSize                = size;
-        }
 
         return true;
     }

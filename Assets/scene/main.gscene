@@ -2275,9 +2275,9 @@
                         {
                             "type": "TextComponent",
                             "font": {
-                                "text": "Hello world!",
+                                "text": "Hello world!\nHow are you doing?\nThis is a multi-line text example.",
                                 "path": "fonts/arial.ttf",
-                                "size": 32,
+                                "size": 16,
                                 "pivot": {
                                     "x": 0.0,
                                     "y": 0.0
@@ -2310,10 +2310,12 @@
             "components": [
                 {
                     "type": "SpriteComponent",
-                    "path": "textures/brick.png",
-                    "size": {
-                        "x": 100,
-                        "y": 100
+                    "texture": {
+                        "path": "textures/brick.png",
+                        "size": {
+                            "x": 100,
+                            "y": 100
+                        }
                     }
                 }
             ]

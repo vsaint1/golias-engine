@@ -17,6 +17,18 @@ namespace golias {
         glm::mat4 Model    = glm::mat4(1.0f);
     };
 
+    struct CanvasBatch {
+        Texture* Texture    = nullptr;
+        uint32_t IndexCount = 0;
+    };
+
+    struct RenderCanvasCommand {
+        Mesh* Mesh                       = nullptr;
+        std::vector<CanvasBatch> Batches = {};
+        Viewport Viewport                = {0, 0, 800, 600};
+    };
+
+
     struct RenderCommand2D {
         Texture* Texture       = nullptr;
         glm::vec4 Color        = glm::vec4(1.0f);
@@ -37,6 +49,7 @@ namespace golias {
         int Type            = 0; // 0 = directional, 1 = point, 2 = spot
         bool IsShadowCaster = false;
     };
+
 
     struct CameraCommand {
         glm::mat4 View           = glm::mat4(1.0f);
@@ -67,6 +80,7 @@ namespace golias {
         void Submit(const RenderCommand& command);
         void Submit(const CameraCommand& command);
         void Submit(const LightCommand& command);
+        void Submit(const RenderCanvasCommand& command);
 
         void BeginFrame();
 
@@ -78,14 +92,16 @@ namespace golias {
     private:
         void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
 
-        std::vector<RenderCommand> mCommands       = {};
-        std::vector<CameraCommand> mCameraCommands = {};
-        std::vector<LightCommand> mLightCommands   = {};
-        std::vector<RenderCommand2D> mCommands2D   = {};
+        std::vector<RenderCommand> mCommands             = {};
+        std::vector<CameraCommand> mCameraCommands       = {};
+        std::vector<LightCommand> mLightCommands         = {};
+        std::vector<RenderCommand2D> mCommands2D         = {};
+        std::vector<RenderCanvasCommand> mCanvasCommands = {};
 
         GLuint mLightingBuffer = 0;
 
         Ref<Shader> mDefault2DShader = nullptr;
+        Ref<Shader> mDefaultUIShader = nullptr;
         Ref<Mesh> mQuadMesh          = nullptr;
 
         Ref<Framebuffer> mDefaultHdrFramebuffer = nullptr;
