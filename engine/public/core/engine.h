@@ -8,9 +8,7 @@
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "scene/scene.h"
-#include "stdafx.h"
-
-struct GLFWwindow;
+#include "core/window.h"
 
 namespace golias {
 
@@ -60,7 +58,7 @@ namespace golias {
 
         std::chrono::high_resolution_clock::time_point mLastTime;
 
-        GLFWwindow* mWindow = nullptr;
+        Window* mWindow = nullptr;
 
         InputManager mInputManager;
         GraphicsDevice mGraphicsDevice;

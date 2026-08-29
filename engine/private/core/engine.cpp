@@ -1,59 +1,10 @@
 #include "core/engine.h"
 
 #include "core/application.h"
-
-#define GLFW_INCLUDE_NONE
+#include "core/wsi/glfw_window.h"
 #include "scene/components/camera_component.h"
-#include <glfw/glfw3.h>
 
 namespace golias {
-
-    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        Engine& engine             = Engine::GetInstance();
-        InputManager& inputManager = engine.GetInputManager();
-
-        KeyCode keyCode = inputManager.TranslateKeyCode(key);
-
-        if (action == GLFW_PRESS) {
-            inputManager.SetKeyPressed(keyCode, true);
-        } else if (action == GLFW_RELEASE) {
-            inputManager.SetKeyPressed(keyCode, false);
-        } else if (action == GLFW_REPEAT) {
-            // TODO: Handle key repeat if needed
-        }
-    }
-
-    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-        Engine& engine             = Engine::GetInstance();
-        InputManager& inputManager = engine.GetInputManager();
-
-        MouseButton mouseButton = inputManager.TranslateMouseButton(button);
-
-        if (action == GLFW_PRESS) {
-            inputManager.SetMouseButtonPressed(mouseButton, true);
-        } else if (action == GLFW_RELEASE) {
-            inputManager.SetMouseButtonPressed(mouseButton, false);
-        }
-    }
-
-    static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-        Engine& engine             = Engine::GetInstance();
-        InputManager& inputManager = engine.GetInputManager();
-
-        inputManager.SetScrollOffset(static_cast<float>(xoffset), static_cast<float>(yoffset));
-    }
-
-    static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-
-        Engine::GetInstance().GetGraphicsDevice().SetViewport({0, 0, width, height});
-    }
-
-    static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-        Engine& engine             = Engine::GetInstance();
-        InputManager& inputManager = engine.GetInputManager();
-
-        inputManager.SetMousePosition(static_cast<float>(xpos), static_cast<float>(ypos));
-    }
 
     bool Engine::Initialize(int width, int height, const String& title) {
 
@@ -71,14 +22,12 @@ namespace golias {
         }
 
 
-        mWindow = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+        mWindow = new GlfwWindow(width, height, title.c_str());
+
         if (!mWindow) {
-            GOLIAS_LOG_ERROR("Failed to create GLFW window");
-            glfwTerminate();
+            GOLIAS_LOG_ERROR("Failed to create Window");
             return false;
         }
-
-        glfwMakeContextCurrent(mWindow);
 
         if (!mGraphicsDevice.Initialize()) {
             GOLIAS_LOG_ERROR("Failed to initialize GraphicsDevice");
@@ -102,19 +51,29 @@ namespace golias {
 
         mGraphicsDevice.SetViewport({0, 0, width, height});
 
-        glfwSetKeyCallback(mWindow, key_callback);
-        glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
-        glfwSetScrollCallback(mWindow, scroll_callback);
-        glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
-        glfwSetCursorPosCallback(mWindow, cursor_position_callback);
+        mWindow->OnKey = [this](KeyCode key, KeyAction action, int /*mods*/) {
+            if (action == KeyAction::Repeat) {
+                return;
+            }
 
-        glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            mInputManager.SetKeyPressed(key, action == KeyAction::Press);
+        };
 
-        
-        double mouseX = 0.0;
-        double mouseY = 0.0;
-        glfwGetCursorPos(mWindow, &mouseX, &mouseY);
-        mInputManager.SetMousePosition(static_cast<float>(mouseX), static_cast<float>(mouseY));
+        mWindow->OnMouseButton = [this](MouseButton button, bool pressed, int /*mods*/) {
+            mInputManager.SetMouseButtonPressed(button, pressed);
+        };
+
+        mWindow->OnCursorPos = [this](double xpos, double ypos) {
+            mInputManager.SetMousePosition(static_cast<float>(xpos), static_cast<float>(ypos));
+        };
+
+        mWindow->OnScroll = [this](double xoffset, double yoffset) {
+            mInputManager.SetScrollOffset(static_cast<float>(xoffset), static_cast<float>(yoffset));
+        };
+
+        mWindow->SetInputMode(InputMode::Disabled);
+
+        mInputManager.SetMousePosition(mInputManager.GetMousePosition());
         mInputManager.ResetTransientState();
 
         if (!mApplication->Initialize()) {
@@ -132,9 +91,9 @@ namespace golias {
 
         mLastTime = std::chrono::high_resolution_clock::now();
 
-        while (!mApplication->ShouldClose() && !glfwWindowShouldClose(mWindow)) {
+        while (!mApplication->ShouldClose() && !mWindow->ShouldClose()) {
 
-            glfwPollEvents();
+            mWindow->PollEvents();
 
 
             auto currentTime = std::chrono::high_resolution_clock::now();
@@ -150,25 +109,26 @@ namespace golias {
             mGraphicsDevice.SetClearColor();
             mGraphicsDevice.ClearBuffers();
 
-            const Viewport viewport = Engine::GetInstance().GetGraphicsDevice().GetViewport();
+            int width, height;
+            mWindow->GetDrawableSize(&width, &height);
 
             CameraCommand cameraCommand;
             if (GameObject* camera = Engine::GetInstance().GetScene()->GetMainCamera()) {
                 if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
 
-                    if (viewport.Width <= 0 || viewport.Height <= 0) {
+                    if (width <= 0 || height <= 0) {
                         continue;
                     }
 
-                    cameraComponent->SetAspectRatio(static_cast<float>(viewport.Width) / static_cast<float>(viewport.Height));
+                    cameraComponent->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
 
                     cameraCommand.View           = cameraComponent->GetViewMatrix();
                     cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
                     cameraCommand.CameraPosition = camera->GetWorldPosition();
-                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(viewport.Width, viewport.Height);
+                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(width, height);
                     cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
                     cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
-                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = viewport.Width, .Height = viewport.Height};
+                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
 
                     mCommandQueue.Submit(cameraCommand);
                 }
@@ -178,7 +138,7 @@ namespace golias {
             mCommandQueue.Execute();
             mCommandQueue.EndFrame();
 
-            glfwSwapBuffers(mWindow);
+            mWindow->SwapBuffers();
         }
     }
 
@@ -187,9 +147,7 @@ namespace golias {
         if (mApplication) {
             mApplication->Shutdown();
 
-            glfwDestroyWindow(mWindow);
-            glfwTerminate();
-
+            delete mWindow;
             mWindow = nullptr;
         }
 

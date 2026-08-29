@@ -6,8 +6,7 @@
 #include "graphics/texture_cube.h"
 #include "render/material.h"
 #include "render/mesh.h"
-#include <glad.h>
-#include <glfw/glfw3.h>
+
 
 namespace golias {
 
@@ -27,28 +26,6 @@ namespace golias {
 
     bool GraphicsDevice::Initialize() {
 
-#if defined(GOLIAS_PLATFORM_WINDOWS) || defined(GOLIAS_PLATFORM_LINUX) || defined(GOLIAS_PLATFORM_OSX)
-
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
-            return false;
-        }
-#else
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-
-        if (!gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress)) {
-            GOLIAS_LOG_ERROR("Failed to initialize GLAD");
-            return false;
-        }
-
-#endif
 
         glEnable(GL_DEPTH_TEST);
 

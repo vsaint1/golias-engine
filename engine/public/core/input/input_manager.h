@@ -20,9 +20,6 @@ namespace golias {
 
         int GetKeyCount() const;
 
-        KeyCode TranslateKeyCode(int key) const;
-
-
         void SetMouseButtonPressed(MouseButton button, bool pressed);
 
         bool IsMouseButtonPressed(MouseButton button) const;
@@ -33,9 +30,8 @@ namespace golias {
 
         bool IsMouseButtonJustReleased(MouseButton button) const;
 
-        MouseButton TranslateMouseButton(int button) const;
-
         void SetMousePosition(float x, float y);
+        void SetMousePosition(const glm::vec2& position);
 
         glm::vec2 GetMousePosition() const;
 

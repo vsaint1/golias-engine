@@ -161,6 +161,12 @@ enum class KeyCode : uint16_t {
     Count
 };
 
+enum class KeyAction : uint8_t {
+    Press,
+    Release,
+    Repeat,
+};
+
 enum class MouseButton : uint8_t {
     Left = 0,
     Right,
