@@ -214,6 +214,10 @@ namespace golias {
         return mIsAlive;
     }
 
+    const std::vector<std::unique_ptr<GameObject>>& GameObject::GetChildren() const {
+        return mChildren;
+    }
+
     glm::vec3 GameObject::GetPosition() const {
         return mPosition;
     }

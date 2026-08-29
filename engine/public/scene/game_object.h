@@ -77,6 +77,8 @@ namespace golias {
 
         Scene* GetCurrentScene() const;
 
+        const std::vector<std::unique_ptr<GameObject>>& GetChildren() const;
+
         template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
         T* GetComponent() {
 

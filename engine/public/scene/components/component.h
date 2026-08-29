@@ -11,7 +11,7 @@ namespace golias {
     public:
         virtual ~Component() = default;
 
-        virtual size_t GetTypeId() const = 0;
+        virtual size_t GetTypeId() const        = 0;
         virtual const char* GetTypeName() const = 0;
 
         virtual bool LoadProperties(const Json& properties);
@@ -60,24 +60,24 @@ namespace golias {
         static ComponentRegistry& GetInstance();
 
         template <typename T>
-        void RegisterComponent(const std::string_view pName) {
-            creators.emplace(pName.data(), std::make_unique<ComponentFactory<T>>());
-            parents[T::TypeId()].push_back(Component::StaticTypeId<Component>());
+        void RegisterComponent(CString name) {
+            mCreators.emplace(name.data(), std::make_unique<ComponentFactory<T>>());
+            mParents[T::TypeId()].push_back(Component::StaticTypeId<Component>());
         }
 
         template <typename T, typename ParentType>
-        void RegisterComponent(const std::string_view pName) {
-            creators.emplace(pName.data(), std::make_unique<ComponentFactory<T>>());
-            parents[T::TypeId()].push_back(Component::StaticTypeId<ParentType>());
+        void RegisterComponent(CString name) {
+            mCreators.emplace(name.data(), std::make_unique<ComponentFactory<T>>());
+            mParents[T::TypeId()].push_back(Component::StaticTypeId<ParentType>());
         }
 
-        Component* CreateComponent(const std::string_view pName) const;
+        Component* CreateComponent(CString name) const;
 
         bool HasParent(size_t objTypeId, size_t parentTypeId) const;
 
     private:
-        std::unordered_map<std::string, std::unique_ptr<ComponentFactoryBase>> creators;
-        std::unordered_map<size_t, std::vector<size_t>> parents;
+        std::unordered_map<std::string, std::unique_ptr<ComponentFactoryBase>> mCreators;
+        std::unordered_map<size_t, std::vector<size_t>> mParents;
     };
 
 
@@ -94,6 +94,18 @@ public:                                                                         
     }                                                                              \
     static void Register() {                                                       \
         ComponentRegistry::GetInstance().RegisterComponent<ClazzName>(#ClazzName); \
+    }
+
+#define COMPONENT_DERIVED(Clazz, ParentType)                                           \
+public:                                                                                \
+    static size_t TypeId() {                                                           \
+        return Component::StaticTypeId<Clazz>();                                       \
+    }                                                                                  \
+    size_t GetTypeId() const override {                                                \
+        return TypeId();                                                               \
+    }                                                                                  \
+    static void Register() {                                                           \
+        ComponentRegistry::GetInstance().RegisterComponent<Clazz, ParentType>(#Clazz); \
     }
 
 } // namespace golias

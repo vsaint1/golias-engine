@@ -24,9 +24,9 @@ namespace golias {
     }
 
 
-    Component* ComponentRegistry::CreateComponent(const std::string_view pName) const {
-        auto it = creators.find(pName.data());
-        if (it != creators.end()) {
+    Component* ComponentRegistry::CreateComponent(CString name) const {
+        auto it = mCreators.find(name.data());
+        if (it != mCreators.end()) {
             return it->second->Create();
         }
 
@@ -35,8 +35,8 @@ namespace golias {
 
     bool ComponentRegistry::HasParent(size_t objTypeId, size_t parentTypeId) const {
 
-        auto record = parents.find(objTypeId);
-        if (record == parents.end()) {
+        auto record = mParents.find(objTypeId);
+        if (record == mParents.end()) {
 
             return false;
         }
