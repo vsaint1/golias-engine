@@ -85,42 +85,44 @@ namespace golias {
         if (parameters.contains("float2")) {
             for (const auto& parameter : parameters["float2"]) {
                 const String name = parameter.value("name", "");
-                const Json& value = parameter["value"];
-                if (!value.is_array() || value.size() != 2) {
-                    GOLIAS_LOG_ERROR("Invalid float2 parameter value for name: %s", name.data());
-                    valid = false;
-                    continue;
-                }
+                const Json& value = parameter.value("value", Json::object());
+                const float r        = value.value("r", 1.0f);
+                const float g        = value.value("g", 1.0f);
 
-                SetParameter(name, glm::vec2(value[0].get<float>(), value[1].get<float>()));
+                glm::vec2 vecValue = glm::vec2(r, g);
+            
+                SetParameter(name, vecValue);
             }
         }
 
         if (parameters.contains("float3")) {
             for (const auto& parameter : parameters["float3"]) {
                 const String name = parameter.value("name", "");
-                const Json& value = parameter["value"];
-                if (!value.is_array() || value.size() != 3) {
-                    GOLIAS_LOG_ERROR("Invalid float3 parameter value for name: %s", name.data());
-                    valid = false;
-                    continue;
-                }
+                const Json& value = parameter.value("value", Json::object());
+                const float r        = value.value("r", 1.0f);
+                const float g        = value.value("g", 1.0f);
+                const float b        = value.value("b", 1.0f);
 
-                SetParameter(name, glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>()));
+                glm::vec3 vecValue = glm::vec3(r, g, b);
+            
+                SetParameter(name, vecValue);
             }
         }
 
         if (parameters.contains("float4")) {
             for (const auto& parameter : parameters["float4"]) {
                 const String name = parameter.value("name", "");
-                const Json& value = parameter["value"];
-                if (!value.is_array() || value.size() != 4) {
-                    GOLIAS_LOG_ERROR("Invalid float4 parameter value for name: %s", name.data());
-                    valid = false;
-                    continue;
-                }
+                const Json& value = parameter.value("value", Json::object());
+              
+                const float r        = value.value("r", 1.0f);
+                const float g        = value.value("g", 1.0f);
+                const float b        = value.value("b", 1.0f);
+                const float a        = value.value("a", 1.0f);
 
-                SetParameter(name, glm::vec4(value[0].get<float>(), value[1].get<float>(), value[2].get<float>(), value[3].get<float>()));
+                glm::vec4 vecValue = glm::vec4(r, g, b, a);
+            
+                SetParameter(name, vecValue);
+
             }
         }
 
