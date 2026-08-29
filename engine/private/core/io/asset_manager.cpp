@@ -1,5 +1,6 @@
 #include "core/io/asset_manager.h"
 
+#include "font/font.h"
 #include "graphics/texture_2d.h"
 #include "render/material.h"
 #include "render/mesh.h"
@@ -43,6 +44,25 @@ namespace golias {
         }
 
         return mesh;
+    }
+
+    Ref<Font> AssetManager::LoadFont(CString path, int size) {
+        if (path.empty() || size <= 0) {
+            GOLIAS_LOG_ERROR("Invalid font request. Path: '%s', size: %d", std::string(path).c_str(), size);
+            return nullptr;
+        }
+
+        FontFamily& family = mFonts[String(path)];
+        if (const auto it = family.find(size); it != family.end()) {
+            return it->second;
+        }
+
+        Ref<Font> font = Font::Load(path, size);
+        if (font) {
+            family.emplace(size, font);
+        }
+
+        return font;
     }
 
     Ref<Texture2D> AssetManager::AcquireWhiteTexture() {

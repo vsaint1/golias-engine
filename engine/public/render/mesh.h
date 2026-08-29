@@ -38,7 +38,7 @@ namespace golias {
 
         void Bind() const;
 
-        void Update(const std::vector<float>& vertices, const std::vector<uint32_t>& indices);
+        void Update(const std::vector<float>& vertices, const std::vector<uint32_t>& indices = {});
 
         void Unbind() const;
         

@@ -114,6 +114,23 @@ namespace golias {
         glBindVertexArray(mVAO);
     }
 
+    void Mesh::Update(const std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
+        mVertexCount = vertices.size() / (mVertexLayout.Stride / sizeof(float));
+        mIndexCount  = indices.size();
+
+        glBindVertexArray(mVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, mVBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+
+        if (mEBO && mIndexCount > 0) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_DYNAMIC_DRAW);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
     void Mesh::Unbind() const {
         glBindVertexArray(0);
     }
@@ -124,6 +141,14 @@ namespace golias {
         } else {
             glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount));
         }
+    }
+
+    void Mesh::DrawIndexed(uint32_t start, uint32_t count) const {
+        if (count == 0) {
+            return;
+        }
+
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(count), GL_UNSIGNED_INT, reinterpret_cast<void*>(start * sizeof(uint32_t)));
     }
 
     const AABB& Mesh::GetAABB() const {
