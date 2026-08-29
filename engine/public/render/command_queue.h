@@ -1,6 +1,6 @@
 #pragma once
-#include "graphics/graphics_device.h"
 #include "graphics/framebuffer.h"
+#include "graphics/graphics_device.h"
 #include "graphics/texture_2d_array.h"
 #include "math/frustum.h"
 #include "render/csm.h"
@@ -9,11 +9,22 @@ namespace golias {
 
     class Mesh;
     class Material;
+    class Texture2D;
 
     struct RenderCommand {
         Mesh* Mesh         = nullptr;
         Material* Material = nullptr;
         glm::mat4 Model    = glm::mat4(1.0f);
+    };
+
+    struct RenderCommand2D {
+        Texture* Texture       = nullptr;
+        glm::vec4 Color        = glm::vec4(1.0f);
+        glm::mat4 Model        = glm::mat4(1.0f);
+        glm::vec2 Size         = glm::vec2(100.0f);
+        glm::vec2 Pivot        = glm::vec2(0.5f);
+        glm::vec2 LowerLeftUV  = glm::vec2(0.0f);
+        glm::vec2 UpperRightUV = glm::vec2(1.0f);
     };
 
     struct LightCommand {
@@ -28,12 +39,16 @@ namespace golias {
     };
 
     struct CameraCommand {
-        glm::mat4 View       = glm::mat4(1.0f);
-        glm::mat4 Projection = glm::mat4(1.0f);
+        glm::mat4 View           = glm::mat4(1.0f);
+        glm::mat4 Projection     = glm::mat4(1.0f);
         glm::vec3 CameraPosition = glm::vec3(0.0f);
-        float NearPlane = 0.1f;
-        float FarPlane = 100.0f;
-        Viewport Viewport    = {0, 0, 800, 600};
+
+        /// @brief  Orthographic view matrix for the camera.
+        glm::mat4 Ortho = glm::mat4(1.0f);
+
+        float NearPlane               = 0.1f;
+        float FarPlane                = 100.0f;
+        Viewport Viewport             = {0, 0, 800, 600};
         CascadedShadowMapDesc Shadows = {};
         // RenderTarget* Target = nullptr; // nullptr = default backbuffer
         // uint32_t CullMask    = 0xFFFFFFFF; // which layers this camera renders
@@ -46,10 +61,11 @@ namespace golias {
         CommandQueue();
         ~CommandQueue();
 
+        bool Initialize();
+
+        void Submit(const RenderCommand2D& command);
         void Submit(const RenderCommand& command);
-
         void Submit(const CameraCommand& command);
-
         void Submit(const LightCommand& command);
 
         void BeginFrame();
@@ -64,16 +80,20 @@ namespace golias {
 
         std::vector<RenderCommand> mCommands       = {};
         std::vector<CameraCommand> mCameraCommands = {};
-        std::vector<LightCommand> mLightCommands = {};
-       
+        std::vector<LightCommand> mLightCommands   = {};
+        std::vector<RenderCommand2D> mCommands2D   = {};
+
         GLuint mLightingBuffer = 0;
 
+        Ref<Shader> mDefault2DShader = nullptr;
+        Ref<Mesh> mQuadMesh          = nullptr;
+
         Ref<Framebuffer> mDefaultHdrFramebuffer = nullptr;
-        Ref<Texture> mDefaultHdrTexture = nullptr;
+        Ref<Texture> mDefaultHdrTexture         = nullptr;
 
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
-        Ref<Texture2DArray> mShadowTexture = nullptr;
-        Ref<Shader> mShadowShader = nullptr;
+        Ref<Texture2DArray> mShadowTexture  = nullptr;
+        Ref<Shader> mShadowShader           = nullptr;
 
         CascadedShadowMap mShadowCsm;
         CascadedShadowMapDesc mShadowCsmDesc = {};

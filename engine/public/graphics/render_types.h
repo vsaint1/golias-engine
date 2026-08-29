@@ -18,17 +18,12 @@ namespace golias {
 
     // clang-format off
 
-    enum class BlendFactor : uint8_t {
-        Zero,
-        One,
-        SrcColor,
-        OneMinusSrcColor,
-        SrcAlpha,
-        OneMinusSrcAlpha,
-        DstColor,
-        OneMinusDstColor,
-        DstAlpha,
-        OneMinusDstAlpha
+
+    enum class BlendMode : uint8_t {
+        None,
+        Alpha,
+        Additive,
+        Multiply
     };
 
     enum class FrontFace { 
@@ -63,7 +58,7 @@ namespace golias {
         Stream
     };
 
-    struct BufferDesc{
+    struct BufferDesc {
         BufferTarget Target = BufferTarget::Vertex;
         BufferUsage Usage = BufferUsage::Static;
         size_t Size = 0;

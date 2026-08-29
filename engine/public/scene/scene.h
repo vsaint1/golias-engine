@@ -57,6 +57,8 @@ namespace golias {
 
         void PostUpdate(float deltaTime);
 
+        void PrintObjectTree(const GameObject* object, size_t depth) const;
+
         void LoadObject(const Json& objectData, GameObject* parent = nullptr);
 
     private:

@@ -43,3 +43,4 @@
 #include "scene/components/physics_component.h"
 #include "scene/components/audio_listener_component.h"
 #include "scene/components/audio_source_component.h"
+#include "scene/components/sprite_component.h"

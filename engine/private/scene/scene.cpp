@@ -8,6 +8,7 @@
 #include "scene/components/light_component.h"
 #include "scene/components/physics_component.h"
 #include "scene/components/player_controller_component.h"
+#include "scene/components/sprite_component.h"
 #include "scene/components/static_mesh_component.h"
 
 namespace golias {
@@ -22,6 +23,7 @@ namespace golias {
         LightComponent::Register();
         AudioSourceComponent::Register();
         AudioListenerComponent::Register();
+        SpriteComponent::Register();
     }
 
     Ref<Scene> Scene::Load(CString path) {
@@ -196,21 +198,25 @@ namespace golias {
         gameObject->Start();
     }
 
+
     void Scene::PrintTree() {
         GOLIAS_LOG_INFO("Scene: %s", mName.c_str());
 
-        for (const auto& obj : mObjects) {
-            GOLIAS_LOG_INFO("GameObject Name: %s ", obj->GetName().data());
-            for (const auto& component : obj->mComponents) {
-                GOLIAS_LOG_INFO("  Component: %s (TypeId: %zu)", component->GetTypeName(), component->GetTypeId());
-            }
+        for (const auto& object : mObjects) {
+            PrintObjectTree(object.get(), 0);
+        }
+    }
 
-            for (const auto& child : obj->mChildren) {
-                GOLIAS_LOG_INFO("  Child: %s", child->GetName().data());
-                for (const auto& childComponent : child->mComponents) {
-                    GOLIAS_LOG_INFO("    Component: %s (TypeId: %zu)", childComponent->GetTypeName(), childComponent->GetTypeId());
-                }
-            }
+    void Scene::PrintObjectTree(const GameObject* object, size_t depth) const {
+        const String indent(depth * 2, ' ');
+        GOLIAS_LOG_INFO("%sGameObject Name: %s", indent.c_str(), object->GetName().data());
+
+        for (const auto& component : object->mComponents) {
+            GOLIAS_LOG_INFO("%s  Component: %s (TypeId: %zu)", indent.c_str(), component->GetTypeName(), component->GetTypeId());
+        }
+
+        for (const auto& child : object->mChildren) {
+            PrintObjectTree(child.get(), depth + 1);
         }
     }
 

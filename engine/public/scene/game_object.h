@@ -42,12 +42,19 @@ namespace golias {
         glm::vec3 GetPosition() const;
         void SetPosition(const glm::vec3& position);
 
+        glm::vec2 GetPosition2D() const;
+        void SetPosition2D(const glm::vec2& position);
+
         glm::vec3 GetWorldPosition() const;
+        glm::vec2 GetWorldPosition2D() const;
         void SetWorldPosition(const glm::vec3& position);
 
         glm::quat GetRotation() const;
         void SetRotation(const glm::quat& rotation);
         void SetRotation(const glm::vec3& eulerAngles);
+
+        float GetRotation2D() const;
+        void SetRotation2D(float angle);
 
         glm::quat GetWorldRotation() const;
         void SetWorldRotation(const glm::quat& rotation);
@@ -57,8 +64,14 @@ namespace golias {
         glm::vec3 GetScale() const;
         void SetScale(const glm::vec3& scale);
 
+        glm::vec2 GetScale2D() const;
+        void SetScale2D(const glm::vec2& scale);
+
         glm::mat4 GetWorldTransform() const;
+        glm::mat4 GetWorldTransform2D() const;
+
         glm::mat4 GetLocalTransform() const;
+        glm::mat4 GetLocalTransform2D() const;
 
         glm::vec3 GetForward() const;
 

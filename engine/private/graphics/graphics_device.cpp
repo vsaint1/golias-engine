@@ -242,6 +242,27 @@ namespace golias {
         return buffer;
     }
 
+    void GraphicsDevice::SetBlendMode(BlendMode mode) {
+
+        switch (mode) {
+        case BlendMode::None:
+            glDisable(GL_BLEND);
+            break;
+        case BlendMode::Alpha:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        case BlendMode::Additive:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            break;
+        case BlendMode::Multiply:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+        }
+    }
+
     void GraphicsDevice::UpdateBuffer(uint32_t handle, BufferTarget target, const void* data, const size_t size, const size_t offset) {
 
         GLenum internalTarget = GL_ARRAY_BUFFER;

@@ -316,4 +316,61 @@ namespace golias {
         return nullptr;
     }
 
+    glm::vec2 GameObject::GetPosition2D() const {
+        return glm::vec2(mPosition.x, mPosition.y);
+    }
+
+    void GameObject::SetPosition2D(const glm::vec2& position) {
+        mPosition = glm::vec3(position.x, position.y, 0.0f);
+    }
+
+    glm::vec2 GameObject::GetWorldPosition2D() const {
+        const glm::vec4 hom = GetWorldTransform() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        return glm::vec2(glm::vec3(hom) / hom.w);
+    }
+
+    float GameObject::GetRotation2D() const {
+        return glm::eulerAngles(mRotation).z;
+    }
+
+    void GameObject::SetRotation2D(float angle) {
+        mRotation = glm::angleAxis(glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
+
+    glm::vec2 GameObject::GetScale2D() const {
+        return glm::vec2(mScale.x, mScale.y);
+    }
+
+    void GameObject::SetScale2D(const glm::vec2& scale) {
+        mScale = glm::vec3(scale.x, scale.y, 1.0f);
+    }
+
+    glm::mat4 GameObject::GetLocalTransform2D() const {
+        glm::mat4 mat = glm::mat4(1.0f);
+
+        const float rotation = GetRotation2D();
+
+        float c = glm::cos(rotation);
+        float s = glm::sin(rotation);
+
+        mat[0][0] = c;
+        mat[0][1] = -s;
+        mat[1][0] = s;
+        mat[1][1] = c;
+        mat[3][0] = mPosition.x;
+        mat[3][1] = mPosition.y;
+        mat[0][0] *= mScale.x;
+        mat[1][1] *= mScale.y;
+
+        return mat;
+    }
+
+    glm::mat4 GameObject::GetWorldTransform2D() const {
+
+        if (mParent) {
+            return mParent->GetWorldTransform2D() * GetLocalTransform2D();
+        } else {
+            return GetLocalTransform2D();
+        }
+    }
 } // namespace golias

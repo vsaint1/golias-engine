@@ -33,8 +33,11 @@ namespace golias {
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
         void SetDepthTestEnabled(bool enabled);
+
         void SetDepthWriteEnabled(bool enabled);
 
+        void SetBlendMode(BlendMode mode = BlendMode::None);
+        
         void ClearBuffers(ClearFlag flag = ClearFlag::Color | ClearFlag::Depth);
 
         void SetViewport(const Viewport& viewport);

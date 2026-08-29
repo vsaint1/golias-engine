@@ -8,15 +8,38 @@
 #include "scene/components/camera_component.h"
 
 namespace golias {
-    
+
     CommandQueue::CommandQueue() {
-       
     }
 
     CommandQueue::~CommandQueue() {
         if (mLightingBuffer) {
             Engine::GetInstance().GetGraphicsDevice().DestroyBuffer(mLightingBuffer);
         }
+    }
+
+    bool CommandQueue::Initialize() {
+
+        mQuadMesh = Mesh::CreateQuad();
+
+        mShadowShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/csm.gshader");
+
+        if (!mShadowShader) {
+            GOLIAS_LOG_ERROR("Failed to create shadow shader program");
+            return false;
+        }
+
+        mDefault2DShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default_2d.gshader");
+        if (!mDefault2DShader) {
+            GOLIAS_LOG_ERROR("Failed to create default 2D shader program");
+            return false;
+        }
+
+        return true;
+    }
+
+    void CommandQueue::Submit(const RenderCommand2D& command) {
+        mCommands2D.push_back(command);
     }
 
     void CommandQueue::Submit(const RenderCommand& command) {
@@ -115,6 +138,29 @@ namespace golias {
                 device.DrawMesh(command.Mesh);
                 device.UnbindMesh(command.Mesh);
             }
+
+
+            device.SetDepthTestEnabled(false);
+            device.SetBlendMode(BlendMode::Alpha);
+            mQuadMesh->Bind();
+
+            for (const auto& command : mCommands2D) {
+                mDefault2DShader->Bind();
+                mDefault2DShader->SetUniform("_ModelMatrix", command.Model);
+                mDefault2DShader->SetUniform("_ViewMatrix", glm::mat4(1.0f));
+                mDefault2DShader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
+                mDefault2DShader->SetUniform("_Pivot", command.Pivot);
+                mDefault2DShader->SetUniform("_Size", command.Size);
+                mDefault2DShader->SetUniform("_LowerLeftUV", command.LowerLeftUV);
+                mDefault2DShader->SetUniform("_UpperRightUV", command.UpperRightUV);
+                mDefault2DShader->SetUniform("_BaseColor", command.Color);
+                mDefault2DShader->SetTexture(TextureSlots::MainTexture, command.Texture);
+                mQuadMesh->Draw();
+            }
+
+            mQuadMesh->Unbind();
+            device.SetBlendMode(BlendMode::None);
+            device.SetDepthTestEnabled(true);
         }
     }
 
@@ -123,14 +169,6 @@ namespace golias {
 
         mShadowCsm.Prepare(mShadowCsmDesc);
         mShadowCsm.Build(cameraCommand.View, cameraCommand.Projection, light.Direction, cameraCommand.NearPlane, cameraCommand.FarPlane);
-
-        if (!mShadowShader) {
-            mShadowShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/csm.gshader");
-        }
-
-        if (!mShadowShader) {
-            return;
-        }
 
         TextureDesc desc;
         desc.Width  = mShadowCsmDesc.ShadowMapResolution;
