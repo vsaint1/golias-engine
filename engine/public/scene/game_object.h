@@ -82,8 +82,9 @@ namespace golias {
         template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
         T* GetComponent() {
 
+            size_t typeId = Component::StaticTypeId<T>();
             for (const auto& component : mComponents) {
-                if (component->GetTypeId() == Component::StaticTypeId<T>()) {
+                if (component->GetTypeId() == typeId || ComponentRegistry::GetInstance().HasParent(component->GetTypeId(), typeId)) {
                     return static_cast<T*>(component.get());
                 }
             }

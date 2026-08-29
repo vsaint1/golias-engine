@@ -104,6 +104,9 @@ public:                                                                         
     size_t GetTypeId() const override {                                                \
         return TypeId();                                                               \
     }                                                                                  \
+    const char* GetTypeName() const override {                                         \
+        return #Clazz;                                                                 \
+    }                                                                                  \
     static void Register() {                                                           \
         ComponentRegistry::GetInstance().RegisterComponent<Clazz, ParentType>(#Clazz); \
     }

@@ -35,6 +35,12 @@ namespace golias {
             return false;
         }
 
+        mDefaultUIShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default_ui.gshader");
+        if (!mDefaultUIShader) {
+            GOLIAS_LOG_ERROR("Failed to create default UI shader program");
+            return false;
+        }
+
         return true;
     }
 
@@ -48,6 +54,10 @@ namespace golias {
 
     void CommandQueue::Submit(const CameraCommand& command) {
         mCameraCommands.push_back(command);
+    }
+
+    void CommandQueue::Submit(const RenderCanvasCommand& command) {
+        mCanvasCommands.push_back(command);
     }
 
     void CommandQueue::Submit(const LightCommand& command) {
@@ -159,6 +169,30 @@ namespace golias {
             }
 
             mQuadMesh->Unbind();
+
+            for (const auto& command : mCanvasCommands) {
+                if (!command.Mesh || command.Batches.empty()) {
+                    continue;
+                }
+
+                command.Mesh->Bind();
+                mDefaultUIShader->Bind();
+                mDefaultUIShader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
+
+                uint32_t indexOffset = 0;
+                for (const CanvasBatch& batch : command.Batches) {
+
+                    if (batch.Texture && batch.IndexCount > 0) {
+                        mDefaultUIShader->SetTexture(TextureSlots::MainTexture, batch.Texture);
+                        command.Mesh->DrawIndexed(indexOffset, batch.IndexCount);
+                    }
+
+                    indexOffset += batch.IndexCount;
+                }
+
+                command.Mesh->Unbind();
+            }
+
             device.SetBlendMode(BlendMode::None);
             device.SetDepthTestEnabled(true);
         }
@@ -230,5 +264,6 @@ namespace golias {
         mCommands.clear();
         mCameraCommands.clear();
         mLightCommands.clear();
+        mCanvasCommands.clear();
     }
 } // namespace golias

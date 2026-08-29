@@ -44,6 +44,8 @@ namespace golias {
     }
 
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+
+        Engine::GetInstance().GetGraphicsDevice().SetViewport({0, 0, width, height});
     }
 
     static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -98,6 +100,8 @@ namespace golias {
             return false;
         }
 
+        mGraphicsDevice.SetViewport({0, 0, width, height});
+
         glfwSetKeyCallback(mWindow, key_callback);
         glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
         glfwSetScrollCallback(mWindow, scroll_callback);
@@ -106,6 +110,7 @@ namespace golias {
 
         glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+        
         double mouseX = 0.0;
         double mouseY = 0.0;
         glfwGetCursorPos(mWindow, &mouseX, &mouseY);
@@ -145,23 +150,25 @@ namespace golias {
             mGraphicsDevice.SetClearColor();
             mGraphicsDevice.ClearBuffers();
 
-
-            int fbWidth, fbHeight;
-            glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
+            const Viewport viewport = Engine::GetInstance().GetGraphicsDevice().GetViewport();
 
             CameraCommand cameraCommand;
             if (GameObject* camera = Engine::GetInstance().GetScene()->GetMainCamera()) {
                 if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
 
-                    cameraComponent->SetAspectRatio(static_cast<float>(fbWidth) / static_cast<float>(fbHeight));
+                    if (viewport.Width <= 0 || viewport.Height <= 0) {
+                        continue;
+                    }
+
+                    cameraComponent->SetAspectRatio(static_cast<float>(viewport.Width) / static_cast<float>(viewport.Height));
 
                     cameraCommand.View           = cameraComponent->GetViewMatrix();
                     cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
                     cameraCommand.CameraPosition = camera->GetWorldPosition();
-                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(fbWidth, fbHeight);
+                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(viewport.Width, viewport.Height);
                     cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
                     cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
-                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = fbWidth, .Height = fbHeight};
+                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = viewport.Width, .Height = viewport.Height};
 
                     mCommandQueue.Submit(cameraCommand);
                 }
