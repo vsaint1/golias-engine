@@ -68,7 +68,7 @@ namespace golias {
 
     void StaticMeshComponent::Update(float deltaTime) {
 
-        if (!mMaterial || !mMesh) {
+        if (!mMaterial || !mMesh || !mVisible) {
             return;
         }
 
@@ -95,4 +95,13 @@ namespace golias {
     void StaticMeshComponent::SetMaterial(const Ref<Material>& material) {
         mMaterial = material;
     }
+
+    bool StaticMeshComponent::IsVisible() const {
+        return mVisible;
+    }
+
+    void StaticMeshComponent::SetVisible(bool visible) {
+        mVisible = visible;
+    }
+
 } // namespace golias

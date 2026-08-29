@@ -3,6 +3,7 @@
 #include "bullet.h"
 
 Player::Player() {
+    mSphereMesh = Mesh::CreateSphere(0.2f);
 }
 
 void Player::Start() {
@@ -10,12 +11,13 @@ void Player::Start() {
     if (GameObject* gun = FindChildByName("Gun")) {
         mGunObject = gun;
 
-        if (GameObject* bullet = FindChildByName("bullet_33")) {
+        if (GameObject* bullet = gun->FindChildByName("bullet_33")) {
             bullet->SetActive(false);
+
         }
 
         // TODO: We should disable the Mesh not the GObject
-        if (GameObject* fire = FindChildByName("BOOM_35")) {
+        if (GameObject* fire = gun->FindChildByName("BOOM_35")) {
             // fire->SetActive(false);
         }
 
@@ -65,14 +67,14 @@ void Player::Update(float deltaTime) {
 
         mAudioSource->Play("gun_shoot");
 
-        Ref<Mesh> mesh    = Mesh::CreateSphere(0.2f);
+        Ref<Mesh> mesh    = mSphereMesh;
         Ref<Material> mat = Engine::GetInstance().GetAssetManager().Load<Material>("materials/suzanne.gmat");
 
         Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet");
 
         bullet->AddComponent(new StaticMeshComponent(mesh, mat));
 
-        if (GameObject* child = FindChildByName("BOOM_35")) {
+        if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
             const glm::vec3 direction      = GetRotation() * glm::vec3(-0.2f, 0.2f, 1.75f);
 

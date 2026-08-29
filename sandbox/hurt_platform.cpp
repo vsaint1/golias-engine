@@ -14,6 +14,7 @@ void HurtPlatform::Update(float deltaTime) {
 void HurtPlatform::OnCollisionEnter(const Collision& collision) {
 
 
+
     if (collision.Object->GetName() == "PlayerObject") {
         Player* player = Cast<Player>(collision.Object);
         
