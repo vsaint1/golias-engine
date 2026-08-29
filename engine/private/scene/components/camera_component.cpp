@@ -18,7 +18,7 @@ namespace golias {
     }
 
     glm::mat4 CameraComponent::GetProjectionMatrix() const {
-        
+
         return glm::perspectiveLH_ZO(glm::radians(mFOV), mAspectRatio, mNearPlane, mFarPlane);
     }
 
@@ -53,4 +53,13 @@ namespace golias {
     void CameraComponent::SetFarPlane(float farPlane) {
         mFarPlane = farPlane;
     }
+
+    glm::mat4 CameraComponent::GetOrthoMatrix(int width, int height) const {
+        float left   = 0.0f;
+        float right  = static_cast<float>(width);
+        float bottom = static_cast<float>(height);
+        float top    = 0.0f;
+        return glm::orthoLH_ZO(left, right, bottom, top, mNearPlane, mFarPlane);
+    }
+    
 } // namespace golias

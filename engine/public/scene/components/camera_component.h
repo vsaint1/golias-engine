@@ -17,6 +17,8 @@ namespace golias {
 
         glm::mat4 GetProjectionMatrix() const;
 
+        glm::mat4 GetOrthoMatrix(int width, int height) const;
+
         float GetFOV() const;
         void SetFOV(float fov);
 
