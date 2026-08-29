@@ -40,6 +40,7 @@ namespace golias {
         
         void ClearBuffers(ClearFlag flag = ClearFlag::Color | ClearFlag::Depth);
 
+        const Viewport& GetViewport() const;
         void SetViewport(const Viewport& viewport);
 
         void SetCullMode(CullMode mode = CullMode::None);
@@ -60,5 +61,6 @@ namespace golias {
 
     private:
         std::unordered_map<std::string, Ref<Shader>> mShaderCache = {};
+        Viewport mViewport = {};
     };
 } // namespace golias

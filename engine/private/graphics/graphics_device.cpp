@@ -285,7 +285,12 @@ namespace golias {
         glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     }
 
+    const Viewport& GraphicsDevice::GetViewport() const {
+        return mViewport;
+    }
+
     void GraphicsDevice::SetViewport(const Viewport& viewport) {
+        mViewport = viewport;
         glViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
     }
 
