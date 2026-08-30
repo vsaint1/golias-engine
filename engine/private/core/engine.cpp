@@ -82,13 +82,13 @@ namespace golias {
     }
 
     void Engine::Run() {
-        if (!mApplication) {
+        if (!mApplication || !mWindow) {
             return;
         }
 
         mLastTime = std::chrono::high_resolution_clock::now();
 
-        while (!mApplication->ShouldClose() && !mWindow->ShouldClose()) {
+        while (!mWindow->ShouldClose()) {
 
             mWindow->PollEvents();
 
@@ -152,6 +152,12 @@ namespace golias {
         mApplication.reset();
     }
 
+    void Engine::SetInputMode(InputMode mode) {
+        if (mWindow) {
+            mWindow->SetInputMode(mode);
+        }
+    }
+
     void Engine::SetApplication(Application* app) {
         mApplication.reset(app);
     }
@@ -169,8 +175,10 @@ namespace golias {
         mScene = scene;
     }
 
-    Application* Engine::GetApplication() const {
-        return mApplication.get();
+    void Engine::Quit() {
+        if (mWindow) {
+            mWindow->Close();
+        }
     }
 
     InputManager& Engine::GetInputManager() {

@@ -30,7 +30,9 @@ namespace golias {
         Scene* GetScene() const;
         void SetScene(const Ref<Scene>& scene);
 
-        Application* GetApplication() const;
+        void SetInputMode(InputMode mode);
+
+        void Quit();
 
         InputManager& GetInputManager();
 
