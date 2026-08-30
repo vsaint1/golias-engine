@@ -501,8 +501,6 @@ namespace golias {
         glfwSetScrollCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::scroll_callback);
         glfwSetCursorPosCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::cursor_position_callback);
 
-        glfwSetInputMode(static_cast<GLFWwindow*>(mWindow), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
         glfwSetCursorPos(static_cast<GLFWwindow*>(mWindow), mWidth / 2.0, mHeight / 2.0);
 
         GOLIAS_LOG_INFO("Created window with size %dx%d", mWidth, mHeight);

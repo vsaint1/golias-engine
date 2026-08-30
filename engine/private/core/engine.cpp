@@ -73,9 +73,6 @@ namespace golias {
 
         mWindow->SetInputMode(InputMode::Disabled);
 
-        mInputManager.SetMousePosition(mInputManager.GetMousePosition());
-        mInputManager.ResetTransientState();
-
         if (!mApplication->Initialize()) {
             GOLIAS_LOG_ERROR("Failed to initialize the application");
             return false;

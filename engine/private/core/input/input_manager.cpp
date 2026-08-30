@@ -81,12 +81,22 @@ namespace golias {
 
     void InputManager::SetMousePosition(float x, float y) {
         const glm::vec2 position{x, y};
-        mMouseDelta += position - mMousePosition;
+        if (!mHasMouseBaseline) {
+            mHasMouseBaseline = true;
+        } else {
+            mMouseDelta += position - mMousePosition;
+        }
+
         mMousePosition = position;
     }
 
     void InputManager::SetMousePosition(const glm::vec2& position) {
-        mMouseDelta += position - mMousePosition;
+        if (!mHasMouseBaseline) {
+            mHasMouseBaseline = true;
+        } else {
+            mMouseDelta += position - mMousePosition;
+        }
+        
         mMousePosition = position;
     }
 

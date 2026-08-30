@@ -63,6 +63,8 @@ namespace golias {
         glm::vec2 mMouseDelta    = glm::vec2(0.0f, 0.0f);
         glm::vec2 mScrollOffset  = glm::vec2(0.0f, 0.0f);
 
+        bool mHasMouseBaseline = false;
+        
         friend class Engine;
     };
 } // namespace golias
