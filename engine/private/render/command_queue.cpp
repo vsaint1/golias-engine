@@ -2,6 +2,7 @@
 
 #include "core/engine.h"
 #include "graphics/shader.h"
+#include "graphics/texture_2d.h"
 #include "render/csm.h"
 #include "render/material.h"
 #include "render/mesh.h"
@@ -182,8 +183,9 @@ namespace golias {
                 uint32_t indexOffset = 0;
                 for (const CanvasBatch& batch : command.Batches) {
 
-                    if (batch.Texture && batch.IndexCount > 0) {
-                        mDefaultUIShader->SetTexture(TextureSlots::MainTexture, batch.Texture);
+                    if (batch.IndexCount > 0) {
+                        Ref<Texture2D> whiteTex = Engine::GetInstance().GetAssetManager().AcquireWhiteTexture();
+                        mDefaultUIShader->SetTexture(TextureSlots::MainTexture, batch.Texture ? batch.Texture : whiteTex.get());
                         command.Mesh->DrawIndexed(indexOffset, batch.IndexCount);
                     }
 

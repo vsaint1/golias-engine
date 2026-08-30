@@ -126,6 +126,10 @@ namespace golias {
 
     void GameObject::Update(float deltaTime) {
 
+        if (!mIsActive) {
+            return;
+        }
+
         for (const auto& component : mComponents) {
             component->Update(deltaTime);
         }
