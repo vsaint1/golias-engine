@@ -2276,7 +2276,7 @@
                         {
                             "type": "SpriteComponent",
                             "texture": {
-                                "path": "textures/Screenshot_3.png",
+                                "path": "textures/checker.png",
                                 "size": {
                                     "x": 150,
                                     "y": 150
