@@ -2052,14 +2052,14 @@
                                     "name": "gun_shoot",
                                     "path": "audios/FirstPersonTemplateWeaponFire.OGG",
                                     "looping": false,
-                                    "play_on_awake": false,
+                                    "play_on_start": false,
                                     "volume": 0.1
                                 },
                                 {
                                     "name": "music_bg",
                                     "path": "audios/the_entertainer.ogg",
                                     "looping": true,
-                                    "play_on_awake": true,
+                                    "play_on_start": true,
                                     "volume": 0.3
                                 }
                             ]
@@ -2262,7 +2262,7 @@
                 {
                     "name": "BrickSprite",
                     "position": {
-                        "x": 150,
+                        "x": 200,
                         "y": 500,
                         "z": 0.0
                     },
@@ -2276,10 +2276,10 @@
                         {
                             "type": "SpriteComponent",
                             "texture": {
-                                "path": "textures/brick.png",
+                                "path": "textures/Screenshot_3.png",
                                 "size": {
-                                    "x": 100,
-                                    "y": 100
+                                    "x": 150,
+                                    "y": 150
                                 }
                             }
                         }
@@ -2292,7 +2292,18 @@
             "components": [
                 {
                     "type": "CanvasComponent",
-                    "is_active": false
+                    "active": false
+                },
+                {
+                    "type": "RectTransformComponent",
+                    "anchor": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    }
                 }
             ],
             "children": [
@@ -2327,14 +2338,25 @@
                 {
                     "name": "PlayButton",
                     "position": {
-                        "x": 400,
-                        "y": 260,
+                        "x": 0,
+                        "y": 0,
                         "z": 0
                     },
                     "components": [
                         {
-                            "type": "ButtonComponent",
-                            "rect": {
+                            "type": "ButtonComponent"
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
                                 "x": 200,
                                 "y": 50
                             }
@@ -2344,8 +2366,8 @@
                 {
                     "name": "PlayButtonText",
                     "position": {
-                        "x": 400,
-                        "y": 260,
+                        "x": 0,
+                        "y": 0,
                         "z": 0
                     },
                     "components": [
@@ -2355,10 +2377,6 @@
                                 "text": "Play",
                                 "path": "fonts/arial.ttf",
                                 "size": 24,
-                                "pivot": {
-                                    "x": 0.5,
-                                    "y": 0.5
-                                },
                                 "color": {
                                     "r": 0.0,
                                     "g": 0.0,
@@ -2366,20 +2384,42 @@
                                     "a": 1.0
                                 }
                             }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            }
                         }
                     ]
                 },
                 {
                     "name": "QuitButton",
                     "position": {
-                        "x": 400,
-                        "y": 340,
+                        "x": 0,
+                        "y": 80,
                         "z": 0
                     },
                     "components": [
                         {
-                            "type": "ButtonComponent",
-                            "rect": {
+                            "type": "ButtonComponent"
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
                                 "x": 200,
                                 "y": 50
                             }
@@ -2389,8 +2429,8 @@
                 {
                     "name": "QuitButtonText",
                     "position": {
-                        "x": 400,
-                        "y": 340,
+                        "x": 0,
+                        "y": 80,
                         "z": 0
                     },
                     "components": [
@@ -2400,16 +2440,130 @@
                                 "text": "Quit",
                                 "path": "fonts/arial.ttf",
                                 "size": 24,
-                                "pivot": {
-                                    "x": 0.5,
-                                    "y": 0.5
-                                },
                                 "color": {
                                     "r": 0.0,
                                     "g": 0.0,
                                     "b": 0.0,
                                     "a": 1.0
                                 }
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "VsyncCheckBox",
+                    "position": {
+                        "x": -70,
+                        "y": 140,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "CheckBoxComponent",
+                            "checked": false,
+                            "color": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
+                                "x": 24,
+                                "y": 24
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "VsyncLabel",
+                    "position": {
+                        "x": -30,
+                        "y": 140,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "TextComponent",
+                            "font": {
+                                "text": "Vsync",
+                                "path": "fonts/arial.ttf",
+                                "size": 18,
+                                "color": {
+                                    "r": 1.0,
+                                    "g": 1.0,
+                                    "b": 1.0,
+                                    "a": 1.0
+                                }
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "MenuBanner",
+                    "position": {
+                        "x": 0,
+                        "y": -90,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "ImageComponent",
+                            "texture": {
+                                "path": "textures/checker.png"
+                            },
+                            "color": {
+                                "r": 1.0,
+                                "g": 1.0,
+                                "b": 1.0,
+                                "a": 1.0
+                            }
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
+                                "x": 160,
+                                "y": 40
                             }
                         }
                     ]
