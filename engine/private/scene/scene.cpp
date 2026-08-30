@@ -12,6 +12,7 @@
 #include "scene/components/static_mesh_component.h"
 #include "scene/components/widget/canvas_component.h"
 #include "scene/components/widget/text_component.h"
+#include "scene/components/widget/button_component.h"
 
 namespace golias {
 
@@ -32,6 +33,7 @@ namespace golias {
 #pragma region WidgetComponents
         CanvasComponent::Register();
         TextComponent::Register();
+        ButtonComponent::Register();
 #pragma endregion
     }
 

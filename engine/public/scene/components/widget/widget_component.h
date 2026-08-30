@@ -16,6 +16,16 @@ namespace golias {
 
         virtual void Render(CanvasComponent* canvas);
 
+        virtual bool HitTest(const glm::vec2& point);
+
+        virtual void OnPointerEnter();
+        virtual void OnPointerExit();
+
+        virtual void OnPointerUp();
+        virtual void OnPointerDown();
+
+        virtual void OnClick();
+
     protected:
         glm::vec2 mPivot = glm::vec2(0.5f);
     };

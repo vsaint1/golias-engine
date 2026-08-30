@@ -1,8 +1,8 @@
 #include "game.h"
 
+#include "hurt_platform.h"
 #include "player.h"
 #include "test_obj.h"
-#include "hurt_platform.h"
 
 void GameApplication::RegisterTypes() {
 
@@ -19,21 +19,24 @@ bool GameApplication::Initialize() {
 
     Engine::GetInstance().SetScene(scene);
 
+    mRoot   = scene->FindGameObjectByName("Main");
+    mCanvas = scene->FindGameObjectByName("Canvas");
 
-    // GameObject* redLight  = mScene->CreateGameObject("Red Light");
-    // LightComponent* lightComp = new LightComponent();
-    // lightComp->SetType(LightType::Point);
-    // lightComp->SetRange(20.0f);
-    // lightComp->SetColor(glm::vec3(1.0f, 0.0f, 0.0f));
-    // redLight->AddComponent(lightComp);
-    // redLight->SetPosition(glm::vec3(0.0f, 2.0f, 0.0f));
+    if (GameObject* playbutton = mCanvas->FindChildByName("PlayButton")) {
+        ButtonComponent* button = playbutton->GetComponent<ButtonComponent>();
+        button->onClick         = [this]() {
+            if (mRoot && !mRoot->IsActive()) {
+                mRoot->SetActive(true);
+                mCanvas->GetComponent<CanvasComponent>()->SetActive(false);
+                Engine::GetInstance().SetInputMode(InputMode::Disabled);
+            }
+        };
+    }
 
-    // GameObject* greenLight = mScene->CreateGameObject("Green Light");
-    // LightComponent* greenLightComp = new LightComponent();
-    // greenLightComp->SetType(LightType::Point);
-    // greenLightComp->SetColor(glm::vec3(0.0f, 1.0f, 0.0f));
-    // greenLight->AddComponent(greenLightComp);
-    // greenLight->SetPosition(glm::vec3(2.0f, 2.0f, 0.0f));
+    if (GameObject* exitbutton = mCanvas->FindChildByName("QuitButton")) {
+        ButtonComponent* button = exitbutton->GetComponent<ButtonComponent>();
+        button->onClick         = [this]() { Engine::GetInstance().Quit(); };
+    }
 
 
     return true;
@@ -45,7 +48,12 @@ void GameApplication::Update(float deltaTime) {
     InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
     if (inputManager.IsKeyPressed(KeyCode::Escape)) {
-        GOLIAS_LOG_INFO("Escape key pressed. Closing the application.");
+
+        if (mRoot && mRoot->IsActive()) {
+            mRoot->SetActive(false);
+            Engine::GetInstance().SetInputMode(InputMode::Cursor);
+            mCanvas->GetComponent<CanvasComponent>()->SetActive(true);
+        }
     }
 
     Engine::GetInstance().GetScene()->Update(deltaTime);

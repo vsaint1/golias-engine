@@ -10,5 +10,25 @@ namespace golias {
     void WidgetComponent::Render(CanvasComponent* canvas) {
     }
 
+    bool WidgetComponent::HitTest(const glm::vec2& point) {
+
+        return false;
+    }
+
+    void WidgetComponent::OnPointerEnter() {
+    }
+
+    void WidgetComponent::OnPointerExit() {
+    }
+
+    void WidgetComponent::OnPointerUp() {
+    }
+
+    void WidgetComponent::OnPointerDown() {
+    }
+
+    void WidgetComponent::OnClick() {
+    }
+
 
 } // namespace golias

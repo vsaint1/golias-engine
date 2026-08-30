@@ -15,15 +15,20 @@ namespace golias {
         CanvasComponent()  = default;
         ~CanvasComponent() = default;
 
+        
         void Begin();
-
+        
         void End();
-
+        
+        bool LoadProperties(const Json& properties);
+        
         void Start() override;
 
         void Update(float deltaTime) override;
 
         void Render(WidgetComponent* widget);
+
+        void DrawQuad(const glm::vec2& lowerLeft, const glm::vec2& upperRight, const glm::vec4& color);
 
         void DrawQuad(const glm::vec2& lowerLeft,
                       const glm::vec2& upperRight,
@@ -32,15 +37,27 @@ namespace golias {
                       Texture* texture,
                       const glm::vec4& color);
 
+
+        bool IsActive() const;
+        void SetActive(bool active);
+
+        void Collect(WidgetComponent* widget, std::vector<WidgetComponent*>& out);
+
     private:
         void UpdateBatches(Texture* texture);
 
+        void ProcessInput();
     private:
         Ref<Mesh> mMesh = nullptr;
 
         std::vector<CanvasBatch> mBatches;
         std::vector<float> mVertices;
         std::vector<uint32_t> mIndices;
+
+        bool mActive = true;
+
+        WidgetComponent* mHovered = nullptr;
+        WidgetComponent* mPressed = nullptr;
     };
 
 } // namespace golias

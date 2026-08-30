@@ -44,3 +44,6 @@
 #include "scene/components/audio_listener_component.h"
 #include "scene/components/audio_source_component.h"
 #include "scene/components/sprite_component.h"
+#include "scene/components/widget/button_component.h"
+#include "scene/components/widget/text_component.h"
+#include "scene/components/widget/canvas_component.h"
