@@ -26,7 +26,6 @@ namespace golias {
 
         virtual void OnClick();
 
-    protected:
-        glm::vec2 mPivot = glm::vec2(0.5f);
+  
     };
 } // namespace golias

@@ -74,6 +74,18 @@ namespace golias {
         }
     }
 
+    void Audio::Pause() {
+        if (mSound) {
+            ma_sound_stop(mSound.get());
+        }
+    }
+
+    void Audio::Resume() {
+        if (mSound) {
+            ma_sound_start(mSound.get());
+        }
+    }
+
     void Audio::Stop() {
         if (mSound) {
             ma_sound_stop(mSound.get());

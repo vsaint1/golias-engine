@@ -178,7 +178,23 @@ namespace golias {
     }
 
     void GameObject::SetActive(bool active) {
+        if (mIsActive == active) {
+            return;
+        }
+
         mIsActive = active;
+
+        for (const auto& component : mComponents) {
+            if (active) {
+                component->OnEnable();
+            } else {
+                component->OnDisable();
+            }
+        }
+
+        for (const auto& child : mChildren) {
+            child->SetActive(active);
+        }
     }
 
     void GameObject::SetName(CString name) {

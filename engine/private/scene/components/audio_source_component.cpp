@@ -13,7 +13,7 @@ namespace golias {
 
                 String name      = audioProp.value("name", "UnamedAudio");
                 String path      = audioProp.value("path", "");
-                bool playOnAwake = audioProp.value("play_on_awake", false);
+                bool playOnAwake = audioProp.value("play_on_start", false);
 
                 Ref<Audio> audio = Audio::Load(path);
 
@@ -42,6 +42,28 @@ namespace golias {
         }
     }
 
+    void AudioSourceComponent::OnEnable() {
+        for (const auto& name : mPausedAudios) {
+            auto it = mAudios.find(name);
+            if (it != mAudios.end()) {
+                it->second->Resume();
+            }
+        }
+
+        mPausedAudios.clear();
+    }
+
+    void AudioSourceComponent::OnDisable() {
+        mPausedAudios.clear();
+
+        for (const auto& [name, audio] : mAudios) {
+            if (audio->IsPlaying()) {
+                audio->Pause();
+                mPausedAudios.push_back(name);
+            }
+        }
+    }
+
     void AudioSourceComponent::RegisterAudio(CString name, const Ref<Audio>& audio) {
         mAudios[name.data()] = audio;
     }
@@ -52,6 +74,26 @@ namespace golias {
                 audio->Play(loop);
                 return;
             }
+        }
+
+        GOLIAS_LOG_ERROR("Audio with name '%s' not found.", name.data());
+    }
+
+    void AudioSourceComponent::Pause(CString name) {
+        auto it = mAudios.find(name.data());
+        if (it != mAudios.end()) {
+            it->second->Pause();
+            return;
+        }
+
+        GOLIAS_LOG_ERROR("Audio with name '%s' not found.", name.data());
+    }
+
+    void AudioSourceComponent::Resume(CString name) {
+        auto it = mAudios.find(name.data());
+        if (it != mAudios.end()) {
+            it->second->Resume();
+            return;
         }
 
         GOLIAS_LOG_ERROR("Audio with name '%s' not found.", name.data());

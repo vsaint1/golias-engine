@@ -15,6 +15,8 @@ namespace golias {
         static Ref<Audio> Load(CString path);
         
         void Play(bool loop = false);
+        void Pause();
+        void Resume();
         void Stop();
 
         float GetVolume() const;
