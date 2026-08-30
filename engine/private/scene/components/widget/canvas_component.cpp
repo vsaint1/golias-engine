@@ -10,7 +10,7 @@
 namespace golias {
 
     bool CanvasComponent::LoadProperties(const Json& properties) {
-        mActive = properties.value("is_active", false);
+        mActive = properties.value("active", false);
 
         return true;
     }
@@ -18,8 +18,8 @@ namespace golias {
     void CanvasComponent::Start() {
         VertexLayout layout;
         layout.Elements.push_back({0, 2, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 2, GL_FLOAT, 2 * sizeof(float)});
-        layout.Elements.push_back({2, 4, GL_FLOAT, 4 * sizeof(float)});
+        layout.Elements.push_back({1, 4, GL_FLOAT, 4 * sizeof(float)});
+        layout.Elements.push_back({2, 2, GL_FLOAT, 2 * sizeof(float)});
         layout.Stride = 8 * sizeof(float);
 
         const std::vector<float> initialVertices(4 * 8, 0.0f);

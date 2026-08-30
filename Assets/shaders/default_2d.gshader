@@ -1,5 +1,6 @@
 @vertex
 layout(location = 0) in vec2 aPos;
+layout(location = 2) in vec2 aTexCoord;
 
 uniform mat4 _ModelMatrix;
 uniform mat4 _ViewMatrix;
@@ -16,7 +17,7 @@ out vec2 vUV;
 void main() {
 
     vec2 local = (aPos - _Pivot) * _Size;
-    vUV = mix(_LowerLeftUV, _UpperRightUV, aPos);
+    vUV = mix(_LowerLeftUV, _UpperRightUV, aTexCoord);
 
     gl_Position = _ProjectionMatrix * _ViewMatrix * _ModelMatrix * vec4(local, 0.0, 1.0);
 }
