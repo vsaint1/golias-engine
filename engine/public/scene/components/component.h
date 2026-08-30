@@ -20,6 +20,10 @@ namespace golias {
 
         virtual void Update(float deltaTime) = 0;
 
+        virtual void OnEnable();
+
+        virtual void OnDisable();
+
         GameObject* GetOwner() const;
 
         template <typename T>

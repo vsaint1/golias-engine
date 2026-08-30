@@ -4,6 +4,7 @@
 #include "graphics/texture.h"
 #include "graphics/vertex_layout.h"
 #include "render/mesh.h"
+#include "scene/components/widget/rect_transform_component.h"
 #include "scene/components/widget/widget_component.h"
 #include "scene/game_object.h"
 
@@ -130,6 +131,12 @@ namespace golias {
 
         if (!mActive) {
             return;
+        }
+
+        if (RectTransformComponent* rt = GetOwner()->GetComponent<RectTransformComponent>()) {
+            const GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+            const Viewport& viewport     = device.GetViewport();
+            rt->SetSize(glm::vec2(static_cast<float>(viewport.Width), static_cast<float>(viewport.Height)));
         }
 
         ProcessInput();

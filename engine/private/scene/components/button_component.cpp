@@ -1,21 +1,13 @@
 #include "scene/components/widget/button_component.h"
 
 #include "scene/components/widget/canvas_component.h"
+#include "scene/components/widget/rect_transform_component.h"
 #include "scene/game_object.h"
 
 namespace golias {
 
 
     bool ButtonComponent::LoadProperties(const Json& properties) {
-        if (properties.contains("rect")) {
-            const Json& rectObj = properties["rect"];
-
-            glm::vec2 rectSize;
-            rectSize.x = rectObj.value("x", 0.0f);
-            rectSize.y = rectObj.value("y", 0.0f);
-
-            SetRect(rectSize);
-        }
 
         if (properties.contains("color")) {
             const Json& colorObj = properties["color"];
@@ -41,22 +33,34 @@ namespace golias {
             return;
         }
 
-        glm::vec2 pos = GetOwner()->GetWorldPosition2D();
-        pos.x -= mRect.x * mPivot.x;
-        pos.y -= mRect.y * mPivot.y;
 
-        canvas->DrawQuad(pos, pos + mRect, *mCurrentColor);
+        RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
+        if (!rectTransform) {
+            return;
+        }
+
+
+        glm::vec2 pos = rectTransform->GetScreenPosition();
+        pos -= rectTransform->GetPivot() * rectTransform->GetSize();
+
+        canvas->DrawQuad(pos, pos + rectTransform->GetSize(), *mCurrentColor);
     }
 
     bool ButtonComponent::HitTest(const glm::vec2& point) {
-        glm::vec2 pos = GetOwner()->GetWorldPosition2D();
 
-        float x1 = pos.x - mRect.x * mPivot.x;
-        float y1 = pos.y - mRect.y * mPivot.y;
-        float x2 = x1 + mRect.x;
-        float y2 = y1 + mRect.y;
 
-        return (point.x >= x1 && point.x <= x2 && point.y >= y1 && point.y <= y2);
+        RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
+        if (!rectTransform) {
+            return false;
+        }
+
+
+        glm::vec2 pos = rectTransform->GetScreenPosition();
+        glm::vec2 p1  = pos - rectTransform->GetPivot() * rectTransform->GetSize();
+        glm::vec2 p2  = p1 + rectTransform->GetSize();
+
+
+        return (point.x >= p1.x && point.x <= p2.x && point.y >= p1.y && point.y <= p2.y);
     }
 
 
@@ -81,14 +85,6 @@ namespace golias {
         if (onClick) {
             onClick();
         }
-    }
-
-    glm::vec2 ButtonComponent::GetRect() const {
-        return mRect;
-    }
-
-    void ButtonComponent::SetRect(const glm::vec2& rect) {
-        mRect = rect;
     }
 
     glm::vec4 ButtonComponent::GetColor() const {

@@ -26,17 +26,12 @@ namespace golias {
 
         void OnClick() override;
 
-        glm::vec2 GetRect() const;
-        void SetRect(const glm::vec2& rect);
-
         glm::vec4 GetColor() const;
         void SetColor(const glm::vec4& color);
         
         std::function<void()> onClick;
 
     private:
-        glm::vec2 mRect = glm::vec2(50.f, 20.0f);
-
         glm::vec4 mColor = glm::vec4(1.0f);
 
         glm::vec4 mHoveredColor  = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
