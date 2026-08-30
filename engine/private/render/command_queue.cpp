@@ -265,5 +265,6 @@ namespace golias {
         mCameraCommands.clear();
         mLightCommands.clear();
         mCanvasCommands.clear();
+        mCommands2D.clear();
     }
 } // namespace golias
