@@ -25,6 +25,7 @@ private:
     int mMaxHealth = 100;
     
     Ref<Mesh> mSphereMesh = nullptr;
+    Ref<Material> mSphereMaterial = nullptr;
 
     AnimationComponent* mGunAnimation            = nullptr;
     PlayerControllerComponent* mPlayerController = nullptr;

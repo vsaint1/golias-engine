@@ -33,6 +33,8 @@ void Player::Start() {
     if (AudioSourceComponent* audioSource = GetComponent<AudioSourceComponent>()) {
         mAudioSource = audioSource;
     }
+
+    mSphereMaterial = Engine::GetInstance().GetAssetManager().Load<Material>("materials/suzanne.gmat");
 }
 
 int Player::GetHealth() const {
@@ -67,12 +69,10 @@ void Player::Update(float deltaTime) {
 
         mAudioSource->Play("gun_shoot");
 
-        Ref<Mesh> mesh    = mSphereMesh;
-        Ref<Material> mat = Engine::GetInstance().GetAssetManager().Load<Material>("materials/suzanne.gmat");
 
         Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet");
 
-        bullet->AddComponent(new StaticMeshComponent(mesh, mat));
+        bullet->AddComponent(new StaticMeshComponent(mSphereMesh, mSphereMaterial));
 
         if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
