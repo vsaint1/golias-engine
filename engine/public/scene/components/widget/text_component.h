@@ -6,6 +6,7 @@ namespace golias {
 
     class Font;
 
+    
     class TextComponent : public WidgetComponent {
         COMPONENT_DERIVED(TextComponent, WidgetComponent)
     public:
@@ -31,7 +32,6 @@ namespace golias {
         void SetFontSize(int size);
 
         glm::vec2 GetPivot() const;
-        void SetPivot(const glm::vec2& pivot);
 
     private:
         String mText;

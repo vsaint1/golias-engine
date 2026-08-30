@@ -9,6 +9,12 @@ namespace golias {
     void Component::Start() {
     }
 
+    void Component::OnEnable() {
+    }
+
+    void Component::OnDisable() {
+    }
+
     bool Component::LoadProperties(const Json& properties) {
         return true;
     }

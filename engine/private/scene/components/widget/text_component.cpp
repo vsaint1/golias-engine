@@ -3,6 +3,7 @@
 #include "core/engine.h"
 #include "font/font.h"
 #include "scene/components/widget/canvas_component.h"
+#include "scene/components/widget/rect_transform_component.h"
 
 namespace golias {
 
@@ -36,14 +37,8 @@ namespace golias {
                 SetColor(color);
             }
 
-            // TODO: We need handle pivot for text alignment and positioning.
-            if (fontObj.contains("pivot")) {
-                const Json& pivot  = fontObj["pivot"];
-                const float x      = pivot.value("x", 0.0f);
-                const float y      = pivot.value("y", 0.0f);
-                
-                SetPivot(glm::vec2(x, y));
-            }
+            // // TODO: We need handle pivot for text alignment and positioning.
+
         }
 
 
@@ -58,13 +53,19 @@ namespace golias {
             return;
         }
 
+        RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
+        if (!rectTransform) {
+            return;
+        }
+
         const TextureDesc& texDesc = mFont->GetTexture()->GetDesc();
         const float invWidth       = 1.0f / static_cast<float>(texDesc.Width);
         const float invHeight      = 1.0f / static_cast<float>(texDesc.Height);
 
+
         const glm::vec2 origin    = GetPivot();
         const float lineHeight    = static_cast<float>(mFont->GetLineHeight());
-        const float baseBaselineY = origin.y + static_cast<float>(mFont->GetSize());
+        const float baseBaselineY = origin.y + static_cast<float>(mFont->GetAscent());
 
         float cursorX   = origin.x;
         float baselineY = baseBaselineY;
@@ -108,7 +109,9 @@ namespace golias {
 
     glm::vec2 TextComponent::GetPivot() const {
 
-        glm::vec2 pos = GetOwner()->GetWorldPosition2D();
+        RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
+
+        glm::vec2 pos = rectTransform ? rectTransform->GetScreenPosition() : GetOwner()->GetWorldPosition2D();
 
         const float lineHeight = static_cast<float>(mFont->GetLineHeight());
 
@@ -151,16 +154,12 @@ namespace golias {
         rect.y = std::max(rect.y, lineMaxHeight);
         rect.y += static_cast<float>(lineCount - 1) * lineHeight;
 
-        pos.x -= std::round(rect.x * mPivot.x);
-        pos.y -= std::round(rect.y * mPivot.y);
+        if (rectTransform) {
+            pos -= rect * rectTransform->GetPivot();
+        }
 
         return pos;
     }
-
-    void TextComponent::SetPivot(const glm::vec2& pivot) {
-        mPivot = pivot;
-    }
-
 
     const String& TextComponent::GetText() const {
         return mText;

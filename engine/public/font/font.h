@@ -26,6 +26,8 @@ namespace golias {
 
         int GetSize() const;
 
+        int GetAscent() const;
+
         int GetLineHeight() const;
 
         const GlyphDesc& GetGlyphDescription(char c) const;
@@ -35,8 +37,9 @@ namespace golias {
         const Ref<Texture> GetTexture() const;
 
     private:
-        int mSize              = 0;
-        int mLineHeight        = 0;
+        int mSize       = 0;
+        int mAscent     = 0;
+        int mLineHeight = 0;
         GlyphDesc mGlyphs[128] = {};
 
         Ref<Texture> mTexture = nullptr;

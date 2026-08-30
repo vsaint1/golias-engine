@@ -25,6 +25,10 @@ namespace golias {
         return mSize;
     }
 
+    int Font::GetAscent() const {
+        return mAscent;
+    }
+
     int Font::GetLineHeight() const {
         return mLineHeight;
     }
@@ -90,6 +94,7 @@ namespace golias {
 
         Ref<Font> font = std::make_shared<Font>();
         font->mSize       = size;
+        font->mAscent     = std::max(1, static_cast<int>(std::lround(static_cast<float>(ascent) * scale)));
         font->mLineHeight = std::max(1, lineHeight);
 
         for (int index = 0; index < kCodepointCount; ++index) {
