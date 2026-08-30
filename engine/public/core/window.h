@@ -21,6 +21,8 @@ namespace golias {
 
         virtual bool ShouldClose() const = 0;
 
+        virtual void Close() = 0;
+
         virtual const String& GetTitle() const = 0;
         virtual void SetTitle(CString title)   = 0;
 

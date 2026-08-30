@@ -12,6 +12,7 @@ namespace golias {
 
         void PollEvents() override;
         bool ShouldClose() const override;
+        void Close() override;
 
         const String& GetTitle() const override;
         void SetTitle(CString title) override;

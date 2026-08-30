@@ -377,10 +377,10 @@ namespace {
         }
     }
 
-    int TranslateInputMode(golias::InputMode mode) {
+    int translate_input_mode(golias::InputMode mode) {
         switch (mode) {
         case golias::InputMode::Cursor:
-            return GLFW_CURSOR;
+            return GLFW_CURSOR_NORMAL;
         case golias::InputMode::Disabled:
             return GLFW_CURSOR_DISABLED;
         default:
@@ -529,6 +529,12 @@ namespace golias {
         return mWindow && glfwWindowShouldClose(static_cast<GLFWwindow*>(mWindow));
     }
 
+    void GlfwWindow::Close() {
+        if (mWindow) {
+            glfwSetWindowShouldClose(static_cast<GLFWwindow*>(mWindow), GLFW_TRUE);
+        }
+    }
+
     const String& GlfwWindow::GetTitle() const {
         return mTitle;
     }
@@ -594,7 +600,7 @@ namespace golias {
     void GlfwWindow::SetInputMode(InputMode mode) {
         mInputMode = mode;
         if (mWindow) {
-            glfwSetInputMode(static_cast<GLFWwindow*>(mWindow), GLFW_CURSOR, TranslateInputMode(mode));
+            glfwSetInputMode(static_cast<GLFWwindow*>(mWindow), GLFW_CURSOR, translate_input_mode(mode));
         }
     }
 
