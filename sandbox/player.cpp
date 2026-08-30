@@ -13,7 +13,6 @@ void Player::Start() {
 
         if (GameObject* bullet = gun->FindChildByName("bullet_33")) {
             bullet->SetActive(false);
-
         }
 
         // TODO: We should disable the Mesh not the GObject
@@ -70,7 +69,7 @@ void Player::Update(float deltaTime) {
         mAudioSource->Play("gun_shoot");
 
 
-        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet");
+        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet", GetParent());
 
         bullet->AddComponent(new StaticMeshComponent(mSphereMesh, mSphereMaterial));
 
