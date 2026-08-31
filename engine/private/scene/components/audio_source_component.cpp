@@ -13,7 +13,7 @@ namespace golias {
 
                 String name      = audioProp.value("name", "UnamedAudio");
                 String path      = audioProp.value("path", "");
-                bool playOnAwake = audioProp.value("play_on_start", false);
+                bool playOnStart = audioProp.value("play_on_start", false);
 
                 Ref<Audio> audio = Audio::Load(path);
 
@@ -22,8 +22,8 @@ namespace golias {
                     audio->SetVolume(volume);
                     RegisterAudio(name, audio);
 
-                    if (playOnAwake) {
-                        audio->Play();
+                    if (playOnStart) {
+                        mDeferredAudios.push_back(name);
                     }
 
                 } else {
@@ -33,6 +33,12 @@ namespace golias {
         }
 
         return true;
+    }
+
+    void AudioSourceComponent::Start() {
+        if (const GameObject* owner = GetOwner(); owner && owner->IsActive()) {
+            PlayDeferredAudios();
+        }
     }
 
     void AudioSourceComponent::Update(float deltaTime) {
@@ -51,6 +57,19 @@ namespace golias {
         }
 
         mPausedAudios.clear();
+
+        PlayDeferredAudios();
+    }
+
+    void AudioSourceComponent::PlayDeferredAudios() {
+        for (const auto& name : mDeferredAudios) {
+            auto it = mAudios.find(name);
+            if (it != mAudios.end() && !it->second->IsPlaying()) {
+                it->second->Play();
+            }
+        }
+
+        mDeferredAudios.clear();
     }
 
     void AudioSourceComponent::OnDisable() {

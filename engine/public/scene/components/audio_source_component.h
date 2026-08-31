@@ -14,6 +14,8 @@ namespace golias {
 
         bool LoadProperties(const Json& properties) override;
 
+        void Start() override;
+
         void Update(float deltaTime) override;
 
         void OnEnable() override;
@@ -33,9 +35,13 @@ namespace golias {
         void SetVolume(CString name, float volume);
 
     private:
+        void PlayDeferredAudios();
+
         std::unordered_map<String, Ref<Audio>> mAudios;
 
         std::vector<String> mPausedAudios;
+
+        std::vector<String> mDeferredAudios;
     };
 
 } // namespace golias
