@@ -37,10 +37,6 @@ namespace golias {
                       Texture* texture,
                       const glm::vec4& color);
 
-
-        bool IsActive() const;
-        void SetActive(bool active);
-
         void Collect(WidgetComponent* widget, std::vector<WidgetComponent*>& out);
 
     private:
@@ -53,8 +49,6 @@ namespace golias {
         std::vector<CanvasBatch> mBatches;
         std::vector<float> mVertices;
         std::vector<uint32_t> mIndices;
-
-        bool mActive = true;
 
         WidgetComponent* mHovered = nullptr;
         WidgetComponent* mPressed = nullptr;

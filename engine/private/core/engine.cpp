@@ -71,8 +71,6 @@ namespace golias {
             mInputManager.SetScrollOffset(static_cast<float>(xoffset), static_cast<float>(yoffset));
         };
 
-        mWindow->SetInputMode(InputMode::Disabled);
-
         if (!mApplication->Initialize()) {
             GOLIAS_LOG_ERROR("Failed to initialize the application");
             return false;

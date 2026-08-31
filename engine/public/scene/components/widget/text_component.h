@@ -33,7 +33,11 @@ namespace golias {
 
         glm::vec2 GetPivot() const;
 
+        glm::vec2 GetDesiredSize() const override;
+
     private:
+        glm::vec2 Measure() const;
+
         String mText;
         String mFontPath;
 

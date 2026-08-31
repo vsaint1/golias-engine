@@ -18,6 +18,8 @@ namespace golias {
 
         virtual bool HitTest(const glm::vec2& point);
 
+        virtual glm::vec2 GetDesiredSize() const;
+
         virtual void OnPointerEnter();
         virtual void OnPointerExit();
 

@@ -68,10 +68,10 @@ namespace golias {
             return GetOwner()->GetPosition2D();
         }
 
-        RectTransformComponent* rect = parent->GetComponent<RectTransformComponent>();
-        glm::vec2 parentAnchor       = rect->GetScreenPosition() + (rect->GetAnchorPoint() - rect->GetPivot()) * rect->GetSize();
+        RectTransformComponent* parentRect = parent->GetComponent<RectTransformComponent>();
+        const glm::vec2 parentTopLeft      = parentRect->GetScreenPosition() - parentRect->GetPivot() * parentRect->GetSize();
 
-        return parentAnchor + GetOwner()->GetPosition2D();
+        return parentTopLeft + mAnchorPoint * parentRect->GetSize() + GetOwner()->GetPosition2D();
     }
 
 } // namespace golias

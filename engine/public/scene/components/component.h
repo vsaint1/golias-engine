@@ -26,6 +26,9 @@ namespace golias {
 
         GameObject* GetOwner() const;
 
+        bool IsEnabled() const;
+        void SetEnabled(bool enabled);
+        
         template <typename T>
         static size_t StaticTypeId() {
             static size_t typeId = sNextComponentID++;
@@ -36,11 +39,14 @@ namespace golias {
         Component() = default;
 
         friend class GameObject;
+        
+        bool mIsEnabled = true;
 
     private:
         static size_t sNextComponentID;
 
         GameObject* mOwner = nullptr;
+
     };
 
     class ComponentFactoryBase {

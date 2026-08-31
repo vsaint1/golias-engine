@@ -113,6 +113,24 @@ namespace golias {
 
         glm::vec2 pos = rectTransform ? rectTransform->GetScreenPosition() : GetOwner()->GetWorldPosition2D();
 
+        const glm::vec2 rect = Measure();
+
+        if (rectTransform) {
+            pos -= rect * rectTransform->GetPivot();
+        }
+
+        return pos;
+    }
+
+    glm::vec2 TextComponent::GetDesiredSize() const {
+        return Measure();
+    }
+
+    glm::vec2 TextComponent::Measure() const {
+        if (!mFont) {
+            return glm::vec2(0.0f);
+        }
+
         const float lineHeight = static_cast<float>(mFont->GetLineHeight());
 
         glm::vec2 rect(0.0f);
@@ -154,11 +172,7 @@ namespace golias {
         rect.y = std::max(rect.y, lineMaxHeight);
         rect.y += static_cast<float>(lineCount - 1) * lineHeight;
 
-        if (rectTransform) {
-            pos -= rect * rectTransform->GetPivot();
-        }
-
-        return pos;
+        return rect;
     }
 
     const String& TextComponent::GetText() const {

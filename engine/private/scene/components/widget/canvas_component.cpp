@@ -11,7 +11,6 @@
 namespace golias {
 
     bool CanvasComponent::LoadProperties(const Json& properties) {
-        mActive = properties.value("active", false);
 
         return true;
     }
@@ -120,6 +119,10 @@ namespace golias {
         out.push_back(widget);
 
         for (const auto& child : widget->GetOwner()->GetChildren()) {
+            if (!child->IsActive()) {
+                continue;
+            }
+
             if (auto* childWidget = child->GetComponent<WidgetComponent>()) {
                 Collect(childWidget, out);
             }
@@ -128,10 +131,6 @@ namespace golias {
 
     void CanvasComponent::Update(float deltaTime) {
         UNUSED_PARAMETER(deltaTime);
-
-        if (!mActive) {
-            return;
-        }
 
         if (RectTransformComponent* rt = GetOwner()->GetComponent<RectTransformComponent>()) {
             const GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
@@ -143,8 +142,13 @@ namespace golias {
 
         Begin();
 
-        if (GetOwner()) {
-            for (const auto& child : GetOwner()->GetChildren()) {
+        if (const GameObject* owner = GetOwner()) {
+            for (const auto& child : owner->GetChildren()) {
+
+                if (!child->IsActive()) {
+                    continue;
+                }
+
                 if (auto* widget = child->GetComponent<WidgetComponent>()) {
                     Render(widget);
                 }
@@ -215,14 +219,6 @@ namespace golias {
         } else {
             mBatches.back().IndexCount += 6;
         }
-    }
-
-    bool CanvasComponent::IsActive() const {
-        return mActive;
-    }
-
-    void CanvasComponent::SetActive(bool active) {
-        mActive = active;
     }
 
 } // namespace golias
