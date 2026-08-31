@@ -13,6 +13,7 @@ namespace golias {
     } // namespace
 
     bool CheckBoxComponent::LoadProperties(const Json& properties) {
+        Component::LoadProperties(properties);
 
         if (properties.contains("color")) {
             const Json& colorObj = properties["color"];
@@ -41,6 +42,7 @@ namespace golias {
             mCheckMark = Engine::GetInstance().GetAssetManager().Load<Texture2D>(kDefaultCheckMarkPath);
         }
 
+
         return true;
     }
 
@@ -61,6 +63,10 @@ namespace golias {
         const glm::vec2 size      = rectTransform->GetSize();
         const glm::vec2 lowerLeft = screenPos - rectTransform->GetPivot() * size;
 
+        if (!mIsEnabled) {
+            mCurrentColor = &mDisabledColor;
+        }
+
         canvas->DrawQuad(lowerLeft, lowerLeft + size, glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f), nullptr, *mCurrentColor);
 
         if (mChecked && mCheckMark) {
@@ -78,6 +84,10 @@ namespace golias {
     }
 
     bool CheckBoxComponent::HitTest(const glm::vec2& point) {
+
+        if (!mIsEnabled) {
+            return false;
+        }
 
         RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
         if (!rectTransform) {

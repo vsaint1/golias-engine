@@ -16,6 +16,12 @@ namespace golias {
     }
 
     bool Component::LoadProperties(const Json& properties) {
+
+        if (properties.contains("enabled")) {
+            const bool enabled = properties.value("enabled", true);
+            SetEnabled(enabled);
+        }
+
         return true;
     }
 

@@ -41,6 +41,7 @@ namespace golias {
 
         glm::vec4 mColor  = glm::vec4(1.0f);
         glm::vec4 mHoveredColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        glm::vec4 mDisabledColor = glm::vec4(0.35f, 0.35f, 0.35f, 1.0f);
         glm::vec4 mPressedColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 
         glm::vec4* mCurrentColor = &mColor;

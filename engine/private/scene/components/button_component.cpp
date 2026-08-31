@@ -8,6 +8,7 @@ namespace golias {
 
 
     bool ButtonComponent::LoadProperties(const Json& properties) {
+        Component::LoadProperties(properties);
 
         if (properties.contains("color")) {
             const Json& colorObj = properties["color"];
@@ -21,6 +22,7 @@ namespace golias {
             SetColor(color);
         }
 
+        
         return true;
     }
 
@@ -43,11 +45,18 @@ namespace golias {
         glm::vec2 pos = rectTransform->GetScreenPosition();
         pos -= rectTransform->GetPivot() * rectTransform->GetSize();
 
+        if (!mIsEnabled) {
+            mCurrentColor = &mDisabledColor;
+        }
+
         canvas->DrawQuad(pos, pos + rectTransform->GetSize(), *mCurrentColor);
     }
 
     bool ButtonComponent::HitTest(const glm::vec2& point) {
 
+        if(!mIsEnabled){
+            return false;
+        }
 
         RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
         if (!rectTransform) {
