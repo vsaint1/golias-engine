@@ -37,6 +37,7 @@ namespace golias {
         bool IsAlive() const;
 
         bool IsActive() const;
+        bool IsActiveSelf() const;
         void SetActive(bool active);
 
         glm::vec3 GetPosition() const;
@@ -113,6 +114,8 @@ namespace golias {
         friend class Scene;
 
     private:
+        void RecomputeActiveState();
+
         String mName;
 
         GameObject* mParent = nullptr;
@@ -123,8 +126,9 @@ namespace golias {
 
         std::vector<std::unique_ptr<Component>> mComponents = {};
 
-        bool mIsAlive  = true;
-        bool mIsActive = true;
+        bool mIsAlive           = true;
+        bool mIsActiveSelf      = true;
+        bool mActiveInHierarchy = true;
 
         glm::vec3 mPosition = glm::vec3(0.0f);
         glm::quat mRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);

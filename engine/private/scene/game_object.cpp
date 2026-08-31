@@ -126,18 +126,23 @@ namespace golias {
 
     void GameObject::Update(float deltaTime) {
 
-        if (!mIsActive) {
+        if (!mActiveInHierarchy) {
             return;
         }
 
         for (const auto& component : mComponents) {
+
+            if (!component->IsEnabled()) {
+                continue;
+            }
+
             component->Update(deltaTime);
         }
 
         for (auto it = mChildren.begin(); it != mChildren.end();) {
             GameObject* child = it->get();
 
-            if (child->IsAlive() && child->IsActive()) {
+            if (child->IsAlive()) {
 
                 child->Update(deltaTime);
                 ++it;
@@ -174,18 +179,39 @@ namespace golias {
     }
 
     bool GameObject::IsActive() const {
-        return mIsActive;
+        return mActiveInHierarchy;
+    }
+
+    bool GameObject::IsActiveSelf() const {
+        return mIsActiveSelf;
     }
 
     void GameObject::SetActive(bool active) {
-        if (mIsActive == active) {
+        if (mIsActiveSelf == active) {
             return;
         }
 
-        mIsActive = active;
+        mIsActiveSelf = active;
+        RecomputeActiveState();
+    }
+
+    void GameObject::RecomputeActiveState() {
+        const bool parentActive = mParent ? mParent->mActiveInHierarchy : true;
+        const bool newActive    = mIsActiveSelf && parentActive;
+
+        if (mActiveInHierarchy == newActive) {
+            return;
+        }
+
+        mActiveInHierarchy = newActive;
 
         for (const auto& component : mComponents) {
-            if (active) {
+
+            if (!component->IsEnabled()) {
+                continue;
+            }
+
+            if (mActiveInHierarchy) {
                 component->OnEnable();
             } else {
                 component->OnDisable();
@@ -193,7 +219,7 @@ namespace golias {
         }
 
         for (const auto& child : mChildren) {
-            child->SetActive(active);
+            child->RecomputeActiveState();
         }
     }
 
@@ -211,6 +237,7 @@ namespace golias {
 
     void GameObject::SetParent(GameObject* parent) {
         mParent = parent;
+        RecomputeActiveState();
     }
 
     GameObject* GameObject::GetParent() const {

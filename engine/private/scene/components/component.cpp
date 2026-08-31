@@ -19,6 +19,32 @@ namespace golias {
         return true;
     }
 
+    bool Component::IsEnabled() const {
+        return mIsEnabled;
+    }
+
+    void Component::SetEnabled(bool enabled) {
+        if (mIsEnabled == enabled) {
+            return;
+        }
+
+        mIsEnabled = enabled;
+
+        const GameObject* owner = GetOwner();
+        if (!owner) {
+            return;
+        }
+
+        if (!owner->IsActive()) {
+            return;
+        }
+
+        if (mIsEnabled) {
+            OnEnable();
+        } else {
+            OnDisable();
+        }
+    }
 
     GameObject* Component::GetOwner() const {
         return mOwner;

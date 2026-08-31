@@ -13,6 +13,7 @@
 #include "scene/components/widget/button_component.h"
 #include "scene/components/widget/canvas_component.h"
 #include "scene/components/widget/check_box_component.h"
+#include "scene/components/widget/box_layout_component.h"
 #include "scene/components/widget/image_component.h"
 #include "scene/components/widget/rect_transform_component.h"
 #include "scene/components/widget/text_component.h"
@@ -40,6 +41,7 @@ namespace golias {
         ButtonComponent::Register();
         ImageComponent::Register();
         CheckBoxComponent::Register();
+        BoxLayoutComponent::Register();
 #pragma endregion
     }
 
@@ -178,6 +180,11 @@ namespace golias {
             gameObject->SetScale(scl);
         }
 
+        if(objectData.contains("active")) {
+            bool active = objectData["active"].get<bool>();
+            gameObject->SetActive(active);
+        }
+
         gameObject->LoadProperties(objectData);
 
         if (objectData.contains("components") && objectData["components"].is_array()) {
@@ -281,6 +288,7 @@ namespace golias {
                                    GameObject* new_parent) {
             dest.push_back(std::move(*it));
             obj->mParent = new_parent;
+            obj->RecomputeActiveState();
             source.erase(it);
         };
 
@@ -305,6 +313,7 @@ namespace golias {
             }
 
             mObjects.emplace_back(object);
+            object->RecomputeActiveState();
             return true;
         }
 
@@ -321,6 +330,7 @@ namespace golias {
 
             parent->mChildren.emplace_back(object);
             object->mParent = parent;
+            object->RecomputeActiveState();
             return true;
         }
 
