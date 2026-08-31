@@ -4,6 +4,7 @@
     "objects": [
         {
             "name": "Main",
+            "active": false,
             "children": [
                 {
                     "name": "Ground",
@@ -2291,8 +2292,7 @@
             "name": "Canvas",
             "components": [
                 {
-                    "type": "CanvasComponent",
-                    "active": false
+                    "type": "CanvasComponent"
                 },
                 {
                     "type": "RectTransformComponent",
@@ -2310,8 +2310,8 @@
                 {
                     "name": "HelloWorld",
                     "position": {
-                        "x": 24,
-                        "y": 24,
+                        "x": 250,
+                        "y": 250,
                         "z": 0
                     },
                     "components": [
@@ -2322,8 +2322,8 @@
                                 "path": "fonts/arial.ttf",
                                 "size": 16,
                                 "pivot": {
-                                    "x": 0.0,
-                                    "y": 0.0
+                                    "x": 0.5,
+                                    "y": 0.5
                                 },
                                 "color": {
                                     "r": 1.0,
@@ -2332,19 +2332,6 @@
                                     "a": 1.0
                                 }
                             }
-                        }
-                    ]
-                },
-                {
-                    "name": "PlayButton",
-                    "position": {
-                        "x": 0,
-                        "y": 0,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "ButtonComponent"
                         },
                         {
                             "type": "RectTransformComponent",
@@ -2355,216 +2342,333 @@
                             "pivot": {
                                 "x": 0.5,
                                 "y": 0.5
-                            },
-                            "size": {
-                                "x": 200,
-                                "y": 50
                             }
                         }
                     ]
                 },
                 {
-                    "name": "PlayButtonText",
-                    "position": {
-                        "x": 0,
-                        "y": 0,
-                        "z": 0
-                    },
+                    "name": "MenuColumn",
                     "components": [
                         {
-                            "type": "TextComponent",
-                            "font": {
-                                "text": "Play",
-                                "path": "fonts/arial.ttf",
-                                "size": 24,
-                                "color": {
-                                    "r": 0.0,
-                                    "g": 0.0,
-                                    "b": 0.0,
-                                    "a": 1.0
+                            "type": "BoxLayoutComponent",
+                            "direction": "vertical",
+                            "spacing": 14,
+                            "padding": {
+                                "left": 10,
+                                "top": 10,
+                                "right": 10,
+                                "bottom": 10
+                            },
+                            "alignment": "center"
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.5,
+                                "y": 0.3
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
+                                "x": 220,
+                                "y": 240
+                            }
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "MenuBanner",
+                            "components": [
+                                {
+                                    "type": "ImageComponent",
+                                    "texture": {
+                                        "path": "textures/checker.png"
+                                    },
+                                    "color": {
+                                        "r": 1.0,
+                                        "g": 1.0,
+                                        "b": 1.0,
+                                        "a": 1.0
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 300,
+                                        "y": 200
+                                    }
                                 }
-                            }
+                            ]
                         },
                         {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "QuitButton",
-                    "position": {
-                        "x": 0,
-                        "y": 80,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "ButtonComponent"
-                        },
-                        {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "size": {
-                                "x": 200,
-                                "y": 50
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "QuitButtonText",
-                    "position": {
-                        "x": 0,
-                        "y": 80,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "TextComponent",
-                            "font": {
-                                "text": "Quit",
-                                "path": "fonts/arial.ttf",
-                                "size": 24,
-                                "color": {
-                                    "r": 0.0,
-                                    "g": 0.0,
-                                    "b": 0.0,
-                                    "a": 1.0
+                            "name": "PlayButton",
+                            "components": [
+                                {
+                                    "type": "ButtonComponent"
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 50
+                                    }
                                 }
-                            }
-                        },
-                        {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "VsyncCheckBox",
-                    "position": {
-                        "x": -70,
-                        "y": 140,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "CheckBoxComponent",
-                            "checked": false,
-                            "color": {
-                                "r": 1.0,
-                                "g": 1.0,
-                                "b": 1.0,
-                                "a": 1.0
-                            }
-                        },
-                        {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "size": {
-                                "x": 24,
-                                "y": 24
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "VsyncLabel",
-                    "position": {
-                        "x": -30,
-                        "y": 140,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "TextComponent",
-                            "font": {
-                                "text": "Vsync",
-                                "path": "fonts/arial.ttf",
-                                "size": 18,
-                                "color": {
-                                    "r": 1.0,
-                                    "g": 1.0,
-                                    "b": 1.0,
-                                    "a": 1.0
+                            ],
+                            "children": [
+                                {
+                                    "name": "PlayButtonText",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Play",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 24,
+                                                "color": {
+                                                    "r": 0.0,
+                                                    "g": 0.0,
+                                                    "b": 0.0,
+                                                    "a": 1.0
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            }
+                                        }
+                                    ]
                                 }
-                            }
+                            ]
                         },
                         {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "MenuBanner",
-                    "position": {
-                        "x": 0,
-                        "y": -90,
-                        "z": 0
-                    },
-                    "components": [
-                        {
-                            "type": "ImageComponent",
-                            "texture": {
-                                "path": "textures/checker.png"
-                            },
-                            "color": {
-                                "r": 1.0,
-                                "g": 1.0,
-                                "b": 1.0,
-                                "a": 1.0
-                            }
+                            "name": "SettingsButton",
+                            "components": [
+                                {
+                                    "type": "ButtonComponent",
+                                    "enabled": false
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 50
+                                    }
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "name": "SettingsButtonText",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Settings",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 24,
+                                                "color": {
+                                                    "r": 0.0,
+                                                    "g": 0.0,
+                                                    "b": 0.0,
+                                                    "a": 1.0
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
                         },
                         {
-                            "type": "RectTransformComponent",
-                            "anchor": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "pivot": {
-                                "x": 0.5,
-                                "y": 0.5
-                            },
-                            "size": {
-                                "x": 160,
-                                "y": 40
-                            }
+                            "name": "QuitButton",
+                            "components": [
+                                {
+                                    "type": "ButtonComponent"
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 50
+                                    }
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "name": "QuitButtonText",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Quit",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 24,
+                                                "color": {
+                                                    "r": 0.0,
+                                                    "g": 0.0,
+                                                    "b": 0.0,
+                                                    "a": 1.0
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OptionsRow",
+                            "components": [
+                                {
+                                    "type": "BoxLayoutComponent",
+                                    "direction": "horizontal",
+                                    "spacing": 8,
+                                    "padding": {
+                                        "left": 0,
+                                        "top": 0,
+                                        "right": 0,
+                                        "bottom": 0
+                                    },
+                                    "alignment": "start"
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 24
+                                    }
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "name": "VsyncCheckBox",
+                                    "components": [
+                                        {
+                                            "type": "CheckBoxComponent",
+                                            "checked": true,
+                                            "color": {
+                                                "r": 1.0,
+                                                "g": 1.0,
+                                                "b": 1.0,
+                                                "a": 1.0
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "size": {
+                                                "x": 24,
+                                                "y": 24
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "VsyncLabel",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Vsync",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 18,
+                                                "color": {
+                                                    "r": 1.0,
+                                                    "g": 1.0,
+                                                    "b": 1.0,
+                                                    "a": 1.0
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 }
