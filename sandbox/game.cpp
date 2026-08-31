@@ -27,7 +27,7 @@ bool GameApplication::Initialize() {
         button->onClick         = [this]() {
             if (mRoot && !mRoot->IsActive()) {
                 mRoot->SetActive(true);
-                mCanvas->GetComponent<CanvasComponent>()->SetActive(false);
+                mCanvas->SetActive(false);
                 Engine::GetInstance().SetInputMode(InputMode::Disabled);
             }
         };
@@ -52,7 +52,7 @@ void GameApplication::Update(float deltaTime) {
         if (mRoot && mRoot->IsActive()) {
             mRoot->SetActive(false);
             Engine::GetInstance().SetInputMode(InputMode::Cursor);
-            mCanvas->GetComponent<CanvasComponent>()->SetActive(true);
+            mCanvas->SetActive(true);
         }
     }
 
