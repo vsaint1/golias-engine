@@ -30,10 +30,17 @@ namespace golias {
     }
 
 
+    float PhysicsManager::GetFixedTimeStep() const {
+        return kFixedTimeStep;
+    }
+
+    int PhysicsManager::GetMaxSubSteps() const {
+        return kMaxSubSteps;
+    }
+
     void PhysicsManager::Update(float deltaTime) {
-        const btScalar kFixedTimeStep = 1.0f / 60.0f;
-        const int kMaxSubSteps        = 4;
-        mWorld->stepSimulation(deltaTime, kMaxSubSteps, kFixedTimeStep);
+
+        mWorld->stepSimulation(deltaTime, PhysicsManager::kMaxSubSteps, PhysicsManager::kFixedTimeStep);
 
         btDispatcher* dispatcher = mWorld->getDispatcher();
         const int manifolds      = dispatcher->getNumManifolds();

@@ -36,6 +36,9 @@ namespace golias {
 
     class PhysicsManager {
     public:
+        static constexpr float kFixedTimeStep = 1.0f / 60.0f;
+        static constexpr int kMaxSubSteps        = 4;
+
         PhysicsManager();
         ~PhysicsManager();
 
@@ -54,6 +57,10 @@ namespace golias {
         void RemoveRigidBody(RigidBody* rigidBody);
 
         void ForgetCollisionObject(CollisionObject* object);
+
+        float GetFixedTimeStep() const;
+
+        int GetMaxSubSteps() const;
 
     private:
         struct ContactState {
