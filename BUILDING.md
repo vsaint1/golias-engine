@@ -38,15 +38,13 @@ git submodule update --init --recursive
 Debug:
 
 ```bash
-cmake --preset=windows-debug
-cmake --build build/windows/debug
+cmake --build --preset=windows-build --config Debug
 ```
 
 Release:
 
 ```bash
-cmake --preset=windows-release
-cmake --build build/windows/release
+cmake --build --preset=windows-build --config Release
 ```
 
 ---
