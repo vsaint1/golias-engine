@@ -85,8 +85,8 @@ namespace golias {
 
     Ref<Texture2D> AssetManager::AcquireFlatNormalTexture() {
         if (!mFlatNormalTexture) {
-            unsigned char flatNormal[] = {128, 128, 255, 255};
-            mFlatNormalTexture         = std::make_shared<Texture2D>(1, 1, 4, flatNormal);
+            unsigned char flatNormal[] = {128, 128, 255};
+            mFlatNormalTexture         = std::make_shared<Texture2D>(1, 1, 3, flatNormal);
         }
 
         return mFlatNormalTexture;

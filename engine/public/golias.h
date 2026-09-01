@@ -52,3 +52,6 @@
 #include "scene/components/widget/rect_transform_component.h"
 #include "scene/components/widget/image_component.h"
 #include "scene/components/widget/check_box_component.h"
+#include "scene/components/widget/check_box_component.h"
+#include "scene/components/widget/input_slider_component.h"
+#include "scene/components/widget/progress_bar_component.h"

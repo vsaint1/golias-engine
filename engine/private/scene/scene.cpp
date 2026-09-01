@@ -10,6 +10,7 @@
 #include "scene/components/player_controller_component.h"
 #include "scene/components/sprite_component.h"
 #include "scene/components/static_mesh_component.h"
+#include "scene/components/widget/progress_bar_component.h"
 #include "scene/components/widget/button_component.h"
 #include "scene/components/widget/canvas_component.h"
 #include "scene/components/widget/check_box_component.h"
@@ -17,6 +18,7 @@
 #include "scene/components/widget/image_component.h"
 #include "scene/components/widget/rect_transform_component.h"
 #include "scene/components/widget/text_component.h"
+#include "scene/components/widget/input_slider_component.h"
 
 namespace golias {
 
@@ -42,6 +44,8 @@ namespace golias {
         ImageComponent::Register();
         CheckBoxComponent::Register();
         BoxLayoutComponent::Register();
+        InputSliderComponent::Register();
+        ProgressBarComponent::Register();
 #pragma endregion
     }
 
