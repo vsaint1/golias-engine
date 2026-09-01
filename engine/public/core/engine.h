@@ -8,6 +8,7 @@
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "scene/scene.h"
+#include "core/time.h"
 #include "core/window.h"
 
 namespace golias {
@@ -57,8 +58,6 @@ namespace golias {
 
     private:
         Scope<Application> mApplication = nullptr;
-
-        std::chrono::high_resolution_clock::time_point mLastTime;
 
         Window* mWindow = nullptr;
 

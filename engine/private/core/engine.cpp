@@ -84,17 +84,16 @@ namespace golias {
             return;
         }
 
-        mLastTime = std::chrono::high_resolution_clock::now();
+        Time::Start();
 
         while (!mWindow->ShouldClose()) {
 
+            Time::Tick();
+
             mWindow->PollEvents();
 
-
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float deltaTime  = std::chrono::duration<float>(currentTime - mLastTime).count();
-            mLastTime        = currentTime;
-
+            const float deltaTime = Time::GetDeltaTime();
+            
             mApplication->Update(deltaTime);
 
             mInputManager.ResetTransientState();
