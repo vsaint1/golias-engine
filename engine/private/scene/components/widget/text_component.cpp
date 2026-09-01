@@ -38,7 +38,25 @@ namespace golias {
             }
 
             // // TODO: We need handle pivot for text alignment and positioning.
+        }
 
+        if (properties.contains("effects") && properties["effects"].is_object()) {
+            const Json& effectsObj = properties["effects"];
+
+            if (effectsObj.contains("outline") && effectsObj["outline"].is_object()) {
+                const Json& outlineObj = effectsObj["outline"];
+                mHasOutline            = outlineObj.value("enabled", false);
+
+                if (outlineObj.contains("color")) {
+                    const Json& colorObj = outlineObj["color"];
+                    const float r        = colorObj.value("r", 0.0f);
+                    const float g        = colorObj.value("g", 0.0f);
+                    const float b        = colorObj.value("b", 0.0f);
+                    const float a        = colorObj.value("a", 1.0f);
+
+                    mOutlineColor = glm::vec4(r, g, b, a);
+                }
+            }
         }
 
 
@@ -101,6 +119,11 @@ namespace golias {
             const float v2 = (static_cast<float>(desc.Y1)) * invHeight;
 
             cursorX += static_cast<float>(desc.Advance);
+
+            if (mHasOutline) {
+                canvas->DrawQuad(
+                    glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), mFont->GetTexture().get(), mOutlineColor);
+            }
 
             canvas->DrawQuad(glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), mFont->GetTexture().get(), mColor);
         }

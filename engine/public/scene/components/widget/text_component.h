@@ -44,5 +44,9 @@ namespace golias {
         glm::vec4 mColor = glm::vec4(1.0f);
         Ref<Font> mFont  = nullptr;
         int mFontSize    = 16;
+
+        bool mHasOutline = false;
+        glm::vec4 mOutlineColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        int mOutlineThickness = 1;
     };
 } // namespace golias
