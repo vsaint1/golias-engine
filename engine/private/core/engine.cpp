@@ -101,9 +101,6 @@ namespace golias {
 
             mPhysicsManager.Update(deltaTime);
 
-            mGraphicsDevice.SetClearColor();
-            mGraphicsDevice.ClearBuffers();
-
             int width, height;
             mWindow->GetDrawableSize(&width, &height);
 
