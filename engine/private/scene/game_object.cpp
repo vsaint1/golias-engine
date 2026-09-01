@@ -45,15 +45,25 @@ namespace golias {
 
             if (primitive.materialIndex >= 0 && primitive.materialIndex < static_cast<int>(model->GetMaterials().size())) {
                 const ModelMaterial& definition = model->GetMaterials()[primitive.materialIndex];
-                material->SetParameter("_BaseColor", definition.baseColor);
+                material->SetParameterValue("_BaseColor", definition.baseColor);
                 if (!definition.baseColorTexture.empty()) {
                     Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(definition.baseColorTexture);
 
                     if (texture) {
-                        material->SetParameter("_MainTexture", texture);
+                        material->SetParameterValue("_MainTexture", texture);
                     } else {
                         GOLIAS_LOG_WARN("Failed to load texture: %s", definition.baseColorTexture.c_str());
-                        material->SetParameter("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireErrorTexture());
+                        material->SetParameterValue("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireErrorTexture());
+                    }
+                }
+
+                if (!definition.normalTexture.empty()) {
+                    Ref<Texture2D> normalTexture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(definition.normalTexture);
+
+                    if (normalTexture) {
+                        material->SetParameterValue("_NormalMap", normalTexture);
+                    } else {
+                        GOLIAS_LOG_WARN("Failed to load normal map: %s", definition.normalTexture.c_str());
                     }
                 }
             }

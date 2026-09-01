@@ -25,13 +25,13 @@ void HurtPlatform::OnCollisionEnter(const Collision& collision) {
     }
 
     if (mStaticMesh) {
-        mStaticMesh->GetMaterial()->SetParameter("_BaseColor", glm::vec4(1.0, 0.0, 0.0, 1.0));
+        mStaticMesh->GetMaterial()->SetParameterValue("_BaseColor", glm::vec4(1.0, 0.0, 0.0, 1.0));
     }
 }
 
 void HurtPlatform::OnCollisionExit(const Collision& collision) {
     
     if (mStaticMesh) {
-        mStaticMesh->GetMaterial()->SetParameter("_BaseColor", glm::vec4(1.0));
+        mStaticMesh->GetMaterial()->SetParameterValue("_BaseColor", glm::vec4(1.0));
     }
 }

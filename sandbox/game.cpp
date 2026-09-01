@@ -35,7 +35,7 @@ bool GameApplication::Initialize() {
 
     if (GameObject* exitbutton = mCanvas->FindChildByName("QuitButton")) {
         ButtonComponent* button = exitbutton->GetComponent<ButtonComponent>();
-        button->onClick         = [this]() { Engine::GetInstance().Quit(); };
+        button->onClick         = []() { Engine::GetInstance().Quit(); };
     }
 
 

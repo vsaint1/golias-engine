@@ -1,9 +1,9 @@
 #include "render/command_queue.h"
 
 #include "core/engine.h"
+#include "graphics/buffer.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d.h"
-#include "graphics/buffer.h"
 #include "render/csm.h"
 #include "render/material.h"
 #include "render/mesh.h"
@@ -15,12 +15,42 @@ namespace golias {
     }
 
     CommandQueue::~CommandQueue() {
-     
     }
 
     bool CommandQueue::Initialize() {
 
         mQuadMesh = Mesh::CreateQuad();
+
+        mPostProcessShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/postprocess.gshader");
+        if (!mPostProcessShader) {
+            GOLIAS_LOG_ERROR("Failed to create post-process shader program");
+            return false;
+        }
+
+        // Full screen quad in normalized device coordinates (NDC)
+        // TODO: We can move this to shader
+        {
+
+            // clang-format off
+            const std::vector<float> vertices = {
+                -1.0f, -1.0f, 0.0f, 0.0f,
+                1.0f, -1.0f, 1.0f, 0.0f,
+                1.0f,  1.0f, 1.0f, 1.0f,
+                -1.0f,  1.0f, 0.0f, 1.0f,
+            };
+            // clang-format on
+
+            const std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+
+            VertexLayout layout;
+            layout.Elements = {
+                {0, 2, GL_FLOAT, 0                },
+                {1, 2, GL_FLOAT, 2 * sizeof(float)},
+            };
+
+            layout.Stride   = 4 * sizeof(float);
+            mFullscreenQuad = std::make_shared<Mesh>(layout, vertices, indices);
+        }
 
         mShadowShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/csm.gshader");
 
@@ -40,6 +70,16 @@ namespace golias {
             GOLIAS_LOG_ERROR("Failed to create default UI shader program");
             return false;
         }
+
+        mDefault2DMaterial = std::make_shared<Material>();
+        mDefault2DMaterial->SetShader(mDefault2DShader);
+        mDefault2DMaterial->SetDepthTestEnabled(false);
+        mDefault2DMaterial->SetBlendMode(BlendMode::Alpha);
+
+        mDefaultUIMaterial = std::make_shared<Material>();
+        mDefaultUIMaterial->SetShader(mDefaultUIShader);
+        mDefaultUIMaterial->SetDepthTestEnabled(false);
+        mDefaultUIMaterial->SetBlendMode(BlendMode::Alpha);
 
         return true;
     }
@@ -71,9 +111,7 @@ namespace golias {
     void CommandQueue::BeginFrame() {
     }
 
-    void CommandQueue::Execute() {
-
-
+    void CommandQueue::UpdateLightingBuffer() {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         if (!mLightingBuffer) {
@@ -81,7 +119,7 @@ namespace golias {
             // clang-format off
             BufferDesc desc = {
                 .Target = BufferTarget::Uniform,
-                .Usage = BufferUsage::Dynamic, 
+                .Usage = BufferUsage::Dynamic,
                 .Size = sizeof(GpuLighting)
             };
             // clang-format on
@@ -107,12 +145,158 @@ namespace golias {
         }
 
         mLightingBuffer->Update(&lighting, sizeof(lighting));
+        mLightingBuffer->Bind(0);
+    }
+
+    void CommandQueue::CategorizeRenderCommands(const Frustum& frustum,
+                                                std::vector<const RenderCommand*>& outOpaque,
+                                                std::vector<const RenderCommand*>& outTransparent) const {
+        outOpaque.clear();
+        outTransparent.clear();
+        outOpaque.reserve(mCommands.size());
+        outTransparent.reserve(mCommands.size());
+
+        for (const auto& command : mCommands) {
+            if (!command.Mesh || !frustum.Intersects(command.Mesh->GetAABB().Transformed(command.Model))) {
+                continue;
+            }
+
+            const bool isTransparent = command.Material && command.Material->GetRenderState().Blend != BlendMode::None;
+
+            if (isTransparent) {
+                outTransparent.push_back(&command);
+                continue;
+            } else {
+                outOpaque.push_back(&command);
+                continue;
+            }
+        }
+    }
+
+    void CommandQueue::DrawRenderCommand(const RenderCommand& command, const CameraCommand& cameraCommand) {
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        if (command.Material) {
+            command.Material->SetParameterValue("_ModelMatrix", command.Model);
+            command.Material->SetParameterValue("_ViewMatrix", cameraCommand.View);
+            command.Material->SetParameterValue("_ProjectionMatrix", cameraCommand.Projection);
+            command.Material->SetParameterValue("_CameraPos", cameraCommand.CameraPosition);
+            device.BindMaterial(command.Material);
+
+            if (mShadowTexture) {
+                Shader* shader = command.Material->GetShader().get();
+                for (uint32_t cascade = 0; cascade < CascadedShadowMapDesc::kMaxCascades; ++cascade) {
+                    shader->SetUniform("_ShadowMatrices[" + std::to_string(cascade) + "]", mShadowCsm.GetCascade(cascade).ViewProjection);
+                    shader->SetUniform("_ShadowSplits[" + std::to_string(cascade) + "]", mShadowCsm.GetSplit(cascade));
+                }
+
+                shader->SetTexture(TextureSlots::ShadowMap, mShadowTexture.get());
+            }
+        }
+
+        device.BindMesh(command.Mesh);
+        device.DrawMesh(command.Mesh);
+        device.UnbindMesh(command.Mesh);
+    }
+
+    void CommandQueue::RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque) {
+        // Opaque geometry: front-to-back order
+        for (const RenderCommand* command : opaque) {
+            DrawRenderCommand(*command, cameraCommand);
+        }
+    }
+
+    void CommandQueue::RenderTransparent(const CameraCommand& cameraCommand, std::vector<const RenderCommand*>& transparent) {
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        // Sort back-to-front (furthest first).
+        const glm::vec3 cameraPosition = cameraCommand.CameraPosition;
+        std::sort(transparent.begin(), transparent.end(), [&](const RenderCommand* a, const RenderCommand* b) {
+            const glm::vec3 centerA = glm::vec3(a->Model * glm::vec4(a->Mesh->GetAABB().GetCenter(), 1.0f));
+            const glm::vec3 centerB = glm::vec3(b->Model * glm::vec4(b->Mesh->GetAABB().GetCenter(), 1.0f));
+            return glm::distance(cameraPosition, centerA) > glm::distance(cameraPosition, centerB);
+        });
+
+        device.SetDepthWriteEnabled(false);
+
+        for (const RenderCommand* command : transparent) {
+            DrawRenderCommand(*command, cameraCommand);
+        }
+
+        device.SetDepthWriteEnabled(true);
+    }
+
+    void CommandQueue::RenderSprites(const CameraCommand& cameraCommand) {
+        if (mCommands2D.empty()) {
+            return;
+        }
+
+        mQuadMesh->Bind();
+
+        for (const auto& command : mCommands2D) {
+            mDefault2DMaterial->Bind();
+            Shader* shader = mDefault2DMaterial->GetShader().get();
+            shader->SetUniform("_ModelMatrix", command.Model);
+            shader->SetUniform("_ViewMatrix", glm::mat4(1.0f));
+            shader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
+            shader->SetUniform("_Pivot", command.Pivot);
+            shader->SetUniform("_Size", command.Size);
+            shader->SetUniform("_LowerLeftUV", command.LowerLeftUV);
+            shader->SetUniform("_UpperRightUV", command.UpperRightUV);
+            shader->SetUniform("_BaseColor", command.Color);
+            shader->SetTexture(TextureSlots::MainTexture, command.Texture);
+            mQuadMesh->Draw();
+        }
+
+        mQuadMesh->Unbind();
+    }
+
+    void CommandQueue::RenderCanvas(const CameraCommand& cameraCommand) {
+        for (const auto& command : mCanvasCommands) {
+            if (!command.Mesh || command.Batches.empty()) {
+                continue;
+            }
+
+            command.Mesh->Bind();
+            mDefaultUIMaterial->Bind();
+            Shader* shader = mDefaultUIMaterial->GetShader().get();
+            shader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
+
+            uint32_t indexOffset = 0;
+            for (const CanvasBatch& batch : command.Batches) {
+
+                if (batch.IndexCount > 0) {
+                    Ref<Texture2D> whiteTex = Engine::GetInstance().GetAssetManager().AcquireWhiteTexture();
+                    shader->SetTexture(TextureSlots::MainTexture, batch.Texture ? batch.Texture : whiteTex.get());
+                    command.Mesh->DrawIndexed(indexOffset, batch.IndexCount);
+                }
+
+                indexOffset += batch.IndexCount;
+            }
+
+            command.Mesh->Unbind();
+        }
+    }
+
+    void CommandQueue::Execute() {
+
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        UpdateLightingBuffer();
 
         for (const auto& cameraCommand : mCameraCommands) {
 
-            device.SetViewport(cameraCommand.Viewport);
+            if (!EnsureHdrTargets(cameraCommand.Viewport)) {
+                continue;
+            }
+
             const Frustum frustum = Frustum::FromMatrix(cameraCommand.Projection * cameraCommand.View);
-            mHasShadows           = false;
+
+            mHdrFramebuffer->Bind();
+
+            device.SetViewport(cameraCommand.Viewport);
+            device.SetClearColor();
+            device.ClearBuffers(ClearFlag::Color | ClearFlag::Depth);
 
             for (const LightCommand& light : mLightCommands) {
                 if (light.Type == 0 && light.IsShadowCaster && cameraCommand.Shadows.Enabled) {
@@ -121,81 +305,95 @@ namespace golias {
                 }
             }
 
-            for (const auto& command : mCommands) {
-                if (!command.Mesh || !frustum.Intersects(command.Mesh->GetAABB().Transformed(command.Model))) {
-                    continue;
-                }
-                if (command.Material) {
-                    command.Material->SetParameterValue("_ModelMatrix", command.Model);
-                    command.Material->SetParameterValue("_ViewMatrix", cameraCommand.View);
-                    command.Material->SetParameterValue("_ProjectionMatrix", cameraCommand.Projection);
-                    command.Material->SetParameterValue("_CameraPos", cameraCommand.CameraPosition);
-                    device.BindMaterial(command.Material);
-                    if (mHasShadows) {
-                        Shader* shader = command.Material->GetShader().get();
-                        for (uint32_t cascade = 0; cascade < CascadedShadowMapDesc::kMaxCascades; ++cascade) {
-                            shader->SetUniform("_ShadowMatrices[" + std::to_string(cascade) + "]",
-                                               mShadowCsm.GetCascade(cascade).ViewProjection);
-                            shader->SetUniform("_ShadowSplits[" + std::to_string(cascade) + "]", mShadowCsm.GetSplit(cascade));
-                        }
+            // NOTE: The shadow pass unbinds its own framebuffer, so re-bind the HDR target.
+            mHdrFramebuffer->Bind();
 
-                        shader->SetTexture(TextureSlots::ShadowMap, mShadowTexture.get());
-                    }
-                }
+            // Categorize draw calls frustum-culled into opaque and transparent sets.
+            std::vector<const RenderCommand*> opaque;
+            std::vector<const RenderCommand*> transparent;
+            CategorizeRenderCommands(frustum, opaque, transparent);
 
-                device.BindMesh(command.Mesh);
-                device.DrawMesh(command.Mesh);
-                device.UnbindMesh(command.Mesh);
-            }
-
+            RenderGeometry(cameraCommand, opaque);
+            RenderTransparent(cameraCommand, transparent);
+            
+            mHdrFramebuffer->Unbind();
+            
+            RenderPostProcess(cameraCommand);
 
             device.SetDepthTestEnabled(false);
             device.SetBlendMode(BlendMode::Alpha);
-            mQuadMesh->Bind();
 
-            for (const auto& command : mCommands2D) {
-                mDefault2DShader->Bind();
-                mDefault2DShader->SetUniform("_ModelMatrix", command.Model);
-                mDefault2DShader->SetUniform("_ViewMatrix", glm::mat4(1.0f));
-                mDefault2DShader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
-                mDefault2DShader->SetUniform("_Pivot", command.Pivot);
-                mDefault2DShader->SetUniform("_Size", command.Size);
-                mDefault2DShader->SetUniform("_LowerLeftUV", command.LowerLeftUV);
-                mDefault2DShader->SetUniform("_UpperRightUV", command.UpperRightUV);
-                mDefault2DShader->SetUniform("_BaseColor", command.Color);
-                mDefault2DShader->SetTexture(TextureSlots::MainTexture, command.Texture);
-                mQuadMesh->Draw();
-            }
-
-            mQuadMesh->Unbind();
-
-            for (const auto& command : mCanvasCommands) {
-                if (!command.Mesh || command.Batches.empty()) {
-                    continue;
-                }
-
-                command.Mesh->Bind();
-                mDefaultUIShader->Bind();
-                mDefaultUIShader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
-
-                uint32_t indexOffset = 0;
-                for (const CanvasBatch& batch : command.Batches) {
-
-                    if (batch.IndexCount > 0) {
-                        Ref<Texture2D> whiteTex = Engine::GetInstance().GetAssetManager().AcquireWhiteTexture();
-                        mDefaultUIShader->SetTexture(TextureSlots::MainTexture, batch.Texture ? batch.Texture : whiteTex.get());
-                        command.Mesh->DrawIndexed(indexOffset, batch.IndexCount);
-                    }
-
-                    indexOffset += batch.IndexCount;
-                }
-
-                command.Mesh->Unbind();
-            }
+            RenderSprites(cameraCommand);
+            RenderCanvas(cameraCommand);
 
             device.SetBlendMode(BlendMode::None);
             device.SetDepthTestEnabled(true);
         }
+    }
+
+    bool CommandQueue::EnsureHdrTargets(const Viewport& viewport) {
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        if (mHdrFramebuffer && viewport.Width == mHdrViewport.Width && viewport.Height == mHdrViewport.Height) {
+            return true;
+        }
+
+        if (viewport.Width <= 0 || viewport.Height <= 0) {
+            return false;
+        }
+
+        TextureDesc colorDesc;
+        colorDesc.Width  = static_cast<uint32_t>(viewport.Width);
+        colorDesc.Height = static_cast<uint32_t>(viewport.Height);
+        colorDesc.Layers = 1;
+        colorDesc.Format = TextureFormat::RGBA16F;
+        colorDesc.Filter = TextureFilter::Linear;
+        colorDesc.Wrap   = TextureWrap::ClampToEdge;
+
+        TextureDesc depthDesc;
+        depthDesc.Width  = static_cast<uint32_t>(viewport.Width);
+        depthDesc.Height = static_cast<uint32_t>(viewport.Height);
+        depthDesc.Layers = 1;
+        depthDesc.Format = TextureFormat::Depth24;
+        depthDesc.Filter = TextureFilter::Nearest;
+        depthDesc.Wrap   = TextureWrap::ClampToEdge;
+
+        mHdrColorTexture = device.CreateTexture2D(colorDesc);
+        mHdrDepthTexture = device.CreateTexture2DArray(depthDesc);
+        mHdrFramebuffer  = device.CreateFramebuffer(colorDesc);
+
+        mHdrFramebuffer->SetColorAttachment(0, mHdrColorTexture);
+        mHdrFramebuffer->SetDepthAttachment(mHdrDepthTexture);
+
+        if (!mHdrFramebuffer->IsComplete()) {
+            GOLIAS_LOG_ERROR("HDR framebuffer is incomplete.");
+            return false;
+        }
+
+        mHdrViewport = viewport;
+        return true;
+    }
+
+
+    void CommandQueue::RenderPostProcess(const CameraCommand& cameraCommand) {
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        if (!mPostProcessShader || !mFullscreenQuad || !mHdrColorTexture) {
+            return;
+        }
+
+        device.SetViewport(cameraCommand.Viewport);
+        device.SetDepthTestEnabled(false);
+        device.SetBlendMode(BlendMode::None);
+
+        mPostProcessShader->Bind();
+        mPostProcessShader->SetTexture(TextureSlots::MainTexture, mHdrColorTexture.get());
+        mPostProcessShader->SetUniform("_Exposure", 1.0f);
+        // mPostProcessShader->SetUniform("_Tonemap", static_cast<int>(mTonemap));
+
+        mFullscreenQuad->Bind();
+        mFullscreenQuad->Draw();
+        mFullscreenQuad->Unbind();
     }
 
     void CommandQueue::RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light) {
@@ -245,6 +443,11 @@ namespace golias {
                     continue;
                 }
 
+                // Skip transparent geometry
+                if (command.Material && command.Material->GetRenderState().Blend != BlendMode::None) {
+                    continue;
+                }
+
                 mShadowShader->SetUniform("_ModelMatrix", command.Model);
 
                 device.BindMesh(command.Mesh);
@@ -256,8 +459,6 @@ namespace golias {
         mShadowFramebuffer->Unbind();
         device.SetCullMode(CullMode::None);
         device.SetViewport(cameraCommand.Viewport);
-
-        mHasShadows = true;
     }
 
     void CommandQueue::EndFrame() {

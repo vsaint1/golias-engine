@@ -11,6 +11,13 @@ namespace golias {
     class Material;
     class Texture2D;
 
+    enum class Tonemap : int {
+        ACES     = 0,
+        Reinhard = 1,
+        Filmic   = 2,
+    };
+
+
     struct RenderCommand {
         Mesh* Mesh         = nullptr;
         Material* Material = nullptr;
@@ -90,7 +97,38 @@ namespace golias {
 
 
     private:
+        /// @brief Renders the shadow cascades for the given light and camera.
         void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
+
+        /// @brief Renders the post-processing effects for the given camera.
+        void RenderPostProcess(const CameraCommand& cameraCommand);
+
+        /// @brief Ensures that the HDR render targets are created and match the given viewport.
+        bool EnsureHdrTargets(const Viewport& viewport);
+
+        /// @brief Updates and binds the per-frame lighting uniform buffer.
+        void UpdateLightingBuffer();
+
+        /// @brief Splits mCommands into frustum-culled opaque/transparent lists.
+        void CategorizeRenderCommands(const Frustum& frustum,
+                                      std::vector<const RenderCommand*>& outOpaque,
+                                      std::vector<const RenderCommand*>& outTransparent) const;
+
+        /// @brief Binds material params (incl. shadow data) and issues the draw call.
+        void DrawRenderCommand(const RenderCommand& command, const CameraCommand& cameraCommand);
+
+        /// @brief Draws opaque geometry (depth-tested, order-independent).
+        void RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
+
+        /// @brief Sorts and draws transparent geometry back-to-front.
+        void RenderTransparent(const CameraCommand& cameraCommand, std::vector<const RenderCommand*>& transparent);
+
+        /// @brief Draws queued sprite/2D commands with the default 2D material.
+        void RenderSprites(const CameraCommand& cameraCommand);
+
+        /// @brief Draws queued UI canvas commands (batched by texture).
+        void RenderCanvas(const CameraCommand& cameraCommand);
+
 
         std::vector<RenderCommand> mCommands             = {};
         std::vector<CameraCommand> mCameraCommands       = {};
@@ -100,12 +138,19 @@ namespace golias {
 
         Ref<Buffer> mLightingBuffer = nullptr;
 
-        Ref<Shader> mDefault2DShader = nullptr;
-        Ref<Shader> mDefaultUIShader = nullptr;
-        Ref<Mesh> mQuadMesh          = nullptr;
+        Ref<Shader> mDefault2DShader     = nullptr;
+        Ref<Shader> mDefaultUIShader     = nullptr;
+        Ref<Shader> mPostProcessShader   = nullptr;
+        Ref<Material> mDefault2DMaterial = nullptr;
+        Ref<Material> mDefaultUIMaterial = nullptr;
+        Ref<Mesh> mQuadMesh              = nullptr;
+        Ref<Mesh> mFullscreenQuad        = nullptr;
 
-        Ref<Framebuffer> mDefaultHdrFramebuffer = nullptr;
-        Ref<Texture> mDefaultHdrTexture         = nullptr;
+        Ref<Framebuffer> mHdrFramebuffer = nullptr;
+        Ref<Texture2D> mHdrColorTexture  = nullptr;
+        Ref<Texture> mHdrDepthTexture    = nullptr;
+
+        Viewport mHdrViewport            = {0, 0, 0, 0};
 
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture  = nullptr;
@@ -114,6 +159,6 @@ namespace golias {
         CascadedShadowMap mShadowCsm;
         CascadedShadowMapDesc mShadowCsmDesc = {};
 
-        bool mHasShadows = false;
+        Tonemap mTonemap = Tonemap::Reinhard;
     };
 } // namespace golias
