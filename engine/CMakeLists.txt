@@ -59,10 +59,5 @@ add_library(engine STATIC ${ENGINE_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC thirdparty)
 
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
-endif()
-
-
 # PCXX
 target_precompile_headers(${PROJECT_NAME} PRIVATE "public/stdafx.h")

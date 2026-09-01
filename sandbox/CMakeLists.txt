@@ -148,7 +148,6 @@ if (WIN32)
             ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets)
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
-    target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
     add_compile_options(-fsanitize=address)
     add_link_options(-fsanitize=address)
 endif ()
@@ -172,6 +171,7 @@ if (EMSCRIPTEN)
             "-sSTACK_SIZE=10MB"
             "-sINITIAL_MEMORY=128MB"
             "--preload-file ${CMAKE_SOURCE_DIR}/Assets@/Assets"
+            "-sUSE_GLFW=3"
     )
 
     target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
