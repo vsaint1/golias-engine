@@ -1,9 +1,49 @@
 #include "graphics/texture_2d.h"
 
 #include "core/engine.h"
+#include "graphics/ogl_commons.h"
 #include <stb_image.h>
 
 namespace golias {
+
+    void Texture2D::Allocate(const TextureDesc& desc) {
+        if (mTextureID) {
+            glDeleteTextures(1, &mTextureID);
+        }
+
+        glGenTextures(1, &mTextureID);
+        glBindTexture(GL_TEXTURE_2D, mTextureID);
+
+        const TextureFormatGl glFormat = TextureFormatToGl(desc.Format);
+
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     glFormat.Internal,
+                     static_cast<GLsizei>(desc.Width),
+                     static_cast<GLsizei>(desc.Height),
+                     0,
+                     glFormat.External,
+                     glFormat.Type,
+                     nullptr);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, TextureMinFilterToGl(desc.Filter));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, TextureMagFilterToGl(desc.Filter));
+
+        const GLint wrap = TextureWrapToGl(desc.Wrap);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &desc.BorderColor.x);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    Texture2D::Texture2D(const TextureDesc& desc) : mDesc(desc) {
+        mWidth    = static_cast<int32_t>(desc.Width);
+        mHeight   = static_cast<int32_t>(desc.Height);
+        mChannels = (desc.Format == TextureFormat::Depth24 || desc.Format == TextureFormat::Depth32F) ? 1 : 4;
+        Allocate(desc);
+    }
 
     Texture2D::Texture2D(int32_t width, int32_t height, int32_t channels, unsigned char* data)
         : mWidth(width), mHeight(height), mChannels(channels) {
@@ -115,7 +155,19 @@ namespace golias {
 
 
     bool Texture2D::Recreate(const TextureDesc& desc) {
-        return desc.Width == static_cast<uint32_t>(mWidth) && desc.Height == static_cast<uint32_t>(mHeight);
+        if (desc.Width == mDesc.Width && desc.Height == mDesc.Height && desc.Format == mDesc.Format && desc.Filter == mDesc.Filter
+            && desc.Wrap == mDesc.Wrap) {
+            return true;
+        }
+
+        mDesc     = desc;
+        mWidth    = static_cast<int32_t>(desc.Width);
+        mHeight   = static_cast<int32_t>(desc.Height);
+        mChannels = (desc.Format == TextureFormat::Depth24 || desc.Format == TextureFormat::Depth32F) ? 1 : 4;
+
+        Allocate(desc);
+
+        return true;
     }
 
 

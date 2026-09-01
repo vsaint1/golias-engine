@@ -1,5 +1,7 @@
 #include "graphics/texture_cube.h"
 
+#include "graphics/ogl_commons.h"
+
 namespace golias {
 
     TextureCube::TextureCube(const TextureDesc& desc) {
@@ -31,13 +33,13 @@ namespace golias {
                 GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA8, desc.Width, desc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         }
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, desc.Filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, desc.Filter == TextureFilter::Linear ? GL_LINEAR : GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, TextureMinFilterToGl(desc.Filter));
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, TextureMagFilterToGl(desc.Filter));
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-        
+
         return true;
     }
 
