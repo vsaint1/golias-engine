@@ -298,35 +298,6 @@
                     ]
                 },
                 {
-                    "name": "TransparentCube",
-                    "position": {
-                        "x": 3,
-                        "y": 2,
-                        "z": 0
-                    },
-                    "scale": {
-                        "x": 1.5,
-                        "y": 1.5,
-                        "z": 1.5
-                    },
-                    "components": [
-                        {
-                            "type": "StaticMeshComponent",
-                            "material": {
-                                "path": "materials/glass.gmat"
-                            },
-                            "mesh": {
-                                "type": "cube",
-                                "size": {
-                                    "x": 1,
-                                    "y": 1,
-                                    "z": 1
-                                }
-                            }
-                        }
-                    ]
-                },
-                {
                     "name": "TestProps",
                     "children": [
                         {
@@ -2116,6 +2087,148 @@
                                 "y": 1,
                                 "z": 1
                             }
+                        },
+                        {
+                            "name": "Body",
+                            "position": {
+                                "x": 0,
+                                "y": 0,
+                                "z": -0.5
+                            },
+                            "components": [
+                                {
+                                    "type": "StaticMeshComponent",
+                                    "material": {
+                                        "path": "materials/checker.gmat"
+                                    },
+                                    "mesh": {
+                                        "type": "capsule",
+                                        "radius": 0.4,
+                                        "height": 1.2
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "HUDCanvas",
+                            "components": [
+                                {
+                                    "type": "CanvasComponent"
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.0,
+                                        "y": 0.0
+                                    }
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "name": "HUDText",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Golias Bento",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 18,
+                                                "pivot": {
+                                                    "x": 0.5,
+                                                    "y": 0.5
+                                                },
+                                                "color": {
+                                                    "r": 1.0,
+                                                    "g": 1.0,
+                                                    "b": 1.0,
+                                                    "a": 1.0
+                                                }
+                                            },
+                                            "effects": {
+                                                "outline": {
+                                                    "enabled": true,
+                                                    "color": {
+                                                        "r": 0.0,
+                                                        "g": 0.0,
+                                                        "b": 0.0,
+                                                        "a": 1.0
+                                                    },
+                                                    "thickness": 1
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.06,
+                                                "y": 0.01
+                                            },
+                                            "pivot": {
+                                                "x": 0.2,
+                                                "y": 0.5
+                                            },
+                                            "size": {
+                                                "x": 200,
+                                                "y": 20
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "HUDHealth",
+                                    "components": [
+                                        {
+                                            "type": "ProgressBarComponent",
+                                            "value": 100.0
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.06,
+                                                "y": 0.05
+                                            },
+                                            "pivot": {
+                                                "x": 0.2,
+                                                "y": 0.5
+                                            },
+                                            "size": {
+                                                "x": 200,
+                                                "y": 20
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "HUDCrossHair",
+                                    "components": [
+                                        {
+                                            "type": "ImageComponent",
+                                            "texture": {
+                                                "path": "textures/crosshair.png"
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "size": {
+                                                "x": 32,
+                                                "y": 20
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 },
@@ -2253,20 +2366,20 @@
                                 "b": 0.0
                             },
                             "range": 20.0,
-                            "intensity": 1.0
+                            "intensity": 5.0
                         }
                     ]
                 },
                 {
                     "name": "GreenPointLight",
                     "position": {
-                        "x": 5,
+                        "x": 0,
                         "y": 5,
-                        "z": 15
+                        "z": 10
                     },
                     "rotation": {
                         "x": 0,
-                        "y": 0,
+                        "y": 30,
                         "z": 0,
                         "w": 1
                     },
@@ -2285,40 +2398,15 @@
                                 "b": 0.0
                             },
                             "range": 10.0,
-                            "intensity": 1.0
-                        }
-                    ]
-                },
-                {
-                    "name": "BrickSprite",
-                    "position": {
-                        "x": 200,
-                        "y": 500,
-                        "z": 0.0
-                    },
-                    "rotation": {
-                        "x": 0,
-                        "y": 0,
-                        "z": 0,
-                        "w": 1
-                    },
-                    "components": [
-                        {
-                            "type": "SpriteComponent",
-                            "texture": {
-                                "path": "textures/checker.png",
-                                "size": {
-                                    "x": 150,
-                                    "y": 150
-                                }
-                            }
+                            "intensity": 3.0
                         }
                     ]
                 }
             ]
         },
         {
-            "name": "Canvas",
+            "name": "SettingsCanvas",
+            "active": false,
             "components": [
                 {
                     "type": "CanvasComponent"
@@ -2337,30 +2425,19 @@
             ],
             "children": [
                 {
-                    "name": "HelloWorld",
-                    "position": {
-                        "x": 250,
-                        "y": 250,
-                        "z": 0
-                    },
+                    "name": "MenuColumnSettings",
                     "components": [
                         {
-                            "type": "TextComponent",
-                            "font": {
-                                "text": "Hello world!\nHow are you doing?\nThis is a multi-line text example.",
-                                "path": "fonts/arial.ttf",
-                                "size": 16,
-                                "pivot": {
-                                    "x": 0.5,
-                                    "y": 0.5
-                                },
-                                "color": {
-                                    "r": 1.0,
-                                    "g": 1.0,
-                                    "b": 1.0,
-                                    "a": 1.0
-                                }
-                            }
+                            "type": "BoxLayoutComponent",
+                            "direction": "vertical",
+                            "spacing": 14,
+                            "padding": {
+                                "left": 10,
+                                "top": 10,
+                                "right": 10,
+                                "bottom": 10
+                            },
+                            "alignment": "center"
                         },
                         {
                             "type": "RectTransformComponent",
@@ -2371,10 +2448,228 @@
                             "pivot": {
                                 "x": 0.5,
                                 "y": 0.5
+                            },
+                            "size": {
+                                "x": 220,
+                                "y": 240
                             }
                         }
+                    ],
+                    "children": [
+                        {
+                            "name": "SettingsText",
+                            "components": [
+                                {
+                                    "type": "TextComponent",
+                                    "font": {
+                                        "text": "Master Volume",
+                                        "path": "fonts/arial.ttf",
+                                        "size": 24,
+                                        "pivot": {
+                                            "x": 0.5,
+                                            "y": 0.5
+                                        },
+                                        "color": {
+                                            "r": 1.0,
+                                            "g": 1.0,
+                                            "b": 1.0,
+                                            "a": 1.0
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "MasterSoundSlider",
+                            "components": [
+                                {
+                                    "type": "InputSliderComponent",
+                                    "value": 1.0
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 24
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "OptionsRow",
+                            "components": [
+                                {
+                                    "type": "BoxLayoutComponent",
+                                    "direction": "horizontal",
+                                    "spacing": 8,
+                                    "padding": {
+                                        "left": 0,
+                                        "top": 0,
+                                        "right": 0,
+                                        "bottom": 0
+                                    },
+                                    "alignment": "start"
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 24
+                                    }
+                                }
+                            ],
+                            "children": [
+                                {
+                                    "name": "VsyncCheckBox",
+                                    "components": [
+                                        {
+                                            "type": "CheckBoxComponent",
+                                            "checked": true,
+                                            "color": {
+                                                "r": 1.0,
+                                                "g": 1.0,
+                                                "b": 1.0,
+                                                "a": 1.0
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "size": {
+                                                "x": 24,
+                                                "y": 24
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "VsyncLabel",
+                                    "components": [
+                                        {
+                                            "type": "TextComponent",
+                                            "font": {
+                                                "text": "Vsync",
+                                                "path": "fonts/arial.ttf",
+                                                "size": 18,
+                                                "color": {
+                                                    "r": 1.0,
+                                                    "g": 1.0,
+                                                    "b": 1.0,
+                                                    "a": 1.0
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            },
+                                            "pivot": {
+                                                "x": 0.5,
+                                                "y": 0.5
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "SettingsText",
+                            "components": [
+                                {
+                                    "type": "TextComponent",
+                                    "font": {
+                                        "text": "Hello world!\nHow are you doing?\nThis is a multi-line text example.\nSource Code: https://github.com/vsaint1/golias\n",
+                                        "path": "fonts/arial.ttf",
+                                        "size": 18,
+                                        "pivot": {
+                                            "x": 0.5,
+                                            "y": 0.5
+                                        },
+                                        "color": {
+                                            "r": 1.0,
+                                            "g": 1.0,
+                                            "b": 1.0,
+                                            "a": 1.0
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 200,
+                                        "y": 100
+                                    }
+                                }
+                            ]
+                        }
                     ]
+                }
+            ]
+        },
+        {
+            "name": "Canvas",
+            "components": [
+                {
+                    "type": "CanvasComponent",
+                    "enabled": false
                 },
+                {
+                    "type": "RectTransformComponent",
+                    "anchor": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "pivot": {
+                        "x": 0.0,
+                        "y": 0.0
+                    }
+                }
+            ],
+            "children": [
                 {
                     "name": "MenuColumn",
                     "components": [
@@ -2498,8 +2793,7 @@
                             "name": "SettingsButton",
                             "components": [
                                 {
-                                    "type": "ButtonComponent",
-                                    "enabled": false
+                                    "type": "ButtonComponent"
                                 },
                                 {
                                     "type": "RectTransformComponent",
@@ -2586,100 +2880,6 @@
                                                     "r": 0.0,
                                                     "g": 0.0,
                                                     "b": 0.0,
-                                                    "a": 1.0
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "type": "RectTransformComponent",
-                                            "anchor": {
-                                                "x": 0.5,
-                                                "y": 0.5
-                                            },
-                                            "pivot": {
-                                                "x": 0.5,
-                                                "y": 0.5
-                                            }
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "name": "OptionsRow",
-                            "components": [
-                                {
-                                    "type": "BoxLayoutComponent",
-                                    "direction": "horizontal",
-                                    "spacing": 8,
-                                    "padding": {
-                                        "left": 0,
-                                        "top": 0,
-                                        "right": 0,
-                                        "bottom": 0
-                                    },
-                                    "alignment": "start"
-                                },
-                                {
-                                    "type": "RectTransformComponent",
-                                    "anchor": {
-                                        "x": 0.5,
-                                        "y": 0.5
-                                    },
-                                    "pivot": {
-                                        "x": 0.5,
-                                        "y": 0.5
-                                    },
-                                    "size": {
-                                        "x": 200,
-                                        "y": 24
-                                    }
-                                }
-                            ],
-                            "children": [
-                                {
-                                    "name": "VsyncCheckBox",
-                                    "components": [
-                                        {
-                                            "type": "CheckBoxComponent",
-                                            "checked": true,
-                                            "color": {
-                                                "r": 1.0,
-                                                "g": 1.0,
-                                                "b": 1.0,
-                                                "a": 1.0
-                                            }
-                                        },
-                                        {
-                                            "type": "RectTransformComponent",
-                                            "anchor": {
-                                                "x": 0.5,
-                                                "y": 0.5
-                                            },
-                                            "pivot": {
-                                                "x": 0.5,
-                                                "y": 0.5
-                                            },
-                                            "size": {
-                                                "x": 24,
-                                                "y": 24
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "name": "VsyncLabel",
-                                    "components": [
-                                        {
-                                            "type": "TextComponent",
-                                            "font": {
-                                                "text": "Vsync",
-                                                "path": "fonts/arial.ttf",
-                                                "size": 18,
-                                                "color": {
-                                                    "r": 1.0,
-                                                    "g": 1.0,
-                                                    "b": 1.0,
                                                     "a": 1.0
                                                 }
                                             }

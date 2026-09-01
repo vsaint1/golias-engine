@@ -18,4 +18,6 @@ private:
     GameObject* mRoot   = nullptr;
 
     GameObject* mCanvas = nullptr;
+
+    GameObject* mSettingsCanvas = nullptr;
 };
