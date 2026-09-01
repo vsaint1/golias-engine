@@ -25,6 +25,11 @@
 //
 //========================================================================
 
+/// FIX: https://github.com/glfw/glfw/issues/2139
+#define POSIX_REQUIRED_STANDARD 199309L
+#define _POSIX_C_SOURCE POSIX_REQUIRED_STANDARD
+#define _POSIX_SOURCE POSIX_REQUIRED_STANDARD
+
 #include "internal.h"
 
 #if defined(GLFW_BUILD_POSIX_TIMER)

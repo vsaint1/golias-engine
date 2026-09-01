@@ -49,7 +49,7 @@
 #ifdef NDEBUG
 
     #define GOLIAS_ASSERT(x) ((void) 0)
-
+    #define GOLIAS_ASSERT_MSG(x, msg) ((void) 0)
 #else
 
     #define GOLIAS_ASSERT(x)                                  \
