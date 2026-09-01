@@ -4,6 +4,8 @@ layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aColor;
 layout(location = 2) in vec2 aTexCoord;
 layout(location = 3) in vec3 aNormals;
+layout(location = 4) in vec3 aTangent;
+layout(location = 5) in vec3 aBitangent;
 
 uniform mat4 _ModelMatrix;
 uniform mat4 _ViewMatrix;
@@ -12,6 +14,8 @@ uniform mat4 _ProjectionMatrix;
 out vec3 vColor;
 out vec2 vTexCoord;
 out vec3 vNormal;
+out vec3 vTangent;
+out vec3 vBitangent;
 out vec3 vWorldPosition;
 
 void main() {
@@ -20,7 +24,14 @@ void main() {
     gl_Position = _ProjectionMatrix * _ViewMatrix * worldPosition;
     vColor = aColor;
     vTexCoord = aTexCoord;
-    vNormal = mat3(transpose(inverse(_ModelMatrix))) * aNormals;
+
+    mat3 normalMatrix = mat3(transpose(inverse(_ModelMatrix)));
+
+
+    vNormal    = normalMatrix * aNormals;
+    vTangent   = normalMatrix * aTangent;
+    vBitangent = normalMatrix * aBitangent;
+
     vWorldPosition = worldPosition.xyz;
 }
 
@@ -32,6 +43,7 @@ uniform vec3 _CameraPos;
 uniform mat4 _ViewMatrix;
 
 uniform sampler2D _MainTexture;
+uniform sampler2D _NormalMap;
 uniform vec4 _BaseColor;
 
 uniform sampler2DArray _ShadowMap;
@@ -41,6 +53,8 @@ uniform float _ShadowSplits[4];
 in vec3 vColor;
 in vec2 vTexCoord;
 in vec3 vNormal;
+in vec3 vTangent;
+in vec3 vBitangent;
 in vec3 vWorldPosition;
 
 #define MAX_LIGHTS 32
@@ -62,6 +76,25 @@ layout(std140) uniform Lighting {
     int _Padding2;
     Light Lights[MAX_LIGHTS];
 };
+
+
+vec3 calc_bumped_normal(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord) {
+    normal = normalize(normal);
+
+    mat3 TBN = mat3(1.0f);
+
+    if (dot(tangent, tangent) > 1e-6) {
+        tangent = normalize(tangent - normal * dot(normal, tangent));
+        bitangent = bitangent - normal * dot(normal, bitangent);
+        bitangent = normalize(bitangent - tangent * dot(tangent, bitangent));
+        TBN = mat3(tangent, bitangent, normal);
+    }
+
+    vec3 tangentSpaceNormal = texture(_NormalMap, texCoord).xyz * 2.0 - 1.0;
+    tangentSpaceNormal.z = sqrt(max(1.0 - dot(tangentSpaceNormal.xy, tangentSpaceNormal.xy), 0.0));
+
+    return normalize(TBN * tangentSpaceNormal);
+}
 
 float shadow_compare(vec2 uv, float layer, float reference) {
     vec2 mapSize = vec2(textureSize(_ShadowMap, 0));
@@ -130,10 +163,13 @@ float shadow_factor(vec3 worldPosition, vec3 normal, vec3 lightDirection) {
 
 void main() {
     vec4 tex = texture(_MainTexture, vTexCoord);
-    vec3 normal = normalize(vNormal);
+
+    float alpha = tex.a;
+
+    vec3 normal = calc_bumped_normal(vNormal, vTangent, vBitangent, vTexCoord);
+
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
-    vec3 ambient = vec3(0.0);
 
     for(int i = 0; i < Count; ++i) {
         Light light = Lights[i];
@@ -166,10 +202,13 @@ void main() {
         vec3 reflectionDirection = reflect(-lightDirection, normal);
         float specularAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0), 32.0);
         specular += 0.5 * specularAmount * lightColor * shadow;
-
-        ambient += 0.4 * lightColor;
     }
 
-    vec3 result = (diffuse + specular + ambient) * tex.rgb * vColor * _BaseColor.rgb;
-    COLOR = vec4(result, 1.0);
+    vec3 kAmbient = vec3(0.08);
+
+    vec3 result = (diffuse + specular + kAmbient) * tex.rgb * vColor * _BaseColor.rgb;
+
+    alpha *= _BaseColor.a;
+
+    COLOR = vec4(result, alpha);
 }
