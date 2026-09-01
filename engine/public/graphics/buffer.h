@@ -15,11 +15,11 @@ namespace golias {
 
         const BufferDesc& GetDesc() const;
 
-        void Bind() const;
+        void Bind(uint32_t slot = 0) const;
 
         void Update(const void* data, const uint32_t size, const uint32_t offset = 0);
 
-        void Unbind() const;
+        void Unbind(uint32_t slot = 0) const;
 
     private:
         uint32_t mBufferId = 0;

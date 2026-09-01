@@ -1,5 +1,6 @@
 #include "graphics/buffer.h"
 
+#include "graphics/ogl_commons.h"
 
 namespace golias {
 
@@ -57,15 +58,7 @@ namespace golias {
 
     void Buffer::Update(const void* data, uint32_t size, uint32_t offset) {
 
-        GLenum internalTarget = GL_ARRAY_BUFFER;
-
-        if (HasFlag(mDesc.Target, BufferTarget::Vertex)) {
-            internalTarget = GL_ARRAY_BUFFER;
-        } else if (HasFlag(mDesc.Target, BufferTarget::Index)) {
-            internalTarget = GL_ELEMENT_ARRAY_BUFFER;
-        } else if (HasFlag(mDesc.Target, BufferTarget::Uniform)) {
-            internalTarget = GL_UNIFORM_BUFFER;
-        }
+        GLenum internalTarget = BufferTargetToGl(mDesc.Target);
 
         glBindBuffer(internalTarget, mBufferId);
 
@@ -79,25 +72,25 @@ namespace golias {
         glBindBuffer(internalTarget, 0);
     }
 
-    void Buffer::Bind() const {
+    void Buffer::Bind(uint32_t slot) const {
 
         if (HasFlag(mDesc.Target, BufferTarget::Vertex)) {
             glBindBuffer(GL_ARRAY_BUFFER, mBufferId);
         } else if (HasFlag(mDesc.Target, BufferTarget::Index)) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBufferId);
         } else if (HasFlag(mDesc.Target, BufferTarget::Uniform)) {
-            glBindBuffer(GL_UNIFORM_BUFFER, mBufferId);
+            glBindBufferBase(GL_UNIFORM_BUFFER, slot, mBufferId);
         }
     }
 
-    void Buffer::Unbind() const {
+    void Buffer::Unbind(uint32_t slot) const {
 
         if (HasFlag(mDesc.Target, BufferTarget::Vertex)) {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         } else if (HasFlag(mDesc.Target, BufferTarget::Index)) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         } else if (HasFlag(mDesc.Target, BufferTarget::Uniform)) {
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+            glBindBufferBase(GL_UNIFORM_BUFFER, slot, 0);
         }
     }
 } // namespace golias
