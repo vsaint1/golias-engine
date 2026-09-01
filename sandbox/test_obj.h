@@ -13,4 +13,6 @@ public:
 
     void Update(float deltaTime) override;
 
+private:
+    float mRotationSpeed = 1.0f;
 };

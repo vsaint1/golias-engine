@@ -7,7 +7,7 @@ namespace golias {
         static constexpr uint32_t kMaxCascades = 4;
 
         bool Enabled                 = true;
-        uint32_t CascadeCount        = 3;
+        uint32_t CascadeCount        = 4;
         uint32_t ShadowMapResolution = 4092;
         float SplitLambda            = 0.5f;
         float MaxDistance            = 1000.0f;

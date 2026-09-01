@@ -40,4 +40,15 @@ namespace golias {
             ma_engine_listener_set_position(mEngine.get(), 0, x, y, z);
         }
     }
+
+    float AudioManager::GetMasterVolume() const {
+        return mMasterVolume;
+    }
+
+    void AudioManager::SetMasterVolume(float volume) {
+        mMasterVolume = glm::clamp(volume, 0.0f, 1.0f);
+        if (mEngine) {
+            ma_engine_set_volume(mEngine.get(), mMasterVolume);
+        }
+    }
 } // namespace golias

@@ -91,7 +91,7 @@ void Player::Update(float deltaTime) {
     }
 
     if (inputManager.IsKeyPressed(KeyCode::LeftShift)) {
-        mPlayerController->SetMoveSpeed(25.0f);
+        mPlayerController->SetMoveSpeed(15.0f);
     } else {
         mPlayerController->SetMoveSpeed(10.0f);
     }

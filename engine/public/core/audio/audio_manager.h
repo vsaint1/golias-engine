@@ -12,7 +12,10 @@ namespace golias {
         ~AudioManager();
 
         bool Initialize();
-        
+
+        float GetMasterVolume() const;
+        void SetMasterVolume(float volume);
+
         void Shutdown();
 
         ma_engine* GetEngine() const;
@@ -21,6 +24,8 @@ namespace golias {
 
     private:
         Scope<ma_engine> mEngine = nullptr;
+
+        float mMasterVolume = 1.0f;
     };
 
 } // namespace golias

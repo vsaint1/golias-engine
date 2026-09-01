@@ -5,7 +5,7 @@ TestObject::TestObject() {
 }
 
 void TestObject::Start() {
-    Ref<Material> material = Engine::GetInstance().GetAssetManager().Load<Material>("materials/brick.gmat");
+    Ref<Material> material = Engine::GetInstance().GetAssetManager().Load<Material>("materials/glass.gmat");
 
     Ref<Mesh> mesh = Mesh::CreateCube();
 
@@ -18,5 +18,5 @@ void TestObject::Start() {
 void TestObject::Update(float deltaTime) {
     GameObject::Update(deltaTime);
 
-    RotateLocal(glm::vec3(0.0f, 1.0f, 0.5f), 0.01f);
+    RotateLocal(glm::vec3(0.0f, 1.0f, 0.5f), mRotationSpeed * deltaTime);
 }
