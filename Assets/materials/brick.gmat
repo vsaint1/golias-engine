@@ -5,6 +5,10 @@
             {
                 "name": "_MainTexture",
                 "path": "textures/brick.png"
+            },
+            {
+                "name": "_NormalMap",
+                "path": "textures/brick_normal.png"
             }
         ]
     }

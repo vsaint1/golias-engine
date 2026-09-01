@@ -298,6 +298,35 @@
                     ]
                 },
                 {
+                    "name": "TransparentCube",
+                    "position": {
+                        "x": 3,
+                        "y": 2,
+                        "z": 0
+                    },
+                    "scale": {
+                        "x": 1.5,
+                        "y": 1.5,
+                        "z": 1.5
+                    },
+                    "components": [
+                        {
+                            "type": "StaticMeshComponent",
+                            "material": {
+                                "path": "materials/glass.gmat"
+                            },
+                            "mesh": {
+                                "type": "cube",
+                                "size": {
+                                    "x": 1,
+                                    "y": 1,
+                                    "z": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "TestProps",
                     "children": [
                         {
@@ -1087,7 +1116,7 @@
                                 {
                                     "type": "StaticMeshComponent",
                                     "material": {
-                                        "path": "materials/checker.gmat"
+                                        "path": "materials/brick.gmat"
                                     },
                                     "mesh": {
                                         "type": "sphere",
@@ -1120,7 +1149,7 @@
                                 {
                                     "type": "StaticMeshComponent",
                                     "material": {
-                                        "path": "materials/checker.gmat"
+                                        "path": "materials/brick.gmat"
                                     },
                                     "mesh": {
                                         "type": "sphere",
@@ -1153,7 +1182,7 @@
                                 {
                                     "type": "StaticMeshComponent",
                                     "material": {
-                                        "path": "materials/checker.gmat"
+                                        "path": "materials/brick.gmat"
                                     },
                                     "mesh": {
                                         "type": "sphere",
