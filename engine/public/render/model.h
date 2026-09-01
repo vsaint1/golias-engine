@@ -26,6 +26,7 @@ namespace golias {
         String name;
         glm::vec4 baseColor = glm::vec4(1.0f);
         String baseColorTexture;
+        String normalTexture;
     };
 
     /// @brief  Represents a 3D model that can be loaded from various file formats (e.g., glTF, OBJ, FBX).

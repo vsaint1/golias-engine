@@ -2,9 +2,46 @@
 
 #include "core/engine.h"
 #include "graphics/buffer.h"
+#include "math/tangent.h"
 #include "render/model.h"
 
 namespace golias {
+
+    namespace {
+
+        void generate_mesh_tangents(std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
+
+            TangentLayout layout;
+            layout.Stride    = kVertexFloatCount;
+            layout.Position  = offsetof(Vertex, position) / sizeof(float);
+            layout.TexCoord  = offsetof(Vertex, texcoord) / sizeof(float);
+            layout.Normal    = offsetof(Vertex, normal) / sizeof(float);
+            layout.Tangent   = offsetof(Vertex, tangent) / sizeof(float);
+            layout.Bitangent = offsetof(Vertex, bitangent) / sizeof(float);
+            GenerateTangents(vertices, indices, layout);
+        }
+
+        // Flattens Vertex data (tangents/bitangents may be zeroed) into the interleaved float buffer.
+        std::vector<float> flatten(const std::vector<Vertex>& vertices) {
+            std::vector<float> out;
+            out.reserve(vertices.size() * kVertexFloatCount);
+
+            // clang-format off
+            for (const Vertex& v : vertices) {
+                out.insert(out.end(),
+                           {v.position.x,    v.position.y,    v.position.z,
+                            v.color.x,       v.color.y,       v.color.z,
+                            v.texcoord.x,    v.texcoord.y,
+                            v.normal.x,      v.normal.y,      v.normal.z,
+                            v.tangent.x,     v.tangent.y,     v.tangent.z,
+                            v.bitangent.x,   v.bitangent.y,   v.bitangent.z});
+            }
+            // clang-format on
+
+            return out;
+        }
+
+    } // namespace
 
     Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
         mVertexLayout = layout;
@@ -163,37 +200,37 @@ namespace golias {
         const float sz = size.z;
 
         // clang-format off
-        std::vector<float> vertices = {
+        std::vector<Vertex> vertices = {
             // Front (+Z)
-            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sy,   0.0f, 0.0f, 1.0f,
-            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   0.0f, 0.0f, 1.0f,
-            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 0.0f, 1.0f,
+            {{ halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   sy },  {0.0f, 0.0f, 1.0f}},
+            {{-halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sy },  {0.0f, 0.0f, 1.0f}},
+            {{-halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{ halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   0.0f}, {0.0f, 0.0f, 1.0f}},
             // Back (-Z)
-            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   0.0f, 0.0f, -1.0f,
-            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sy,   0.0f, 0.0f, -1.0f,
-            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 0.0f, -1.0f,
-            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+            {{-halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sy },  {0.0f, 0.0f, -1.0f}},
+            {{ halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   sy },  {0.0f, 0.0f, -1.0f}},
+            {{ halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   0.0f}, {0.0f, 0.0f, -1.0f}},
+            {{-halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
             // Top (+Y)
-            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, 1.0f, 0.0f,
-            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sz,   0.0f, 1.0f, 0.0f,
-            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sz,   0.0f, 1.0f, 0.0f,
+            {{-halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{ halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{ halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   sz },  {0.0f, 1.0f, 0.0f}},
+            {{-halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sz },  {0.0f, 1.0f, 0.0f}},
             // Bottom (-Y)
-            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sz,   0.0f, -1.0f, 0.0f,
-            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   sz,   0.0f, -1.0f, 0.0f,
-            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sx,   0.0f, 0.0f, -1.0f, 0.0f,
-            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+            {{-halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sz },  {0.0f, -1.0f, 0.0f}},
+            {{ halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   sz },  {0.0f, -1.0f, 0.0f}},
+            {{ halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   0.0f}, {0.0f, -1.0f, 0.0f}},
+            {{-halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}},
             // Right (+X)
-            halfSize.x,  halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, sy,   1.0f, 0.0f, 0.0f,
-            halfSize.x,  halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sz,   sy,   1.0f, 0.0f, 0.0f,
-            halfSize.x, -halfSize.y,  halfSize.z,   1.0f, 1.0f, 1.0f,  sz,   0.0f, 1.0f, 0.0f, 0.0f,
-            halfSize.x, -halfSize.y, -halfSize.z,   1.0f, 1.0f, 1.0f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+            {{ halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sy },  {1.0f, 0.0f, 0.0f}},
+            {{ halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sz,   sy },  {1.0f, 0.0f, 0.0f}},
+            {{ halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sz,   0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{ halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
             // Left (-X)
-            -halfSize.x,  halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, sy,   -1.0f, 0.0f, 0.0f,
-            -halfSize.x,  halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  sz,   sy,   -1.0f, 0.0f, 0.0f,
-            -halfSize.x, -halfSize.y, -halfSize.z,  1.0f, 1.0f, 1.0f,  sz,   0.0f, -1.0f, 0.0f, 0.0f,
-            -halfSize.x, -halfSize.y,  halfSize.z,  1.0f, 1.0f, 1.0f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f
+            {{-halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, sy },  {-1.0f, 0.0f, 0.0f}},
+            {{-halfSize.x,  halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sz,   sy },  {-1.0f, 0.0f, 0.0f}},
+            {{-halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sz,   0.0f}, {-1.0f, 0.0f, 0.0f}},
+            {{-halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}}
         };
         // clang-format on
 
@@ -208,14 +245,12 @@ namespace golias {
         };
         //  clang-format on
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0}); // Position
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)}); // Color
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)}); // TexCoord
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)}); // Normal
-        layout.Stride = 11 * sizeof(float);
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, vertices, indices);
+        const VertexLayout layout = StandardVertexLayout();
+
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
         return mesh;
     }
@@ -225,29 +260,27 @@ namespace golias {
         const glm::vec2 half = size * 0.5f;
 
         // clang-format off
-        std::vector<float> vertices = {
-            half.x,  half.y, 0.0f,  1,1,1,  1.0f, 1.0f,  0,0,1,
-            -half.x,  half.y, 0.0f,  1,1,1,  0.0f, 1.0f,  0,0,1,
-            -half.x, -half.y, 0.0f,  1,1,1,  0.0f, 0.0f,  0,0,1,
-            half.x, -half.y, 0.0f,  1,1,1,  1.0f, 0.0f,  0,0,1
+        std::vector<Vertex> vertices = {
+            {{ half.x,  half.y, 0.0f},  {1,1,1},  {1.0f, 1.0f},  {0,0,1}},
+            {{-half.x,  half.y, 0.0f},  {1,1,1},  {0.0f, 1.0f},  {0,0,1}},
+            {{-half.x, -half.y, 0.0f},  {1,1,1},  {0.0f, 0.0f},  {0,0,1}},
+            {{ half.x, -half.y, 0.0f},  {1,1,1},  {1.0f, 0.0f},  {0,0,1}}
         };
         // clang-format on
 
         std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});
-        layout.Stride = 11 * sizeof(float);
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        return std::make_shared<Mesh>(layout, vertices, indices);
+        const VertexLayout layout = StandardVertexLayout();
+
+        return std::make_shared<Mesh>(layout, fullVertices, indices);
     }
 
 
     Ref<Mesh> Mesh::CreateSphere(float radius, uint32_t sectorCount, uint32_t stackCount) {
-        std::vector<float> vertices;
+        std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
         for (uint32_t i = 0; i <= stackCount; ++i) {
@@ -265,7 +298,13 @@ namespace golias {
                 float u          = (float) j / sectorCount;
                 float v          = (float) i / stackCount;
 
-                vertices.insert(vertices.end(), {x, y, z, 1.0f, 1.0f, 1.0f, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1.0f, 1.0f, 1.0f},
+                    {u, v},
+                    normal, {0.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f}
+                });
             }
         }
 
@@ -287,19 +326,17 @@ namespace golias {
             }
         }
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});
-        layout.Stride = 11 * sizeof(float);
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        return std::make_shared<Mesh>(layout, vertices, indices);
+        const VertexLayout layout = StandardVertexLayout();
+
+        return std::make_shared<Mesh>(layout, fullVertices, indices);
     }
 
 
     Ref<Mesh> Mesh::CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
-        std::vector<float> vertices;
+        std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
         for (uint32_t i = 0; i <= majorSegments; ++i) {
@@ -318,7 +355,13 @@ namespace golias {
                 float u          = (float) i / majorSegments;
                 float v          = (float) j / minorSegments;
 
-                vertices.insert(vertices.end(), {x, y, z, 1.0f, 1.0f, 1.0f, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1.0f, 1.0f, 1.0f},
+                    {u, v},
+                    normal, {0.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f}
+                });
             }
         }
 
@@ -337,19 +380,17 @@ namespace golias {
             }
         }
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});
-        layout.Stride = 11 * sizeof(float);
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        return std::make_shared<Mesh>(layout, vertices, indices);
+        const VertexLayout layout = StandardVertexLayout();
+
+        return std::make_shared<Mesh>(layout, fullVertices, indices);
     }
 
 
     Ref<Mesh> Mesh::CreateCylinder(float radiusTop, float radiusBottom, float height, uint32_t sectorCount) {
-        std::vector<float> vertices;
+        std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         float halfH = height * 0.5f;
 
@@ -367,7 +408,13 @@ namespace golias {
                 float u          = (float) j / sectorCount;
                 float v          = (float) i;
 
-                vertices.insert(vertices.end(), {x, y, z, 1.0f, 1.0f, 1.0f, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1.0f, 1.0f, 1.0f},
+                    {u, v},
+                    normal, {0.0f, 0.0f, 0.0f},
+                    {0.0f, 0.0f, 0.0f}
+                });
             }
         }
 
@@ -386,12 +433,18 @@ namespace golias {
 
         // Caps
         auto add_cap = [&](float y, float r, bool top) {
-            uint32_t centerIdx = (uint32_t) (vertices.size() / 11);
+            uint32_t centerIdx = (uint32_t) vertices.size();
             glm::vec3 normal(0.0f, top ? 1.0f : -1.0f, 0.0f);
 
-            vertices.insert(vertices.end(), {0.0f, y, 0.0f, 1, 1, 1, 0.5f, 0.5f, normal.x, normal.y, normal.z});
+            vertices.push_back({
+                {0.0f, y, 0.0f},
+                {1, 1, 1},
+                {0.5f, 0.5f},
+                normal, {0, 0, 0},
+                {0, 0, 0}
+            });
 
-            uint32_t startIdx = (uint32_t) (vertices.size() / 11);
+            uint32_t startIdx = (uint32_t) vertices.size();
             for (uint32_t j = 0; j <= sectorCount; ++j) {
                 float angle = (float) j * (glm::two_pi<float>() / sectorCount);
                 float x     = r * cosf(angle);
@@ -399,7 +452,13 @@ namespace golias {
                 float u     = 0.5f + 0.5f * cosf(angle);
                 float v     = 0.5f + 0.5f * sinf(angle);
 
-                vertices.insert(vertices.end(), {x, y, z, 1, 1, 1, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1, 1, 1},
+                    {u, v},
+                    normal, {0, 0, 0},
+                    {0, 0, 0}
+                });
             }
 
             for (uint32_t j = 0; j < sectorCount; ++j) {
@@ -422,14 +481,12 @@ namespace golias {
             add_cap(-halfH, radiusBottom, false);
         }
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});
-        layout.Stride = 11 * sizeof(float);
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        return std::make_shared<Mesh>(layout, vertices, indices);
+        const VertexLayout layout = StandardVertexLayout();
+
+        return std::make_shared<Mesh>(layout, fullVertices, indices);
     }
 
     Ref<Mesh> Mesh::CreateCone(float radius, float height, uint32_t sectorCount) {
@@ -438,26 +495,11 @@ namespace golias {
 
 
     Ref<Mesh> Mesh::CreateCapsule(float radius, float cylinderHeight, uint32_t sectorCount, uint32_t hemisphereRings) {
-        std::vector<float> vertices;
+        std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
         float halfH           = cylinderHeight * 0.5f;
         uint32_t ringsPerHemi = hemisphereRings;
-        uint32_t totalRings   = ringsPerHemi * 2 + 1; // +1 for the middle seam is implicit via two cylinder rows
-
-        auto add_ring = [&](float y, float ringRadius, glm::vec3 normalDir, float v) {
-            for (uint32_t j = 0; j <= sectorCount; ++j) {
-                float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
-                float x          = ringRadius * cosf(angle);
-                float z          = ringRadius * sinf(angle);
-                glm::vec3 normal = glm::normalize(
-                    glm::vec3(normalDir.x != 0 || normalDir.z != 0 ? x : 0, normalDir.y, normalDir.x != 0 || normalDir.z != 0 ? z : 0));
-
-                (void) normal;
-                float u = (float) j / sectorCount;
-                vertices.insert(vertices.end(), {x, y, z, 1.0f, 1.0f, 1.0f, u, v, 0, 0, 0});
-            }
-        };
 
         // Top hemisphere
         for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
@@ -472,7 +514,13 @@ namespace golias {
                 glm::vec3 normal = glm::normalize(glm::vec3(x, radius * sinf(stackAngle), z));
                 float u          = (float) j / sectorCount;
                 float v          = (float) i / (ringsPerHemi * 2.0f + 1.0f);
-                vertices.insert(vertices.end(), {x, y, z, 1, 1, 1, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1, 1, 1},
+                    {u, v},
+                    normal, {0, 0, 0},
+                    {0, 0, 0}
+                });
             }
         }
 
@@ -483,7 +531,13 @@ namespace golias {
             float z          = radius * sinf(angle);
             glm::vec3 normal = glm::normalize(glm::vec3(x, 0.0f, z));
             float u          = (float) j / sectorCount;
-            vertices.insert(vertices.end(), {x, -halfH, z, 1, 1, 1, u, 0.5f, normal.x, normal.y, normal.z});
+            vertices.push_back({
+                {x, -halfH, z},
+                {1, 1, 1},
+                {u, 0.5f},
+                normal, {0, 0, 0},
+                {0, 0, 0}
+            });
         }
 
         //  Bottom hemisphere
@@ -499,7 +553,13 @@ namespace golias {
                 glm::vec3 normal = glm::normalize(glm::vec3(x, -radius * sinf(stackAngle), z));
                 float u          = (float) j / sectorCount;
                 float v          = 0.5f + (float) (i + 1) / (ringsPerHemi * 2.0f + 2.0f);
-                vertices.insert(vertices.end(), {x, y, z, 1, 1, 1, u, v, normal.x, normal.y, normal.z});
+                vertices.push_back({
+                    {x, y, z},
+                    {1, 1, 1},
+                    {u, v},
+                    normal, {0, 0, 0},
+                    {0, 0, 0}
+                });
             }
         }
 
@@ -521,16 +581,12 @@ namespace golias {
             }
         }
 
-        (void) totalRings;
+        std::vector<float> fullVertices = flatten(vertices);
+        generate_mesh_tangents(fullVertices, indices);
 
-        VertexLayout layout;
-        layout.Elements.push_back({0, 3, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 3, GL_FLOAT, 3 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 6 * sizeof(float)});
-        layout.Elements.push_back({3, 3, GL_FLOAT, 8 * sizeof(float)});
-        layout.Stride = 11 * sizeof(float);
+        const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, vertices, indices);
+        return std::make_shared<Mesh>(layout, fullVertices, indices);
     }
 
     Mesh::~Mesh() {

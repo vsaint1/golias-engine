@@ -8,7 +8,7 @@ namespace golias {
     void GenerateTangents(std::vector<float>& vertices,
                           const std::vector<uint32_t>& indices,
                           const TangentLayout& layout,
-                          size_t vertexCount = 0) {
+                          size_t vertexCount) {
 
         if (layout.Stride == 0 || vertices.empty()) {
             return;

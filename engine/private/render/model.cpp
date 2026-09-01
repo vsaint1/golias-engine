@@ -1,28 +1,13 @@
 #include "render/model.h"
 
 #include "core/engine.h"
+#include "math/tangent.h"
 #include <tiny_gltf.h>
 #include <tiny_obj_loader.h>
 
 namespace golias {
 
     namespace {
-        constexpr size_t kVertexStride = 11;
-
-        VertexLayout model_layout() {
-            VertexLayout layout;
-            layout.Elements = {
-                {0, 3, GL_FLOAT, 0                },
-                {1, 3, GL_FLOAT, 3 * sizeof(float)},
-                {2, 2, GL_FLOAT, 6 * sizeof(float)},
-                {3, 3, GL_FLOAT, 8 * sizeof(float)},
-            };
-
-            layout.Stride = kVertexStride * sizeof(float);
-
-            return layout;
-        }
-
         const unsigned char* accessor_data(const tinygltf::Model& model, const tinygltf::Accessor& accessor, int& stride, int& components) {
             if (accessor.bufferView < 0 || accessor.bufferView >= static_cast<int>(model.bufferViews.size())) {
                 return nullptr;
@@ -298,10 +283,12 @@ namespace golias {
         mVertices.insert(mVertices.end(), color, color + 3);
         mVertices.insert(mVertices.end(), texCoord, texCoord + 2);
         mVertices.insert(mVertices.end(), normal, normal + 3);
+        mVertices.insert(mVertices.end(), {0.0f, 0.0f, 0.0f}); // tangent placeholder
+        mVertices.insert(mVertices.end(), {0.0f, 0.0f, 0.0f}); // bitangent placeholder
     }
 
     GltfModel::GltfModel(const std::vector<char>& data, CString path) {
-        mVertexLayout = model_layout();
+        mVertexLayout = StandardVertexLayout();
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string error;
@@ -336,10 +323,11 @@ namespace golias {
                     continue;
                 }
 
-                const size_t base        = mVertices.size() / kVertexStride;
+                const size_t base        = mVertices.size() / kVertexFloatCount;
                 const size_t index_start = mIndices.size();
                 const size_t count       = model.accessors[position->second].count;
                 for (size_t i = 0; i < count; ++i) {
+                    const size_t vertexBase  = (mVertices.size() / kVertexFloatCount) * kVertexFloatCount;
                     float position_value[3]  = {};
                     float color_value[3]     = {1.0f, 1.0f, 1.0f};
                     float tex_coord_value[2] = {};
@@ -364,6 +352,41 @@ namespace golias {
 
                     convert_to_left_handed(position_value, normal_value);
                     AppendVertex(position_value, color_value, tex_coord_value, normal_value);
+
+                    // glTF TANGENT (vec4: xyz + handedness).
+                    auto tangent_attribute = primitive.attributes.find("TANGENT");
+                    if (tangent_attribute != primitive.attributes.end()) {
+                        float tangent_value[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+                        attribute(model, tangent_attribute->second, i, 4, tangent_value);
+
+                        // Convert to left-handed
+                        glm::vec3 tangent(tangent_value[0], tangent_value[1], tangent_value[2]);
+                        tangent.z     = -tangent.z;
+                        const float w = (tangent_value[3] < 0.0f) ? -1.0f : 1.0f;
+                        const glm::vec3 normal(normal_value[0], normal_value[1], normal_value[2]);
+                        const glm::vec3 bitangent = glm::cross(normal, tangent) * w;
+
+                        const size_t kTangentOffset                  = offsetof(Vertex, tangent) / sizeof(float);
+                        const size_t kBitangentOffset                = offsetof(Vertex, bitangent) / sizeof(float);
+                        mVertices[vertexBase + kTangentOffset]       = tangent.x;
+                        mVertices[vertexBase + kTangentOffset + 1]   = tangent.y;
+                        mVertices[vertexBase + kTangentOffset + 2]   = tangent.z;
+                        mVertices[vertexBase + kBitangentOffset]     = bitangent.x;
+                        mVertices[vertexBase + kBitangentOffset + 1] = bitangent.y;
+                        mVertices[vertexBase + kBitangentOffset + 2] = bitangent.z;
+                    }
+                }
+
+                // Compute tangents if they are not provided by the glTF TANGENT attribute.
+                {
+                    TangentLayout layout;
+                    layout.Stride    = kVertexFloatCount;
+                    layout.Position  = offsetof(Vertex, position) / sizeof(float);
+                    layout.TexCoord  = offsetof(Vertex, texcoord) / sizeof(float);
+                    layout.Normal    = offsetof(Vertex, normal) / sizeof(float);
+                    layout.Tangent   = offsetof(Vertex, tangent) / sizeof(float);
+                    layout.Bitangent = offsetof(Vertex, bitangent) / sizeof(float);
+                    GenerateTangents(mVertices, mIndices, layout, count > base ? base + count : base);
                 }
 
                 if (primitive.indices >= 0) {
@@ -525,12 +548,23 @@ namespace golias {
                     }
                 }
             }
+
+            const int normalTextureIndex = material.normalTexture.index;
+            if (normalTextureIndex >= 0 && normalTextureIndex < static_cast<int>(model.textures.size())) {
+                const int imageIndex = model.textures[normalTextureIndex].source;
+                if (imageIndex >= 0 && imageIndex < static_cast<int>(model.images.size())) {
+                    const String uri = model.images[imageIndex].uri;
+                    if (!uri.empty()) {
+                        modelMaterial.normalTexture = (Path(path).parent_path() / uri).generic_string();
+                    }
+                }
+            }
             mMaterials.push_back(std::move(modelMaterial));
         }
     }
 
     ObjModel::ObjModel(const std::vector<char>& data, CString path) {
-        mVertexLayout = model_layout();
+        mVertexLayout = StandardVertexLayout();
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -553,7 +587,7 @@ namespace golias {
                 const int faceMaterial = face < shape.mesh.material_ids.size() ? shape.mesh.material_ids[face] : -1;
                 if (faceMaterial != currentMaterial) {
                     ModelPrimitive primitive;
-                    primitive.vertexOffset  = mVertices.size() / kVertexStride;
+                    primitive.vertexOffset  = mVertices.size() / kVertexFloatCount;
                     primitive.indexOffset   = mIndices.size();
                     primitive.materialIndex = faceMaterial;
                     primitive.name          = shape.name;
@@ -593,7 +627,7 @@ namespace golias {
                     mIndices.push_back(static_cast<uint32_t>(mIndices.size()));
                 }
                 indexOffset += vertexCount;
-                currentPrimitive->vertexCount = mVertices.size() / kVertexStride - currentPrimitive->vertexOffset;
+                currentPrimitive->vertexCount = mVertices.size() / kVertexFloatCount - currentPrimitive->vertexOffset;
                 currentPrimitive->indexCount  = mIndices.size() - currentPrimitive->indexOffset;
             }
         }
@@ -606,6 +640,17 @@ namespace golias {
                 modelMaterial.baseColorTexture = (Path(path).parent_path() / material.diffuse_texname).lexically_normal().generic_string();
             }
             mMaterials.push_back(std::move(modelMaterial));
+        }
+
+        {
+            TangentLayout layout;
+            layout.Stride    = kVertexFloatCount;
+            layout.Position  = offsetof(Vertex, position) / sizeof(float);
+            layout.TexCoord  = offsetof(Vertex, texcoord) / sizeof(float);
+            layout.Normal    = offsetof(Vertex, normal) / sizeof(float);
+            layout.Tangent   = offsetof(Vertex, tangent) / sizeof(float);
+            layout.Bitangent = offsetof(Vertex, bitangent) / sizeof(float);
+            GenerateTangents(mVertices, mIndices, layout);
         }
 
         reverse_triangle_winding(mIndices, 0);
