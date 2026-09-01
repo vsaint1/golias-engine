@@ -1,5 +1,6 @@
 #pragma once
 
+#include "graphics/render_types.h"
 #include "stdafx.h"
 
 namespace golias {
@@ -28,14 +29,27 @@ namespace golias {
 
         void Bind() const;
 
-        void SetParameter(const std::string& name, const ParamType& value);
+        void SetParameterValue(CString name, const ParamType& value);
 
         bool ApplyParametersFromJson(const Json& parameters);
 
-        ParamType GetParameter(const std::string& name) const;
+        ParamType GetParameter(CString name) const;
+
+        const RenderState& GetRenderState() const;
+        void SetRenderState(const RenderState& state);
+
+        void SetBlendMode(BlendMode mode);
+
+        void SetCullMode(CullMode mode);
+
+        void SetDepthTestEnabled(bool enabled);
+
+        void SetDepthWriteEnabled(bool enabled);
 
     private:
         Ref<Shader> mShader = nullptr;
+
+        RenderState mRenderState = {};
 
         std::unordered_map<std::string, ParamType> mParameters = {};
     };

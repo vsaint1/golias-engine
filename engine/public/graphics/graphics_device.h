@@ -7,6 +7,7 @@ namespace golias {
     class Shader;
     class Material;
     class Mesh;
+    class Texture2D;
     class Texture2DArray;
     class TextureCube;
     class Framebuffer;
@@ -17,12 +18,13 @@ namespace golias {
     class GraphicsDevice {
 
     public:
-        ~GraphicsDevice();
+        ~GraphicsDevice() = default;
 
         bool Initialize();
 
         Ref<Shader> CreateShader(const std::string& vertexSource, const std::string& fragmentSource);
 
+        Ref<Texture2D> CreateTexture2D(const TextureDesc& desc);
         Ref<Texture2DArray> CreateTexture2DArray(const TextureDesc& desc);
         Ref<TextureCube> CreateTextureCube(const TextureDesc& desc);
 

@@ -53,6 +53,8 @@ namespace golias {
 
         Ref<Texture2D> AcquireErrorTexture();
 
+        Ref<Texture2D> AcquireFlatNormalTexture();
+
     private:
         using AssetMap = std::unordered_map<std::type_index, AssetType>;
         std::unordered_map<String, AssetMap> mAssets;
@@ -64,6 +66,7 @@ namespace golias {
         Ref<Material> mDefaultMaterial = nullptr;
         Ref<Texture2D> mWhiteTexture   = nullptr;
         Ref<Texture2D> mErrorTexture   = nullptr;
+        Ref<Texture2D> mFlatNormalTexture = nullptr;
     };
 
 } // namespace golias

@@ -8,6 +8,9 @@ namespace golias {
 
     public:
         Texture2D(int32_t width, int32_t height, int32_t channels, unsigned char* data);
+
+        explicit Texture2D(const TextureDesc& desc);
+
         ~Texture2D();
 
         static Ref<Texture2D> Load(CString path);
@@ -23,10 +26,12 @@ namespace golias {
         GLenum GetTarget() const override;
 
         const TextureDesc& GetDesc() const override;
-        
+
         bool Recreate(const TextureDesc& desc) override;
 
     private:
+        void Allocate(const TextureDesc& desc);
+
         int32_t mWidth    = 0;
         int32_t mHeight   = 0;
         int32_t mChannels = 0;

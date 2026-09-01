@@ -3,6 +3,7 @@
 #include "graphics/buffer.h"
 #include "graphics/framebuffer.h"
 #include "graphics/shader.h"
+#include "graphics/texture_2d.h"
 #include "graphics/texture_2d_array.h"
 #include "graphics/texture_cube.h"
 #include "render/material.h"
@@ -11,7 +12,10 @@
 
 namespace golias {
 
-    GraphicsDevice::~GraphicsDevice() = default;
+
+    Ref<Texture2D> GraphicsDevice::CreateTexture2D(const TextureDesc& desc) {
+        return std::make_shared<Texture2D>(desc);
+    }
 
     Ref<Texture2DArray> GraphicsDevice::CreateTexture2DArray(const TextureDesc& desc) {
         return std::make_shared<Texture2DArray>(desc);

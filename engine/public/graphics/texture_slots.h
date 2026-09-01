@@ -11,6 +11,7 @@ namespace golias {
     // TODO: add more text. slots
     namespace TextureSlots {
         inline constexpr TextureBinding MainTexture{"_MainTexture", 0};
+        inline constexpr TextureBinding NormalMap{"_NormalMap", 1};
         inline constexpr TextureBinding ShadowMap{"_ShadowMap", 8};
     } // namespace TextureSlots
 

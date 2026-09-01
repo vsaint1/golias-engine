@@ -66,6 +66,14 @@ namespace golias {
 
     // clang-format on
 
+    /// @brief  Per-material rasterization state.
+    struct RenderState {
+        BlendMode Blend      = BlendMode::None;
+        CullMode  Cull       = CullMode::None;
+        bool DepthTest       = true;
+        bool DepthWrite      = true;
+    };
+
 
     inline constexpr BufferTarget operator|(BufferTarget a, BufferTarget b) {
         return static_cast<BufferTarget>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
