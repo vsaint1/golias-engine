@@ -98,7 +98,7 @@ namespace golias {
         std::vector<RenderCommand2D> mCommands2D         = {};
         std::vector<RenderCanvasCommand> mCanvasCommands = {};
 
-        GLuint mLightingBuffer = 0;
+        Ref<Buffer> mLightingBuffer = nullptr;
 
         Ref<Shader> mDefault2DShader = nullptr;
         Ref<Shader> mDefaultUIShader = nullptr;

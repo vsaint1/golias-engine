@@ -6,6 +6,8 @@
 namespace golias {
 
     class Model;
+    class Buffer;
+    
     struct ModelPrimitive;
 
     class Mesh {
@@ -61,8 +63,8 @@ namespace golias {
         AABB mAABB;
 
         GLuint mVAO = 0;
-        GLuint mVBO = 0;
-        GLuint mEBO = 0;
+        Ref<Buffer> mEBO = nullptr;
+        Ref<Buffer> mVBO = nullptr;
     };
 
 } // namespace golias

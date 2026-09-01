@@ -10,6 +10,8 @@ namespace golias {
     class Texture2DArray;
     class TextureCube;
     class Framebuffer;
+    class Buffer;
+
     struct TextureDesc;
 
     class GraphicsDevice {
@@ -26,9 +28,7 @@ namespace golias {
 
         Ref<Framebuffer> CreateFramebuffer(const TextureDesc& desc);
 
-        uint32_t CreateBuffer(const BufferDesc& desc);
-
-        void UpdateBuffer(uint32_t handle, BufferTarget target, const void* data, const size_t size, const size_t offset = 0);
+        Ref<Buffer> CreateBuffer(const BufferDesc& desc);
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
@@ -37,7 +37,7 @@ namespace golias {
         void SetDepthWriteEnabled(bool enabled);
 
         void SetBlendMode(BlendMode mode = BlendMode::None);
-        
+
         void ClearBuffers(ClearFlag flag = ClearFlag::Color | ClearFlag::Depth);
 
         const Viewport& GetViewport() const;
@@ -50,17 +50,14 @@ namespace golias {
         void BindMaterial(Material* material);
 
         void BindMesh(Mesh* mesh);
-
         void DrawMesh(Mesh* mesh);
-
         void UnbindMesh(Mesh* mesh);
 
-        void BindUniformBuffer(GLuint buffer, uint32_t binding);
-
-        void DestroyBuffer(GLuint buffer);
+        void BindBuffer(Buffer* buffer);
+        void UnbindBuffer(Buffer* buffer);
 
     private:
         std::unordered_map<std::string, Ref<Shader>> mShaderCache = {};
-        Viewport mViewport = {};
+        Viewport mViewport                                        = {};
     };
 } // namespace golias

@@ -1,5 +1,6 @@
 #include "graphics/graphics_device.h"
 
+#include "graphics/buffer.h"
 #include "graphics/framebuffer.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d_array.h"
@@ -182,39 +183,8 @@ namespace golias {
         }
     }
 
-    uint32_t GraphicsDevice::CreateBuffer(const BufferDesc& desc) {
-        GLuint buffer;
-        glGenBuffers(1, &buffer);
-
-        GLenum target         = GL_ARRAY_BUFFER;
-        const char* targetStr = "VERTEX_BUFFER";
-
-        if (HasFlag(desc.Target, BufferTarget::Vertex)) {
-            target = GL_ARRAY_BUFFER;
-        } else if (HasFlag(desc.Target, BufferTarget::Index)) {
-            target    = GL_ELEMENT_ARRAY_BUFFER;
-            targetStr = "INDEX_BUFFER";
-        } else if (HasFlag(desc.Target, BufferTarget::Uniform)) {
-            target    = GL_UNIFORM_BUFFER;
-            targetStr = "UNIFORM_BUFFER";
-        }
-
-
-        GLenum usage         = GL_STATIC_DRAW;
-        const char* usageStr = "Static";
-        if (desc.Usage == BufferUsage::Dynamic) {
-            usage    = GL_DYNAMIC_DRAW;
-            usageStr = "Dynamic";
-        } else if (desc.Usage == BufferUsage::Stream) {
-            usage    = GL_STREAM_DRAW;
-            usageStr = "Streaming";
-        }
-
-        glBindBuffer(target, buffer);
-        glBufferData(target, desc.Size, nullptr, usage);
-        glBindBuffer(target, 0);
-
-        GOLIAS_LOG_TRACE("Target %s | Usage %s | Buffer Handle %#u | Size %zu", targetStr, usageStr, buffer, desc.Size);
+    Ref<Buffer> GraphicsDevice::CreateBuffer(const BufferDesc& desc) {
+        Ref<Buffer> buffer = std::make_shared<Buffer>(desc);
 
         return buffer;
     }
@@ -239,24 +209,6 @@ namespace golias {
             break;
         }
     }
-
-    void GraphicsDevice::UpdateBuffer(uint32_t handle, BufferTarget target, const void* data, const size_t size, const size_t offset) {
-
-        GLenum internalTarget = GL_ARRAY_BUFFER;
-
-        if (HasFlag(target, BufferTarget::Vertex)) {
-            internalTarget = GL_ARRAY_BUFFER;
-        } else if (HasFlag(target, BufferTarget::Index)) {
-            internalTarget = GL_ELEMENT_ARRAY_BUFFER;
-        } else if (HasFlag(target, BufferTarget::Uniform)) {
-            internalTarget = GL_UNIFORM_BUFFER;
-        }
-
-        glBindBuffer(internalTarget, handle);
-        glBufferSubData(internalTarget, offset, size, data);
-        glBindBuffer(internalTarget, 0);
-    }
-
 
     void GraphicsDevice::SetDepthWriteEnabled(bool enabled) {
         glDepthMask(enabled ? GL_TRUE : GL_FALSE);
@@ -303,13 +255,17 @@ namespace golias {
     }
 
 
-    void GraphicsDevice::BindUniformBuffer(GLuint buffer, uint32_t binding) {
-        glBindBufferBase(GL_UNIFORM_BUFFER, binding, buffer);
-    }
-
-    void GraphicsDevice::DestroyBuffer(GLuint buffer) {
+    void GraphicsDevice::BindBuffer(Buffer* buffer) {
         if (buffer) {
-            glDeleteBuffers(1, &buffer);
+            buffer->Bind();
         }
     }
+
+    void GraphicsDevice::UnbindBuffer(Buffer* buffer) {
+        if (buffer) {
+            buffer->Unbind();
+        }
+    }
+
+
 } // namespace golias

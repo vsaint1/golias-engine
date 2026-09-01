@@ -3,6 +3,7 @@
 #include "core/engine.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d.h"
+#include "graphics/buffer.h"
 #include "render/csm.h"
 #include "render/material.h"
 #include "render/mesh.h"
@@ -14,9 +15,7 @@ namespace golias {
     }
 
     CommandQueue::~CommandQueue() {
-        if (mLightingBuffer) {
-            Engine::GetInstance().GetGraphicsDevice().DestroyBuffer(mLightingBuffer);
-        }
+     
     }
 
     bool CommandQueue::Initialize() {
@@ -88,7 +87,6 @@ namespace golias {
             // clang-format on
 
             mLightingBuffer = device.CreateBuffer(desc);
-            device.BindUniformBuffer(mLightingBuffer, 0);
         }
 
         GpuLighting lighting = {
@@ -108,7 +106,7 @@ namespace golias {
             destination.IsShadowCaster = source.IsShadowCaster ? 1 : 0;
         }
 
-        device.UpdateBuffer(mLightingBuffer, BufferTarget::Uniform, &lighting, sizeof(lighting));
+        mLightingBuffer->Update(&lighting, sizeof(lighting));
 
         for (const auto& cameraCommand : mCameraCommands) {
 
@@ -128,10 +126,10 @@ namespace golias {
                     continue;
                 }
                 if (command.Material) {
-                    command.Material->SetParameter("_ModelMatrix", command.Model);
-                    command.Material->SetParameter("_ViewMatrix", cameraCommand.View);
-                    command.Material->SetParameter("_ProjectionMatrix", cameraCommand.Projection);
-                    command.Material->SetParameter("_CameraPos", cameraCommand.CameraPosition);
+                    command.Material->SetParameterValue("_ModelMatrix", command.Model);
+                    command.Material->SetParameterValue("_ViewMatrix", cameraCommand.View);
+                    command.Material->SetParameterValue("_ProjectionMatrix", cameraCommand.Projection);
+                    command.Material->SetParameterValue("_CameraPos", cameraCommand.CameraPosition);
                     device.BindMaterial(command.Material);
                     if (mHasShadows) {
                         Shader* shader = command.Material->GetShader().get();

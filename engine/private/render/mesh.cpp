@@ -1,6 +1,7 @@
 #include "render/mesh.h"
 
 #include "core/engine.h"
+#include "graphics/buffer.h"
 #include "render/model.h"
 
 namespace golias {
@@ -39,7 +40,7 @@ namespace golias {
         // clang-format on
 
         mVBO = device.CreateBuffer(desc);
-        device.UpdateBuffer(mVBO, BufferTarget::Vertex, vertices.data(), vertices.size() * sizeof(float));
+        mVBO->Update(vertices.data(), vertices.size() * sizeof(float));
 
         if (!indices.empty()) {
 
@@ -52,12 +53,12 @@ namespace golias {
             // clang-format on
 
             mEBO = device.CreateBuffer(desc);
-            device.UpdateBuffer(mEBO, BufferTarget::Index, indices.data(), indices.size() * sizeof(uint32_t));
+            mEBO->Update(indices.data(), indices.size() * sizeof(uint32_t));
         }
 
         glGenVertexArrays(1, &mVAO);
         glBindVertexArray(mVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, mVBO);
+        mVBO->Bind();
 
         for (const auto& element : layout.Elements) {
             glVertexAttribPointer(element.Index, element.Size, element.Type, GL_FALSE, layout.Stride, (void*) (uintptr_t) (element.Offset));
@@ -65,7 +66,7 @@ namespace golias {
         }
 
         if (mEBO) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
+            mEBO->Bind();
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -119,12 +120,11 @@ namespace golias {
         mIndexCount  = indices.size();
 
         glBindVertexArray(mVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW);
+        mVBO->Update(vertices.data(), vertices.size() * sizeof(float));
 
         if (mEBO && mIndexCount > 0) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(), GL_DYNAMIC_DRAW);
+            mEBO->Update(indices.data(), indices.size() * sizeof(uint32_t));
+            mEBO->Bind();
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -536,14 +536,6 @@ namespace golias {
     Mesh::~Mesh() {
         if (mVAO) {
             glDeleteVertexArrays(1, &mVAO);
-        }
-
-        if (mVBO) {
-            glDeleteBuffers(1, &mVBO);
-        }
-
-        if (mEBO) {
-            glDeleteBuffers(1, &mEBO);
         }
     }
 
