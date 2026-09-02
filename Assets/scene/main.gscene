@@ -2018,6 +2018,62 @@
                     ]
                 },
                 {
+                    "name": "Medkit_Obj",
+                    "type": "Medkit",
+                    "position": {
+                        "x": -8.0,
+                        "y": 0.5,
+                        "z": 12.0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0,
+                        "w": 1
+                    },
+                    "scale": {
+                        "x": 0.1,
+                        "y": 0.1,
+                        "z": 0.1
+                    },
+                    "components": [
+                        {
+                            "type": "PhysicsComponent",
+                            "body": {
+                                "type": "static",
+                                "collider": {
+                                    "type": "box",
+                                    "size": {
+                                        "x": 1.0,
+                                        "y": 1.0,
+                                        "z": 1.0
+                                    },
+                                    "is_trigger": true
+                                }
+                            }
+                        },
+                        {
+                            "type": "AudioSourceComponent",
+                            "audios": [
+                                {
+                                    "name": "medkit_pickup",
+                                    "path": "audios/Hl_medkit_sound.mp3",
+                                    "looping": false,
+                                    "play_on_start": false,
+                                    "volume": 0.2
+                                }
+                            ]
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "SM_Medkit",
+                            "type": "Model",
+                            "path": "models/medkit/Medkit.obj"
+                        }
+                    ]
+                },
+                {
                     "name": "PlayerObject",
                     "type": "Player",
                     "position": {
@@ -2457,7 +2513,7 @@
                     ],
                     "children": [
                         {
-                            "name": "SettingsText",
+                            "name": "MasterVolumeText",
                             "components": [
                                 {
                                     "type": "TextComponent",

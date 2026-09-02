@@ -3,12 +3,14 @@
 #include "hurt_platform.h"
 #include "player.h"
 #include "test_obj.h"
+#include "medkit.h"
 
 void GameApplication::RegisterTypes() {
 
     Player::Register();
     TestObject::Register();
     HurtPlatform::Register();
+    Medkit::Register();
 }
 
 // TODO: This can be moved to separate classes for better organization

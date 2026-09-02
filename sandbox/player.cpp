@@ -33,6 +33,15 @@ void Player::Start() {
         mAudioSource = audioSource;
     }
 
+    if (GameObject* canvas = FindChildByName("HUDCanvas")) {
+        if (ProgressBarComponent* healthBar = canvas->FindChildByName("HUDHealth")->GetComponent<ProgressBarComponent>()) {
+            healthBar->SetMinValue(0.0f);
+            healthBar->SetMaxValue(static_cast<float>(mMaxHealth));
+            mHealthBar = healthBar;
+        }
+    }
+
+
     mSphereMaterial = Engine::GetInstance().GetAssetManager().Load<Material>("materials/suzanne.gmat");
 }
 
@@ -40,13 +49,31 @@ int Player::GetHealth() const {
     return mHealth;
 }
 
+void Player::Heal(int amount) {
+    mHealth += amount;
+    mHealth = glm::clamp(mHealth, 0, mMaxHealth);
+
+    if (mHealthBar) {
+        mHealthBar->SetValue(mHealth);
+    }
+}
+
 void Player::TakeDamage(int amount) {
     mHealth -= amount;
-    mHealth = glm::clamp(0, 100, mHealth);
+    mHealth = glm::clamp(mHealth, 0, mMaxHealth);
 
     if (mHealth <= 0) {
         GOLIAS_LOG_WARN("PLAYER DIED");
     }
+
+    if (mHealthBar) {
+        mHealthBar->SetValue(mHealth);
+    }
+}
+
+void Player::Knockback(const glm::vec3& direction, float force) {
+  
+    mPlayerController->ApplyForce(direction, force);
 }
 
 void Player::Update(float deltaTime) {
@@ -75,11 +102,11 @@ void Player::Update(float deltaTime) {
 
         if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
-            const glm::vec3 direction      = GetRotation() * glm::vec3(-0.2f, 0.2f, 1.75f);
+            const glm::vec3 direction      = GetRotation() * glm::vec3(-0.1f, 0.2f, 1.75f);
 
             bullet->SetPosition(muzzlePosition + direction);
 
-            Ref<Collider> collider = std::make_shared<SphereCollider>(0.3f);
+            Ref<Collider> collider = std::make_shared<SphereCollider>(0.2f);
 
             PhysicsMaterial phys = {.Mass = 10, .Restitution = 1};
             Ref<RigidBody> rb    = std::make_shared<RigidBody>(RigidBodyType::Dynamic, collider, phys);
@@ -91,9 +118,9 @@ void Player::Update(float deltaTime) {
     }
 
     if (inputManager.IsKeyPressed(KeyCode::LeftShift)) {
-        mPlayerController->SetMoveSpeed(15.0f);
+        mPlayerController->SetMoveSpeed(8.0f);
     } else {
-        mPlayerController->SetMoveSpeed(10.0f);
+        mPlayerController->SetMoveSpeed(4.0f);
     }
 
     if (inputManager.IsKeyJustPressed(KeyCode::Space)) {
