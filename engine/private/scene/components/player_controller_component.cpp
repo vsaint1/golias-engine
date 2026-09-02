@@ -95,7 +95,7 @@ namespace golias {
         }
 
         if (glm::length2(movement) > 0.0f) {
-            movement = glm::normalize(movement) * mMoveSpeed * deltaTime;
+            movement = glm::normalize(movement) * mMoveSpeed * PhysicsManager::kFixedTimeStep;
         }
 
         mCharacterController->Walk(movement);
@@ -133,6 +133,12 @@ namespace golias {
     void PlayerControllerComponent::Jump(const glm::vec3& direction) {
         if (mCharacterController) {
             mCharacterController->Jump(direction);
+        }
+    }
+
+    void PlayerControllerComponent::ApplyForce(const glm::vec3& direction, float force) {
+        if (mCharacterController) {
+            mCharacterController->ApplyForce(direction, force);
         }
     }
 

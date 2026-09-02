@@ -90,6 +90,10 @@ namespace golias {
         mController->jump(btVector3(direction.x, direction.y, direction.z));
     }
 
+    void KinematicCharacterController::ApplyForce(const glm::vec3& direction, float force) {
+        mController->applyImpulse(btVector3(direction.x * force, direction.y * force, direction.z * force));
+    }
+
     bool KinematicCharacterController::IsOnGround() const {
         return mController->onGround();
     }

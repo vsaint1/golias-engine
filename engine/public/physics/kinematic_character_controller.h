@@ -22,6 +22,8 @@ namespace golias {
         void Walk(const glm::vec3& direction);
 
         void Jump(const glm::vec3& direction);
+        
+        void ApplyForce(const glm::vec3& direction, float force);
 
         bool IsOnGround() const;
     private:

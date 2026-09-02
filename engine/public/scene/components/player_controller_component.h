@@ -34,8 +34,10 @@ namespace golias {
 
         void Jump(const glm::vec3& direction);
 
+        void ApplyForce(const glm::vec3& direction, float force);
+
     private:
-        float mMoveSpeed   = 10.0f;
+        float mMoveSpeed   = 5.0f;
         float mSensitivity = 0.1f;
 
         float mRadius = 0.4f;
