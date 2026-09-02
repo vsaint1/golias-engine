@@ -229,13 +229,14 @@ namespace golias {
             return std::make_shared<GltfModel>(data, path);
         }
 
+        if (is_obj(data)) {
+            return std::make_shared<ObjModel>(data, path);
+        }
+
         if (is_json_gltf(data)) {
             return std::make_shared<GltfModel>(data, path);
         }
 
-        if (is_obj(data)) {
-            return std::make_shared<ObjModel>(data, path);
-        }
 
         GOLIAS_LOG_ERROR("Unknown model format: %s", pathString.c_str());
         return nullptr;
@@ -406,6 +407,7 @@ namespace golias {
                 reverse_triangle_winding(mIndices, index_start);
 
                 ModelPrimitive modelPrimitive;
+
                 modelPrimitive.vertexOffset  = base;
                 modelPrimitive.vertexCount   = count;
                 modelPrimitive.indexOffset   = index_start;
@@ -565,44 +567,70 @@ namespace golias {
 
     ObjModel::ObjModel(const std::vector<char>& data, CString path) {
         mVertexLayout = StandardVertexLayout();
+
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string error;
+
         const std::string source(data.data(), data.size());
         std::istringstream stream(source);
+
         const Path base = Engine::GetInstance().GetFileSystem().GetAssetsFolder() / Path(path).parent_path();
-        tinyobj::MaterialFileReader materialReader(base.string());
+
+        const std::string materialBasePath = base.generic_string() + "/";
+
+        tinyobj::MaterialFileReader materialReader(materialBasePath);
 
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &error, &stream, &materialReader, true)) {
+
             GOLIAS_LOG_ERROR("Failed to parse OBJ '%s': %s", path.data(), error.c_str());
+
             return;
         }
+
+        if (!error.empty()) {
+            GOLIAS_LOG_WARN("OBJ parsing warnings for '%s': %s", path.data(), error.c_str());
+        }
+
+        GOLIAS_LOG_TRACE(
+            "OBJ '%s' shapes=%zu materials=%zu vertices=%zu", path.data(), shapes.size(), materials.size(), attrib.vertices.size() / 3);
 
         for (const auto& shape : shapes) {
             size_t indexOffset               = 0;
             int currentMaterial              = -2;
             ModelPrimitive* currentPrimitive = nullptr;
+
             for (size_t face = 0; face < shape.mesh.num_face_vertices.size(); ++face) {
+
                 const int faceMaterial = face < shape.mesh.material_ids.size() ? shape.mesh.material_ids[face] : -1;
+
                 if (faceMaterial != currentMaterial) {
                     ModelPrimitive primitive;
-                    primitive.vertexOffset  = mVertices.size() / kVertexFloatCount;
+
+                    primitive.vertexOffset = mVertices.size() / kVertexFloatCount;
+
                     primitive.indexOffset   = mIndices.size();
                     primitive.materialIndex = faceMaterial;
                     primitive.name          = shape.name;
+
                     mPrimitives.push_back(std::move(primitive));
+
                     currentPrimitive = &mPrimitives.back();
                     currentMaterial  = faceMaterial;
                 }
 
                 const size_t vertexCount = shape.mesh.num_face_vertices[face];
+
                 for (size_t vertex = 0; vertex < vertexCount; ++vertex) {
-                    const auto& index        = shape.mesh.indices[indexOffset + vertex];
-                    float position_value[3]  = {};
-                    float color_value[3]     = {1.0f, 1.0f, 1.0f};
+                    const auto& index = shape.mesh.indices[indexOffset + vertex];
+
+                    float position_value[3] = {};
+                    float color_value[3]    = {1.0f, 1.0f, 1.0f};
+
                     float tex_coord_value[2] = {};
-                    float normal_value[3]    = {0.0f, 1.0f, 0.0f};
+
+                    float normal_value[3] = {0.0f, 1.0f, 0.0f};
 
                     if (index.vertex_index >= 0) {
                         for (int i = 0; i < 3; ++i) {
@@ -623,33 +651,49 @@ namespace golias {
                     }
 
                     convert_to_left_handed(position_value, normal_value);
+
                     AppendVertex(position_value, color_value, tex_coord_value, normal_value);
+
                     mIndices.push_back(static_cast<uint32_t>(mIndices.size()));
                 }
+
                 indexOffset += vertexCount;
+
                 currentPrimitive->vertexCount = mVertices.size() / kVertexFloatCount - currentPrimitive->vertexOffset;
-                currentPrimitive->indexCount  = mIndices.size() - currentPrimitive->indexOffset;
+
+                currentPrimitive->indexCount = mIndices.size() - currentPrimitive->indexOffset;
             }
         }
 
         for (const auto& material : materials) {
             ModelMaterial modelMaterial;
-            modelMaterial.name      = material.name;
+
+            modelMaterial.name = material.name;
+
             modelMaterial.baseColor = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], material.dissolve);
+
             if (!material.diffuse_texname.empty()) {
                 modelMaterial.baseColorTexture = (Path(path).parent_path() / material.diffuse_texname).lexically_normal().generic_string();
             }
+
             mMaterials.push_back(std::move(modelMaterial));
         }
 
         {
             TangentLayout layout;
-            layout.Stride    = kVertexFloatCount;
-            layout.Position  = offsetof(Vertex, position) / sizeof(float);
-            layout.TexCoord  = offsetof(Vertex, texcoord) / sizeof(float);
-            layout.Normal    = offsetof(Vertex, normal) / sizeof(float);
-            layout.Tangent   = offsetof(Vertex, tangent) / sizeof(float);
+
+            layout.Stride = kVertexFloatCount;
+
+            layout.Position = offsetof(Vertex, position) / sizeof(float);
+
+            layout.TexCoord = offsetof(Vertex, texcoord) / sizeof(float);
+
+            layout.Normal = offsetof(Vertex, normal) / sizeof(float);
+
+            layout.Tangent = offsetof(Vertex, tangent) / sizeof(float);
+
             layout.Bitangent = offsetof(Vertex, bitangent) / sizeof(float);
+
             GenerateTangents(mVertices, mIndices, layout);
         }
 
