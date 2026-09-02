@@ -26,7 +26,7 @@ namespace golias {
     public:
         CascadedShadowMap(const CascadedShadowMapDesc& settings = {});
 
-        void Prepare(const CascadedShadowMapDesc& settings);
+        void Prepare();
 
         void Build(const glm::mat4& cameraView,
                    const glm::mat4& cameraProjection,

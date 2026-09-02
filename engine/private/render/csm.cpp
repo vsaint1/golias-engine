@@ -28,12 +28,11 @@ namespace golias {
     }
 
 
-    CascadedShadowMap::CascadedShadowMap(const CascadedShadowMapDesc& settings) {
-        Prepare(settings);
+    CascadedShadowMap::CascadedShadowMap(const CascadedShadowMapDesc& settings) : mSettings(settings) {
+        Prepare();
     }
 
-    void CascadedShadowMap::Prepare(const CascadedShadowMapDesc& settings) {
-        mSettings = settings;
+    void CascadedShadowMap::Prepare() {
         mSettings.Clamp();
     }
 

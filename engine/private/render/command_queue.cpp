@@ -81,6 +81,12 @@ namespace golias {
         mDefaultUIMaterial->SetDepthTestEnabled(false);
         mDefaultUIMaterial->SetBlendMode(BlendMode::Alpha);
 
+        mFxaaShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/fxaa.gshader");
+        if (!mFxaaShader) {
+            GOLIAS_LOG_ERROR("Failed to create FXAA shader program");
+            return false;
+        }
+
         return true;
     }
 
@@ -315,9 +321,9 @@ namespace golias {
 
             RenderGeometry(cameraCommand, opaque);
             RenderTransparent(cameraCommand, transparent);
-            
+
             mHdrFramebuffer->Unbind();
-            
+
             RenderPostProcess(cameraCommand);
 
             device.SetDepthTestEnabled(false);
@@ -382,16 +388,32 @@ namespace golias {
             return;
         }
 
-        device.SetViewport(cameraCommand.Viewport);
+
         device.SetDepthTestEnabled(false);
         device.SetBlendMode(BlendMode::None);
+
+        // Tonemap
+        device.SetViewport(cameraCommand.Viewport);
+
+        mFxaaShader->Bind();
+        mFxaaShader->SetTexture(TextureSlots::MainTexture, mHdrColorTexture.get());
+        mFxaaShader->SetUniform("_TexelSizeX", 1.0f / static_cast<float>(mHdrColorTexture->GetDesc().Width));
+        mFxaaShader->SetUniform("_TexelSizeY", 1.0f / static_cast<float>(mHdrColorTexture->GetDesc().Height));
+        mFxaaShader->SetUniform("_SubpixelQuality", 0.75f);
+        mFxaaShader->SetUniform("_EdgeThreshold", 0.25f);
+        mFxaaShader->SetUniform("_EdgeThresholdMin", 0.0625f);
+
+        mFullscreenQuad->Bind();
+        mFullscreenQuad->Draw();
+
+        // FXAA
+        device.SetViewport(cameraCommand.Viewport);
 
         mPostProcessShader->Bind();
         mPostProcessShader->SetTexture(TextureSlots::MainTexture, mHdrColorTexture.get());
         mPostProcessShader->SetUniform("_Exposure", 1.0f);
-        // mPostProcessShader->SetUniform("_Tonemap", static_cast<int>(mTonemap));
+        mPostProcessShader->SetUniform("_Tonemap", static_cast<int>(mTonemap));
 
-        mFullscreenQuad->Bind();
         mFullscreenQuad->Draw();
         mFullscreenQuad->Unbind();
     }
@@ -399,12 +421,14 @@ namespace golias {
     void CommandQueue::RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light) {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
-        mShadowCsm.Prepare(mShadowCsmDesc);
+        mShadowCsm.Prepare();
         mShadowCsm.Build(cameraCommand.View, cameraCommand.Projection, light.Direction, cameraCommand.NearPlane, cameraCommand.FarPlane);
 
+        const CascadedShadowMapDesc shadowCsmDesc = mShadowCsm.GetSettings();
+
         TextureDesc desc;
-        desc.Width  = mShadowCsmDesc.ShadowMapResolution;
-        desc.Height = mShadowCsmDesc.ShadowMapResolution;
+        desc.Width  = shadowCsmDesc.ShadowMapResolution;
+        desc.Height = shadowCsmDesc.ShadowMapResolution;
         desc.Layers = CascadedShadowMapDesc::kMaxCascades;
         desc.Format = TextureFormat::Depth24;
         desc.Filter = TextureFilter::Linear;
@@ -432,7 +456,7 @@ namespace golias {
         device.SetCullMode(CullMode::Front);
 
         mShadowShader->Bind();
-        for (uint32_t cascade = 0; cascade < mShadowCsmDesc.CascadeCount; ++cascade) {
+        for (uint32_t cascade = 0; cascade < shadowCsmDesc.CascadeCount; ++cascade) {
             mShadowFramebuffer->SetDepthAttachment(mShadowTexture, cascade);
             mShadowFramebuffer->Bind();
             device.ClearBuffers(ClearFlag::Depth);

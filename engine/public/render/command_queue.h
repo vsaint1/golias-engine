@@ -12,9 +12,9 @@ namespace golias {
     class Texture2D;
 
     enum class Tonemap : int {
-        ACES     = 0,
-        Reinhard = 1,
-        Filmic   = 2,
+        None     = 0, // Only applies gamma correction
+        ACES     = 1, // ACES filmic tonemapping (approximation)
+        Reinhard = 2, // Reinhard tonemapping
     };
 
 
@@ -138,26 +138,28 @@ namespace golias {
 
         Ref<Buffer> mLightingBuffer = nullptr;
 
-        Ref<Shader> mDefault2DShader     = nullptr;
-        Ref<Shader> mDefaultUIShader     = nullptr;
-        Ref<Shader> mPostProcessShader   = nullptr;
+        Ref<Shader> mDefault2DShader   = nullptr;
+        Ref<Shader> mDefaultUIShader   = nullptr;
+        Ref<Shader> mFxaaShader        = nullptr;
+        Ref<Shader> mPostProcessShader = nullptr;
+
         Ref<Material> mDefault2DMaterial = nullptr;
         Ref<Material> mDefaultUIMaterial = nullptr;
-        Ref<Mesh> mQuadMesh              = nullptr;
-        Ref<Mesh> mFullscreenQuad        = nullptr;
+
+        Ref<Mesh> mQuadMesh       = nullptr;
+        Ref<Mesh> mFullscreenQuad = nullptr;
 
         Ref<Framebuffer> mHdrFramebuffer = nullptr;
-        Ref<Texture2D> mHdrColorTexture  = nullptr;
-        Ref<Texture> mHdrDepthTexture    = nullptr;
-
-        Viewport mHdrViewport            = {0, 0, 0, 0};
+        Ref<Texture2D> mHdrColorTexture = nullptr;
+        Ref<Texture2DArray> mHdrDepthTexture = nullptr;
+        
+        Viewport mHdrViewport = {0, 0, 0, 0};
 
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture  = nullptr;
         Ref<Shader> mShadowShader           = nullptr;
 
         CascadedShadowMap mShadowCsm;
-        CascadedShadowMapDesc mShadowCsmDesc = {};
 
         Tonemap mTonemap = Tonemap::Reinhard;
     };
