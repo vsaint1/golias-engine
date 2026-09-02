@@ -13,8 +13,12 @@ namespace golias {
 
         btCollisionShape* GetShape() const;
 
+        bool IsTrigger() const;
+        void SetTrigger(bool isTrigger);
+
     protected:
         btCollisionShape* mShape = nullptr;
+        bool mIsTrigger = false;
     };
 
 

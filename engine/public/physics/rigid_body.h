@@ -58,6 +58,12 @@ namespace golias {
         glm::quat GetRotation() const;
         void SetRotation(const glm::quat& rotation);
 
+        bool IsEnabled() const;
+        void SetEnabled(bool enabled);
+
+        bool IsTrigger() const;
+        void SetTrigger(bool isTrigger);
+
         void ApplyImpulse(const glm::vec3& force);
         void ApplyTorque(const glm::vec3& torque);
         void ApplyForce(const glm::vec3& force);
@@ -69,6 +75,8 @@ namespace golias {
         Ref<Collider> mCollider       = nullptr;
         Scope<btRigidBody> mRigidBody = nullptr;
 
+        int mDefaultCollisionFlags = 0;
         bool mIsAddedToWorld = false;
+        bool mIsEnabled      = true;
     };
 } // namespace golias

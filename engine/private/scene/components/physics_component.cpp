@@ -64,6 +64,10 @@ namespace golias {
                     GOLIAS_LOG_ERROR("Unsupported collider type '%s' in JSON.", type.data());
                     return false;
                 }
+
+                if (colliderObj.contains("is_trigger")) {
+                    collider->SetTrigger(colliderObj["is_trigger"].get<bool>());
+                }
             }
 
             if (!collider) {

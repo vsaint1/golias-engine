@@ -19,6 +19,14 @@ namespace golias {
         return mShape;
     }
 
+    bool Collider::IsTrigger() const {
+        return mIsTrigger;
+    }
+
+    void Collider::SetTrigger(bool isTrigger) {
+        mIsTrigger = isTrigger;
+    }
+
 
     BoxCollider::BoxCollider(float width, float height, float depth) : mWidth(width), mHeight(height), mDepth(depth) {
         glm::vec3 halfExtents(width / 2.0f, height / 2.0f, depth / 2.0f);

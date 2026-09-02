@@ -36,10 +36,19 @@ namespace golias {
         mRigidBody->setFriction(mPhysicsMaterial.Friction);
         mRigidBody->setRestitution(mPhysicsMaterial.Restitution);
 
+        int collisionFlags = 0;
+
         if (mType == RigidBodyType::Kinematic) {
-            mRigidBody->setCollisionFlags(mRigidBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+            collisionFlags |= btCollisionObject::CF_KINEMATIC_OBJECT;
             mRigidBody->setActivationState(DISABLE_DEACTIVATION);
         }
+
+        if (collider->IsTrigger()) {
+            collisionFlags |= btCollisionObject::CF_NO_CONTACT_RESPONSE;
+        }
+
+        mDefaultCollisionFlags = collisionFlags;
+        mRigidBody->setCollisionFlags(collisionFlags);
     }
 
     RigidBody::~RigidBody() {
@@ -129,6 +138,42 @@ namespace golias {
         btTransform transform = mRigidBody->getWorldTransform();
         transform.setRotation(btQuaternion(rotation.x, rotation.y, rotation.z, rotation.w));
         mRigidBody->setWorldTransform(transform);
+    }
+
+    bool RigidBody::IsEnabled() const {
+        return mIsEnabled;
+    }
+
+    void RigidBody::SetEnabled(bool enabled) {
+        if (!mRigidBody) {
+            return;
+        }
+
+        mIsEnabled = enabled;
+
+        if (enabled) {
+            mRigidBody->setCollisionFlags(mDefaultCollisionFlags);
+            mRigidBody->forceActivationState(ACTIVE_TAG);
+        } else {
+            mRigidBody->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            mRigidBody->forceActivationState(ISLAND_SLEEPING);
+        }
+    }
+
+    bool RigidBody::IsTrigger() const {
+        return mIsEnabled && (mRigidBody->getCollisionFlags() & btCollisionObject::CF_NO_CONTACT_RESPONSE) != 0;
+    }
+
+    void RigidBody::SetTrigger(bool isTrigger) {
+        if (!mRigidBody) {
+            return;
+        }
+
+        if (isTrigger) {
+            mRigidBody->setCollisionFlags(mRigidBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        } else {
+            mRigidBody->setCollisionFlags(mRigidBody->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        }
     }
 
     void RigidBody::ApplyImpulse(const glm::vec3& force) {
