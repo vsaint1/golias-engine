@@ -5,8 +5,18 @@ project(golias_sandbox)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
+option(ASAN "Enable AddressSanitizer" OFF)
 
 set(ASSETS_FOLDER "${CMAKE_SOURCE_DIR}/Assets")
+
+function(copy_assets)
+message(STATUS "Moving assets from ${ASSETS_FOLDER} to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets")
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${ASSETS_FOLDER} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets
+)
+endfunction()
+
 
 if (NOT EXISTS ${ASSETS_FOLDER})
     message(STATUS "Copy the default resources folder to ${ASSETS_FOLDER}")
@@ -24,10 +34,24 @@ if (APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fobjc-arc")
 endif ()
 
+
 if (MSVC)
-    if (NOT CMAKE_GENERATOR STREQUAL "Ninja")
-        add_definitions(/MP)
-    endif ()
+  
+    if(ASAN)
+        add_compile_options(/fsanitize=address)
+        add_link_options(/fsanitize=address)
+    endif()
+
+    add_definitions(/MP)
+    add_compile_definitions(/EHs-c-)
+else()
+    
+if(ASAN)
+        add_compile_options(-fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
+
+    add_compile_definitions(-fno-exceptions)
 endif ()
 
 if (EMSCRIPTEN)
@@ -74,7 +98,7 @@ if (APPLE)
     if (CMAKE_OSX_SYSROOT MATCHES ".*iPhoneOS.*" OR CMAKE_OSX_SYSROOT MATCHES ".*iPhoneSimulator.*")
         set(LAUNCH_SCREEN "${CMAKE_SOURCE_DIR}/templates/ios/LaunchScreen.storyboard")
         set(ICON_PATH "${CMAKE_SOURCE_DIR}/templates/ios/AppLogo.icns")
-        set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/Assets")
+        set(ASSETS_PATH "${ASSETS_FOLDER}")
 
         add_executable(${PROJECT_NAME} MACOSX_BUNDLE
                 ${SOURCES} ${LAUNCH_SCREEN} ${ASSETS_PATH})
@@ -143,13 +167,10 @@ if (WIN32)
 
     add_executable(${PROJECT_NAME} ${SOURCES})
 
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets)
+    copy_assets()
 
     target_link_libraries(${PROJECT_NAME} PUBLIC opengl32 glu32)
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+
 endif ()
 
 # WASM (Emscripten)
@@ -197,10 +218,7 @@ endif ()
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_executable(${PROJECT_NAME} ${SOURCES})
 
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets)
-
+    copy_assets()
     target_link_libraries(${PROJECT_NAME} PUBLIC dl pthread)
 endif ()
 
