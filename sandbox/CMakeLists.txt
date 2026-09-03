@@ -51,7 +51,7 @@ if(ASAN)
         add_link_options(-fsanitize=address)
     endif()
 
-    add_compile_definitions(-fno-exceptions)
+    add_compile_options(-fno-exceptions)
 endif ()
 
 if (EMSCRIPTEN)
