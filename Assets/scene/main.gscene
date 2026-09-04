@@ -2018,6 +2018,27 @@
                     ]
                 },
                 {
+                    "name":"SM_HevMedkit",
+                    "type":"Model",
+                    "path": "models/hevmedkit/hevmedkit.obj",
+                    "position": {
+                        "x": -10.0,
+                        "y": 1.5,
+                        "z": 14.8
+                    },
+                    "rotation":{
+                        "x": 0,
+                        "y": 0,
+                        "z": 0,
+                        "w": 1
+                    },
+                    "scale": {
+                        "x": 0.02,
+                        "y": 0.02,
+                        "z": 0.02
+                    }
+                },
+                {
                     "name": "Medkit_Obj",
                     "type": "Medkit",
                     "position": {
@@ -2118,6 +2139,13 @@
                                     "looping": true,
                                     "play_on_start": true,
                                     "volume": 0.3
+                                },
+                                {
+                                    "name": "hurt",
+                                    "path": "audios/mc_classic_hurt.mp3",
+                                    "looping": false,
+                                    "play_on_start": false,
+                                    "volume": 0.1
                                 }
                             ]
                         }
@@ -2174,8 +2202,8 @@
                                 {
                                     "type": "RectTransformComponent",
                                     "anchor": {
-                                        "x": 0.5,
-                                        "y": 0.5
+                                        "x": 0.0,
+                                        "y": 0.0
                                     },
                                     "pivot": {
                                         "x": 0.0,
@@ -2186,6 +2214,11 @@
                             "children": [
                                 {
                                     "name": "HUDText",
+                                    "position": {
+                                        "x": 10,
+                                        "y": 5,
+                                        "z": 0
+                                    },
                                     "components": [
                                         {
                                             "type": "TextComponent",
@@ -2220,12 +2253,12 @@
                                         {
                                             "type": "RectTransformComponent",
                                             "anchor": {
-                                                "x": 0.06,
-                                                "y": 0.01
+                                                "x": 0.0,
+                                                "y": 0.0
                                             },
                                             "pivot": {
-                                                "x": 0.2,
-                                                "y": 0.5
+                                                "x": 0.0,
+                                                "y": 0.0
                                             },
                                             "size": {
                                                 "x": 200,
@@ -2236,26 +2269,114 @@
                                 },
                                 {
                                     "name": "HUDHealth",
+                                    "position": {
+                                        "x": 10,
+                                        "y": 30,
+                                        "z": 0
+                                    },
                                     "components": [
                                         {
                                             "type": "ProgressBarComponent",
+                                            "min": 0.0,
+                                            "max": 100.0,
                                             "value": 100.0
                                         },
                                         {
                                             "type": "RectTransformComponent",
                                             "anchor": {
-                                                "x": 0.06,
-                                                "y": 0.05
+                                                "x": 0.0,
+                                                "y": 0.0
                                             },
                                             "pivot": {
-                                                "x": 0.2,
-                                                "y": 0.5
+                                                "x": 0.0,
+                                                "y": 0.0
                                             },
                                             "size": {
                                                 "x": 200,
                                                 "y": 20
                                             }
                                         }
+                                    ]
+                                },
+                                {
+                                    "name": "HUDStats",
+                                    "position": {
+                                        "x": -10,
+                                        "y": 10,
+                                        "z": 0
+                                    },
+                                    "components": [
+                                        {
+                                            "type": "PanelComponent",
+                                            "color": {
+                                                "r": 0.0,
+                                                "g": 0.0,
+                                                "b": 0.0,
+                                                "a": 0.2
+                                            },
+                                            "pass_through": true
+                                        },
+                                        {
+                                            "type": "RectTransformComponent",
+                                            "anchor": {
+                                                "x": 1.0,
+                                                "y": 0.0
+                                            },
+                                            "pivot": {
+                                                "x": 1.0,
+                                                "y": 0.0
+                                            },
+                                            "size": {
+                                                "x": 200,
+                                                "y": 200
+                                            }
+                                        }
+                                    ],
+                                    "children": [
+                                        {
+                                            "name": "HUDText_Stats",
+                                            "position": {
+                                                "x": 10,
+                                                "y": 5,
+                                                "z": 0
+                                            },
+                                            "components": [
+                                                {
+                                                    "type": "TextComponent",
+                                                    "font": {
+                                                        "text": "FPS: 67\nFrame Time: 14.9 ms\nCPU: 6.2 ms\nGPU: 8.1 ms\n\nRendering\nDraw Calls: 67\nBatches: 24\nVertices: 12,480\nTriangles: 4,160",
+                                                        "path": "fonts/arial.ttf",
+                                                        "size": 18,
+                                                        "pivot": {
+                                                            "x": 0.5,
+                                                            "y": 0.5
+                                                        },
+                                                        "color": {
+                                                            "r": 1.0,
+                                                            "g": 1.0,
+                                                            "b": 1.0,
+                                                            "a": 1.0
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "type": "RectTransformComponent",
+                                                    "anchor": {
+                                                        "x": 0.0,
+                                                        "y": 0.0
+                                                    },
+                                                    "pivot": {
+                                                        "x": 0.0,
+                                                        "y": 0.0
+                                                    },
+                                                    "size": {
+                                                        "x": 100,
+                                                        "y": 20
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                       
                                     ]
                                 },
                                 {
