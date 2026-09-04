@@ -31,6 +31,7 @@ namespace golias {
         Scene* GetScene() const;
         void SetScene(const Ref<Scene>& scene);
 
+        InputMode GetInputMode() const;
         void SetInputMode(InputMode mode);
 
         void Quit();
@@ -73,5 +74,6 @@ namespace golias {
         AssetManager mAssetManager;
 
         Ref<Scene> mScene = nullptr;
+
     };
 } // namespace golias

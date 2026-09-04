@@ -84,11 +84,7 @@ void Player::Update(float deltaTime) {
 
     InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
-    if (inputManager.IsKeyPressed(KeyCode::Escape)) {
-        GOLIAS_LOG_INFO("Escape key pressed. Closing the application.");
-    }
-
-    if (inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
+    if (!inputManager.IsCanvasFocused() && inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
 
         if (mGunAnimation->IsPlaying()) {
             return;

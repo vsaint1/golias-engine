@@ -20,4 +20,6 @@ private:
     GameObject* mCanvas = nullptr;
 
     GameObject* mSettingsCanvas = nullptr;
+
+    GameObject* mHUDCanvas = nullptr;
 };

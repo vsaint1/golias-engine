@@ -161,6 +161,14 @@ namespace golias {
         }
     }
 
+    InputMode Engine::GetInputMode() const {
+        if (mWindow) {
+            return mWindow->GetInputMode();
+        }
+
+        return InputMode::Cursor;
+    }
+
     void Engine::SetApplication(Application* app) {
         mApplication.reset(app);
     }

@@ -1,9 +1,9 @@
 #include "game.h"
 
 #include "hurt_platform.h"
+#include "medkit.h"
 #include "player.h"
 #include "test_obj.h"
-#include "medkit.h"
 
 void GameApplication::RegisterTypes() {
 
@@ -33,7 +33,7 @@ bool GameApplication::Initialize() {
             if (mRoot && !mRoot->IsActive()) {
                 mRoot->SetActive(true);
                 mCanvas->SetActive(false);
-                Engine::GetInstance().SetInputMode(InputMode::Disabled);
+                Engine::GetInstance().GetInputManager().SetCanvasFocus(false);
             }
         };
     }
@@ -50,22 +50,21 @@ bool GameApplication::Initialize() {
 
     if (GameObject* settingsMasterSlider = mSettingsCanvas->FindChildByName("MasterSoundSlider")) {
         InputSliderComponent* slider = settingsMasterSlider->GetComponent<InputSliderComponent>();
-        slider->onValueChanged = [](float value) {
-            Engine::GetInstance().GetAudioManager().SetMasterVolume(value);
-            
-        };
+        slider->onValueChanged       = [](float value) { Engine::GetInstance().GetAudioManager().SetMasterVolume(value); };
     }
 
     if (GameObject* settingsVsync = mSettingsCanvas->FindChildByName("VsyncToggle")) {
         CheckBoxComponent* checkBox = settingsVsync->GetComponent<CheckBoxComponent>();
-        checkBox->onValueChanged = [](bool value) {
-            GOLIAS_LOG_INFO("VSync toggled: %d", value);
-        };
+        checkBox->onValueChanged    = [](bool value) { GOLIAS_LOG_INFO("VSync toggled: %d", value); };
     }
 
     if (GameObject* exitbutton = mCanvas->FindChildByName("QuitButton")) {
         ButtonComponent* button = exitbutton->GetComponent<ButtonComponent>();
         button->onClick         = []() { Engine::GetInstance().Quit(); };
+    }
+
+    if (GameObject* hudCanvas = mRoot->FindChildByName("HUDCanvas")) {
+        mHUDCanvas = hudCanvas;
     }
 
 
@@ -75,13 +74,23 @@ bool GameApplication::Initialize() {
 void GameApplication::Update(float deltaTime) {
 
 
-    InputManager& inputManager = Engine::GetInstance().GetInputManager();
+    Engine& engine = Engine::GetInstance();
+    InputManager& inputManager = engine.GetInputManager();
+
+    if (mRoot && mRoot->IsActive() && inputManager.IsKeyJustPressed(KeyCode::LeftControl)) {
+       
+        if (inputManager.IsCanvasFocused()) {
+            inputManager.SetCanvasFocus(false);
+        } else {
+            inputManager.SetCanvasFocus(true);
+        }
+    }
 
     if (inputManager.IsKeyPressed(KeyCode::Escape)) {
 
         if (mRoot && mRoot->IsActive()) {
             mRoot->SetActive(false);
-            Engine::GetInstance().SetInputMode(InputMode::Cursor);
+            inputManager.SetCanvasFocus(true);
             mCanvas->SetActive(true);
         }
 
@@ -91,7 +100,7 @@ void GameApplication::Update(float deltaTime) {
         }
     }
 
-    Engine::GetInstance().GetScene()->Update(deltaTime);
+    engine.GetScene()->Update(deltaTime);
 }
 
 void GameApplication::Shutdown() {

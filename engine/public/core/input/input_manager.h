@@ -41,8 +41,12 @@ namespace golias {
 
         glm::vec2 GetScrollOffset() const;
 
-        void ResetTransientState();
+        bool IsCanvasFocused() const;
+        void SetCanvasFocus(bool focus);
 
+        void ResetMouseBaseline();
+
+        void ResetTransientState();
 
     private:
         InputManager()                               = default;
@@ -64,7 +68,9 @@ namespace golias {
         glm::vec2 mScrollOffset  = glm::vec2(0.0f, 0.0f);
 
         bool mHasMouseBaseline = false;
-        
+
+        bool mUIFocus = false;
+
         friend class Engine;
     };
 } // namespace golias

@@ -50,6 +50,10 @@ namespace golias {
     void PlayerControllerComponent::Update(float deltaTime) {
         InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
+        if (inputManager.IsCanvasFocused()) {
+            return;
+        }
+
         glm::quat rotation = GetOwner()->GetRotation();
 
         const glm::vec2 mouseDelta = inputManager.GetMouseDelta();

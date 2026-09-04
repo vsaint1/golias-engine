@@ -1,5 +1,7 @@
 ﻿#include "core/input/input_manager.h"
 
+#include "core/engine.h"
+
 namespace golias {
 
 
@@ -83,7 +85,7 @@ namespace golias {
         const glm::vec2 position{x, y};
         if (!mHasMouseBaseline) {
             mHasMouseBaseline = true;
-        } else {
+        } else if (!mUIFocus) {
             mMouseDelta += position - mMousePosition;
         }
 
@@ -93,10 +95,10 @@ namespace golias {
     void InputManager::SetMousePosition(const glm::vec2& position) {
         if (!mHasMouseBaseline) {
             mHasMouseBaseline = true;
-        } else {
+        } else if (!mUIFocus) {
             mMouseDelta += position - mMousePosition;
         }
-        
+
         mMousePosition = position;
     }
 
@@ -114,6 +116,23 @@ namespace golias {
 
     glm::vec2 InputManager::GetScrollOffset() const {
         return mScrollOffset;
+    }
+
+    bool InputManager::IsCanvasFocused() const {
+        return mUIFocus;
+    }
+
+    void InputManager::SetCanvasFocus(bool focus) {
+        mUIFocus = focus;
+
+        Engine::GetInstance().SetInputMode(focus ? InputMode::Cursor : InputMode::Disabled);
+
+        ResetMouseBaseline();
+    }
+
+    void InputManager::ResetMouseBaseline() {
+        mHasMouseBaseline = false;
+        mMouseDelta       = glm::vec2{0.0f};
     }
 
     void InputManager::ResetTransientState() {
