@@ -6,9 +6,10 @@
 namespace golias {
 
 
-    enum class InputMode { 
-        Cursor,
-        Disabled
+enum class InputMode { 
+        Cursor,  // Standard cursor visible
+        Hidden,  // Cursor hidden but still functional
+        Disabled // Cursor disabled (mouse-look FPS like)
     };
 
     class Window {

@@ -2018,15 +2018,15 @@
                     ]
                 },
                 {
-                    "name":"SM_HevMedkit",
-                    "type":"Model",
+                    "name": "SM_HevMedkit",
+                    "type": "Model",
                     "path": "models/hevmedkit/hevmedkit.obj",
                     "position": {
                         "x": -10.0,
                         "y": 1.5,
                         "z": 14.8
                     },
-                    "rotation":{
+                    "rotation": {
                         "x": 0,
                         "y": 0,
                         "z": 0,
@@ -2327,8 +2327,8 @@
                                                 "y": 0.0
                                             },
                                             "size": {
-                                                "x": 200,
-                                                "y": 200
+                                                "x": 300,
+                                                "y": 250
                                             }
                                         }
                                     ],
@@ -2375,8 +2375,106 @@
                                                     }
                                                 }
                                             ]
+                                        },
+                                        {
+                                            "name": "OptionsRow",
+                                            "position": {
+                                                "x": 10,
+                                                "y": 0,
+                                                "z": 0
+                                            },
+                                            "components": [
+                                                {
+                                                    "type": "BoxLayoutComponent",
+                                                    "direction": "horizontal",
+                                                    "spacing": 4,
+                                                    "padding": {
+                                                        "left": 0,
+                                                        "top": 0,
+                                                        "right": 0,
+                                                        "bottom": 0
+                                                    },
+                                                    "alignment": "center"
+                                                },
+                                                {
+                                                    "type": "RectTransformComponent",
+                                                    "anchor": {
+                                                        "x": 0.0,
+                                                        "y": 0.8
+                                                    },
+                                                    "pivot": {
+                                                        "x": 0.0,
+                                                        "y": 0.0
+                                                    },
+                                                    "size": {
+                                                        "x": 200,
+                                                        "y": 24
+                                                    }
+                                                }
+                                            ],
+                                            "children": [
+                                                {
+                                                    "name": "PhysicsCheckBox",
+                                                    "components": [
+                                                        {
+                                                            "type": "CheckBoxComponent",
+                                                            "checked": true,
+                                                            "color": {
+                                                                "r": 1.0,
+                                                                "g": 1.0,
+                                                                "b": 1.0,
+                                                                "a": 1.0
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "RectTransformComponent",
+                                                            "anchor": {
+                                                                "x": 0.5,
+                                                                "y": 0.5
+                                                            },
+                                                            "pivot": {
+                                                                "x": 0.5,
+                                                                "y": 0.5
+                                                            },
+                                                            "size": {
+                                                                "x": 16,
+                                                                "y": 16
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "PhysicsLabel",
+                                                    "components": [
+                                                        {
+                                                            "type": "TextComponent",
+                                                            "font": {
+                                                                "text": "Physics Debug",
+                                                                "path": "fonts/arial.ttf",
+                                                                "size": 16,
+                                                                "color": {
+                                                                    "r": 1.0,
+                                                                    "g": 1.0,
+                                                                    "b": 1.0,
+                                                                    "a": 1.0
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "RectTransformComponent",
+                                                            "anchor": {
+                                                                "x": 0.5,
+                                                                "y": 0.5
+                                                            },
+                                                            "pivot": {
+                                                                "x": 0.5,
+                                                                "y": 0.5
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ]
                                         }
-                                       
                                     ]
                                 },
                                 {

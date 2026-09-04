@@ -64,7 +64,10 @@ namespace golias {
 
         std::vector<WidgetComponent*> widgets;
         const auto& children = GetOwner()->GetChildren();
-        for (const auto& child : children) {
+
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            const auto& child = *it;
+
             if (auto comp = child->GetComponent<WidgetComponent>()) {
                 Collect(comp, widgets);
             }

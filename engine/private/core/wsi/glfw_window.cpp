@@ -383,6 +383,8 @@ namespace {
         switch (mode) {
         case golias::InputMode::Cursor:
             return GLFW_CURSOR_NORMAL;
+        case golias::InputMode::Hidden:
+            return GLFW_CURSOR_HIDDEN;
         case golias::InputMode::Disabled:
             return GLFW_CURSOR_DISABLED;
         default:
