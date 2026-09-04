@@ -71,7 +71,26 @@ namespace golias {
         RectTransformComponent* parentRect = parent->GetComponent<RectTransformComponent>();
         const glm::vec2 parentTopLeft      = parentRect->GetScreenPosition() - parentRect->GetPivot() * parentRect->GetSize();
 
-        return parentTopLeft + mAnchorPoint * parentRect->GetSize() + GetOwner()->GetPosition2D();
+        const auto result = parentTopLeft + mAnchorPoint * parentRect->GetSize() + GetOwner()->GetPosition2D();
+        
+        // GOLIAS_LOG_INFO("GetScreenPosition: owner=%s anchor=%.1f,%.1f pivot=%.1f,%.1f size=%.0f,%.0f screenPos=%.0f,%.0f "
+        //                 "parentTopLeft=%.0f,%.0f parentSize=%.0f,%.0f",
+        //                 GetOwner()->GetName().c_str(),
+        //                 mAnchorPoint.x,
+        //                 mAnchorPoint.y,
+        //                 mPivot.x,
+        //                 mPivot.y,
+        //                 mSize.x,
+        //                 mSize.y,
+        //                 result.x,
+        //                 result.y,
+        //                 parentTopLeft.x,
+        //                 parentTopLeft.y,
+        //                 parentRect->GetSize().x,
+        //                 parentRect->GetSize().y);
+
+
+        return result;
     }
 
 } // namespace golias

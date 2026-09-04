@@ -64,8 +64,11 @@ void Player::TakeDamage(int amount) {
 
     if (mHealth <= 0) {
         GOLIAS_LOG_WARN("PLAYER DIED");
+        return;
     }
 
+    mAudioSource->Play("hurt");
+    
     if (mHealthBar) {
         mHealthBar->SetValue(mHealth);
     }
