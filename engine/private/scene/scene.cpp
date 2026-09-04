@@ -19,6 +19,7 @@
 #include "scene/components/widget/rect_transform_component.h"
 #include "scene/components/widget/text_component.h"
 #include "scene/components/widget/input_slider_component.h"
+#include "scene/components/widget/panel_component.h"
 
 namespace golias {
 
@@ -46,6 +47,7 @@ namespace golias {
         BoxLayoutComponent::Register();
         InputSliderComponent::Register();
         ProgressBarComponent::Register();
+        PanelComponent::Register();
 #pragma endregion
     }
 
