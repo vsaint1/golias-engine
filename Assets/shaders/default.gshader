@@ -49,7 +49,7 @@ uniform sampler2D _MainTexture;
 uniform sampler2D _NormalMap;
 uniform vec4 _BaseColor;
 
-uniform sampler2DArray _ShadowMap;
+uniform mediump sampler2DArray _ShadowMap;
 uniform mat4 _ShadowMatrices[4];
 uniform float _ShadowSplits[4];
 

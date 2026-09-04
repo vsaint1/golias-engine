@@ -1,5 +1,3 @@
-#pragma once
-
 #include "math/tangent.h"
 
 namespace golias {

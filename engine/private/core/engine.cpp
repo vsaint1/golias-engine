@@ -4,6 +4,10 @@
 #include "core/wsi/glfw_window.h"
 #include "scene/components/camera_component.h"
 
+#if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
+    #include <emscripten/emscripten.h>
+#endif
+
 namespace golias {
 
     bool Engine::Initialize(int width, int height, const String& title) {
@@ -15,12 +19,6 @@ namespace golias {
 
         Scene::RegisterTypes();
         mApplication->RegisterTypes();
-
-        if (!glfwInit()) {
-            GOLIAS_LOG_ERROR("Failed to initialize GLFW");
-            return false;
-        }
-
 
         mWindow = new GlfwWindow(width, height, title.c_str());
 
@@ -79,29 +77,28 @@ namespace golias {
         return true;
     }
 
-    void Engine::Run() {
-        if (!mApplication || !mWindow) {
-            return;
-        }
+    void engine_core_loop() {
+
+        Engine& engine = Engine::GetInstance();
 
         Time::Start();
 
-        while (!mWindow->ShouldClose()) {
+        while (!engine.mWindow->ShouldClose()) {
 
             Time::Tick();
 
-            mWindow->PollEvents();
+            engine.mWindow->PollEvents();
 
             const float deltaTime = Time::GetDeltaTime();
-            
-            mApplication->Update(deltaTime);
 
-            mInputManager.ResetTransientState();
+            engine.mApplication->Update(deltaTime);
 
-            mPhysicsManager.Update(deltaTime);
+            engine.mInputManager.ResetTransientState();
+
+            engine.mPhysicsManager.Update(deltaTime);
 
             int width, height;
-            mWindow->GetDrawableSize(&width, &height);
+            engine.mWindow->GetDrawableSize(&width, &height);
 
             CameraCommand cameraCommand;
             if (GameObject* camera = Engine::GetInstance().GetScene()->GetMainCamera()) {
@@ -121,16 +118,28 @@ namespace golias {
                     cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
                     cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
 
-                    mCommandQueue.Submit(cameraCommand);
+                    engine.mCommandQueue.Submit(cameraCommand);
                 }
             }
 
-            mCommandQueue.BeginFrame();
-            mCommandQueue.Execute();
-            mCommandQueue.EndFrame();
+            engine.mCommandQueue.BeginFrame();
+            engine.mCommandQueue.Execute();
+            engine.mCommandQueue.EndFrame();
 
-            mWindow->SwapBuffers();
+            engine.mWindow->SwapBuffers();
         }
+    }
+
+    void Engine::Run() {
+        if (!mApplication || !mWindow) {
+            return;
+        }
+
+#if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
+        emscripten_set_main_loop(engine_core_loop, 0, true);
+#else
+        engine_core_loop();
+#endif
     }
 
     void Engine::Shutdown() {

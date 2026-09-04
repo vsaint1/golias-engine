@@ -33,7 +33,12 @@ namespace golias {
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &desc.BorderColor.x);
+
+#if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
+        if (desc.Wrap == TextureWrap::ClampToBorder) {
+            glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &desc.BorderColor.x);
+        }
+#endif
 
         glBindTexture(GL_TEXTURE_2D, 0);
     }

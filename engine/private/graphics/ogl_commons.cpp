@@ -18,7 +18,7 @@ namespace golias {
         case TextureFormat::Depth24:
             result.Internal = GL_DEPTH_COMPONENT24;
             result.External = GL_DEPTH_COMPONENT;
-            result.Type     = GL_FLOAT;
+            result.Type     = GL_UNSIGNED_INT;
             break;
         case TextureFormat::Depth32F:
             result.Internal = GL_DEPTH_COMPONENT32F;

@@ -13,16 +13,16 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-if(EMSCRIPTEN)
-    set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
-endif()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build STATIC libs" FORCE)
 
 add_subdirectory(glad)
 add_subdirectory(stb_image)
-add_subdirectory(glfw EXCLUDE_FROM_ALL)
+
+if (NOT EMSCRIPTEN)
+    add_subdirectory(glfw)
+endif()
+
 add_subdirectory(glm)
 
 add_subdirectory(json)
@@ -46,7 +46,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR
 
 target_link_libraries(${PROJECT_NAME}  INTERFACE
         stb_image
-        glfw
+        $<$<NOT:$<BOOL:${EMSCRIPTEN}>>:glfw>
         glm
         glad
         json

@@ -41,7 +41,7 @@ namespace golias {
         glViewport(0, 0, mDesc.Width, mDesc.Height);
 
         if (mColorAttachmentCount == 0 && mHasDepthAttachment) {
-            glDrawBuffer(GL_NONE);
+            glDrawBuffers(GL_NONE, nullptr);
             glReadBuffer(GL_NONE);
         } else {
             std::vector<GLenum> buffers(mColorAttachmentCount);

@@ -3,13 +3,13 @@
 #include "core/input/input_manager.h"
 #include "core/io/asset_manager.h"
 #include "core/io/file_system.h"
+#include "core/time.h"
+#include "core/window.h"
 #include "graphics/graphics_device.h"
 #include "physics/physics_manager.h"
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "scene/scene.h"
-#include "core/time.h"
-#include "core/window.h"
 
 namespace golias {
 
@@ -55,6 +55,8 @@ namespace golias {
         Engine& operator=(const Engine&) = delete;
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
+
+        friend void engine_core_loop();
 
     private:
         Scope<Application> mApplication = nullptr;

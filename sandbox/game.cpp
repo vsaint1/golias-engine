@@ -59,7 +59,7 @@ bool GameApplication::Initialize() {
     if (GameObject* settingsVsync = mSettingsCanvas->FindChildByName("VsyncToggle")) {
         CheckBoxComponent* checkBox = settingsVsync->GetComponent<CheckBoxComponent>();
         checkBox->onValueChanged = [](bool value) {
-            GOLIAS_LOG_INFO("VSync toggled: ", value);
+            GOLIAS_LOG_INFO("VSync toggled: %d", value);
         };
     }
 

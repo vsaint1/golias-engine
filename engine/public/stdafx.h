@@ -76,37 +76,31 @@
 #define GOLIAS_LOG_TRACE(fmt, ...)                                          \
     do {                                                                    \
         std::printf("[Trace] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                                \
     } while (false)
 
 #define GOLIAS_LOG_INFO(fmt, ...)                                          \
     do {                                                                   \
         std::printf("[Info] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                               \
     } while (false)
 
 #define GOLIAS_LOG_WARN(fmt, ...)                                          \
     do {                                                                   \
         std::printf("[Warn] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                               \
     } while (false)
 
 #define GOLIAS_LOG_DEBUG(fmt, ...)                                          \
     do {                                                                    \
         std::printf("[Debug] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                                \
     } while (false)
 
 #define GOLIAS_LOG_ERROR(fmt, ...)                                          \
     do {                                                                    \
         std::printf("[Error] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                                \
     } while (false)
 
 #define GOLIAS_LOG_CRITICAL(fmt, ...)                                          \
     do {                                                                       \
         std::printf("[Critical] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-        std::fflush(stdout);                                                   \
     } while (false)
 
 #define GOLIAS_LOG_FATAL(fmt, ...)                                          \

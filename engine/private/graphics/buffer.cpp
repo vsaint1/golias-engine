@@ -36,7 +36,7 @@ namespace golias {
         glBufferData(target, desc.Size, nullptr, usage);
         glBindBuffer(target, 0);
 
-        GOLIAS_LOG_TRACE("Target %s Buffer | Usage %s | Buffer Handle %#u | Size %zu", targetStr, usageStr, buffer, desc.Size);
+        GOLIAS_LOG_TRACE("Target %s Buffer | Usage %s | Buffer Handle %u | Size %zu", targetStr, usageStr, buffer, desc.Size);
 
         mBufferId = buffer;
     }

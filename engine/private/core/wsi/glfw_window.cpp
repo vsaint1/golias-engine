@@ -10,7 +10,9 @@
         #define GLFW_EXPOSE_NATIVE_COCOA
     #endif
 
-    #include <GLFW/glfw3native.h>
+    #if !defined(GOLIAS_PLATFORM_EMSCRIPTEN)
+        #include <GLFW/glfw3native.h>
+    #endif
 #endif
 
 
@@ -438,7 +440,17 @@ namespace golias {
         win->OnKey(translate_key_code(key), translate_key_action(action), mods);
     }
 
+    void glfw_error_callback(int error, const char* description) {
+        GOLIAS_LOG_ERROR("GLFW Error %d: %s", error, description);
+    }
+
     GlfwWindow::GlfwWindow(int width, int height, CString title) : Window(width, height, title) {
+
+        if (!glfwInit()) {
+            GOLIAS_LOG_CRITICAL("Failed to initialize GLFW.");
+            glfwTerminate();
+            return;
+        }
 
 #if defined(GOLIAS_PLATFORM_OSX)
         glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_COCOA);
@@ -462,11 +474,7 @@ namespace golias {
 
 #endif
 
-        if (!glfwInit()) {
-            GOLIAS_LOG_CRITICAL("Failed to initialize GLFW.");
-            glfwTerminate();
-            return;
-        }
+        glfwSetErrorCallback(glfw_error_callback);
 
         mWindow = glfwCreateWindow(mWidth, mHeight, title.data(), nullptr, nullptr);
         if (!mWindow) {
@@ -484,9 +492,9 @@ namespace golias {
             return;
         }
 
-#elif defined(GOLIAS_PLATFORM_ANDROID) || defined(GOLIAS_PLATFORM_IOS)
+#elif defined(GOLIAS_PLATFORM_ANDROID) || defined(GOLIAS_PLATFORM_IOS) || defined(GOLIAS_PLATFORM_EMSCRIPTEN)
 
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        if (!gladLoadGLES2Loader((GLADloadproc) glfwGetProcAddress)) {
             GOLIAS_LOG_ERROR("Failed to initialize GLAD");
             return;
         }
