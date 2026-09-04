@@ -2791,9 +2791,9 @@
                                 {
                                     "type": "TextComponent",
                                     "font": {
-                                        "text": "Hello world!\nHow are you doing?\nThis is a multi-line text example.\nSource Code: https://github.com/vsaint1/golias\n",
+                                        "text": "Hello world!\nHow are you doing?\nThis is a multi-line text example.\nSource Code: https://github.com/vsaint1/golias-engine",
                                         "path": "fonts/arial.ttf",
-                                        "size": 18,
+                                        "size": 24,
                                         "pivot": {
                                             "x": 0.5,
                                             "y": 0.5
