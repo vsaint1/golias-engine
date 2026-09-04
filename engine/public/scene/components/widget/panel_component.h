@@ -8,15 +8,15 @@ namespace golias {
     class PanelComponent : public WidgetComponent {
         COMPONENT_DERIVED(PanelComponent, WidgetComponent)
     public:
-        bool LoadProperties(const Json& properties);
+        bool LoadProperties(const Json& properties) override;
 
         void Start() override;
 
         void Update(float deltaTime) override;
 
-        void Render(CanvasComponent* canvas);
+        void Render(CanvasComponent* canvas) override;
 
-        bool HitTest(const glm::vec2& point);
+        bool HitTest(const glm::vec2& point) override;
 
         glm::vec4 GetColor() const;
         void SetColor(const glm::vec4& color);

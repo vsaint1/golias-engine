@@ -15,12 +15,11 @@ namespace golias {
         CanvasComponent()  = default;
         ~CanvasComponent() = default;
 
-        
         void Begin();
         
         void End();
         
-        bool LoadProperties(const Json& properties);
+        bool LoadProperties(const Json& properties) override;
         
         void Start() override;
 

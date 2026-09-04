@@ -10,9 +10,9 @@ namespace golias {
         RectTransformComponent()  = default;
         ~RectTransformComponent() = default;
 
-        bool LoadProperties(const Json& properties);
+        bool LoadProperties(const Json& properties) override;
 
-        void Update(float deltaTime);
+        void Update(float deltaTime) override;
 
         glm::vec2 GetSize() const;
         void SetSize(const glm::vec2& size);

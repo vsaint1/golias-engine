@@ -10,7 +10,7 @@ namespace golias {
         ButtonComponent()  = default;
         ~ButtonComponent() = default;
 
-        bool LoadProperties(const Json& properties);
+        bool LoadProperties(const Json& properties) override;
 
         void Update(float deltaTime) override;
 
