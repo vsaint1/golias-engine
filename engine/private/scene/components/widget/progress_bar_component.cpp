@@ -26,14 +26,14 @@ namespace golias {
 
             if (c.contains("background")) {
                 const Json& background = c["background"];
-                mBackgroundColor = glm::vec4(background.value("r", 0.25f), background.value("g", 0.25f), background.value("b", 0.25f), background.value("a", 1.0f));
+                mBackgroundColor       = glm::vec4(
+                    background.value("r", 0.25f), background.value("g", 0.25f), background.value("b", 0.25f), background.value("a", 1.0f));
             }
 
             if (c.contains("fill")) {
                 const Json& fill = c["fill"];
                 mFillColor       = glm::vec4(fill.value("r", 0.3f), fill.value("g", 0.6f), fill.value("b", 1.0f), fill.value("a", 1.0f));
             }
-          
         }
 
         SetValue(mValue);
@@ -58,18 +58,15 @@ namespace golias {
         const glm::vec2 size      = rectTransform->GetSize();
         const glm::vec2 origin    = screenPos - rectTransform->GetPivot() * size;
 
-        canvas->DrawQuad(origin, origin + size, mBackgroundColor);
-
         const float t = NormalizeValue();
 
-        if (t > 0.0f) {
-            const float fillWidth = size.x * t;
+        const float fillWidth = size.x * t;
 
-            const glm::vec2 fillLowerLeft  = glm::vec2(origin.x, origin.y);
-            const glm::vec2 fillUpperRight = glm::vec2(origin.x + fillWidth, origin.y + size.y);
+        const glm::vec2 fillLowerLeft  = glm::vec2(origin.x, origin.y);
+        const glm::vec2 fillUpperRight = glm::vec2(origin.x + fillWidth, origin.y + size.y);
 
-            canvas->DrawQuad(fillLowerLeft, fillUpperRight, mFillColor);
-        }
+        canvas->DrawQuad(fillLowerLeft, origin + size, mBackgroundColor);
+        canvas->DrawQuad(fillLowerLeft, fillUpperRight, mFillColor);
     }
 
     bool ProgressBarComponent::HitTest(const glm::vec2& point) {

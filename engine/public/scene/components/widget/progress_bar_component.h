@@ -38,8 +38,8 @@ namespace golias {
 
 
         float mMinValue = 0.0f;
-        float mMaxValue = 100.0f;
-        float mValue    = 50.0f;
+        float mMaxValue = 1.0f;
+        float mValue    = 0.5f;
 
         glm::vec4 mBackgroundColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
         glm::vec4 mFillColor       = glm::vec4(0.3f, 0.7f, 0.3f, 1.0f);
