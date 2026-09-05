@@ -1,6 +1,7 @@
 #include "scene/components/widget/canvas_component.h"
 
 #include "core/engine.h"
+#include "font/font.h"
 #include "graphics/texture.h"
 #include "graphics/vertex_layout.h"
 #include "render/mesh.h"
@@ -75,9 +76,18 @@ namespace golias {
 
         WidgetComponent* hit = nullptr;
         for (auto element : widgets) {
-            if (element->HitTest(mousePosition)) {
+            if (element->IsTopmost() && element->HitTest(mousePosition)) {
                 hit = element;
                 break;
+            }
+        }
+
+        if (!hit) {
+            for (auto element : widgets) {
+                if (!element->IsTopmost() && element->HitTest(mousePosition)) {
+                    hit = element;
+                    break;
+                }
             }
         }
 
@@ -145,16 +155,28 @@ namespace golias {
 
         Begin();
 
-        if (const GameObject* owner = GetOwner()) {
-            for (const auto& child : owner->GetChildren()) {
+        std::vector<WidgetComponent*> widgets;
+        const auto& children = GetOwner()->GetChildren();
 
-                if (!child->IsActive()) {
-                    continue;
-                }
+        for (const auto& child : children) {
+            if (!child->IsActive()) {
+                continue;
+            }
 
-                if (auto* widget = child->GetComponent<WidgetComponent>()) {
-                    Render(widget);
-                }
+            if (auto comp = child->GetComponent<WidgetComponent>()) {
+                Collect(comp, widgets);
+            }
+        }
+
+        for (auto* widget : widgets) {
+            if (!widget->IsTopmost()) {
+                widget->Render(this);
+            }
+        }
+
+        for (auto* widget : widgets) {
+            if (widget->IsTopmost()) {
+                widget->Render(this);
             }
         }
 
@@ -221,6 +243,67 @@ namespace golias {
             mBatches.push_back({texture, 6});
         } else {
             mBatches.back().IndexCount += 6;
+        }
+    }
+
+    void CanvasComponent::DrawText(Font* font, const glm::vec2& origin, const String& text, const glm::vec4& color) {
+        DrawText(font, origin, text, color, nullptr);
+    }
+
+    void CanvasComponent::DrawText(
+        Font* font, const glm::vec2& origin, const String& text, const glm::vec4& color, const glm::vec4* outlineColor) {
+        if (!font || text.empty()) {
+            return;
+        }
+
+        const TextureDesc& texDesc = font->GetTexture()->GetDesc();
+        const float invWidth       = 1.0f / static_cast<float>(texDesc.Width);
+        const float invHeight      = 1.0f / static_cast<float>(texDesc.Height);
+
+        const float baseBaselineY = origin.y + static_cast<float>(font->GetAscent());
+        const float lineHeight    = static_cast<float>(font->GetLineHeight());
+
+        float cursorX   = origin.x;
+        float baselineY = baseBaselineY;
+
+        for (size_t i = 0; i < text.size(); ++i) {
+            const char c = text[i];
+
+            if (c == '\n') {
+                cursorX = origin.x;
+                baselineY += lineHeight;
+                continue;
+            }
+
+            if (c == '\r') {
+                if (i + 1 < text.size() && text[i + 1] == '\n') {
+                    continue;
+                }
+
+                cursorX = origin.x;
+                continue;
+            }
+
+            const auto& desc = font->GetGlyphDescription(c);
+
+            const float x1 = cursorX + static_cast<float>(desc.OffsetX);
+            const float y1 = baselineY + static_cast<float>(desc.OffsetY);
+            const float x2 = x1 + static_cast<float>(desc.Width);
+            const float y2 = y1 + static_cast<float>(desc.Height);
+
+            const float u1 = (static_cast<float>(desc.X0)) * invWidth;
+            const float v1 = (static_cast<float>(desc.Y0)) * invHeight;
+            const float u2 = (static_cast<float>(desc.X1)) * invWidth;
+            const float v2 = (static_cast<float>(desc.Y1)) * invHeight;
+
+            cursorX += static_cast<float>(desc.Advance);
+
+            if (outlineColor && outlineColor->a > 0.0f) {
+                DrawQuad(
+                    glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), font->GetTexture().get(), *outlineColor);
+            }
+
+            DrawQuad(glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), font->GetTexture().get(), color);
         }
     }
 

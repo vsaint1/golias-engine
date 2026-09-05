@@ -40,5 +40,8 @@ namespace golias {
     void WidgetComponent::OnClick() {
     }
 
+    bool WidgetComponent::IsTopmost() const {
+        return false;
+    }
 
 } // namespace golias

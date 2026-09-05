@@ -28,6 +28,8 @@ namespace golias {
 
         virtual void OnClick();
 
+        virtual bool IsTopmost() const;
+
   
     };
 } // namespace golias

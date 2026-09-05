@@ -8,6 +8,7 @@ namespace golias {
     class WidgetComponent;
     class Texture;
     class Mesh;
+    class Font;
 
     class CanvasComponent : public Component {
         COMPONENT(CanvasComponent)
@@ -16,11 +17,11 @@ namespace golias {
         ~CanvasComponent() = default;
 
         void Begin();
-        
+
         void End();
-        
+
         bool LoadProperties(const Json& properties) override;
-        
+
         void Start() override;
 
         void Update(float deltaTime) override;
@@ -36,12 +37,17 @@ namespace golias {
                       Texture* texture,
                       const glm::vec4& color);
 
+        void DrawText(Font* font, const glm::vec2& origin, const String& text, const glm::vec4& color);
+
+        void DrawText(Font* font, const glm::vec2& origin, const String& text, const glm::vec4& color, const glm::vec4* outlineColor);
+
         void Collect(WidgetComponent* widget, std::vector<WidgetComponent*>& out);
 
     private:
         void UpdateBatches(Texture* texture);
 
         void ProcessInput();
+
     private:
         Ref<Mesh> mMesh = nullptr;
 

@@ -71,62 +71,9 @@ namespace golias {
             return;
         }
 
-        RectTransformComponent* rectTransform = GetOwner()->GetComponent<RectTransformComponent>();
-        if (!rectTransform) {
-            return;
-        }
+        const glm::vec4* outlineColor = mHasOutline ? &mOutlineColor : nullptr;
 
-        const TextureDesc& texDesc = mFont->GetTexture()->GetDesc();
-        const float invWidth       = 1.0f / static_cast<float>(texDesc.Width);
-        const float invHeight      = 1.0f / static_cast<float>(texDesc.Height);
-
-
-        const glm::vec2 origin    = GetPivot();
-        const float lineHeight    = static_cast<float>(mFont->GetLineHeight());
-        const float baseBaselineY = origin.y + static_cast<float>(mFont->GetAscent());
-
-        float cursorX   = origin.x;
-        float baselineY = baseBaselineY;
-
-        for (size_t i = 0; i < mText.size(); ++i) {
-            const char c = mText[i];
-
-            if (c == '\n') {
-                cursorX = origin.x;
-                baselineY += lineHeight;
-                continue;
-            }
-
-            if (c == '\r') {
-                if (i + 1 < mText.size() && mText[i + 1] == '\n') {
-                    continue;
-                }
-
-                cursorX = origin.x;
-                continue;
-            }
-
-            const auto& desc = mFont->GetGlyphDescription(c);
-
-            const float x1 = cursorX + static_cast<float>(desc.OffsetX);
-            const float y1 = baselineY + static_cast<float>(desc.OffsetY);
-            const float x2 = x1 + static_cast<float>(desc.Width);
-            const float y2 = y1 + static_cast<float>(desc.Height);
-
-            const float u1 = (static_cast<float>(desc.X0)) * invWidth;
-            const float v1 = (static_cast<float>(desc.Y0)) * invHeight;
-            const float u2 = (static_cast<float>(desc.X1)) * invWidth;
-            const float v2 = (static_cast<float>(desc.Y1)) * invHeight;
-
-            cursorX += static_cast<float>(desc.Advance);
-
-            if (mHasOutline) {
-                canvas->DrawQuad(
-                    glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), mFont->GetTexture().get(), mOutlineColor);
-            }
-
-            canvas->DrawQuad(glm::vec2(x1, y1), glm::vec2(x2, y2), glm::vec2(u1, v1), glm::vec2(u2, v2), mFont->GetTexture().get(), mColor);
-        }
+        canvas->DrawText(mFont.get(), GetPivot(), mText, mColor, outlineColor);
     }
 
 
