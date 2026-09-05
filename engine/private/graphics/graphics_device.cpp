@@ -2,6 +2,7 @@
 
 #include "graphics/buffer.h"
 #include "graphics/framebuffer.h"
+#include "graphics/query.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d.h"
 #include "graphics/texture_2d_array.h"
@@ -38,8 +39,11 @@ namespace golias {
         const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         const char* vendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
 
+        mTimerQuerySupported = GLAD_GL_ARB_timer_query != 0;
+
         GOLIAS_LOG_INFO("OpenGL Vendor: %s | Device: %s", vendor, renderer);
         GOLIAS_LOG_INFO("OpenGL Version: %s", version);
+        GOLIAS_LOG_INFO("GPU Timer Queries: %s", mTimerQuerySupported ? "Supported" : "Not Supported");
 
         return true;
     }
@@ -191,6 +195,14 @@ namespace golias {
         Ref<Buffer> buffer = std::make_shared<Buffer>(desc);
 
         return buffer;
+    }
+
+    bool GraphicsDevice::IsQuerySupported() const {
+        return mTimerQuerySupported;
+    }
+
+    Ref<Query> GraphicsDevice::CreateQuery(QueryType type) {
+        return std::make_shared<Query>(type);
     }
 
     void GraphicsDevice::SetBlendMode(BlendMode mode) {

@@ -26,4 +26,7 @@ namespace golias {
     /// @brief  Maps a BufferTarget to its corresponding OpenGL target enum.
     GLenum BufferTargetToGl(BufferTarget target);
 
+    /// @brief  Maps a QueryType to its corresponding OpenGL query target enum.
+    GLenum QueryTargetToGl(QueryType type);
+
 } // namespace golias

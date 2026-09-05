@@ -64,6 +64,17 @@ namespace golias {
         size_t Size = 0;
     };
 
+    enum class QueryType : uint8_t {
+        TimeElapsed,
+        Timestamp
+    };
+
+    enum class QueryResult : uint8_t {
+        Pending,
+        Available,
+        Disjoint
+    };
+
     // clang-format on
 
     /// @brief  Per-material rasterization state.

@@ -12,6 +12,7 @@ namespace golias {
     class TextureCube;
     class Framebuffer;
     class Buffer;
+    class Query;
 
     struct TextureDesc;
 
@@ -31,6 +32,10 @@ namespace golias {
         Ref<Framebuffer> CreateFramebuffer(const TextureDesc& desc);
 
         Ref<Buffer> CreateBuffer(const BufferDesc& desc);
+
+        Ref<Query> CreateQuery(QueryType type);
+
+        bool IsQuerySupported() const;
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
@@ -61,5 +66,6 @@ namespace golias {
     private:
         std::unordered_map<std::string, Ref<Shader>> mShaderCache = {};
         Viewport mViewport                                        = {};
+        bool mTimerQuerySupported                                 = false;
     };
 } // namespace golias

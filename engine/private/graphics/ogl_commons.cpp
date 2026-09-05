@@ -62,4 +62,15 @@ namespace golias {
         }
     }
 
+    GLenum QueryTargetToGl(QueryType type) {
+        switch (type) {
+        case QueryType::TimeElapsed:
+            return GL_TIME_ELAPSED;
+        case QueryType::Timestamp:
+            return GL_TIMESTAMP;
+        default:
+            return GL_TIME_ELAPSED;
+        }
+    }
+
 } // namespace golias
