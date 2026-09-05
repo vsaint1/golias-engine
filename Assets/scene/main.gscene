@@ -2380,7 +2380,7 @@
                                             "name": "OptionsRow",
                                             "position": {
                                                 "x": 10,
-                                                "y": 0,
+                                                "y": 15,
                                                 "z": 0
                                             },
                                             "components": [
@@ -2449,7 +2449,7 @@
                                                         {
                                                             "type": "TextComponent",
                                                             "font": {
-                                                                "text": "Physics Debug",
+                                                                "text": "Physics Debug/AABB (TODO)",
                                                                 "path": "fonts/arial.ttf",
                                                                 "size": 16,
                                                                 "color": {
@@ -2880,6 +2880,39 @@
                                             }
                                         }
                                     ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "QualityDropdown",
+                            "components": [
+                                {
+                                    "type": "DropdownComponent",
+                                    "selected": 1,
+                                    "options": [
+                                        "Low Quality",
+                                        "Medium Quality",
+                                        "High Quality"
+                                    ],
+                                    "font": {
+                                        "path": "fonts/arial.ttf",
+                                        "size": 16
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 1.0,
+                                        "y": 0.15
+                                    },
+                                    "pivot": {
+                                        "x": 1.0,
+                                        "y": 0.5
+                                    },
+                                    "size": {
+                                        "x": 160,
+                                        "y": 28
+                                    }
                                 }
                             ]
                         },

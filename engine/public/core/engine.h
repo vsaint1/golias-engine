@@ -3,12 +3,14 @@
 #include "core/input/input_manager.h"
 #include "core/io/asset_manager.h"
 #include "core/io/file_system.h"
+#include "core/platform/memory.h"
 #include "core/time.h"
 #include "core/window.h"
 #include "graphics/graphics_device.h"
 #include "physics/physics_manager.h"
 #include "render/command_queue.h"
 #include "render/material.h"
+#include "render/render_stats.h"
 #include "scene/scene.h"
 
 namespace golias {
@@ -50,6 +52,10 @@ namespace golias {
 
         AudioManager& GetAudioManager();
 
+        const RenderStats& GetRenderStats() const;
+
+        const MemoryStats& GetMemoryStats() const;
+
     private:
         Engine()                         = default;
         Engine(const Engine&)            = delete;
@@ -72,6 +78,8 @@ namespace golias {
         AudioManager mAudioManager;
 
         AssetManager mAssetManager;
+
+        MemoryStats mMemoryStats = {};
 
         Ref<Scene> mScene = nullptr;
 

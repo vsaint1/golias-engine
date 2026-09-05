@@ -20,6 +20,7 @@
 #include "scene/components/widget/text_component.h"
 #include "scene/components/widget/input_slider_component.h"
 #include "scene/components/widget/panel_component.h"
+#include "scene/components/widget/dropdown_component.h"
 
 namespace golias {
 
@@ -48,6 +49,7 @@ namespace golias {
         InputSliderComponent::Register();
         ProgressBarComponent::Register();
         PanelComponent::Register();
+        DropdownComponent::Register();
 #pragma endregion
     }
 
