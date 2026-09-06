@@ -2,12 +2,12 @@
 
 #include "core/engine.h"
 #include "core/io/file_system.h"
-#include "graphics/texture_2d.h"
 #include "physics/collision.h"
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"
 #include "scene/components/animation_component.h"
+#include "scene/components/skeletal_mesh_component.h"
 #include "scene/components/static_mesh_component.h"
 #include "scene/scene.h"
 
@@ -18,7 +18,7 @@ namespace golias {
             return nullptr;
         }
 
-        const Ref<Model> model = Model::Load(modelPath);
+        const Ref<Model> model = Engine::GetInstance().GetAssetManager().Load<Model>(modelPath);
         if (!model || (model->GetPrimitives().empty() && model->GetNodes().empty())) {
             return nullptr;
         }
@@ -36,49 +36,62 @@ namespace golias {
             }
         }
 
-        auto add_primitive = [&](GameObject* parent, const ModelPrimitive& primitive) {
-            Ref<Mesh> mesh         = Mesh::Create(*model, primitive);
-            Ref<Material> material = Engine::GetInstance().GetAssetManager().LoadDefaultMaterial();
-            if (!mesh || !material) {
-                return;
-            }
+        AssetManager& assetManager = Engine::GetInstance().GetAssetManager();
 
-            if (primitive.materialIndex >= 0 && primitive.materialIndex < static_cast<int>(model->GetMaterials().size())) {
-                const ModelMaterial& definition = model->GetMaterials()[primitive.materialIndex];
-                material->SetParameterValue("_BaseColor", definition.baseColor);
-                if (!definition.baseColorTexture.empty()) {
-                    Ref<Texture2D> texture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(definition.baseColorTexture);
+        auto add_primitive =
+            [&](GameObject* parent, const std::vector<const ModelPrimitive*>& primitives, const Ref<ModelSkin>& skin = nullptr) {
+                if (primitives.empty()) {
+                    return;
+                }
 
-                    if (texture) {
-                        material->SetParameterValue("_MainTexture", texture);
-                    } else {
-                        GOLIAS_LOG_WARN("Failed to load texture: %s", definition.baseColorTexture.c_str());
-                        material->SetParameterValue("_MainTexture", Engine::GetInstance().GetAssetManager().AcquireErrorTexture());
+                using GroupKey = std::pair<int, bool>;
+                std::vector<GroupKey> groupKeys;
+                for (const ModelPrimitive* primitive : primitives) {
+                    const GroupKey key{primitive->materialIndex, primitive->Skinned};
+                    if (std::find(groupKeys.begin(), groupKeys.end(), key) == groupKeys.end()) {
+                        groupKeys.push_back(key);
                     }
                 }
 
-                if (!definition.normalTexture.empty()) {
-                    Ref<Texture2D> normalTexture = Engine::GetInstance().GetAssetManager().Load<Texture2D>(definition.normalTexture);
+                for (const GroupKey& key : groupKeys) {
+                    std::vector<const ModelPrimitive*> group;
+                    for (const ModelPrimitive* primitive : primitives) {
+                        if (primitive->materialIndex == key.first && primitive->Skinned == key.second) {
+                            group.push_back(primitive);
+                        }
+                    }
 
-                    if (normalTexture) {
-                        material->SetParameterValue("_NormalMap", normalTexture);
-                    } else {
-                        GOLIAS_LOG_WARN("Failed to load normal map: %s", definition.normalTexture.c_str());
+                    Ref<Mesh> mesh         = assetManager.LoadGroupMesh(modelPath, group);
+                    Ref<Material> material = assetManager.LoadModelMaterial(modelPath, key.first);
+                    if (!mesh || !material) {
+                        return;
+                    }
+
+                    const String name = group.front()->name.empty() ? parent->GetName() : group.front()->name;
+
+                    GameObject* child = scene->CreateGameObject(name, parent);
+                    if (child) {
+                        if (key.second) {
+                            auto* meshComponent = new SkeletalMeshComponent(mesh, material);
+                            if (skin) {
+                                meshComponent->SetSkin(skin);
+                            }
+                            child->AddComponent(meshComponent);
+                        } else {
+                            child->AddComponent(new StaticMeshComponent(mesh, material));
+                        }
                     }
                 }
-            }
-
-            GameObject* child = scene->CreateGameObject(primitive.name.empty() ? parent->GetName() : primitive.name, parent);
-            if (child) {
-                child->AddComponent(new StaticMeshComponent(mesh, material));
-            }
-        };
+            };
 
         if (model->GetNodes().empty()) {
 
+            std::vector<const ModelPrimitive*> allPrimitives;
             for (const ModelPrimitive& primitive : model->GetPrimitives()) {
-                add_primitive(root, primitive);
+                allPrimitives.push_back(&primitive);
             }
+
+            add_primitive(root, allPrimitives);
 
             return root;
         }
@@ -108,11 +121,19 @@ namespace golias {
                 object->SetScale(scale);
             }
 
+            std::vector<const ModelPrimitive*> nodePrimitives;
             for (size_t primitiveIndex : node.primitives) {
                 if (primitiveIndex < model->GetPrimitives().size()) {
-                    add_primitive(object, model->GetPrimitives()[primitiveIndex]);
+                    nodePrimitives.push_back(&model->GetPrimitives()[primitiveIndex]);
                 }
             }
+
+            Ref<ModelSkin> nodeSkin;
+            if (node.skinIndex >= 0 && node.skinIndex < static_cast<int>(model->GetSkins().size())) {
+                nodeSkin = std::make_shared<ModelSkin>(model->GetSkins()[node.skinIndex]);
+            }
+
+            add_primitive(object, nodePrimitives, nodeSkin);
 
             for (size_t childIndex : node.children) {
                 create_node(childIndex, object);
@@ -252,6 +273,16 @@ namespace golias {
 
     GameObject* GameObject::GetParent() const {
         return mParent;
+    }
+
+    GameObject* GameObject::GetRoot() const {
+        const GameObject* current = this;
+
+        while (current->mParent) {
+            current = current->mParent;
+        }
+
+        return const_cast<GameObject*>(current);
     }
 
     void GameObject::Destroy() {

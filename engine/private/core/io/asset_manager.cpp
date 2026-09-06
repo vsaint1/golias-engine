@@ -138,8 +138,8 @@ namespace golias {
             }
         };
 
-        bind_texture(definition.baseColorTexture, definition.baseColorData, "_MainTexture");
-        bind_texture(definition.normalTexture, definition.normalData, "_NormalMap");
+        bind_texture(definition.baseColorData.Path, definition.baseColorData, "_MainTexture");
+        bind_texture(definition.normalData.Path, definition.normalData, "_NormalMap");
 
         assets.emplace(type, material);
         return material;

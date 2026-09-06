@@ -61,6 +61,8 @@ namespace golias {
 
         void LoadObject(const Json& objectData, GameObject* parent = nullptr);
 
+        GameObject* LoadObject(const Json& objectData, GameObject* parent, bool callStart);
+
     private:
         std::vector<std::unique_ptr<GameObject>> mObjects              = {};
         std::vector<std::pair<GameObject*, GameObject*>> mObjectsToAdd = {};

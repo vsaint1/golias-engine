@@ -8,19 +8,20 @@
 #include "scene/components/light_component.h"
 #include "scene/components/physics_component.h"
 #include "scene/components/player_controller_component.h"
+#include "scene/components/skeletal_mesh_component.h"
 #include "scene/components/sprite_component.h"
 #include "scene/components/static_mesh_component.h"
-#include "scene/components/widget/progress_bar_component.h"
+#include "scene/components/widget/box_layout_component.h"
 #include "scene/components/widget/button_component.h"
 #include "scene/components/widget/canvas_component.h"
 #include "scene/components/widget/check_box_component.h"
-#include "scene/components/widget/box_layout_component.h"
+#include "scene/components/widget/dropdown_component.h"
 #include "scene/components/widget/image_component.h"
-#include "scene/components/widget/rect_transform_component.h"
-#include "scene/components/widget/text_component.h"
 #include "scene/components/widget/input_slider_component.h"
 #include "scene/components/widget/panel_component.h"
-#include "scene/components/widget/dropdown_component.h"
+#include "scene/components/widget/progress_bar_component.h"
+#include "scene/components/widget/rect_transform_component.h"
+#include "scene/components/widget/text_component.h"
 
 namespace golias {
 
@@ -28,6 +29,7 @@ namespace golias {
 
 #pragma region CoreComponents
         StaticMeshComponent::Register();
+        SkeletalMeshComponent::Register();
         CameraComponent::Register();
         AnimationComponent::Register();
         PlayerControllerComponent::Register();
@@ -106,9 +108,13 @@ namespace golias {
     }
 
     void Scene::LoadObject(const Json& objectData, GameObject* parent) {
+        LoadObject(objectData, parent, true);
+    }
+
+    GameObject* Scene::LoadObject(const Json& objectData, GameObject* parent, bool callStart) {
         if (!objectData.is_object()) {
             GOLIAS_LOG_ERROR("Invalid object data: expected an object.");
-            return;
+            return nullptr;
         }
 
         String name            = objectData.value("name", "Unnamed");
@@ -117,7 +123,23 @@ namespace golias {
         if (objectData.contains("type") && objectData["type"].is_string()) {
             String type = objectData["type"].get<String>();
 
-            if (type == "Model") {
+            if (type == "Prefab") {
+                String prefabPath = objectData.value("path", "");
+                if (!prefabPath.empty()) {
+                    const String contents = Engine::GetInstance().GetFileSystem().LoadAssetFileText(prefabPath);
+                    Json prefabJson       = contents.empty() ? Json() : Json::parse(contents, nullptr, false);
+
+                    if (prefabJson.is_discarded() || !prefabJson.is_object()) {
+                        GOLIAS_LOG_ERROR("Failed to parse prefab from path: %s", prefabPath.data());
+                    } else {
+                        prefabJson["name"] = name;
+                        gameObject         = LoadObject(prefabJson, parent, false);
+                    }
+                } else {
+                    GOLIAS_LOG_ERROR("Prefab object '%s' is missing a 'path' property.", name.data());
+                }
+
+            } else if (type == "Model") {
                 String path = objectData.value("path", "");
                 if (!path.empty()) {
                     gameObject = GameObject::Load(path, this, name);
@@ -157,7 +179,7 @@ namespace golias {
 
         if (!gameObject) {
             GOLIAS_LOG_ERROR("Failed to create GameObject '%s'.", name.data());
-            return;
+            return nullptr;
         }
 
         if (objectData.contains("position")) {
@@ -188,7 +210,7 @@ namespace golias {
             gameObject->SetScale(scl);
         }
 
-        if(objectData.contains("active")) {
+        if (objectData.contains("active")) {
             bool active = objectData["active"].get<bool>();
             gameObject->SetActive(active);
         }
@@ -222,12 +244,16 @@ namespace golias {
         if (objectData.contains("children") && objectData["children"].is_array()) {
             const Json& children = objectData["children"];
             for (const auto& childData : children) {
-                LoadObject(childData, gameObject);
+                LoadObject(childData, gameObject, true);
             }
         }
 
 
-        gameObject->Start();
+        if (callStart) {
+            gameObject->Start();
+        }
+
+        return gameObject;
     }
 
 

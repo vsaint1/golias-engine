@@ -81,6 +81,44 @@ namespace golias {
             return true;
         }
 
+        bool attribute_uint(const tinygltf::Model& model, int index, size_t vertex, int expected, uint32_t* output) {
+            if (index < 0 || index >= static_cast<int>(model.accessors.size())) {
+                return false;
+            }
+
+            const auto& accessor      = model.accessors[index];
+            int stride                = 0;
+            int components            = 0;
+            const unsigned char* data = accessor_data(model, accessor, stride, components);
+            if (!data || vertex >= accessor.count || components < expected) {
+                return false;
+            }
+
+            const size_t size = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(accessor.componentType));
+            data += vertex * static_cast<size_t>(stride);
+            for (int i = 0; i < expected; ++i) {
+                switch (accessor.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_BYTE:
+                    output[i] = static_cast<uint32_t>(*reinterpret_cast<const int8_t*>(data + i * size));
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+                    output[i] = static_cast<uint32_t>(data[i * size]);
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_SHORT:
+                    output[i] = static_cast<uint32_t>(*reinterpret_cast<const int16_t*>(data + i * size));
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    output[i] = static_cast<uint32_t>(*reinterpret_cast<const uint16_t*>(data + i * size));
+                    break;
+                default:
+                    output[i] = 0u;
+                    break;
+                }
+            }
+
+            return true;
+        }
+
         bool index_value(const tinygltf::Model& model, const tinygltf::Accessor& accessor, size_t index, uint32_t& value) {
             int stride                = 0;
             int components            = 0;
@@ -271,6 +309,18 @@ namespace golias {
         return mSceneRoots;
     }
 
+    const std::vector<float>& Model::GetSkinnedVertices() const {
+        return mSkinnedVertices;
+    }
+
+    const std::vector<uint32_t>& Model::GetSkinnedIndices() const {
+        return mSkinnedIndices;
+    }
+
+    const std::vector<ModelSkin>& Model::GetSkins() const {
+        return mSkins;
+    }
+
     bool Model::HasAnimations() const {
         return !mAnimations.empty();
     }
@@ -324,11 +374,13 @@ namespace golias {
                     continue;
                 }
 
-                const size_t base        = mVertices.size() / kVertexFloatCount;
-                const size_t index_start = mIndices.size();
+                const bool skinned = primitive.attributes.find("JOINTS_0") != primitive.attributes.end()
+                    && primitive.attributes.find("WEIGHTS_0") != primitive.attributes.end();
+
+                const size_t base        = skinned ? mSkinnedVertices.size() / VertexAttributeOffsets::kSkinnedVertexFloatCount : mVertices.size() / kVertexFloatCount;
+                const size_t index_start = skinned ? mSkinnedIndices.size() : mIndices.size();
                 const size_t count       = model.accessors[position->second].count;
                 for (size_t i = 0; i < count; ++i) {
-                    const size_t vertexBase  = (mVertices.size() / kVertexFloatCount) * kVertexFloatCount;
                     float position_value[3]  = {};
                     float color_value[3]     = {1.0f, 1.0f, 1.0f};
                     float tex_coord_value[2] = {};
@@ -352,7 +404,39 @@ namespace golias {
                     }
 
                     convert_to_left_handed(position_value, normal_value);
-                    AppendVertex(position_value, color_value, tex_coord_value, normal_value);
+
+                    if (!skinned) {
+                        AppendVertex(position_value, color_value, tex_coord_value, normal_value);
+                    } else {
+                        const size_t vertexBase = (mSkinnedVertices.size() / VertexAttributeOffsets::kSkinnedVertexFloatCount) * VertexAttributeOffsets::kSkinnedVertexFloatCount;
+                        mSkinnedVertices.insert(mSkinnedVertices.end(),
+                                                {position_value[0], position_value[1], position_value[2],
+                                                 color_value[0],    color_value[1],    color_value[2],
+                                                 tex_coord_value[0], tex_coord_value[1],
+                                                 normal_value[0],  normal_value[1],  normal_value[2],
+                                                 0.0f, 0.0f, 0.0f, // tangent placeholder
+                                                 0.0f, 0.0f, 0.0f, // bitangent placeholder
+                                                 0.0f, 0.0f, 0.0f, 0.0f, // joints
+                                                 0.0f, 0.0f, 0.0f, 0.0f}); // weights
+
+                        auto joints_attribute = primitive.attributes.find("JOINTS_0");
+                        if (joints_attribute != primitive.attributes.end()) {
+                            uint32_t joint_value[4] = {};
+                            attribute_uint(model, joints_attribute->second, i, 4, joint_value);
+                            for (uint32_t k = 0; k < 4; ++k) {
+                                mSkinnedVertices[vertexBase + VertexAttributeOffsets::Joints + k] = static_cast<float>(joint_value[k]);
+                            }
+                        }
+
+                        auto weights_attribute = primitive.attributes.find("WEIGHTS_0");
+                        if (weights_attribute != primitive.attributes.end()) {
+                            float weight_value[4] = {};
+                            attribute(model, weights_attribute->second, i, 4, weight_value);
+                            for (uint32_t k = 0; k < 4; ++k) {
+                                mSkinnedVertices[vertexBase + VertexAttributeOffsets::Weights + k] = weight_value[k];
+                            }
+                        }
+                    }
 
                     // glTF TANGENT (vec4: xyz + handedness).
                     auto tangent_attribute = primitive.attributes.find("TANGENT");
@@ -360,26 +444,38 @@ namespace golias {
                         float tangent_value[4] = {0.0f, 0.0f, 0.0f, 1.0f};
                         attribute(model, tangent_attribute->second, i, 4, tangent_value);
 
-                        // Convert to left-handed
                         glm::vec3 tangent(tangent_value[0], tangent_value[1], tangent_value[2]);
                         tangent.z     = -tangent.z;
                         const float w = (tangent_value[3] < 0.0f) ? -1.0f : 1.0f;
                         const glm::vec3 normal(normal_value[0], normal_value[1], normal_value[2]);
                         const glm::vec3 bitangent = glm::cross(normal, tangent) * w;
 
-                        const size_t kTangentOffset                  = offsetof(Vertex, tangent) / sizeof(float);
-                        const size_t kBitangentOffset                = offsetof(Vertex, bitangent) / sizeof(float);
-                        mVertices[vertexBase + kTangentOffset]       = tangent.x;
-                        mVertices[vertexBase + kTangentOffset + 1]   = tangent.y;
-                        mVertices[vertexBase + kTangentOffset + 2]   = tangent.z;
-                        mVertices[vertexBase + kBitangentOffset]     = bitangent.x;
-                        mVertices[vertexBase + kBitangentOffset + 1] = bitangent.y;
-                        mVertices[vertexBase + kBitangentOffset + 2] = bitangent.z;
+                        if (skinned) {
+                            const size_t kTangentOffset   = VertexAttributeOffsets::Tangent;
+                            const size_t kBitangentOffset = VertexAttributeOffsets::Bitangent;
+                            const size_t vertexBase       = (mSkinnedVertices.size() / VertexAttributeOffsets::kSkinnedVertexFloatCount - 1) * VertexAttributeOffsets::kSkinnedVertexFloatCount;
+                            mSkinnedVertices[vertexBase + kTangentOffset]       = tangent.x;
+                            mSkinnedVertices[vertexBase + kTangentOffset + 1]   = tangent.y;
+                            mSkinnedVertices[vertexBase + kTangentOffset + 2]   = tangent.z;
+                            mSkinnedVertices[vertexBase + kBitangentOffset]     = bitangent.x;
+                            mSkinnedVertices[vertexBase + kBitangentOffset + 1] = bitangent.y;
+                            mSkinnedVertices[vertexBase + kBitangentOffset + 2] = bitangent.z;
+                        } else {
+                            const size_t kTangentOffset                  = offsetof(Vertex, tangent) / sizeof(float);
+                            const size_t kBitangentOffset                = offsetof(Vertex, bitangent) / sizeof(float);
+                            const size_t vertexBase                      = (mVertices.size() / kVertexFloatCount - 1) * kVertexFloatCount;
+                            mVertices[vertexBase + kTangentOffset]       = tangent.x;
+                            mVertices[vertexBase + kTangentOffset + 1]   = tangent.y;
+                            mVertices[vertexBase + kTangentOffset + 2]   = tangent.z;
+                            mVertices[vertexBase + kBitangentOffset]     = bitangent.x;
+                            mVertices[vertexBase + kBitangentOffset + 1] = bitangent.y;
+                            mVertices[vertexBase + kBitangentOffset + 2] = bitangent.z;
+                        }
                     }
                 }
 
                 // Compute tangents if they are not provided by the glTF TANGENT attribute.
-                {
+                if (!skinned) {
                     TangentLayout layout;
                     layout.Stride    = kVertexFloatCount;
                     layout.Position  = offsetof(Vertex, position) / sizeof(float);
@@ -388,6 +484,15 @@ namespace golias {
                     layout.Tangent   = offsetof(Vertex, tangent) / sizeof(float);
                     layout.Bitangent = offsetof(Vertex, bitangent) / sizeof(float);
                     GenerateTangents(mVertices, mIndices, layout, count > base ? base + count : base);
+                } else {
+                    TangentLayout layout;
+                    layout.Stride    = VertexAttributeOffsets::kSkinnedVertexFloatCount;
+                    layout.Position  = VertexAttributeOffsets::Position;
+                    layout.TexCoord  = VertexAttributeOffsets::TexCoord;
+                    layout.Normal    = VertexAttributeOffsets::Normal;
+                    layout.Tangent   = VertexAttributeOffsets::Tangent;
+                    layout.Bitangent = VertexAttributeOffsets::Bitangent;
+                    GenerateTangents(mSkinnedVertices, mSkinnedIndices, layout, count > base ? base + count : base);
                 }
 
                 if (primitive.indices >= 0) {
@@ -395,24 +500,37 @@ namespace golias {
                     for (size_t i = 0; i < accessor.count; ++i) {
                         uint32_t loaded_index = 0;
                         if (index_value(model, accessor, i, loaded_index)) {
-                            mIndices.push_back(static_cast<uint32_t>(base) + loaded_index);
+                            if (skinned) {
+                                mSkinnedIndices.push_back(static_cast<uint32_t>(base) + loaded_index);
+                            } else {
+                                mIndices.push_back(static_cast<uint32_t>(base) + loaded_index);
+                            }
                         }
                     }
                 } else {
                     for (size_t i = 0; i < count; ++i) {
-                        mIndices.push_back(static_cast<uint32_t>(base + i));
+                        if (skinned) {
+                            mSkinnedIndices.push_back(static_cast<uint32_t>(base + i));
+                        } else {
+                            mIndices.push_back(static_cast<uint32_t>(base + i));
+                        }
                     }
                 }
 
-                reverse_triangle_winding(mIndices, index_start);
+                if (skinned) {
+                    reverse_triangle_winding(mSkinnedIndices, index_start);
+                } else {
+                    reverse_triangle_winding(mIndices, index_start);
+                }
 
                 ModelPrimitive modelPrimitive;
 
                 modelPrimitive.vertexOffset  = base;
                 modelPrimitive.vertexCount   = count;
                 modelPrimitive.indexOffset   = index_start;
-                modelPrimitive.indexCount    = mIndices.size() - index_start;
+                modelPrimitive.indexCount    = (skinned ? mSkinnedIndices.size() : mIndices.size()) - index_start;
                 modelPrimitive.materialIndex = primitive.material;
+                modelPrimitive.Skinned       = skinned;
                 modelPrimitive.name          = mesh.name;
                 mPrimitives.push_back(std::move(modelPrimitive));
                 meshPrimitives[meshIndex].push_back(mPrimitives.size() - 1);
@@ -425,6 +543,7 @@ namespace golias {
             ModelNode& node     = mNodes[nodeIndex];
             node.name           = source.name;
             node.localTransform = gltf_transform(source);
+            node.skinIndex      = source.skin;
             for (int child : source.children) {
                 if (child >= 0 && child < static_cast<int>(mNodes.size())) {
                     node.children.push_back(static_cast<size_t>(child));
@@ -434,6 +553,44 @@ namespace golias {
             if (source.mesh >= 0 && source.mesh < static_cast<int>(meshPrimitives.size())) {
                 node.primitives = meshPrimitives[source.mesh];
             }
+        }
+
+        for (const auto& sourceSkin : model.skins) {
+            ModelSkin skin;
+            skin.name = sourceSkin.name;
+            for (int joint : sourceSkin.joints) {
+                if (joint >= 0 && joint < static_cast<int>(mNodes.size())) {
+                    skin.jointNames.push_back(mNodes[joint].name);
+                }
+            }
+
+            if (sourceSkin.inverseBindMatrices >= 0
+                && sourceSkin.inverseBindMatrices < static_cast<int>(model.accessors.size())) {
+                const auto& accessor = model.accessors[sourceSkin.inverseBindMatrices];
+                int stride           = 0;
+                int components       = 0;
+                const unsigned char* data = accessor_data(model, accessor, stride, components);
+                if (data && accessor.type == TINYGLTF_TYPE_MAT4) {
+                    const size_t jointCount = std::min(static_cast<size_t>(accessor.count), skin.jointNames.size());
+                    const size_t componentSize = tinygltf::GetComponentSizeInBytes(static_cast<uint32_t>(accessor.componentType));
+                    const glm::mat4 reflection = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -1.0f));
+
+                    for (size_t joint = 0; joint < jointCount; ++joint) {
+                        glm::mat4 matrix(1.0f);
+                        const unsigned char* raw = data + joint * static_cast<size_t>(stride);
+                        for (int column = 0; column < 4; ++column) {
+                            for (int row = 0; row < 4; ++row) {
+                                matrix[column][row] =
+                                    *reinterpret_cast<const float*>(raw + (column * 4 + row) * componentSize);
+                            }
+                        }
+
+                        skin.inverseBindMatrices.push_back(reflection * matrix * reflection);
+                    }
+                }
+            }
+
+            mSkins.push_back(std::move(skin));
         }
 
         if (model.defaultScene >= 0 && model.defaultScene < static_cast<int>(model.scenes.size())) {
@@ -457,6 +614,7 @@ namespace golias {
             if (clip->Name.empty()) {
                 char buffer[256];
                 std::snprintf(buffer, sizeof(buffer), "Animation_%04zu", mAnimations.size());
+                clip->Name = buffer;
             }
 
             std::unordered_map<int, size_t> trackIndices;
@@ -544,9 +702,18 @@ namespace golias {
             if (textureIndex >= 0 && textureIndex < static_cast<int>(model.textures.size())) {
                 const int imageIndex = model.textures[textureIndex].source;
                 if (imageIndex >= 0 && imageIndex < static_cast<int>(model.images.size())) {
-                    const String uri = model.images[imageIndex].uri;
+                   
+                    const auto& image     = model.images[imageIndex];
+                    const String uri      = image.uri;
+                    const bool isEmbedded = !image.image.empty() && image.width > 0 && image.height > 0;
+                   
                     if (!uri.empty()) {
-                        modelMaterial.baseColorTexture = (Path(path).parent_path() / uri).generic_string();
+                        modelMaterial.baseColorData.Path = (Path(path).parent_path() / uri).generic_string();
+                    } else if (isEmbedded) {
+                        modelMaterial.baseColorData = ModelTextureData{image.image,
+                                                                       image.width,
+                                                                       image.height,
+                                                                       image.component > 0 ? image.component : 4};
                     }
                 }
             }
@@ -555,9 +722,18 @@ namespace golias {
             if (normalTextureIndex >= 0 && normalTextureIndex < static_cast<int>(model.textures.size())) {
                 const int imageIndex = model.textures[normalTextureIndex].source;
                 if (imageIndex >= 0 && imageIndex < static_cast<int>(model.images.size())) {
-                    const String uri = model.images[imageIndex].uri;
+                   
+                    const auto& image     = model.images[imageIndex];
+                    const String uri      = image.uri;
+                    const bool isEmbedded = !image.image.empty() && image.width > 0 && image.height > 0;
+                   
                     if (!uri.empty()) {
-                        modelMaterial.normalTexture = (Path(path).parent_path() / uri).generic_string();
+                        modelMaterial.normalData.Path = (Path(path).parent_path() / uri).generic_string();
+                    } else if (isEmbedded) {
+                        modelMaterial.normalData = ModelTextureData{image.image,
+                                                                    image.width,
+                                                                    image.height,
+                                                                    image.component > 0 ? image.component : 4};
                     }
                 }
             }
@@ -673,7 +849,7 @@ namespace golias {
             modelMaterial.baseColor = glm::vec4(material.diffuse[0], material.diffuse[1], material.diffuse[2], material.dissolve);
 
             if (!material.diffuse_texname.empty()) {
-                modelMaterial.baseColorTexture = (Path(path).parent_path() / material.diffuse_texname).lexically_normal().generic_string();
+                modelMaterial.baseColorData.Path = (Path(path).parent_path() / material.diffuse_texname).lexically_normal().generic_string();
             }
 
             mMaterials.push_back(std::move(modelMaterial));

@@ -30,6 +30,8 @@ namespace golias {
 
         GameObject* GetParent() const;
 
+        GameObject* GetRoot() const;
+
         GameObject* FindChildByName(CString name) const;
 
         void Destroy();
