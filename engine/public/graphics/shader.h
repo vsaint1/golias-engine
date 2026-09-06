@@ -1,6 +1,5 @@
 #pragma once
 #include "graphics/texture_slots.h"
-#include "stdafx.h"
 
 namespace golias {
 

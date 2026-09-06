@@ -49,11 +49,19 @@ namespace golias {
 
         Ref<Mesh> LoadMesh(CString modelPath, const ModelPrimitive& primitive);
 
+        /// @brief  Loads (and caches) the Mesh produced by merging one group of primitives.
+        Ref<Mesh> LoadGroupMesh(CString modelPath, const std::vector<const ModelPrimitive*>& primitives);
+
+        /// @brief  Loads (and caches) the Material for one material slot of a model.
+        Ref<Material> LoadModelMaterial(CString modelPath, int materialIndex);
+
         Ref<Texture2D> AcquireWhiteTexture();
 
         Ref<Texture2D> AcquireErrorTexture();
 
         Ref<Texture2D> AcquireFlatNormalTexture();
+
+        Ref<Texture2D> AcquireEmbeddedTexture(CString key, const std::vector<unsigned char>& pixels, int32_t width, int32_t height, int32_t components);
 
     private:
         using AssetMap = std::unordered_map<std::type_index, AssetType>;
@@ -63,9 +71,9 @@ namespace golias {
 
         Ref<Font> LoadFont(CString path, int size);
 
-        Ref<Material> mDefaultMaterial = nullptr;
-        Ref<Texture2D> mWhiteTexture   = nullptr;
-        Ref<Texture2D> mErrorTexture   = nullptr;
+        Ref<Material> mDefaultMaterial    = nullptr;
+        Ref<Texture2D> mWhiteTexture      = nullptr;
+        Ref<Texture2D> mErrorTexture      = nullptr;
         Ref<Texture2D> mFlatNormalTexture = nullptr;
     };
 

@@ -11,7 +11,7 @@ namespace golias {
         Buffer(const BufferDesc& desc);
         ~Buffer();
 
-        uint32_t GetHandle();
+        uint32_t GetHandle() const;
 
         const BufferDesc& GetDesc() const;
 

@@ -28,12 +28,15 @@ namespace golias {
         glGenTextures(1, &mTextureID);
         glBindTexture(GL_TEXTURE_CUBE_MAP, mTextureID);
 
+        const TextureFormatGl glFormat = TextureFormatToGl(desc.Format);
+
         for (int face = 0; face < 6; ++face) {
-            glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA8, desc.Width, desc.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, glFormat.Internal, desc.Width, desc.Height, 0, glFormat.External,
+                         glFormat.Type, nullptr);
         }
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, TextureMinFilterToGl(desc.Filter));
+        const GLint filter = TextureMinFilterToGl(desc.Filter);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filter);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, TextureMagFilterToGl(desc.Filter));
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
