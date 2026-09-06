@@ -7,7 +7,7 @@ namespace golias {
     class Texture2D : public Texture {
 
     public:
-        Texture2D(int32_t width, int32_t height, int32_t channels, unsigned char* data);
+        Texture2D(int32_t width, int32_t height, int32_t channels, const unsigned char* data);
 
         explicit Texture2D(const TextureDesc& desc);
 

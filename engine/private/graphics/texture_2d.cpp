@@ -50,7 +50,7 @@ namespace golias {
         Allocate(desc);
     }
 
-    Texture2D::Texture2D(int32_t width, int32_t height, int32_t channels, unsigned char* data)
+    Texture2D::Texture2D(int32_t width, int32_t height, int32_t channels, const unsigned char* data)
         : mWidth(width), mHeight(height), mChannels(channels) {
 
         if (mWidth <= 0 || mHeight <= 0 || mChannels <= 0) {

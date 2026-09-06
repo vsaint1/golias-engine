@@ -1,16 +1,16 @@
 #pragma once
 
-#include <array>
 #include <algorithm>
+#include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <chrono>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
-#include <limits>
 #include <optional>
 #include <set>
 #include <string>
@@ -21,14 +21,13 @@
 
 #define GLM_FORCE_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/norm.hpp>
 #include <json/json.hpp>
-
-#include <glad.h>
 
 #ifdef _WIN32
 
@@ -42,15 +41,28 @@
 
     #include <windows.h>
 
+    #ifndef APIENTRY
+        #define APIENTRY __stdcall
+    #endif
+
 #endif
 
-#define UNUSED_PARAMETER(x) (void)(x)
+#include <glad.h>
+
+#define UNUSED_PARAMETER(x) (void) (x)
 
 #ifdef NDEBUG
 
-    #define GOLIAS_ASSERT(x) ((void) 0)
+    #define GOLIAS_ASSERT(x)          ((void) 0)
     #define GOLIAS_ASSERT_MSG(x, msg) ((void) 0)
+
+    #define GOLIAS_RELEASE 1
+
+    #define GOLIAS_LOG_TRACE(fmt, ...) ((void) 0)
+
 #else
+
+    #define GOLIAS_DEBUG 1
 
     #define GOLIAS_ASSERT(x)                                  \
         do {                                                  \
@@ -69,14 +81,14 @@
             }                                                  \
         } while (0)
 
+    #define GOLIAS_LOG_TRACE(fmt, ...)                                          \
+        do {                                                                    \
+            std::printf("[Trace] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
+        } while (false)
+
 
 #endif
 
-
-#define GOLIAS_LOG_TRACE(fmt, ...)                                          \
-    do {                                                                    \
-        std::printf("[Trace] %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
-    } while (false)
 
 #define GOLIAS_LOG_INFO(fmt, ...)                                          \
     do {                                                                   \

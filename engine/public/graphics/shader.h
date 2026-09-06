@@ -1,15 +1,14 @@
 #pragma once
-#include "stdafx.h"
 #include "graphics/texture_slots.h"
+#include "stdafx.h"
 
 namespace golias {
 
     class Texture;
-    
+
     class Shader {
 
     public:
-
         Shader(GLuint programID);
 
         static Ref<Shader> Load(CString path);
@@ -27,12 +26,14 @@ namespace golias {
         void SetUniform(CString name, const glm::vec4& value);
 
         void SetUniform(CString name, const glm::mat3& value);
-        
+
         void SetUniform(CString name, const glm::mat4& value);
 
         void SetUniform(CString name, const Texture* texture);
 
         void SetTexture(const TextureBinding& binding, const Texture* texture);
+
+        void SetUniformBlockBinding(CString name, uint32_t bindingIndex);
 
         ~Shader();
 
@@ -46,7 +47,7 @@ namespace golias {
         Shader& operator=(Shader&&)      = delete;
 
     private:
-        uint32_t mUnitIndex = 0;
+        uint32_t mUnitIndex                                  = 0;
         std::unordered_map<size_t, GLuint> mUniformLocations = {};
         GLuint mProgramID                                    = 0;
     };
