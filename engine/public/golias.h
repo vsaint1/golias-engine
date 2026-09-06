@@ -21,6 +21,8 @@
 #include "math/aabb.h"
 #include "math/frustum.h"
 
+#include "core/stl/string_utils.h"
+
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "render/mesh.h"
@@ -43,6 +45,7 @@
 #include "scene/components/physics_component.h"
 #include "scene/components/audio_listener_component.h"
 #include "scene/components/audio_source_component.h"
+#include "scene/components/skeletal_mesh_component.h"
 #include "scene/components/sprite_component.h"
 
 
@@ -55,3 +58,4 @@
 #include "scene/components/widget/check_box_component.h"
 #include "scene/components/widget/input_slider_component.h"
 #include "scene/components/widget/progress_bar_component.h"
+#include "scene/components/widget/dropdown_component.h"

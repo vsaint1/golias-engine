@@ -37,8 +37,12 @@ namespace golias {
     class AnimationComponent : public Component {
         COMPONENT(AnimationComponent)
     public:
-        AnimationComponent()          = default;
+        AnimationComponent()  = default;
         ~AnimationComponent() = default;
+
+        bool LoadProperties(const Json& properties) override;
+
+        void Start() override;
 
         void Update(float deltaTime) override;
 
@@ -49,6 +53,8 @@ namespace golias {
         void Play(CString name, bool loop = true);
 
         bool IsPlaying();
+
+        const std::unordered_map<String, Ref<AnimationClip>>& GetAnimationClips() const;
 
     private:
         void UpdateObjectBindings();

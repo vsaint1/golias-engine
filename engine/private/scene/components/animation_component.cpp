@@ -4,6 +4,15 @@
 
 namespace golias {
 
+    bool AnimationComponent::LoadProperties(const Json& properties) {
+        Component::LoadProperties(properties);
+
+        return true;
+    }
+
+    void AnimationComponent::Start() {
+    }
+
     void AnimationComponent::Update(float deltaTime) {
 
         if (!mCurrentClip) {
@@ -112,6 +121,9 @@ namespace golias {
         UpdateObjectBindings();
     }
 
+    const std::unordered_map<String, Ref<AnimationClip>>& AnimationComponent::GetAnimationClips() const {
+        return mAnimationClips;
+    }
 
     void AnimationComponent::RegisterClip(CString name, const Ref<AnimationClip>& clip) {
         mAnimationClips[name.data()] = clip;
@@ -137,12 +149,11 @@ namespace golias {
 
                 mObjectBindings[object]->TrackIndices.push_back(i);
             }
-           
         }
     }
 
     bool AnimationComponent::IsPlaying() {
-       return mIsPlaying;
+        return mIsPlaying;
     }
 
     void AnimationComponent::Play(CString name, bool loop) {

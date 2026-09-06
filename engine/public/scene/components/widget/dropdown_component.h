@@ -33,6 +33,13 @@ namespace golias {
 
         const std::vector<String>& GetOptions() const;
         void SetOptions(const std::vector<String>& options);
+        
+        void AddOption(const String& option);
+        
+        bool RemoveOption(const String& option);
+        void RemoveOptionAt(int index);
+
+        void ClearOptions();
 
         int GetSelectedIndex() const;
         void SetSelectedIndex(int index, bool notify = true);

@@ -227,6 +227,45 @@ namespace golias {
         }
     }
 
+    void DropdownComponent::AddOption(const String& option) {
+        mOptions.push_back(option);
+
+        if (mSelectedIndex < 0 || mSelectedIndex >= static_cast<int>(mOptions.size())) {
+            mSelectedIndex = static_cast<int>(mOptions.size()) - 1;
+        }
+    }
+
+    void DropdownComponent::ClearOptions() {
+        mOptions.clear();
+        mSelectedIndex = -1;
+    }
+
+    bool DropdownComponent::RemoveOption(const String& option) {
+        auto it = std::find(mOptions.begin(), mOptions.end(), option);
+
+        if (it != mOptions.end()) {
+            int index = static_cast<int>(std::distance(mOptions.begin(), it));
+            RemoveOptionAt(index);
+            return true;
+        }
+
+        return false;
+    }
+
+    void DropdownComponent::RemoveOptionAt(int index) {
+        if (index < 0 || index >= static_cast<int>(mOptions.size())) {
+            return;
+        }
+
+        mOptions.erase(mOptions.begin() + index);
+
+        if (mSelectedIndex == index) {
+            mSelectedIndex = -1;
+        } else if (mSelectedIndex > index) {
+            --mSelectedIndex;
+        }
+    }
+
     int DropdownComponent::GetSelectedIndex() const {
         return mSelectedIndex;
     }
