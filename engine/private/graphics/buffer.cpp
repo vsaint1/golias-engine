@@ -41,7 +41,7 @@ namespace golias {
         mBufferId = buffer;
     }
 
-    uint32_t Buffer::GetHandle() {
+    uint32_t Buffer::GetHandle() const {
         return mBufferId;
     }
 

@@ -7,12 +7,10 @@ namespace golias {
         static constexpr uint32_t kMaxCascades = 4;
 
         bool Enabled                 = true;
-        uint32_t CascadeCount        = 4;
-        uint32_t ShadowMapResolution = 4092;
+        uint32_t CascadeCount        = 3;
+        uint32_t ShadowMapResolution = 2048;
         float SplitLambda            = 0.5f;
         float MaxDistance            = 1000.0f;
-        float Bias                   = 0.0005f;
-        float NormalBias             = 0.001f;
 
         void Clamp();
     };

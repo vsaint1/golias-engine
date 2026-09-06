@@ -116,9 +116,26 @@ namespace golias {
 
     void Shader::SetTexture(const TextureBinding& binding, const Texture* texture) {
         const GLuint location = GetUniformLocation(binding.Sampler);
-        
+
         glActiveTexture(GL_TEXTURE0 + binding.Unit);
         glBindTexture(texture->GetTarget(), texture->GetHandle());
         glUniform1i(location, static_cast<GLint>(binding.Unit));
+    }
+
+    void Shader::SetUniformBlockBinding(CString name, uint32_t bindingIndex) {
+        constexpr size_t kMaxBlockNameLen = 128;
+        char buffer[kMaxBlockNameLen];
+
+        const size_t len = std::min(name.size(), kMaxBlockNameLen - 1);
+        std::memcpy(buffer, name.data(), len);
+        buffer[len] = '\0';
+
+        const GLuint blockIndex = glGetUniformBlockIndex(mProgramID, buffer);
+        if (blockIndex == GL_INVALID_INDEX) {
+            GOLIAS_LOG_WARN("Uniform block '%s' not found in shader program.", buffer);
+            return;
+        }
+
+        glUniformBlockBinding(mProgramID, blockIndex, bindingIndex);
     }
 } // namespace golias

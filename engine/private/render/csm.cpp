@@ -6,9 +6,7 @@ namespace golias {
         CascadeCount        = std::clamp(CascadeCount, 1u, kMaxCascades);
         ShadowMapResolution = std::max(ShadowMapResolution, 1u);
         SplitLambda         = std::clamp(SplitLambda, 0.0f, 1.0f);
-        MaxDistance         = std::max(MaxDistance, 0.1f);
-        Bias                = std::max(Bias, 0.0f);
-        NormalBias          = std::max(NormalBias, 0.0f);
+        MaxDistance         = std::max(MaxDistance, 150.0f);
     }
 
 
@@ -43,7 +41,7 @@ namespace golias {
                                   float cameraFar) {
 
         const float nearPlane = std::max(cameraNear, 0.001f);
-        const float farPlane  = std::max(cameraFar, nearPlane);
+        const float farPlane  = std::clamp(cameraFar, nearPlane, mSettings.MaxDistance);
 
         // TODO: Make this rebuild only if changes (minor changes)
         RebuildSplits(nearPlane, farPlane);
