@@ -2039,6 +2039,27 @@
                     }
                 },
                 {
+                    "name": "Godette",
+                    "type": "Prefab",
+                    "path": "scene/prefabs/godette.gprefab",
+                    "position": {
+                        "x": -10.0,
+                        "y": 0.5,
+                        "z": 9.0
+                    },
+                    "rotation": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0,
+                        "w": 1
+                    },
+                    "scale": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                },
+                {
                     "name": "Medkit_Obj",
                     "type": "Medkit",
                     "position": {
@@ -2328,7 +2349,7 @@
                                             },
                                             "size": {
                                                 "x": 300,
-                                                "y": 250
+                                                "y": 300
                                             }
                                         }
                                     ],
@@ -2372,6 +2393,44 @@
                                                     "size": {
                                                         "x": 100,
                                                         "y": 20
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "HUDAnimation_DD",
+                                            "position": {
+                                                "x": 10,
+                                                "y": 10,
+                                                "z": 0
+                                            },
+                                            "components": [
+                                                {
+                                                    "type": "DropdownComponent",
+                                                    "selected": 0,
+                                                    "options": [
+                                                        "Test0",
+                                                        "Test1",
+                                                        "Test2"
+                                                    ],
+                                                    "font": {
+                                                        "path": "fonts/arial.ttf",
+                                                        "size": 16
+                                                    }
+                                                },
+                                                {
+                                                    "type": "RectTransformComponent",
+                                                    "anchor": {
+                                                        "x": 0.0,
+                                                        "y": 0.7
+                                                    },
+                                                    "pivot": {
+                                                        "x": 0.0,
+                                                        "y": 0.0
+                                                    },
+                                                    "size": {
+                                                        "x": 250,
+                                                        "y": 30
                                                     }
                                                 }
                                             ]
@@ -2888,7 +2947,7 @@
                             "components": [
                                 {
                                     "type": "DropdownComponent",
-                                    "selected": 1,
+                                    "selected": 0,
                                     "options": [
                                         "Low Quality",
                                         "Medium Quality",

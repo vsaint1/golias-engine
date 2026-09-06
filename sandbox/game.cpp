@@ -25,7 +25,7 @@ bool GameApplication::Initialize() {
     mRoot           = scene->FindGameObjectByName("Main");
     mCanvas         = scene->FindGameObjectByName("Canvas");
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
-
+    mGodette        = mRoot->FindChildByName("Godette");
 
     if (GameObject* playbutton = mCanvas->FindChildByName("PlayButton")) {
         ButtonComponent* button = playbutton->GetComponent<ButtonComponent>();
@@ -67,18 +67,43 @@ bool GameApplication::Initialize() {
         mHUDCanvas = hudCanvas;
     }
 
+    if (GameObject* hudAnimationDropdown = mHUDCanvas->FindChildByName("HUDAnimation_DD")) {
+        DropdownComponent* dropdown = hudAnimationDropdown->GetComponent<DropdownComponent>();
+        dropdown->ClearOptions();
+
+        if (mGodette) {
+            if (AnimationComponent* anim = mGodette->GetComponent<AnimationComponent>()) {
+                for (const auto& [name, clip] : anim->GetAnimationClips()) {
+                    dropdown->AddOption(name);
+                }
+
+                anim->Play(dropdown->GetSelectedOption(), false);
+            }
+        }
+
+        dropdown->onValueChanged = [dropdown, this](int index) {
+            if (mGodette) {
+                if (AnimationComponent* anim = mGodette->GetComponent<AnimationComponent>()) {
+                    String selectedOption = dropdown->GetSelectedOption();
+                    anim->Play(selectedOption, false);
+                }
+            }
+        };
+    }
+
 
     return true;
 }
 
 void GameApplication::Update(float deltaTime) {
 
-
-    Engine& engine = Engine::GetInstance();
+    Engine& engine             = Engine::GetInstance();
     InputManager& inputManager = engine.GetInputManager();
 
+
     if (mRoot && mRoot->IsActive() && inputManager.IsKeyJustPressed(KeyCode::LeftControl)) {
-       
+
+
         if (inputManager.IsCanvasFocused()) {
             inputManager.SetCanvasFocus(false);
         } else {
@@ -97,6 +122,27 @@ void GameApplication::Update(float deltaTime) {
         if (mSettingsCanvas && mSettingsCanvas->IsActive()) {
             mSettingsCanvas->SetActive(false);
             mCanvas->SetActive(true);
+        }
+    }
+
+    if (mHUDCanvas && mHUDCanvas->IsActive()) {
+
+        if (TextComponent* text = mHUDCanvas->FindChildByName("HUDText_Stats")->GetComponent<TextComponent>()) {
+            RenderStats rs = engine.GetRenderStats();
+            MemoryStats ms = engine.GetMemoryStats();
+            String fmt     = String_Format("FPS: %d\nFrame Time: %.2f ms\nCPU: %.2f ms\nGPU: %.2f ms\nRendering\nDraw Calls: %d\nBatches: "
+                                           "%d\nVertices: %d\nTriangles: %d\nRAM: %.2f/%s \nVRAM: N/A",
+                                           rs.Fps,
+                                           rs.FrameTimeMs,
+                                           rs.CpuTimeMs,
+                                           rs.GpuTimeMs,
+                                           rs.DrawCalls,
+                                           rs.Batches,
+                                           rs.Vertices,
+                                           rs.Triangles,
+                                           ms.ProcessRamBytes / pow(1024.0, 2),
+                                           String_FormatBytes(ms.TotalRamBytes).c_str());
+            text->SetText(fmt);
         }
     }
 

@@ -22,4 +22,6 @@ private:
     GameObject* mSettingsCanvas = nullptr;
 
     GameObject* mHUDCanvas = nullptr;
+
+    GameObject* mGodette = nullptr;
 };

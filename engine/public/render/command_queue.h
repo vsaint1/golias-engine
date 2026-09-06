@@ -10,6 +10,14 @@ namespace golias {
     class Mesh;
     class Material;
     class Texture2D;
+    class TextureCube;
+    class Query;
+
+    /// @brief  Maximum number of instances drawn draw call.
+    inline constexpr size_t kMaxInstancesPerBatch = 65535;
+
+    /// @brief  Maximum number of joints used for skeletal animation.
+    inline constexpr size_t kMaxJoints = 1024;
 
     enum class Tonemap : int {
         None     = 0, // Only applies gamma correction
@@ -22,6 +30,10 @@ namespace golias {
         Mesh* Mesh         = nullptr;
         Material* Material = nullptr;
         glm::mat4 Model    = glm::mat4(1.0f);
+
+        /// @brief  Skin joint matrices (null for static meshes).
+        const glm::mat4* JointMatrices = nullptr;
+        uint32_t JointCount            = 0;
     };
 
     struct CanvasBatch {
@@ -97,8 +109,11 @@ namespace golias {
 
 
     private:
-        /// @brief Renders the shadow cascades for the given light and camera.
+        /// @brief  Renders the shadow cascades for the given light and camera.
         void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
+
+        /// @brief  Renders the given mesh into the currently bound shadow pass.
+        void DrawShadowOpaque(const CameraCommand& cameraCommand, const glm::mat4& cascadeViewProjection);
 
         /// @brief Renders the post-processing effects for the given camera.
         void RenderPostProcess(const CameraCommand& cameraCommand);
@@ -114,8 +129,14 @@ namespace golias {
                                       std::vector<const RenderCommand*>& outOpaque,
                                       std::vector<const RenderCommand*>& outTransparent) const;
 
-        /// @brief Binds material params (incl. shadow data) and issues the draw call.
-        void DrawRenderCommand(const RenderCommand& command, const CameraCommand& cameraCommand);
+        /// @brief  Binds material params and issues the draw call.
+        void DrawRenderCommand(const RenderCommand& command,
+                               const CameraCommand& cameraCommand,
+                               uint32_t instanceCount            = 0,
+                               const glm::mat4* instanceMatrices = nullptr);
+
+        /// @brief  Draws instanced batches of identical (mesh, material) pairs.
+        void RenderInstanced(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
 
         /// @brief Draws opaque geometry (depth-tested, order-independent).
         void RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
@@ -138,10 +159,17 @@ namespace golias {
 
         Ref<Buffer> mLightingBuffer = nullptr;
 
+        /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices of the current instanced batch.
+        Ref<Buffer> mInstanceBuffer = nullptr;
+
+        /// @brief  Per-frame UBO holding the skin joint matrices of the current skinned mesh.
+        Ref<Buffer> mJointBuffer = nullptr;
+
         Ref<Shader> mDefault2DShader   = nullptr;
         Ref<Shader> mDefaultUIShader   = nullptr;
         Ref<Shader> mFxaaShader        = nullptr;
         Ref<Shader> mPostProcessShader = nullptr;
+        Ref<Shader> mDefault3DShader   = nullptr;
 
         Ref<Material> mDefault2DMaterial = nullptr;
         Ref<Material> mDefaultUIMaterial = nullptr;
@@ -149,15 +177,18 @@ namespace golias {
         Ref<Mesh> mQuadMesh       = nullptr;
         Ref<Mesh> mFullscreenQuad = nullptr;
 
-        Ref<Framebuffer> mHdrFramebuffer = nullptr;
-        Ref<Texture2D> mHdrColorTexture = nullptr;
+        Ref<Framebuffer> mHdrFramebuffer     = nullptr;
+        Ref<Texture2D> mHdrColorTexture      = nullptr;
         Ref<Texture2DArray> mHdrDepthTexture = nullptr;
-        
+
         Viewport mHdrViewport = {0, 0, 0, 0};
 
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture  = nullptr;
         Ref<Shader> mShadowShader           = nullptr;
+
+        Ref<Query> mActiveGpuQuery  = nullptr;
+        Ref<Query> mStandbyGpuQuery = nullptr;
 
         CascadedShadowMap mShadowCsm;
 

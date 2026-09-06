@@ -111,6 +111,10 @@ namespace golias {
         LoadObject(objectData, parent, true);
     }
 
+    GameObject* Scene::InstantiatePrefab(const Json& json, GameObject* parent) {
+        return LoadObject(json, parent, true);
+    }
+    
     GameObject* Scene::LoadObject(const Json& objectData, GameObject* parent, bool callStart) {
         if (!objectData.is_object()) {
             GOLIAS_LOG_ERROR("Invalid object data: expected an object.");

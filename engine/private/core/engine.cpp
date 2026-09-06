@@ -83,6 +83,9 @@ namespace golias {
 
         Time::Start();
 
+        static Clock::time_point lastMemorySample = Clock::now();
+        engine.mMemoryStats                       = GetMemoryStats();
+
         while (!engine.mWindow->ShouldClose()) {
 
             Time::Tick();
@@ -90,6 +93,8 @@ namespace golias {
             engine.mWindow->PollEvents();
 
             const float deltaTime = Time::GetDeltaTime();
+
+            const Clock::time_point cpuStart = Clock::now();
 
             engine.mApplication->Update(deltaTime);
 
@@ -126,7 +131,23 @@ namespace golias {
             engine.mCommandQueue.Execute();
             engine.mCommandQueue.EndFrame();
 
+            const Clock::time_point cpuEnd = Clock::now();
+
             engine.mWindow->SwapBuffers();
+
+            const Clock::time_point frameEnd = Clock::now();
+
+            const float frameMs = deltaTime * 1000.0f;
+            const float cpuMs   = std::chrono::duration<float, std::milli>(cpuEnd - cpuStart).count();
+
+            FrameStats::RecordFrame(frameMs, cpuMs);
+            FrameStats::NextFrame();
+
+            static constexpr std::chrono::duration<float, std::milli> kMemoryInterval = std::chrono::duration<float, std::milli>(500.0f);
+            if (frameEnd - lastMemorySample >= kMemoryInterval) {
+                engine.mMemoryStats = GetMemoryStats();
+                lastMemorySample    = frameEnd;
+            }
         }
     }
 
@@ -218,6 +239,14 @@ namespace golias {
 
     AudioManager& Engine::GetAudioManager() {
         return mAudioManager;
+    }
+
+    const RenderStats& Engine::GetRenderStats() const {
+        return FrameStats::Get();
+    }
+
+    const MemoryStats& Engine::GetMemoryStats() const {
+        return mMemoryStats;
     }
 
 } // namespace golias

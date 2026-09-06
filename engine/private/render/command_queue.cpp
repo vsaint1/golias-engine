@@ -2,11 +2,13 @@
 
 #include "core/engine.h"
 #include "graphics/buffer.h"
+#include "graphics/query.h"
 #include "graphics/shader.h"
 #include "graphics/texture_2d.h"
 #include "render/csm.h"
 #include "render/material.h"
 #include "render/mesh.h"
+#include "render/render_stats.h"
 #include "scene/components/camera_component.h"
 
 namespace golias {
@@ -65,6 +67,40 @@ namespace golias {
             return false;
         }
 
+        mDefault3DShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default.gshader");
+        if (!mDefault3DShader) {
+            GOLIAS_LOG_ERROR("Failed to create default 3D shader program");
+            return false;
+        }
+        mDefault3DShader->SetUniformBlockBinding("Lighting", 0);
+        mDefault3DShader->SetUniformBlockBinding("JointMatrices", 2);
+
+        {
+            // clang-format off
+            BufferDesc desc = {
+                .Target = BufferTarget::Vertex,
+                .Usage = BufferUsage::Dynamic,
+                .Size = kMaxInstancesPerBatch * sizeof(glm::mat4)
+            };
+            // clang-format on
+
+            mInstanceBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
+        }
+
+        {
+            // clang-format off
+            BufferDesc desc = {
+                .Target = BufferTarget::Uniform,
+                .Usage = BufferUsage::Dynamic,
+                .Size = kMaxJoints * sizeof(glm::mat4)
+            };
+            // clang-format on
+
+            mJointBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
+        }
+
+        mShadowShader->SetUniformBlockBinding("JointMatrices", 2);
+
         mDefaultUIShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default_ui.gshader");
         if (!mDefaultUIShader) {
             GOLIAS_LOG_ERROR("Failed to create default UI shader program");
@@ -85,6 +121,12 @@ namespace golias {
         if (!mFxaaShader) {
             GOLIAS_LOG_ERROR("Failed to create FXAA shader program");
             return false;
+        }
+
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+        if (device.IsQuerySupported()) {
+            mActiveGpuQuery  = device.CreateQuery(QueryType::TimeElapsed);
+            mStandbyGpuQuery = device.CreateQuery(QueryType::TimeElapsed);
         }
 
         return true;
@@ -115,6 +157,7 @@ namespace golias {
     }
 
     void CommandQueue::BeginFrame() {
+        FrameStats::BeginFrame();
     }
 
     void CommandQueue::UpdateLightingBuffer() {
@@ -179,7 +222,10 @@ namespace golias {
         }
     }
 
-    void CommandQueue::DrawRenderCommand(const RenderCommand& command, const CameraCommand& cameraCommand) {
+    void CommandQueue::DrawRenderCommand(const RenderCommand& command,
+                                         const CameraCommand& cameraCommand,
+                                         uint32_t instanceCount,
+                                         const glm::mat4* instanceMatrices) {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         if (command.Material) {
@@ -189,8 +235,9 @@ namespace golias {
             command.Material->SetParameterValue("_CameraPos", cameraCommand.CameraPosition);
             device.BindMaterial(command.Material);
 
+            Shader* shader = command.Material->GetShader().get();
+
             if (mShadowTexture) {
-                Shader* shader = command.Material->GetShader().get();
                 for (uint32_t cascade = 0; cascade < CascadedShadowMapDesc::kMaxCascades; ++cascade) {
                     shader->SetUniform("_ShadowMatrices[" + std::to_string(cascade) + "]", mShadowCsm.GetCascade(cascade).ViewProjection);
                     shader->SetUniform("_ShadowSplits[" + std::to_string(cascade) + "]", mShadowCsm.GetSplit(cascade));
@@ -198,6 +245,41 @@ namespace golias {
 
                 shader->SetTexture(TextureSlots::ShadowMap, mShadowTexture.get());
             }
+
+            if (shader == mDefault3DShader.get()) {
+                if (command.JointMatrices && command.JointCount > 0 && command.JointCount <= kMaxJoints) {
+                    mJointBuffer->Update(command.JointMatrices, command.JointCount * sizeof(glm::mat4));
+                    mJointBuffer->Bind(2);
+                    shader->SetUniform("_IsSkinned", 1);
+                } else {
+                    shader->SetUniform("_IsSkinned", 0);
+                }
+            }
+
+            if (instanceCount > 0 && instanceMatrices && shader == mDefault3DShader.get()) {
+                uint32_t remaining = instanceCount;
+                uint32_t offset    = 0;
+                while (remaining > 0) {
+                    const uint32_t batchSize = std::min<uint32_t>(kMaxInstancesPerBatch, remaining);
+                    mInstanceBuffer->Update(instanceMatrices + offset, batchSize * sizeof(glm::mat4));
+                    
+                    shader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
+
+                    device.BindMesh(command.Mesh);
+                    command.Mesh->DrawInstanced(*mInstanceBuffer, batchSize);
+                    device.UnbindMesh(command.Mesh);
+
+                    offset += batchSize;
+                    remaining -= batchSize;
+                }
+
+                shader->SetUniform("_InstanceCount", 0);
+                return;
+            }
+        }
+
+        if (command.Material && command.Material->GetShader().get() == mDefault3DShader.get()) {
+            command.Material->GetShader()->SetUniform("_InstanceCount", 0);
         }
 
         device.BindMesh(command.Mesh);
@@ -205,11 +287,70 @@ namespace golias {
         device.UnbindMesh(command.Mesh);
     }
 
-    void CommandQueue::RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque) {
-        // Opaque geometry: front-to-back order
+    void CommandQueue::RenderInstanced(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque) {
+        if (opaque.empty()) {
+            return;
+        }
+
+        // Group identical (mesh, material pairs) for instancing. 
+        // NOTE: Skinned meshes aren't instanced
+        std::vector<const RenderCommand*> staticCommands;
+        std::vector<const RenderCommand*> skinnedCommands;
+
         for (const RenderCommand* command : opaque) {
+            
+            if (command->JointMatrices) {
+                skinnedCommands.push_back(command);
+                continue;
+            }
+
+            staticCommands.push_back(command);
+        }
+
+        std::sort(staticCommands.begin(), staticCommands.end(), [](const RenderCommand* a, const RenderCommand* b) {
+            if (a->Mesh != b->Mesh) {
+                return std::less<const Mesh*>{}(a->Mesh, b->Mesh);
+            }
+
+            return std::less<const Material*>{}(a->Material, b->Material);
+        });
+
+        for (size_t i = 0; i < staticCommands.size();) {
+            size_t end = i + 1;
+            while (end < staticCommands.size() && staticCommands[end]->Mesh == staticCommands[i]->Mesh
+                   && staticCommands[end]->Material == staticCommands[i]->Material) {
+                ++end;
+            }
+
+            const size_t count         = end - i;
+            const RenderCommand* first = staticCommands[i];
+
+            // Instancing is only supported for the default 3D shader.
+            const bool canInstance = count >= 2 && first->Material && first->Material->GetShader().get() == mDefault3DShader.get();
+
+            if (canInstance) {
+                std::vector<glm::mat4> matrices;
+                matrices.reserve(count);
+                for (size_t k = i; k < end; ++k) {
+                    matrices.push_back(staticCommands[k]->Model);
+                }
+
+                DrawRenderCommand(*first, cameraCommand, static_cast<uint32_t>(count), matrices.data());
+            } else {
+                for (size_t k = i; k < end; ++k) {
+                    DrawRenderCommand(*staticCommands[k], cameraCommand);
+                }
+            }
+            i = end;
+        }
+
+        for (const RenderCommand* command : skinnedCommands) {
             DrawRenderCommand(*command, cameraCommand);
         }
+    }
+
+    void CommandQueue::RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque) {
+        RenderInstanced(cameraCommand, opaque);
     }
 
     void CommandQueue::RenderTransparent(const CameraCommand& cameraCommand, std::vector<const RenderCommand*>& transparent) {
@@ -272,6 +413,8 @@ namespace golias {
             for (const CanvasBatch& batch : command.Batches) {
 
                 if (batch.IndexCount > 0) {
+                    FrameStats::RecordCanvasBatch(1);
+
                     Ref<Texture2D> whiteTex = Engine::GetInstance().GetAssetManager().AcquireWhiteTexture();
                     shader->SetTexture(TextureSlots::MainTexture, batch.Texture ? batch.Texture : whiteTex.get());
                     command.Mesh->DrawIndexed(indexOffset, batch.IndexCount);
@@ -287,6 +430,17 @@ namespace golias {
     void CommandQueue::Execute() {
 
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        if (mStandbyGpuQuery) {
+            uint64_t nanoseconds = 0;
+            if (mStandbyGpuQuery->GetResult(&nanoseconds) == QueryResult::Available) {
+                FrameStats::RecordGpuTime(nanoseconds * 1e-6f);
+            }
+        }
+
+        if (mActiveGpuQuery) {
+            mActiveGpuQuery->Begin();
+        }
 
         UpdateLightingBuffer();
 
@@ -334,6 +488,11 @@ namespace golias {
 
             device.SetBlendMode(BlendMode::None);
             device.SetDepthTestEnabled(true);
+        }
+
+        if (mActiveGpuQuery) {
+            mActiveGpuQuery->End();
+            std::swap(mActiveGpuQuery, mStandbyGpuQuery);
         }
     }
 
@@ -418,6 +577,105 @@ namespace golias {
         mFullscreenQuad->Unbind();
     }
 
+    void CommandQueue::DrawShadowOpaque(const CameraCommand& cameraCommand, const glm::mat4& cascadeViewProjection) {
+        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
+
+        struct ShadowGeometry {
+            Mesh* Mesh = nullptr;
+            std::vector<const RenderCommand*> Commands;
+        };
+
+        std::vector<ShadowGeometry> geometries;
+        std::vector<const RenderCommand*> skinned;
+        std::unordered_map<const Mesh*, size_t> geometryLookup;
+
+        for (const RenderCommand& command : mCommands) {
+            if (!command.Mesh) {
+                continue;
+            }
+
+            // Skip transparent geometry
+            if (command.Material && command.Material->GetRenderState().Blend != BlendMode::None) {
+                continue;
+            }
+
+            if (command.JointMatrices) {
+                skinned.push_back(&command);
+                continue;
+            }
+
+            size_t geometryIndex = geometries.size();
+
+            if (const auto it = geometryLookup.find(command.Mesh); it != geometryLookup.end()) {
+                geometryIndex = it->second;
+            } else {
+                geometryLookup.emplace(command.Mesh, geometryIndex);
+                ShadowGeometry geometry;
+                geometry.Mesh = command.Mesh;
+                geometries.push_back(std::move(geometry));
+            }
+            geometries[geometryIndex].Commands.push_back(&command);
+        }
+
+        for (const ShadowGeometry& geometry : geometries) {
+            if (geometry.Commands.empty()) {
+                continue;
+            }
+
+            if (geometry.Commands.size() < 2) {
+                const RenderCommand& command = *geometry.Commands[0];
+                mShadowShader->SetUniform("_ModelMatrix", command.Model);
+                mShadowShader->SetUniform("_InstanceCount", 0);
+                mShadowShader->SetUniform("_IsSkinned", 0);
+
+                device.BindMesh(command.Mesh);
+                device.DrawMesh(command.Mesh);
+                device.UnbindMesh(command.Mesh);
+                continue;
+            }
+
+            std::vector<glm::mat4> matrices;
+            matrices.reserve(geometry.Commands.size());
+            for (const RenderCommand* command : geometry.Commands) {
+                matrices.push_back(command->Model);
+            }
+
+            uint32_t remaining = static_cast<uint32_t>(matrices.size());
+            uint32_t offset    = 0;
+            while (remaining > 0) {
+                const uint32_t batchSize = std::min<uint32_t>(kMaxInstancesPerBatch, remaining);
+                mInstanceBuffer->Update(matrices.data() + offset, batchSize * sizeof(glm::mat4));
+
+                mShadowShader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
+                mShadowShader->SetUniform("_IsSkinned", 0);
+                device.BindMesh(geometry.Mesh);
+                geometry.Mesh->DrawInstanced(*mInstanceBuffer, batchSize);
+                device.UnbindMesh(geometry.Mesh);
+                offset += batchSize;
+                remaining -= batchSize;
+            }
+            mShadowShader->SetUniform("_InstanceCount", 0);
+            continue;
+        }
+
+        for (const RenderCommand* command : skinned) {
+            mShadowShader->SetUniform("_ModelMatrix", command->Model);
+            mShadowShader->SetUniform("_InstanceCount", 0);
+
+            if (command->JointMatrices && command->JointCount > 0 && command->JointCount <= kMaxJoints) {
+                mJointBuffer->Update(command->JointMatrices, command->JointCount * sizeof(glm::mat4));
+                mJointBuffer->Bind(2);
+                mShadowShader->SetUniform("_IsSkinned", 1);
+            } else {
+                mShadowShader->SetUniform("_IsSkinned", 0);
+            }
+
+            device.BindMesh(command->Mesh);
+            device.DrawMesh(command->Mesh);
+            device.UnbindMesh(command->Mesh);
+        }
+    }
+
     void CommandQueue::RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light) {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
@@ -462,22 +720,7 @@ namespace golias {
             device.ClearBuffers(ClearFlag::Depth);
             mShadowShader->SetUniform("_ViewMatrix", mShadowCsm.GetCascades()[cascade].ViewProjection);
 
-            for (const RenderCommand& command : mCommands) {
-                if (!command.Mesh) {
-                    continue;
-                }
-
-                // Skip transparent geometry
-                if (command.Material && command.Material->GetRenderState().Blend != BlendMode::None) {
-                    continue;
-                }
-
-                mShadowShader->SetUniform("_ModelMatrix", command.Model);
-
-                device.BindMesh(command.Mesh);
-                device.DrawMesh(command.Mesh);
-                device.UnbindMesh(command.Mesh);
-            }
+            DrawShadowOpaque(cameraCommand, mShadowCsm.GetCascades()[cascade].ViewProjection);
         }
 
         mShadowFramebuffer->Unbind();

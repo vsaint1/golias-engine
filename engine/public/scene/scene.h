@@ -15,6 +15,8 @@ namespace golias {
 
         GameObject* CreateGameObject(CString name, GameObject* parent = nullptr);
 
+        GameObject* InstantiatePrefab(const Json& json, GameObject* parent = nullptr);
+
         template <typename T, typename = typename std::enable_if<std::is_base_of<GameObject, T>::value>::type>
         T* CreateGameObject(CString name, GameObject* parent = nullptr) {
             T* gameObject = new T();
