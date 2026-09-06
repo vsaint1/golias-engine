@@ -16,7 +16,7 @@ namespace golias {
         StaticMeshComponent(const Ref<Mesh>& mesh, const Ref<Material>& material);
 
         bool LoadProperties(const Json& properties) override;
-        
+
         void Update(float deltaTime) override;
 
         Ref<Mesh> GetMesh() const;
@@ -28,10 +28,9 @@ namespace golias {
         bool IsVisible() const;
         void SetVisible(bool visible);
 
-    private:
+    protected:
         Ref<Mesh> mMesh         = nullptr;
         Ref<Material> mMaterial = nullptr;
-
-        bool mVisible = true;
+        bool mVisible           = true;
     };
 } // namespace golias

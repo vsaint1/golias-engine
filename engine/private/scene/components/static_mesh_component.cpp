@@ -65,7 +65,6 @@ namespace golias {
         return true;
     }
 
-
     void StaticMeshComponent::Update(float deltaTime) {
 
         if (!mMaterial || !mMesh || !mVisible) {
