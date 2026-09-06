@@ -6,11 +6,21 @@ layout(location = 2) in vec2 aTexCoord;
 layout(location = 3) in vec3 aNormals;
 layout(location = 4) in vec3 aTangent;
 layout(location = 5) in vec3 aBitangent;
+layout(location = 6) in uvec4 aJoints;
+layout(location = 7) in vec4 aWeights;
+layout(location = 8) in mat4 aInstanceMatrix;
 
 uniform mat4 _ModelMatrix;
 uniform mat4 _ViewMatrix;
 uniform mat4 _ProjectionMatrix;
 uniform vec3 _CameraPos;
+
+uniform int _InstanceCount;
+uniform int _IsSkinned;
+
+layout(std140) uniform JointMatrices {
+    mat4 _JointMatrices[1024];
+};
 
 out vec3 vColor;
 out vec2 vTexCoord;
@@ -18,20 +28,27 @@ out vec3 vNormal;
 out vec3 vTangent;
 out vec3 vBitangent;
 out vec3 vWorldPosition;
-out vec3 vViewPosition; 
+out vec3 vViewPosition;
+
+mat4 skin_matrix() {
+    return _JointMatrices[aJoints.x] * aWeights.x + _JointMatrices[aJoints.y] * aWeights.y + _JointMatrices[aJoints.z] * aWeights.z + _JointMatrices[aJoints.w] * aWeights.w;
+}
 
 void main() {
-    vec4 worldPosition = _ModelMatrix * vec4(aPos, 1.0);
+    mat4 modelMatrix = (_InstanceCount > 0) ? aInstanceMatrix : _ModelMatrix;
+
+    vec4 localPosition = (_IsSkinned != 0) ? skin_matrix() * vec4(aPos, 1.0) : vec4(aPos, 1.0);
+    vec4 worldPosition = modelMatrix * localPosition;
 
     gl_Position = _ProjectionMatrix * _ViewMatrix * worldPosition;
     vColor = aColor;
     vTexCoord = aTexCoord;
 
-    mat3 normalMatrix = mat3(transpose(inverse(_ModelMatrix)));
+    mat3 skinNormalMatrix = (_IsSkinned != 0) ? mat3(skin_matrix()) : mat3(1.0);
+    mat3 normalMatrix = mat3(transpose(inverse(modelMatrix))) * skinNormalMatrix;
 
-
-    vNormal    = normalMatrix * aNormals;
-    vTangent   = normalMatrix * aTangent;
+    vNormal = normalMatrix * aNormals;
+    vTangent = normalMatrix * aTangent;
     vBitangent = normalMatrix * aBitangent;
 
     vWorldPosition = worldPosition.xyz;
@@ -81,15 +98,14 @@ layout(std140) uniform Lighting {
     Light Lights[MAX_LIGHTS];
 };
 
-
 vec3 calc_bumped_normal(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord) {
     normal = normalize(normal);
 
-   if (dot(tangent, tangent) <= 1e-6) {
-        return normal; 
+    if(dot(tangent, tangent) <= 1e-6) {
+        return normal;
     }
 
-    mat3 TBN = mat3(1.0f);
+    mat3 TBN = mat3(1.0);
 
     tangent = normalize(tangent - normal * dot(normal, tangent));
     bitangent = bitangent - normal * dot(normal, bitangent);
@@ -115,7 +131,7 @@ float shadow_compare(vec2 uv, float layer, float reference) {
             vec2 sampleUv = (base + vec2(x, y) + 0.5) * texel;
             float depth = texture(_ShadowMap, vec3(sampleUv, layer)).r;
             float weight = (x == 0 ? 1.0 - fraction.x : fraction.x) *
-                           (y == 0 ? 1.0 - fraction.y : fraction.y);
+                (y == 0 ? 1.0 - fraction.y : fraction.y);
             result += (reference <= depth ? 1.0 : 0.0) * weight;
         }
     }
@@ -158,8 +174,7 @@ float shadow_factor(vec3 worldPosition, vec3 normal, vec3 lightDirection) {
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
             float weight = (x == 0 ? 2.0 : 1.0) * (y == 0 ? 2.0 : 1.0);
-            visibility += shadow_compare(shadowPosition.xy + vec2(x, y) * texelSize,
-                                          float(cascade), shadowPosition.z - bias) * weight;
+            visibility += shadow_compare(shadowPosition.xy + vec2(x, y) * texelSize, float(cascade), shadowPosition.z - bias) * weight;
             totalWeight += weight;
         }
     }
@@ -180,12 +195,13 @@ void main() {
     for(int i = 0; i < Count; ++i) {
         Light light = Lights[i];
         vec3 lightDirection;
+        vec3 toLight = vec3(0.0);
         float attenuation = 1.0;
 
         if(light.Type == 0) {
             lightDirection = normalize(-light.Direction.xyz);
         } else {
-            vec3 toLight = light.Position.xyz - vWorldPosition;
+            toLight = light.Position.xyz - vWorldPosition;
             float distanceToLight = length(toLight);
             lightDirection = normalize(toLight);
             attenuation = max(0.0, 1.0 - distanceToLight / light.Range);
@@ -200,8 +216,10 @@ void main() {
         float brightness = max(dot(normal, lightDirection), 0.0);
         vec3 lightColor = light.ColorIntensity.rgb * light.ColorIntensity.a * attenuation;
 
-        // Currently only Directional lights cast shadows
-        float shadow = (light.Type == 0 && light.IsShadowCaster != 0) ? shadow_factor(vWorldPosition, normal, lightDirection) : 1.0;
+        float shadow = 1.0;
+        if(light.IsShadowCaster != 0 && light.Type == 0)
+            shadow = shadow_factor(vWorldPosition, normal, lightDirection);
+
         diffuse += brightness * lightColor * shadow;
 
         vec3 viewDirection = normalize(vViewPosition);
@@ -219,6 +237,6 @@ void main() {
     // COLOR = vec4(tex.rgb * vColor * _BaseColor.rgb, alpha); // Albedo pass
 
     // COLOR = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0); // Normal visualization pass
-    
+
     COLOR = vec4(result, alpha); // Final 
 }
