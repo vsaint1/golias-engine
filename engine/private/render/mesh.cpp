@@ -4,6 +4,7 @@
 #include "graphics/buffer.h"
 #include "math/tangent.h"
 #include "render/model.h"
+#include "render/render_stats.h"
 
 namespace golias {
 
@@ -66,18 +67,53 @@ namespace golias {
             break;
         }
 
+        ConfigureBuffers(vertices.data(), vertices.size() * sizeof(float), indices);
+    }
+
+    Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices) : Mesh(layout, vertices, {}) {
+    }
+
+    Mesh::Mesh(const VertexLayout& layout,
+               const void* vertexData,
+               size_t vertexDataBytes,
+               size_t vertexCount,
+               const std::vector<uint32_t>& indices) {
+        mVertexLayout = layout;
+        mVertexCount  = vertexCount;
+        mIndexCount   = indices.size();
+
+        const uint8_t* base = static_cast<const uint8_t*>(vertexData);
+        for (const auto& element : layout.Elements) {
+            if (element.Index != 0 || element.Size < 3 || element.Type != GL_FLOAT) {
+                continue;
+            }
+
+            for (size_t vertex = 0; vertex < mVertexCount && element.Offset + 12 <= layout.Stride; ++vertex) {
+                const uint8_t* position = base + vertex * layout.Stride + element.Offset;
+                mAABB.Expand(glm::vec3(*reinterpret_cast<const float*>(position),
+                                       *reinterpret_cast<const float*>(position + sizeof(float)),
+                                       *reinterpret_cast<const float*>(position + 2 * sizeof(float))));
+            }
+
+            break;
+        }
+
+        ConfigureBuffers(vertexData, vertexDataBytes, indices);
+    }
+
+    void Mesh::ConfigureBuffers(const void* vertexData, size_t vertexDataBytes, const std::vector<uint32_t>& indices) {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         // clang-format off
         BufferDesc desc = {
             .Target = BufferTarget::Vertex,
             .Usage = BufferUsage::Static, 
-            .Size = vertices.size() * sizeof(float)
+            .Size = vertexDataBytes
         };
         // clang-format on
 
         mVBO = device.CreateBuffer(desc);
-        mVBO->Update(vertices.data(), vertices.size() * sizeof(float));
+        mVBO->Update(vertexData, vertexDataBytes);
 
         if (!indices.empty()) {
 
@@ -97,8 +133,14 @@ namespace golias {
         glBindVertexArray(mVAO);
         mVBO->Bind();
 
-        for (const auto& element : layout.Elements) {
-            glVertexAttribPointer(element.Index, element.Size, element.Type, GL_FALSE, layout.Stride, (void*) (uintptr_t) (element.Offset));
+        for (const auto& element : mVertexLayout.Elements) {
+            if (element.Integer) {
+                glVertexAttribIPointer(
+                    element.Index, element.Size, element.Type, mVertexLayout.Stride, (void*) (uintptr_t) (element.Offset));
+            } else {
+                glVertexAttribPointer(
+                    element.Index, element.Size, element.Type, GL_FALSE, mVertexLayout.Stride, (void*) (uintptr_t) (element.Offset));
+            }
             glEnableVertexAttribArray(element.Index);
         }
 
@@ -108,9 +150,6 @@ namespace golias {
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-    }
-
-    Mesh::Mesh(const VertexLayout& layout, const std::vector<float>& vertices) : Mesh(layout, vertices, {}) {
     }
 
     Ref<Mesh> Mesh::Load(CString path) {
@@ -127,25 +166,91 @@ namespace golias {
     }
 
     Ref<Mesh> Mesh::Create(const Model& model, const ModelPrimitive& primitive) {
-        const size_t stride  = model.GetVertexLayout().Stride / sizeof(float);
-        const auto& vertices = model.GetVertices();
-        const auto& indices  = model.GetIndices();
-        if (primitive.vertexOffset + primitive.vertexCount > vertices.size() / stride
-            || primitive.indexOffset + primitive.indexCount > indices.size()) {
+        return Create(model, std::vector<const ModelPrimitive*>{&primitive});
+    }
+
+    Ref<Mesh> Mesh::Create(const Model& model, const std::vector<const ModelPrimitive*>& primitives) {
+        if (primitives.empty()) {
             return nullptr;
         }
 
-        std::vector<float> primitiveVertices(vertices.begin() + primitive.vertexOffset * stride,
-                                             vertices.begin() + (primitive.vertexOffset + primitive.vertexCount) * stride);
+        if (primitives.front()->Skinned) {
+            constexpr uint32_t kModelStride = VertexAttributeOffsets::kSkinnedVertexFloatCount;
+            const auto& vertices            = model.GetSkinnedVertices();
+            const auto& indices             = model.GetSkinnedIndices();
 
-        std::vector<uint32_t> primitiveIndices;
-        primitiveIndices.reserve(primitive.indexCount);
+            std::vector<uint8_t> packed;
+            std::vector<uint32_t> mergedIndices;
+            uint32_t vertexBase = 0;
 
-        for (size_t i = 0; i < primitive.indexCount; ++i) {
-            primitiveIndices.push_back(indices[primitive.indexOffset + i] - static_cast<uint32_t>(primitive.vertexOffset));
+            for (const ModelPrimitive* primitive : primitives) {
+                if (!primitive || primitive->vertexOffset + primitive->vertexCount > vertices.size() / kModelStride
+                    || primitive->indexOffset + primitive->indexCount > indices.size()) {
+                    return nullptr;
+                }
+
+                const size_t vertexStart = primitive->vertexOffset * kModelStride;
+                for (size_t v = 0; v < primitive->vertexCount; ++v) {
+                    const size_t source = vertexStart + v * kModelStride;
+
+                    for (uint32_t i = 0; i < 17; ++i) {
+                        const float value    = vertices[source + i];
+                        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&value);
+                        packed.insert(packed.end(), bytes, bytes + sizeof(float));
+                    }
+
+                    for (uint32_t i = 0; i < 4; ++i) {
+                        const float jointValue = vertices[source + VertexAttributeOffsets::Joints + i];
+                        const uint16_t joint   = jointValue <= 0.0f ? 0u : static_cast<uint16_t>(glm::clamp(jointValue, 0.0f, 65535.0f));
+                        const uint8_t* bytes   = reinterpret_cast<const uint8_t*>(&joint);
+                        packed.insert(packed.end(), bytes, bytes + sizeof(uint16_t));
+                    }
+
+                    for (uint32_t i = 0; i < 4; ++i) {
+                        const float value    = vertices[source + VertexAttributeOffsets::Weights + i];
+                        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&value);
+                        packed.insert(packed.end(), bytes, bytes + sizeof(float));
+                    }
+                }
+
+                for (size_t i = 0; i < primitive->indexCount; ++i) {
+                    mergedIndices.push_back(indices[primitive->indexOffset + i] - static_cast<uint32_t>(primitive->vertexOffset)
+                                            + vertexBase);
+                }
+
+                vertexBase += static_cast<uint32_t>(primitive->vertexCount);
+            }
+
+            return std::make_shared<Mesh>(SkinnedVertexLayout(), packed.data(), packed.size(), vertexBase, mergedIndices);
         }
 
-        return std::make_shared<Mesh>(model.GetVertexLayout(), primitiveVertices, primitiveIndices);
+        const size_t stride  = model.GetVertexLayout().Stride / sizeof(float);
+        const auto& vertices = model.GetVertices();
+        const auto& indices  = model.GetIndices();
+
+        std::vector<float> mergedVertices;
+        std::vector<uint32_t> mergedIndices;
+        uint32_t vertexBase = 0;
+
+        std::vector<float> primitiveVertices;
+        for (const ModelPrimitive* primitive : primitives) {
+            if (!primitive || primitive->vertexOffset + primitive->vertexCount > vertices.size() / stride
+                || primitive->indexOffset + primitive->indexCount > indices.size()) {
+                return nullptr;
+            }
+
+            primitiveVertices.assign(vertices.begin() + primitive->vertexOffset * stride,
+                                     vertices.begin() + (primitive->vertexOffset + primitive->vertexCount) * stride);
+            mergedVertices.insert(mergedVertices.end(), primitiveVertices.begin(), primitiveVertices.end());
+
+            for (size_t i = 0; i < primitive->indexCount; ++i) {
+                mergedIndices.push_back(indices[primitive->indexOffset + i] - static_cast<uint32_t>(primitive->vertexOffset) + vertexBase);
+            }
+
+            vertexBase += static_cast<uint32_t>(primitive->vertexCount);
+        }
+
+        return std::make_shared<Mesh>(model.GetVertexLayout(), mergedVertices, mergedIndices);
     }
 
     void Mesh::Bind() const {
@@ -173,6 +278,8 @@ namespace golias {
     }
 
     void Mesh::Draw() const {
+        FrameStats::RecordDrawCall(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
+
         if (mIndexCount) {
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr);
         } else {
@@ -185,7 +292,40 @@ namespace golias {
             return;
         }
 
+        FrameStats::RecordDrawCall(count, count);
+
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(count), GL_UNSIGNED_INT, reinterpret_cast<void*>(start * sizeof(uint32_t)));
+    }
+
+    void Mesh::DrawInstanced(const Buffer& instanceBuffer, uint32_t instanceCount) const {
+        if (instanceCount == 0) {
+            return;
+        }
+
+        FrameStats::RecordDrawCall(static_cast<uint32_t>(mVertexCount) * instanceCount, static_cast<uint32_t>(mIndexCount) * instanceCount);
+
+        glBindVertexArray(mVAO);
+
+        // Stream per-instance model matrices through dedicated vertex attributes (locations 8-11)
+        glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer.GetHandle());
+        constexpr GLsizei kInstanceStride = static_cast<GLsizei>(sizeof(glm::mat4));
+        
+        for (uint32_t column = 0; column < 4; ++column) {
+            const GLuint location = 8 + column;
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, kInstanceStride, reinterpret_cast<void*>(column * sizeof(glm::vec4)));
+            glVertexAttribDivisor(location, 1);
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        if (mIndexCount) {
+            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr, instanceCount);
+        } else {
+            glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount), instanceCount);
+        }
+
+        glBindVertexArray(0);
     }
 
     const AABB& Mesh::GetAABB() const {
