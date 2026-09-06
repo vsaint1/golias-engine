@@ -6,7 +6,7 @@
         "*.gtheme": "json",
         "*.comp": "glsl",
         "*.gscene": "json",
-        "*.prefab": "json",
+        "*.gprefab": "json",
         "*.gproj": "json",
     }
 }
