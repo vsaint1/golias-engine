@@ -1,6 +1,7 @@
 #pragma once
 
 #include "font/font.h"
+#include "render/mesh.h"
 #include "stdafx.h"
 #include <any>
 #include <typeindex>
@@ -52,6 +53,8 @@ namespace golias {
         /// @brief  Loads (and caches) the Mesh produced by merging one group of primitives.
         Ref<Mesh> LoadGroupMesh(CString modelPath, const std::vector<const ModelPrimitive*>& primitives);
 
+        Ref<Mesh> AcquireProceduralMesh(const ProceduralMeshKey& key, const std::function<Ref<Mesh>()>& factory);
+
         /// @brief  Loads (and caches) the Material for one material slot of a model.
         Ref<Material> LoadModelMaterial(CString modelPath, int materialIndex);
 
@@ -66,6 +69,8 @@ namespace golias {
     private:
         using AssetMap = std::unordered_map<std::type_index, AssetType>;
         std::unordered_map<String, AssetMap> mAssets;
+
+        std::map<ProceduralMeshKey, Ref<Mesh>> mProceduralMeshes;
 
         std::unordered_map<String, FontFamily> mFonts;
 

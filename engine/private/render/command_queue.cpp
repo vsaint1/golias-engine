@@ -321,7 +321,7 @@ namespace golias {
                     shader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
 
                     device.BindMesh(command.Mesh);
-                    command.Mesh->DrawInstanced(*mInstanceBuffer, batchSize);
+                    command.Mesh->DrawInstanced(mInstanceBuffer, batchSize);
                     device.UnbindMesh(command.Mesh);
 
                     offset += batchSize;
@@ -761,7 +761,7 @@ namespace golias {
                 mShadowShader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
                 mShadowShader->SetUniform("_IsSkinned", 0);
                 device.BindMesh(geometry.Mesh);
-                geometry.Mesh->DrawInstanced(*mInstanceBuffer, batchSize);
+                geometry.Mesh->DrawInstanced(mInstanceBuffer, batchSize);
                 device.UnbindMesh(geometry.Mesh);
                 offset += batchSize;
                 remaining -= batchSize;

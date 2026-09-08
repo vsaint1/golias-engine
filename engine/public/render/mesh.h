@@ -7,8 +7,33 @@ namespace golias {
 
     class Model;
     class Buffer;
+    class VertexArray;
 
     struct ModelPrimitive;
+
+    enum class ProceduralMeshKind : int {
+        Cube       = 0,
+        Quad       = 1,
+        Sphere     = 2,
+        Torus      = 3,
+        Cylinder   = 4,
+        Cone       = 5,
+        Capsule    = 6,
+    };
+
+    /// @brief  Identifies a procedural primitive so identical meshes can share one GPU resource.
+    struct ProceduralMeshKey {
+        ProceduralMeshKind Kind   = ProceduralMeshKind::Cube;
+        std::vector<float> Params = {};
+
+        bool operator<(const ProceduralMeshKey& other) const {
+            if (Kind != other.Kind) {
+                return Kind < other.Kind;
+            }
+
+            return Params < other.Params;
+        }
+    };
 
     class Mesh {
     public:
@@ -59,7 +84,7 @@ namespace golias {
         void DrawIndexed(uint32_t start, uint32_t count) const;
 
         /// @brief  Renders the mesh multiple times in a single draw call.
-        void DrawInstanced(const Buffer& instanceBuffer, uint32_t instanceCount) const;
+        void DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount) const;
 
         const AABB& GetAABB() const;
 
@@ -78,9 +103,9 @@ namespace golias {
         size_t mIndexCount  = 0;
         AABB mAABB;
 
-        GLuint mVAO      = 0;
-        Ref<Buffer> mEBO = nullptr;
-        Ref<Buffer> mVBO = nullptr;
+        VertexArray* mVAO = nullptr;
+        Ref<Buffer> mEBO        = nullptr;
+        Ref<Buffer> mVBO        = nullptr;
     };
 
 } // namespace golias

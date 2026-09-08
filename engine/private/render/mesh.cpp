@@ -1,7 +1,9 @@
 #include "render/mesh.h"
 
 #include "core/engine.h"
+#include "core/io/asset_manager.h"
 #include "graphics/buffer.h"
+#include "graphics/vertex_array.h"
 #include "math/tangent.h"
 #include "render/model.h"
 #include "render/render_stats.h"
@@ -50,9 +52,10 @@ namespace golias {
         mIndexCount   = indices.size();
 
         for (const auto& element : layout.Elements) {
-            if (element.Index != 0 || element.Size < 3) {
+            if (element.Index != 0) {
                 continue;
             }
+
             const size_t stride = layout.Stride / sizeof(float);
             const size_t offset = element.Offset / sizeof(float);
 
@@ -84,7 +87,7 @@ namespace golias {
 
         const uint8_t* base = static_cast<const uint8_t*>(vertexData);
         for (const auto& element : layout.Elements) {
-            if (element.Index != 0 || element.Size < 3 || element.Type != GL_FLOAT) {
+            if (element.Index != 0 || element.Format != VertexFormat::Float3) {
                 continue;
             }
 
@@ -129,27 +132,12 @@ namespace golias {
             mEBO->Update(indices.data(), indices.size() * sizeof(uint32_t));
         }
 
-        glGenVertexArrays(1, &mVAO);
-        glBindVertexArray(mVAO);
-        mVBO->Bind();
-
-        for (const auto& element : mVertexLayout.Elements) {
-            if (element.Integer) {
-                glVertexAttribIPointer(
-                    element.Index, element.Size, element.Type, mVertexLayout.Stride, (void*) (uintptr_t) (element.Offset));
-            } else {
-                glVertexAttribPointer(
-                    element.Index, element.Size, element.Type, GL_FALSE, mVertexLayout.Stride, (void*) (uintptr_t) (element.Offset));
-            }
-            glEnableVertexAttribArray(element.Index);
-        }
+        mVAO = new VertexArray();
+        mVAO->SetVertexBuffer(mVBO, mVertexLayout);
 
         if (mEBO) {
-            mEBO->Bind();
+            mVAO->SetIndexBuffer(mEBO);
         }
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
     }
 
     Ref<Mesh> Mesh::Load(CString path) {
@@ -254,78 +242,66 @@ namespace golias {
     }
 
     void Mesh::Bind() const {
-        glBindVertexArray(mVAO);
+        mVAO->Bind();
     }
 
     void Mesh::Update(const std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
         mVertexCount = vertices.size() / (mVertexLayout.Stride / sizeof(float));
         mIndexCount  = indices.size();
 
-        glBindVertexArray(mVAO);
-        mVBO->Update(vertices.data(), vertices.size() * sizeof(float));
+        mVAO->Bind();
+        mVBO->Update(vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(float)));
 
         if (mEBO && mIndexCount > 0) {
-            mEBO->Update(indices.data(), indices.size() * sizeof(uint32_t));
+            mEBO->Update(indices.data(), static_cast<uint32_t>(indices.size() * sizeof(uint32_t)));
             mEBO->Bind();
         }
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        mVAO->Unbind();
     }
 
     void Mesh::Unbind() const {
-        glBindVertexArray(0);
+        mVAO->Unbind();
     }
 
     void Mesh::Draw() const {
         FrameStats::RecordDrawCall(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
 
-        if (mIndexCount) {
-            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr);
-        } else {
-            glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount));
-        }
+        mVAO->Draw(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
     }
 
     void Mesh::DrawIndexed(uint32_t start, uint32_t count) const {
-        if (count == 0) {
-            return;
-        }
-
         FrameStats::RecordDrawCall(count, count);
 
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(count), GL_UNSIGNED_INT, reinterpret_cast<void*>(start * sizeof(uint32_t)));
+        mVAO->DrawIndexed(start, count);
     }
 
-    void Mesh::DrawInstanced(const Buffer& instanceBuffer, uint32_t instanceCount) const {
+    void Mesh::DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount) const {
         if (instanceCount == 0) {
             return;
         }
 
+        // Instanced model matrices stream through vertex attributes at locations 8-11, immediately
+        // followed by the per-instance base color (location 12). The color attribute is always enabled
+        // even for shaders that read only the matrix (e.g. shadow pass); an unused attribute is harmless.
+        constexpr uint32_t kMatrixColumns = 4;
+
+        const uint32_t matrixBytes = kMatrixColumns * sizeof(glm::vec4);
+        const uint32_t stride      = matrixBytes + sizeof(glm::vec4);
+
+        std::vector<VertexArray::InstanceAttribute> attributes;
+        attributes.reserve(kMatrixColumns + 1);
+        for (uint32_t column = 0; column < kMatrixColumns; ++column) {
+            attributes.emplace_back(VertexArray::InstanceAttribute{VertexAttributeBinding::InstanceMatrix + column, 4, column * sizeof(glm::vec4)});
+        }
+        attributes.emplace_back(VertexArray::InstanceAttribute{VertexAttributeBinding::InstanceColor, 4, matrixBytes});
+
         FrameStats::RecordDrawCall(static_cast<uint32_t>(mVertexCount) * instanceCount, static_cast<uint32_t>(mIndexCount) * instanceCount);
 
-        glBindVertexArray(mVAO);
-
-        // Stream per-instance model matrices through dedicated vertex attributes (locations 8-11)
-        glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer.GetHandle());
-        constexpr GLsizei kInstanceStride = static_cast<GLsizei>(sizeof(glm::mat4));
-        
-        for (uint32_t column = 0; column < 4; ++column) {
-            const GLuint location = 8 + column;
-            glEnableVertexAttribArray(location);
-            glVertexAttribPointer(location, 4, GL_FLOAT, GL_FALSE, kInstanceStride, reinterpret_cast<void*>(column * sizeof(glm::vec4)));
-            glVertexAttribDivisor(location, 1);
-        }
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        if (mIndexCount) {
-            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(mIndexCount), GL_UNSIGNED_INT, nullptr, instanceCount);
-        } else {
-            glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(mVertexCount), instanceCount);
-        }
-
-        glBindVertexArray(0);
+        mVAO->SetInstanceBuffer(instanceBuffer, stride, attributes);
+        mVAO->Bind();
+        mVAO->DrawInstanced(instanceCount, static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
+        mVAO->Unbind();
     }
 
     const AABB& Mesh::GetAABB() const {
@@ -333,6 +309,10 @@ namespace golias {
     }
 
     Ref<Mesh> Mesh::CreateCube(const glm::vec3& size, uint32_t segments) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Cube, {size.x, size.y, size.z, static_cast<float>(segments)}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [size, segments]() {
+
         const glm::vec3 halfSize = size * 0.5f;
 
         const float sx = size.x;
@@ -393,10 +373,14 @@ namespace golias {
         Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
         return mesh;
+        });
     }
 
 
     Ref<Mesh> Mesh::CreateQuad(const glm::vec2& size) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Quad, {size.x, size.y}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [size]() {
         const glm::vec2 half = size * 0.5f;
 
         // clang-format off
@@ -415,11 +399,18 @@ namespace golias {
 
         const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, fullVertices, indices);
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+        return mesh;
+        });
     }
 
 
     Ref<Mesh> Mesh::CreateSphere(float radius, uint32_t sectorCount, uint32_t stackCount) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Sphere, {radius, static_cast<float>(sectorCount), static_cast<float>(stackCount)}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [radius, sectorCount, stackCount]() {
+
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -471,11 +462,20 @@ namespace golias {
 
         const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, fullVertices, indices);
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+        return mesh;
+        });
     }
 
 
     Ref<Mesh> Mesh::CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Torus,
+                                    {majorRadius, minorRadius, static_cast<float>(majorSegments), static_cast<float>(minorSegments)}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
+            key, [majorRadius, minorRadius, majorSegments, minorSegments]() {
+
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -525,11 +525,20 @@ namespace golias {
 
         const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, fullVertices, indices);
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+        return mesh;
+        });
     }
 
 
     Ref<Mesh> Mesh::CreateCylinder(float radiusTop, float radiusBottom, float height, uint32_t sectorCount) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Cylinder,
+                                    {radiusTop, radiusBottom, height, static_cast<float>(sectorCount)}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
+            key, [radiusTop, radiusBottom, height, sectorCount]() {
+
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         float halfH = height * 0.5f;
@@ -626,7 +635,10 @@ namespace golias {
 
         const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, fullVertices, indices);
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+        return mesh;
+        });
     }
 
     Ref<Mesh> Mesh::CreateCone(float radius, float height, uint32_t sectorCount) {
@@ -635,6 +647,12 @@ namespace golias {
 
 
     Ref<Mesh> Mesh::CreateCapsule(float radius, float cylinderHeight, uint32_t sectorCount, uint32_t hemisphereRings) {
+        const ProceduralMeshKey key{ProceduralMeshKind::Capsule,
+                                    {radius, cylinderHeight, static_cast<float>(sectorCount), static_cast<float>(hemisphereRings)}};
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
+            key, [radius, cylinderHeight, sectorCount, hemisphereRings]() {
+
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -726,13 +744,14 @@ namespace golias {
 
         const VertexLayout layout = StandardVertexLayout();
 
-        return std::make_shared<Mesh>(layout, fullVertices, indices);
+        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+        return mesh;
+        });
     }
 
     Mesh::~Mesh() {
-        if (mVAO) {
-            glDeleteVertexArrays(1, &mVAO);
-        }
+        delete mVAO;
     }
 
 } // namespace golias
