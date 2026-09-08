@@ -18,9 +18,9 @@ namespace golias {
 
     void CanvasComponent::Start() {
         VertexLayout layout;
-        layout.Elements.push_back({0, 2, GL_FLOAT, 0});
-        layout.Elements.push_back({1, 4, GL_FLOAT, 4 * sizeof(float)});
-        layout.Elements.push_back({2, 2, GL_FLOAT, 2 * sizeof(float)});
+        layout.Elements.push_back({0, 2, VertexFormat::Float2, 0});
+        layout.Elements.push_back({1, 4, VertexFormat::Float4, 4 * sizeof(float)});
+        layout.Elements.push_back({2, 2, VertexFormat::Float2, 2 * sizeof(float)});
         layout.Stride = 8 * sizeof(float);
 
         const std::vector<float> initialVertices(4 * 8, 0.0f);
@@ -74,9 +74,42 @@ namespace golias {
             }
         }
 
+        // Widgets can be destroyed at runtime (e.g. a dropdown list closing). If the previously
+        // hovered/pressed widget is no longer part of the canvas, drop the reference without
+        // touching its memory - calling OnPointerExit/Up on freed objects would crash.
+        if (mHovered && std::find(widgets.begin(), widgets.end(), mHovered) == widgets.end()) {
+            mHovered = nullptr;
+        }
+
+        if (mPressed && std::find(widgets.begin(), widgets.end(), mPressed) == widgets.end()) {
+            mPressed = nullptr;
+        }
+
         WidgetComponent* hit = nullptr;
+        auto hit_test_widget = [&](WidgetComponent* element, const glm::vec2& point, bool topmostOnly) {
+            ScissorRect clip;
+            bool hasClip = false;
+            glm::vec2 contentOffset(0.0f);
+            bool topmost = false;
+
+            GetWidgetContext(element, clip, hasClip, contentOffset, topmost);
+
+            if (topmost != topmostOnly) {
+                return false;
+            }
+
+            // A masked widget can only be hit while the pointer is inside its mask.
+            if (hasClip) {
+                if (point.x < clip.X || point.x > clip.X + clip.Width || point.y < clip.Y || point.y > clip.Y + clip.Height) {
+                    return false;
+                }
+            }
+
+            return element->HitTest(point - contentOffset);
+        };
+
         for (auto element : widgets) {
-            if (element->IsTopmost() && element->HitTest(mousePosition)) {
+            if (hit_test_widget(element, mousePosition, true)) {
                 hit = element;
                 break;
             }
@@ -84,7 +117,7 @@ namespace golias {
 
         if (!hit) {
             for (auto element : widgets) {
-                if (!element->IsTopmost() && element->HitTest(mousePosition)) {
+                if (hit_test_widget(element, mousePosition, false)) {
                     hit = element;
                     break;
                 }
@@ -169,18 +202,73 @@ namespace golias {
         }
 
         for (auto* widget : widgets) {
-            if (!widget->IsTopmost()) {
-                widget->Render(this);
+            ScissorRect clip;
+            bool hasClip = false;
+            glm::vec2 contentOffset(0.0f);
+            bool topmost = false;
+
+            GetWidgetContext(widget, clip, hasClip, contentOffset, topmost);
+
+            mClipRect      = clip;
+            mHasClip       = hasClip;
+            mContentOffset = contentOffset;
+
+            if (!topmost) {
+                RenderWidget(widget);
             }
         }
+
+        mClipRect      = ScissorRect{};
+        mHasClip       = false;
+        mContentOffset = glm::vec2(0.0f);
 
         for (auto* widget : widgets) {
-            if (widget->IsTopmost()) {
-                widget->Render(this);
+            ScissorRect clip;
+            bool hasClip = false;
+            glm::vec2 contentOffset(0.0f);
+            bool topmost = false;
+
+            GetWidgetContext(widget, clip, hasClip, contentOffset, topmost);
+
+            mClipRect      = clip;
+            mHasClip       = hasClip;
+            mContentOffset = contentOffset;
+
+            if (topmost) {
+                RenderWidget(widget);
             }
         }
 
+        mClipRect      = ScissorRect{};
+        mHasClip       = false;
+        mContentOffset = glm::vec2(0.0f);
+
         End();
+    }
+
+    void CanvasComponent::RenderWidget(WidgetComponent* widget) {
+        if (!widget) {
+            return;
+        }
+
+        // Cull widgets whose rect lies fully outside the current clip (e.g. rows scrolled out of a
+        // mask viewport). This keeps per-frame canvas geometry proportional to what is on screen.
+        if (RectTransformComponent* rectTransform = widget->GetOwner()->GetComponent<RectTransformComponent>()) {
+            const glm::vec2 size = rectTransform->GetSize();
+            const glm::vec2 ll   = rectTransform->GetScreenPosition() - rectTransform->GetPivot() * size + mContentOffset;
+            const glm::vec2 ur   = ll + size;
+
+            if (mHasClip) {
+                const float clipRight  = mClipRect.X + mClipRect.Width;
+                const float clipBottom = mClipRect.Y + mClipRect.Height;
+
+                if (ur.x <= mClipRect.X || ll.x >= clipRight || ur.y <= mClipRect.Y || ll.y >= clipBottom) {
+                    return;
+                }
+            }
+        }
+
+        widget->Render(this);
     }
 
     void CanvasComponent::Render(WidgetComponent* widget) {
@@ -198,16 +286,19 @@ namespace golias {
     }
 
     void CanvasComponent::DrawQuad(const glm::vec2& lowerLeft, const glm::vec2& upperRight, const glm::vec4& color) {
+        const glm::vec2 ll = lowerLeft + mContentOffset;
+        const glm::vec2 ur = upperRight + mContentOffset;
+
         const uint32_t startIndex = static_cast<uint32_t>(mVertices.size() / 8);
 
         Texture* texture = nullptr;
 
         // clang-format off
         mVertices.insert(mVertices.end(), {
-            lowerLeft.x, lowerLeft.y, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
-            upperRight.x, lowerLeft.y, 1.0f, 0.0, color.r, color.g, color.b, color.a,
-            upperRight.x, upperRight.y, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
-            lowerLeft.x, upperRight.y, 0.0f, 1.0f, color.r, color.g, color.b, color.a,
+            ll.x, ll.y, 0.0f, 0.0f, color.r, color.g, color.b, color.a,
+            ur.x, ll.y, 1.0f, 0.0, color.r, color.g, color.b, color.a,
+            ur.x, ur.y, 1.0f, 1.0f, color.r, color.g, color.b, color.a,
+            ll.x, ur.y, 0.0f, 1.0f, color.r, color.g, color.b, color.a,
         });
         // clang-format on
 
@@ -223,14 +314,17 @@ namespace golias {
                                    Texture* texture,
                                    const glm::vec4& color) {
 
+        const glm::vec2 ll = lowerLeft + mContentOffset;
+        const glm::vec2 ur = upperRight + mContentOffset;
+
         const uint32_t startIndex = static_cast<uint32_t>(mVertices.size() / 8);
 
         // clang-format off
         mVertices.insert(mVertices.end(), {
-            lowerLeft.x, lowerLeft.y, lowerLeftUV.x, lowerLeftUV.y, color.r, color.g, color.b, color.a,
-            upperRight.x, lowerLeft.y, upperRightUV.x, lowerLeftUV.y, color.r, color.g, color.b, color.a,
-            upperRight.x, upperRight.y, upperRightUV.x, upperRightUV.y, color.r, color.g, color.b, color.a,
-            lowerLeft.x, upperRight.y, lowerLeftUV.x, upperRightUV.y, color.r, color.g, color.b, color.a,
+            ll.x, ll.y, lowerLeftUV.x, lowerLeftUV.y, color.r, color.g, color.b, color.a,
+            ur.x, ll.y, upperRightUV.x, lowerLeftUV.y, color.r, color.g, color.b, color.a,
+            ur.x, ur.y, upperRightUV.x, upperRightUV.y, color.r, color.g, color.b, color.a,
+            ll.x, ur.y, lowerLeftUV.x, upperRightUV.y, color.r, color.g, color.b, color.a,
         });
         // clang-format on
 
@@ -238,11 +332,91 @@ namespace golias {
         UpdateBatches(texture);
     }
 
+    void CanvasComponent::PushClip(const glm::vec2& lowerLeft, const glm::vec2& upperRight) {
+        mSavedClip     = mClipRect;
+        mSavedHasClip  = mHasClip;
+
+        const ScissorRect local = {
+            std::min(lowerLeft.x, upperRight.x),
+            std::min(lowerLeft.y, upperRight.y),
+            std::abs(upperRight.x - lowerLeft.x),
+            std::abs(upperRight.y - lowerLeft.y),
+        };
+
+        if (!mHasClip) {
+            mClipRect = local;
+            mHasClip  = true;
+            return;
+        }
+
+        const float x1 = std::max(mClipRect.X, local.X);
+        const float y1 = std::max(mClipRect.Y, local.Y);
+        const float x2 = std::min(mClipRect.X + mClipRect.Width, local.X + local.Width);
+        const float y2 = std::min(mClipRect.Y + mClipRect.Height, local.Y + local.Height);
+
+        mClipRect = {x1, y1, std::max(x2 - x1, 0.0f), std::max(y2 - y1, 0.0f)};
+    }
+
+    void CanvasComponent::PopClip() {
+        mClipRect    = mSavedClip;
+        mHasClip     = mSavedHasClip;
+    }
+
     void CanvasComponent::UpdateBatches(Texture* texture) {
-        if (mBatches.empty() || mBatches.back().Texture != texture) {
-            mBatches.push_back({texture, 6});
+        if (mBatches.empty() || mBatches.back().Texture != texture || mBatches.back().HasClip != mHasClip
+            || (mHasClip && mBatches.back().ClipRect != mClipRect)) {
+            mBatches.push_back({texture, 6, mClipRect, mHasClip});
         } else {
             mBatches.back().IndexCount += 6;
+        }
+    }
+
+    void CanvasComponent::GetWidgetContext(
+        const WidgetComponent* widget, ScissorRect& clip, bool& hasClip, glm::vec2& contentOffset, bool& topmost) {
+
+        if (!widget || !widget->GetOwner()) {
+            return;
+        }
+
+        topmost = widget->IsTopmost();
+
+        glm::vec2 clipLowerLeft(0.0f);
+        glm::vec2 clipUpperRight(0.0f);
+
+        for (GameObject* ancestor = widget->GetOwner()->GetParent(); ancestor; ancestor = ancestor->GetParent()) {
+            if (WidgetComponent* ancestorWidget = ancestor->GetComponent<WidgetComponent>()) {
+                contentOffset += ancestorWidget->GetContentOffset();
+
+                if (ancestorWidget->IsTopmost()) {
+                    topmost = true;
+                }
+
+                glm::vec2 maskLowerLeft;
+                glm::vec2 maskSize;
+                if (ancestorWidget->GetMaskRect(maskLowerLeft, maskSize)) {
+                    const glm::vec2 maskUpperRight = maskLowerLeft + maskSize;
+
+                    if (!hasClip) {
+                        hasClip        = true;
+                        clipLowerLeft  = maskLowerLeft;
+                        clipUpperRight = maskUpperRight;
+                    } else {
+                        clipLowerLeft.x  = std::max(clipLowerLeft.x, maskLowerLeft.x);
+                        clipLowerLeft.y  = std::max(clipLowerLeft.y, maskLowerLeft.y);
+                        clipUpperRight.x = std::min(clipUpperRight.x, maskUpperRight.x);
+                        clipUpperRight.y = std::min(clipUpperRight.y, maskUpperRight.y);
+                    }
+                }
+            }
+        }
+
+        if (hasClip) {
+            clip = {
+                clipLowerLeft.x,
+                clipLowerLeft.y,
+                std::max(clipUpperRight.x - clipLowerLeft.x, 0.0f),
+                std::max(clipUpperRight.y - clipLowerLeft.y, 0.0f),
+            };
         }
     }
 
@@ -260,17 +434,19 @@ namespace golias {
         const float invWidth       = 1.0f / static_cast<float>(texDesc.Width);
         const float invHeight      = 1.0f / static_cast<float>(texDesc.Height);
 
-        const float baseBaselineY = origin.y + static_cast<float>(font->GetAscent());
+        const glm::vec2 offsetOrigin = origin;
+
+        const float baseBaselineY = offsetOrigin.y + static_cast<float>(font->GetAscent());
         const float lineHeight    = static_cast<float>(font->GetLineHeight());
 
-        float cursorX   = origin.x;
+        float cursorX   = offsetOrigin.x;
         float baselineY = baseBaselineY;
 
         for (size_t i = 0; i < text.size(); ++i) {
             const char c = text[i];
 
             if (c == '\n') {
-                cursorX = origin.x;
+                cursorX = offsetOrigin.x;
                 baselineY += lineHeight;
                 continue;
             }
@@ -280,7 +456,7 @@ namespace golias {
                     continue;
                 }
 
-                cursorX = origin.x;
+                cursorX = offsetOrigin.x;
                 continue;
             }
 

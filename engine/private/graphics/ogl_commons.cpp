@@ -73,4 +73,24 @@ namespace golias {
         }
     }
 
+    GLenum VertexFormatToGl(VertexFormat format) {
+        switch (format) {
+        case VertexFormat::Float:
+        case VertexFormat::Float2:
+        case VertexFormat::Float3:
+        case VertexFormat::Float4:
+            return GL_FLOAT;
+        case VertexFormat::UShort:
+        case VertexFormat::UShort4:
+            return GL_UNSIGNED_SHORT;
+        case VertexFormat::Int:
+        case VertexFormat::Int4:
+            return GL_INT;
+        case VertexFormat::UByte4:
+            return GL_UNSIGNED_BYTE;
+        }
+
+        return GL_FLOAT;
+    }
+
 } // namespace golias

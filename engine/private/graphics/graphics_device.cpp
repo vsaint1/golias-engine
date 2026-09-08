@@ -226,6 +226,18 @@ namespace golias {
         }
     }
 
+    void GraphicsDevice::SetScissorRect(const ScissorRect& rect) {
+        glScissor(rect.X, rect.Y, rect.Width, rect.Height);
+    }
+
+    void GraphicsDevice::SetScissorTestEnabled(bool enabled) {
+        if (enabled) {
+            glEnable(GL_SCISSOR_TEST);
+        } else {
+            glDisable(GL_SCISSOR_TEST);
+        }
+    }
+
     void GraphicsDevice::SetDepthWriteEnabled(bool enabled) {
         glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     }

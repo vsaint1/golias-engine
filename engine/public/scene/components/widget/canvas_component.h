@@ -41,12 +41,20 @@ namespace golias {
 
         void DrawText(Font* font, const glm::vec2& origin, const String& text, const glm::vec4& color, const glm::vec4* outlineColor);
 
+        void PushClip(const glm::vec2& lowerLeft, const glm::vec2& upperRight);
+        void PopClip();
+
         void Collect(WidgetComponent* widget, std::vector<WidgetComponent*>& out);
 
     private:
         void UpdateBatches(Texture* texture);
 
+        void RenderWidget(WidgetComponent* widget);
+
         void ProcessInput();
+
+        static void
+            GetWidgetContext(const WidgetComponent* widget, ScissorRect& clip, bool& hasClip, glm::vec2& contentOffset, bool& topmost);
 
     private:
         Ref<Mesh> mMesh = nullptr;
@@ -54,6 +62,13 @@ namespace golias {
         std::vector<CanvasBatch> mBatches;
         std::vector<float> mVertices;
         std::vector<uint32_t> mIndices;
+
+        ScissorRect mClipRect = {};
+        bool mHasClip            = false;
+        glm::vec2 mContentOffset = glm::vec2(0.0f);
+
+        ScissorRect mSavedClip{};
+        bool mSavedHasClip = false;
 
         WidgetComponent* mHovered = nullptr;
         WidgetComponent* mPressed = nullptr;

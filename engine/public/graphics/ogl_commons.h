@@ -1,5 +1,6 @@
 #pragma once
 #include "graphics/render_types.h"
+#include "graphics/vertex_layout.h"
 #include "graphics/texture.h"
 #include "stdafx.h"
 
@@ -28,5 +29,8 @@ namespace golias {
 
     /// @brief  Maps a QueryType to its corresponding OpenGL query target enum.
     GLenum QueryTargetToGl(QueryType type);
+
+    /// @brief  Maps a VertexFormat to its corresponding OpenGL type enum.
+    GLenum VertexFormatToGl(VertexFormat format);
 
 } // namespace golias

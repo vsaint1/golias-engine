@@ -6,6 +6,7 @@ namespace golias {
 
     class Font;
     class Texture2D;
+    class ScrollRectComponent;
 
     class DropdownComponent : public WidgetComponent {
         COMPONENT_DERIVED(DropdownComponent, WidgetComponent)
@@ -14,6 +15,8 @@ namespace golias {
         ~DropdownComponent() = default;
 
         bool LoadProperties(const Json& properties) override;
+
+        void Start() override;
 
         void Update(float deltaTime) override;
 
@@ -33,9 +36,9 @@ namespace golias {
 
         const std::vector<String>& GetOptions() const;
         void SetOptions(const std::vector<String>& options);
-        
+
         void AddOption(const String& option);
-        
+
         bool RemoveOption(const String& option);
         void RemoveOptionAt(int index);
 
@@ -56,19 +59,33 @@ namespace golias {
 
         float GetRowHeight() const;
 
+        float GetViewportHeight() const;
+
+        bool IsPointInList(const glm::vec2& point) const;
+
         int RowAt(const glm::vec2& point) const;
 
+        bool IsPointInBarArea(const glm::vec2& point) const;
+        bool IsScrollbarActive() const;
+        void EnsureScrollRect();
+        void SyncScrollRect();
+
     private:
-        static constexpr float kListGap        = 2.0f;
-        static constexpr float kRowPadding     = 4.0f;
-        static constexpr float kHeaderPaddingX = 10.0f;
-        static constexpr float kArrowInsetX    = 20.0f;
+        static constexpr float kListGap            = 2.0f;
+        static constexpr float kRowPadding         = 4.0f;
+        static constexpr float kHeaderPaddingX     = 10.0f;
+        static constexpr float kArrowInsetX        = 20.0f;
+        static constexpr int kMaxVisibleRows       = 5;
+        static constexpr float kScrollbarThickness = 12.0f;
+        static constexpr float kScrollbarMargin    = 2.0f;
 
         std::vector<String> mOptions;
         int mSelectedIndex = 0;
 
         bool mOpen      = false;
         int mHoveredRow = -1;
+
+        ScrollRectComponent* mScrollRect = nullptr;
 
         String mFontPath;
         int mFontSize   = 16;

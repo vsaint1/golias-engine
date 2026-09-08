@@ -18,9 +18,11 @@
 #include "scene/components/widget/dropdown_component.h"
 #include "scene/components/widget/image_component.h"
 #include "scene/components/widget/input_slider_component.h"
+#include "scene/components/widget/mask_component.h"
 #include "scene/components/widget/panel_component.h"
 #include "scene/components/widget/progress_bar_component.h"
 #include "scene/components/widget/rect_transform_component.h"
+#include "scene/components/widget/scroll_rect_component.h"
 #include "scene/components/widget/text_component.h"
 
 namespace golias {
@@ -52,6 +54,8 @@ namespace golias {
         ProgressBarComponent::Register();
         PanelComponent::Register();
         DropdownComponent::Register();
+        MaskComponent::Register();
+        ScrollRectComponent::Register();
 #pragma endregion
     }
 

@@ -3,6 +3,7 @@
 
 namespace golias {
 
+
     struct Viewport {
         int X = 0, Y = 0, Width = 0, Height = 0;
     };
@@ -15,6 +16,29 @@ namespace golias {
         }
     };
 
+    struct ScissorRect {
+        float X      = 0;
+        float Y      = 0;
+        float Width  = 0;
+        float Height = 0;
+
+        bool operator==(const ScissorRect&) const = default;
+        bool operator!=(const ScissorRect&) const = default;
+
+        ScissorRect ToScissorRect(const Viewport& viewport) const {
+            const float x0 = std::clamp(X, 0.0f, static_cast<float>(viewport.Width));
+            const float y0 = std::clamp(Y, 0.0f, static_cast<float>(viewport.Height));
+            const float x1 = std::clamp(X + Width, 0.0f, static_cast<float>(viewport.Width));
+            const float y1 = std::clamp(Y + Height, 0.0f, static_cast<float>(viewport.Height));
+
+            return {
+                .X      = x0,
+                .Y      = viewport.Height - y1,
+                .Width  = x1 - x0,
+                .Height = y1 - y0,
+            };
+        }
+    };
 
     // clang-format off
 
@@ -79,10 +103,10 @@ namespace golias {
 
     /// @brief  Per-material rasterization state.
     struct RenderState {
-        BlendMode Blend      = BlendMode::None;
-        CullMode  Cull       = CullMode::None;
-        bool DepthTest       = true;
-        bool DepthWrite      = true;
+        BlendMode Blend = BlendMode::None;
+        CullMode Cull   = CullMode::None;
+        bool DepthTest  = true;
+        bool DepthWrite = true;
     };
 
 

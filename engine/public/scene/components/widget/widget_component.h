@@ -30,6 +30,8 @@ namespace golias {
 
         virtual bool IsTopmost() const;
 
-  
+        virtual bool GetMaskRect(glm::vec2& lowerLeft, glm::vec2& size) const;
+       
+        virtual glm::vec2 GetContentOffset() const;
     };
 } // namespace golias

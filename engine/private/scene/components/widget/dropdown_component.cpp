@@ -5,6 +5,7 @@
 #include "graphics/texture_2d.h"
 #include "scene/components/widget/canvas_component.h"
 #include "scene/components/widget/rect_transform_component.h"
+#include "scene/components/widget/scroll_rect_component.h"
 #include "scene/game_object.h"
 
 namespace golias {
@@ -76,19 +77,29 @@ namespace golias {
         return true;
     }
 
+    void DropdownComponent::Start() {
+        EnsureScrollRect();
+    }
+
     void DropdownComponent::Update(float deltaTime) {
         UNUSED_PARAMETER(deltaTime);
 
         if (!mOpen) {
+            if (mScrollRect && mScrollRect->GetOwner()) {
+                mScrollRect->GetOwner()->SetActive(false);
+            }
+
             return;
         }
+
+        SyncScrollRect();
 
         const InputManager& inputManager = Engine::GetInstance().GetInputManager();
         const glm::vec2 mousePos         = inputManager.GetMousePosition();
 
         mHoveredRow = RowAt(mousePos);
 
-        if (inputManager.IsMouseButtonJustReleased(MouseButton::Left) && !HitTest(mousePos)) {
+        if (inputManager.IsMouseButtonJustReleased(MouseButton::Left) && !HitTest(mousePos) && !IsPointInBarArea(mousePos)) {
             SetOpen(false);
         }
     }
@@ -139,14 +150,21 @@ namespace golias {
             return;
         }
 
-        const float rowHeight  = GetRowHeight();
-        const float listTop    = lowerLeft.y + size.y + kListGap;
-        const float listHeight = rowHeight * static_cast<float>(mOptions.size());
+        const float rowHeight      = GetRowHeight();
+        const float viewportHeight = GetViewportHeight();
+        const float listTop        = lowerLeft.y + size.y + kListGap;
 
-        canvas->DrawQuad(glm::vec2(lowerLeft.x, listTop), glm::vec2(lowerLeft.x + size.x, listTop + listHeight), mListColor);
+        const glm::vec2 listLowerLeft(lowerLeft.x, listTop);
+        const glm::vec2 listUpperRight(lowerLeft.x + size.x, listTop + viewportHeight);
+
+        canvas->PushClip(listLowerLeft, listUpperRight);
+
+        canvas->DrawQuad(listLowerLeft, listUpperRight, mListColor);
+
+        const float scrollOffset = mScrollRect ? mScrollRect->GetScrollOffset() : 0.0f;
 
         for (size_t i = 0; i < mOptions.size(); ++i) {
-            const float rowY = listTop + static_cast<float>(i) * rowHeight;
+            const float rowY = listTop - scrollOffset + static_cast<float>(i) * rowHeight;
             const glm::vec2 rowLowerLeft(lowerLeft.x, rowY);
             const glm::vec2 rowUpperRight(lowerLeft.x + size.x, rowY + rowHeight);
 
@@ -159,6 +177,8 @@ namespace golias {
             const float rowTop = rowY + (rowHeight - lineHeight) * 0.5f;
             canvas->DrawText(mFont.get(), glm::vec2(lowerLeft.x + kHeaderPaddingX, rowTop), mOptions[i], mTextColor);
         }
+
+        canvas->PopClip();
     }
 
     bool DropdownComponent::HitTest(const glm::vec2& point) {
@@ -303,7 +323,15 @@ namespace golias {
 
         mOpen = open;
 
-        if (!mOpen) {
+        if (open) {
+            if (mScrollRect) {
+                mScrollRect->SetScrollOffset(0.0f);
+            }
+        } else {
+            if (mScrollRect && mScrollRect->GetOwner()) {
+                mScrollRect->GetOwner()->SetActive(false);
+            }
+
             mHoveredRow = -1;
         }
     }
@@ -326,8 +354,30 @@ namespace golias {
         return lineHeight + kRowPadding * 2.0f;
     }
 
-    int DropdownComponent::RowAt(const glm::vec2& point) const {
+    float DropdownComponent::GetViewportHeight() const {
+        return GetRowHeight() * static_cast<float>(kMaxVisibleRows);
+    }
+
+    bool DropdownComponent::IsPointInList(const glm::vec2& point) const {
         if (!mOpen) {
+            return false;
+        }
+
+        glm::vec2 lowerLeft;
+        glm::vec2 size;
+
+        if (!GetHeaderRect(lowerLeft, size)) {
+            return false;
+        }
+
+        const float listTop = lowerLeft.y + size.y + kListGap;
+
+        return (point.x >= lowerLeft.x && point.x <= lowerLeft.x + size.x && point.y >= listTop
+                && point.y <= listTop + GetViewportHeight());
+    }
+
+    int DropdownComponent::RowAt(const glm::vec2& point) const {
+        if (!IsPointInList(point)) {
             return -1;
         }
 
@@ -341,17 +391,95 @@ namespace golias {
         const float rowHeight = GetRowHeight();
         const float listTop   = lowerLeft.y + size.y + kListGap;
 
-        if (point.x < lowerLeft.x || point.x > lowerLeft.x + size.x || point.y < listTop) {
-            return -1;
+        if (IsScrollbarActive()) {
+            const float barLeft = lowerLeft.x + size.x - kScrollbarMargin - kScrollbarThickness;
+
+            if (point.x >= barLeft && point.x <= lowerLeft.x + size.x) {
+                return -1;
+            }
         }
 
-        const int row = static_cast<int>((point.y - listTop) / rowHeight);
+        const float scrollOffset = mScrollRect ? mScrollRect->GetScrollOffset() : 0.0f;
+        const float contentY     = point.y - listTop + scrollOffset;
+        const int row            = static_cast<int>(contentY / rowHeight);
 
         if (row < 0 || row >= static_cast<int>(mOptions.size())) {
             return -1;
         }
 
         return row;
+    }
+
+    bool DropdownComponent::IsScrollbarActive() const {
+        return mOpen && mScrollRect && mScrollRect->GetOwner() && mScrollRect->GetOwner()->IsActive();
+    }
+
+    bool DropdownComponent::IsPointInBarArea(const glm::vec2& point) const {
+        return IsScrollbarActive() && mScrollRect->HitTest(point);
+    }
+
+    void DropdownComponent::EnsureScrollRect() {
+        if (mScrollRect) {
+            return;
+        }
+
+        Scene* scene = GetOwner()->GetCurrentScene();
+        if (!scene) {
+            return;
+        }
+
+        GameObject* barGameObject = scene->CreateGameObject("DropdownScrollRect", GetOwner());
+        if (!barGameObject) {
+            return;
+        }
+
+        RectTransformComponent* rectTransform = new RectTransformComponent();
+        barGameObject->AddComponent(rectTransform);
+        rectTransform->SetAnchorPoint(glm::vec2(0.0f, 0.0f));
+        rectTransform->SetPivot(glm::vec2(0.0f, 0.0f));
+
+        ScrollRectComponent* scrollRect = new ScrollRectComponent();
+        barGameObject->AddComponent(scrollRect);
+        scrollRect->SetColor(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+        scrollRect->SetShowScrollbar(true);
+
+        barGameObject->SetActive(false);
+
+        mScrollRect = scrollRect;
+    }
+
+    void DropdownComponent::SyncScrollRect() {
+        if (!mScrollRect || !mScrollRect->GetOwner()) {
+            return;
+        }
+
+        glm::vec2 lowerLeft;
+        glm::vec2 headerSize;
+        if (!GetHeaderRect(lowerLeft, headerSize)) {
+            return;
+        }
+
+        const float rowHeight      = GetRowHeight();
+        const float viewportHeight = GetViewportHeight();
+        const float contentHeight  = rowHeight * static_cast<float>(mOptions.size());
+        const float maxScroll      = std::max(contentHeight - viewportHeight, 0.0f);
+
+        GameObject* barGameObject = mScrollRect->GetOwner();
+        barGameObject->SetActive(mOpen && maxScroll > 0.0f);
+
+        if (maxScroll <= 0.0f) {
+            return;
+        }
+
+        RectTransformComponent* rectTransform = barGameObject->GetComponent<RectTransformComponent>();
+        if (!rectTransform) {
+            return;
+        }
+
+        rectTransform->SetSize(glm::vec2(headerSize.x, viewportHeight));
+        barGameObject->SetPosition2D(glm::vec2(0.0f, headerSize.y + kListGap));
+
+        mScrollRect->SetContentLengthOverride(contentHeight);
     }
 
     bool DropdownComponent::IsTopmost() const {

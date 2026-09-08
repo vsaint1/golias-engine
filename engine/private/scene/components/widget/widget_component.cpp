@@ -44,4 +44,14 @@ namespace golias {
         return false;
     }
 
+    bool WidgetComponent::GetMaskRect(glm::vec2& lowerLeft, glm::vec2& size) const {
+        UNUSED_PARAMETER(lowerLeft);
+        UNUSED_PARAMETER(size);
+        return false;
+    }
+
+    glm::vec2 WidgetComponent::GetContentOffset() const {
+        return glm::vec2(0.0f);
+    }
+
 } // namespace golias
