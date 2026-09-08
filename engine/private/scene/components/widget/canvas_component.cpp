@@ -18,9 +18,9 @@ namespace golias {
 
     void CanvasComponent::Start() {
         VertexLayout layout;
-        layout.Elements.push_back({0, 2, VertexFormat::Float2, 0});
-        layout.Elements.push_back({1, 4, VertexFormat::Float4, 4 * sizeof(float)});
-        layout.Elements.push_back({2, 2, VertexFormat::Float2, 2 * sizeof(float)});
+        layout.Elements.push_back({0, VertexFormat::Float2, 0});
+        layout.Elements.push_back({1, VertexFormat::Float4, 4 * sizeof(float)});
+        layout.Elements.push_back({2, VertexFormat::Float2, 2 * sizeof(float)});
         layout.Stride = 8 * sizeof(float);
 
         const std::vector<float> initialVertices(4 * 8, 0.0f);
@@ -333,8 +333,8 @@ namespace golias {
     }
 
     void CanvasComponent::PushClip(const glm::vec2& lowerLeft, const glm::vec2& upperRight) {
-        mSavedClip     = mClipRect;
-        mSavedHasClip  = mHasClip;
+        mSavedClip    = mClipRect;
+        mSavedHasClip = mHasClip;
 
         const ScissorRect local = {
             std::min(lowerLeft.x, upperRight.x),
@@ -358,8 +358,8 @@ namespace golias {
     }
 
     void CanvasComponent::PopClip() {
-        mClipRect    = mSavedClip;
-        mHasClip     = mSavedHasClip;
+        mClipRect = mSavedClip;
+        mHasClip  = mSavedHasClip;
     }
 
     void CanvasComponent::UpdateBatches(Texture* texture) {

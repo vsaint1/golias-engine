@@ -36,9 +36,21 @@ namespace golias {
         uint32_t JointCount            = 0;
     };
 
+    /// @brief  Per-instance data streamed to the GPU for instanced draw calls.
+    struct InstanceData {
+        glm::mat4 Model = glm::mat4(1.0f);
+        glm::vec4 Color = glm::vec4(1.0f);
+    };
+
+    static_assert(sizeof(InstanceData) == sizeof(glm::mat4) + sizeof(glm::vec4),
+                  "InstanceData must remain a tightly packed { matrix, color } pair");
+
     struct CanvasBatch {
         Texture* Texture    = nullptr;
         uint32_t IndexCount = 0;
+
+        ScissorRect ClipRect = {};
+        bool HasClip         = false;
     };
 
     struct RenderCanvasCommand {
@@ -113,13 +125,16 @@ namespace golias {
         void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
 
         /// @brief  Renders the given mesh into the currently bound shadow pass.
-        void DrawShadowOpaque(const CameraCommand& cameraCommand, const glm::mat4& cascadeViewProjection);
+        void DrawShadowOpaque(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& casters);
 
         /// @brief Renders the post-processing effects for the given camera.
         void RenderPostProcess(const CameraCommand& cameraCommand);
 
         /// @brief Ensures that the HDR render targets are created and match the given viewport.
         bool EnsureHdrTargets(const Viewport& viewport);
+
+        /// @brief Ensures that the LDR intermediate render target is created and matches the given viewport.
+        bool EnsureLdrTargets(const Viewport& viewport);
 
         /// @brief Updates and binds the per-frame lighting uniform buffer.
         void UpdateLightingBuffer();
@@ -132,8 +147,8 @@ namespace golias {
         /// @brief  Binds material params and issues the draw call.
         void DrawRenderCommand(const RenderCommand& command,
                                const CameraCommand& cameraCommand,
-                               uint32_t instanceCount            = 0,
-                               const glm::mat4* instanceMatrices = nullptr);
+                               uint32_t instanceCount           = 0,
+                               const InstanceData* instanceData = nullptr);
 
         /// @brief  Draws instanced batches of identical (mesh, material) pairs.
         void RenderInstanced(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
@@ -159,7 +174,7 @@ namespace golias {
 
         Ref<Buffer> mLightingBuffer = nullptr;
 
-        /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices of the current instanced batch.
+        /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices + colors of the current instanced batch.
         Ref<Buffer> mInstanceBuffer = nullptr;
 
         /// @brief  Per-frame UBO holding the skin joint matrices of the current skinned mesh.
@@ -181,7 +196,11 @@ namespace golias {
         Ref<Texture2D> mHdrColorTexture      = nullptr;
         Ref<Texture2DArray> mHdrDepthTexture = nullptr;
 
+        Ref<Framebuffer> mLdrFramebuffer = nullptr;
+        Ref<Texture2D> mLdrColorTexture  = nullptr;
+
         Viewport mHdrViewport = {0, 0, 0, 0};
+        Viewport mLdrViewport = {0, 0, 0, 0};
 
         Ref<Framebuffer> mShadowFramebuffer = nullptr;
         Ref<Texture2DArray> mShadowTexture  = nullptr;

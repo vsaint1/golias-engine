@@ -35,6 +35,11 @@ namespace golias {
 
         ParamType GetParameter(CString name) const;
 
+        glm::vec4 GetBaseColor() const;
+
+        /// @brief  Returns a texture parameter registered by name, or nullptr.
+        Ref<Texture> GetTextureParameter(CString name) const;
+
         const RenderState& GetRenderState() const;
         void SetRenderState(const RenderState& state);
 

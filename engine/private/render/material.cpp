@@ -269,5 +269,29 @@ namespace golias {
         return {};
     }
 
+    glm::vec4 Material::GetBaseColor() const {
+        const auto it = mParameters.find("_BaseColor");
+
+        if (it != mParameters.end()) {
+            if (const glm::vec4* color = std::get_if<glm::vec4>(&it->second)) {
+                return *color;
+            }
+        }
+
+        return glm::vec4(1.0f);
+    }
+
+    Ref<Texture> Material::GetTextureParameter(CString name) const {
+        const auto it = mParameters.find(name.data());
+
+        if (it != mParameters.end()) {
+            if (const Ref<Texture>* texture = std::get_if<Ref<Texture>>(&it->second)) {
+                return *texture;
+            }
+        }
+
+        return nullptr;
+    }
+
 
 } // namespace golias

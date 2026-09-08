@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include "math/aabb.h"
 
 namespace golias {
 
@@ -19,6 +20,8 @@ namespace golias {
         glm::mat4 ViewProjection = glm::mat4(1.0f);
         float SplitDistance      = 0.0f;
     };
+
+    bool CascadeContains(const AABB& aabb, const glm::mat4& modelMatrix, const glm::mat4& cascadeViewProjection);
 
     class CascadedShadowMap {
     public:

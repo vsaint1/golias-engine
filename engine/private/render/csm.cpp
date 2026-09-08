@@ -9,6 +9,29 @@ namespace golias {
         MaxDistance         = std::max(MaxDistance, 150.0f);
     }
 
+    bool CascadeContains(const AABB& aabb, const glm::mat4& modelMatrix, const glm::mat4& cascadeViewProjection) {
+        constexpr float kCullingBias = 1.02f;
+
+        glm::vec3 minClip(std::numeric_limits<float>::max());
+        glm::vec3 maxClip(std::numeric_limits<float>::lowest());
+
+        const glm::mat4 mvp = cascadeViewProjection * modelMatrix;
+
+        for (uint32_t corner = 0; corner < 8; ++corner) {
+            const glm::vec3 cornerPos((corner & 1) ? aabb.GetMax().x : aabb.GetMin().x,
+                                      (corner & 2) ? aabb.GetMax().y : aabb.GetMin().y,
+                                      (corner & 4) ? aabb.GetMax().z : aabb.GetMin().z);
+            const glm::vec4 clip = mvp * glm::vec4(cornerPos, 1.0f);
+            const glm::vec3 ndc  = glm::vec3(clip) / clip.w;
+
+            minClip = glm::min(minClip, ndc);
+            maxClip = glm::max(maxClip, ndc);
+        }
+
+        return minClip.x < kCullingBias && maxClip.x > -kCullingBias && minClip.y < kCullingBias && maxClip.y > -kCullingBias
+            && minClip.z < kCullingBias && maxClip.z > -kCullingBias;
+    }
+
 
     static glm::vec3 unproject(const glm::mat4& inverseMatrix, const glm::vec3& ndc) {
         const glm::vec4 world = inverseMatrix * glm::vec4(ndc, 1.0f);

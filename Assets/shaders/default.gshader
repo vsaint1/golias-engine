@@ -9,6 +9,7 @@ layout(location = 5) in vec3 aBitangent;
 layout(location = 6) in uvec4 aJoints;
 layout(location = 7) in vec4 aWeights;
 layout(location = 8) in mat4 aInstanceMatrix;
+layout(location = 12) in vec4 aInstanceColor;
 
 uniform mat4 _ModelMatrix;
 uniform mat4 _ViewMatrix;
@@ -29,12 +30,22 @@ out vec3 vTangent;
 out vec3 vBitangent;
 out vec3 vWorldPosition;
 out vec3 vViewPosition;
+out vec4 vInstanceColor;
+flat out int vInstanced;
 
 mat4 skin_matrix() {
     return _JointMatrices[aJoints.x] * aWeights.x + _JointMatrices[aJoints.y] * aWeights.y + _JointMatrices[aJoints.z] * aWeights.z + _JointMatrices[aJoints.w] * aWeights.w;
 }
 
 void main() {
+    vInstanced = (_InstanceCount > 0) ? 1 : 0;
+
+    if (vInstanced != 0) {
+        vInstanceColor = aInstanceColor;
+    } else {
+        vInstanceColor = vec4(1.0);
+    }
+
     mat4 modelMatrix = (_InstanceCount > 0) ? aInstanceMatrix : _ModelMatrix;
 
     vec4 localPosition = (_IsSkinned != 0) ? skin_matrix() * vec4(aPos, 1.0) : vec4(aPos, 1.0);
@@ -77,6 +88,8 @@ in vec3 vTangent;
 in vec3 vBitangent;
 in vec3 vWorldPosition;
 in vec3 vViewPosition;
+in vec4 vInstanceColor;
+flat in int vInstanced;
 
 #define MAX_LIGHTS 32
 
@@ -230,9 +243,11 @@ void main() {
 
     vec3 kAmbient = vec3(0.08);
 
-    vec3 result = (diffuse + specular + kAmbient) * tex.rgb * vColor * _BaseColor.rgb;
+    vec4 baseColor = (vInstanced != 0) ? vInstanceColor : _BaseColor;
 
-    alpha *= _BaseColor.a;
+    vec3 result = (diffuse + specular + kAmbient) * tex.rgb * vColor * baseColor.rgb;
+
+    alpha *= baseColor.a;
 
     // COLOR = vec4(tex.rgb * vColor * _BaseColor.rgb, alpha); // Albedo pass
 

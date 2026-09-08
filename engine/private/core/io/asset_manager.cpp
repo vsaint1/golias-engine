@@ -88,6 +88,19 @@ namespace golias {
         return mesh;
     }
 
+    Ref<Mesh> AssetManager::AcquireProceduralMesh(const ProceduralMeshKey& key, const std::function<Ref<Mesh>()>& factory) {
+        if (const auto existing = mProceduralMeshes.find(key); existing != mProceduralMeshes.end()) {
+            return existing->second;
+        }
+
+        Ref<Mesh> mesh = factory();
+        if (mesh) {
+            mProceduralMeshes.emplace(key, mesh);
+        }
+
+        return mesh;
+    }
+
     Ref<Material> AssetManager::LoadModelMaterial(CString modelPath, int materialIndex) {
 
         const String key = String_Format("%.*s#material:%d", static_cast<int>(modelPath.size()), modelPath.data(), materialIndex);

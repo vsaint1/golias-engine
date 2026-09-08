@@ -39,6 +39,10 @@ namespace golias {
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
 
+        void SetScissorRect(const ScissorRect& rect);
+        
+        void SetScissorTestEnabled(bool enabled);
+
         void SetDepthTestEnabled(bool enabled);
 
         void SetDepthWriteEnabled(bool enabled);

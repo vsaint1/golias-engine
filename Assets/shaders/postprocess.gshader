@@ -44,13 +44,13 @@ void main() {
     vec3 color = texture(_MainTexture, vUV).rgb;
     color *= _Exposure;
 
-    vec3 mapped = gamma_correction(color);
-
     if (_Tonemap == 1) {
-        mapped = aces_approx(color);
+        color = aces_approx(color);
     } else if (_Tonemap == 2) {
-        mapped = reinhard(color);
+        color = reinhard(color);
     }
 
-    COLOR = vec4(mapped, 1.0);
+    color = gamma_correction(color);
+
+    COLOR = vec4(color, 1.0);
 }
