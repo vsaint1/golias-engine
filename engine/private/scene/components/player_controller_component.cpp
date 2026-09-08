@@ -50,10 +50,6 @@ namespace golias {
     void PlayerControllerComponent::Update(float deltaTime) {
         InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
-        if (inputManager.IsCanvasFocused()) {
-            return;
-        }
-
         glm::quat rotation = GetOwner()->GetRotation();
 
         const glm::vec2 mouseDelta = inputManager.GetMouseDelta();
@@ -82,20 +78,23 @@ namespace golias {
 
         glm::vec3 movement(0.0f);
 
-        if (inputManager.IsKeyPressed(KeyCode::W)) {
-            movement += forward;
-        }
+        if (!inputManager.IsCanvasFocused()) {
 
-        if (inputManager.IsKeyPressed(KeyCode::S)) {
-            movement -= forward;
-        }
+            if (inputManager.IsKeyPressed(KeyCode::W)) {
+                movement += forward;
+            }
 
-        if (inputManager.IsKeyPressed(KeyCode::A)) {
-            movement -= right;
-        }
+            if (inputManager.IsKeyPressed(KeyCode::S)) {
+                movement -= forward;
+            }
 
-        if (inputManager.IsKeyPressed(KeyCode::D)) {
-            movement += right;
+            if (inputManager.IsKeyPressed(KeyCode::A)) {
+                movement -= right;
+            }
+
+            if (inputManager.IsKeyPressed(KeyCode::D)) {
+                movement += right;
+            }
         }
 
         if (glm::length2(movement) > 0.0f) {

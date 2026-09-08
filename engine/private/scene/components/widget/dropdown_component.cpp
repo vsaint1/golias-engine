@@ -163,8 +163,15 @@ namespace golias {
 
         const float scrollOffset = mScrollRect ? mScrollRect->GetScrollOffset() : 0.0f;
 
+        const float listBottom = listTop + viewportHeight;
+
         for (size_t i = 0; i < mOptions.size(); ++i) {
             const float rowY = listTop - scrollOffset + static_cast<float>(i) * rowHeight;
+
+            if (rowY + rowHeight <= listTop || rowY >= listBottom) {
+                continue;
+            }
+
             const glm::vec2 rowLowerLeft(lowerLeft.x, rowY);
             const glm::vec2 rowUpperRight(lowerLeft.x + size.x, rowY + rowHeight);
 
