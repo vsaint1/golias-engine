@@ -35,6 +35,7 @@
 #include "physics/collider.h"
 #include "physics/collision.h"
 #include "physics/rigid_body.h"
+#include "physics/soft_body.h"
 #include "physics/kinematic_character_controller.h"
 
 #include "scene/components/component.h"
@@ -47,6 +48,7 @@
 #include "scene/components/audio_source_component.h"
 #include "scene/components/skeletal_mesh_component.h"
 #include "scene/components/sprite_component.h"
+#include "scene/components/soft_body_component.h"
 
 
 #include "scene/components/widget/button_component.h"

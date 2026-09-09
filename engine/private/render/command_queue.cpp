@@ -65,6 +65,16 @@ namespace golias {
 
             return key;
         }
+
+        void UpdateUniformBuffer(Ref<Buffer>& buffer, size_t size, const void* data, uint32_t binding) {
+            if (!buffer) {
+                BufferDesc desc = {.Target = BufferTarget::Uniform, .Usage = BufferUsage::Dynamic, .Size = size};
+                buffer          = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
+            }
+
+            buffer->Update(data, static_cast<uint32_t>(size));
+            buffer->Bind(binding);
+        }
     } // namespace
 
     CommandQueue::CommandQueue() {
@@ -126,8 +136,11 @@ namespace golias {
             GOLIAS_LOG_ERROR("Failed to create default 3D shader program");
             return false;
         }
-        mDefault3DShader->SetUniformBlockBinding("Lighting", 0);
-        mDefault3DShader->SetUniformBlockBinding("JointMatrices", 2);
+        mDefault3DShader->SetUniformBlockBinding(GpuLayout::LightingBlock, GpuLayout::LightingBinding);
+        mDefault3DShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
+        mDefault3DShader->SetUniformBlockBinding(GpuLayout::JointsBlock, GpuLayout::JointsBinding);
+        mDefault3DShader->SetUniformBlockBinding(GpuLayout::ObjectBlock, GpuLayout::ObjectBinding);
+        mDefault3DShader->SetUniformBlockBinding(GpuLayout::MaterialBlock, GpuLayout::MaterialBinding);
 
         {
             // clang-format off
@@ -153,13 +166,20 @@ namespace golias {
             mJointBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
         }
 
-        mShadowShader->SetUniformBlockBinding("JointMatrices", 2);
+        mShadowShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
+        mShadowShader->SetUniformBlockBinding(GpuLayout::JointsBlock, GpuLayout::JointsBinding);
+        mShadowShader->SetUniformBlockBinding(GpuLayout::ObjectBlock, GpuLayout::ObjectBinding);
 
         mDefaultUIShader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default_ui.gshader");
         if (!mDefaultUIShader) {
             GOLIAS_LOG_ERROR("Failed to create default UI shader program");
             return false;
         }
+        mDefault2DShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
+        mDefault2DShader->SetUniformBlockBinding(GpuLayout::ObjectBlock, GpuLayout::ObjectBinding);
+        mDefault2DShader->SetUniformBlockBinding(GpuLayout::MaterialBlock, GpuLayout::MaterialBinding);
+
+        mDefaultUIShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
 
         mDefault2DMaterial = std::make_shared<Material>();
         mDefault2DMaterial->SetShader(mDefault2DShader);
@@ -176,6 +196,8 @@ namespace golias {
             GOLIAS_LOG_ERROR("Failed to create FXAA shader program");
             return false;
         }
+        mPostProcessShader->SetUniformBlockBinding(GpuLayout::PostProcessBlock, GpuLayout::PostProcessBinding);
+        mFxaaShader->SetUniformBlockBinding(GpuLayout::PostProcessBlock, GpuLayout::PostProcessBinding);
 
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
         if (device.IsQuerySupported()) {
@@ -215,21 +237,6 @@ namespace golias {
     }
 
     void CommandQueue::UpdateLightingBuffer() {
-        GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
-
-        if (!mLightingBuffer) {
-
-            // clang-format off
-            BufferDesc desc = {
-                .Target = BufferTarget::Uniform,
-                .Usage = BufferUsage::Dynamic,
-                .Size = sizeof(GpuLighting)
-            };
-            // clang-format on
-
-            mLightingBuffer = device.CreateBuffer(desc);
-        }
-
         GpuLighting lighting = {
             .Count = static_cast<int>(std::min(mLightCommands.size(), kMaxLights)),
         };
@@ -238,17 +245,60 @@ namespace golias {
             const LightCommand& source = mLightCommands[i];
             GpuLight& destination      = lighting.Lights[i];
 
-            destination.Position       = glm::vec4(source.Position, 1.0f);
-            destination.Direction      = glm::vec4(source.Direction, 0.0f);
-            destination.ColorIntensity = glm::vec4(source.Color, source.Intensity);
-            destination.Range          = source.Range;
-            destination.SpotAngle      = source.SpotAngle;
-            destination.Type           = source.Type;
-            destination.IsShadowCaster = source.IsShadowCaster ? 1 : 0;
+            destination.Position = glm::vec4(source.Position, 1.0f);
+            const glm::vec3 direction =
+                glm::length2(source.Direction) > 1e-8f ? glm::normalize(source.Direction) : glm::vec3(0.0f, -1.0f, 0.0f);
+            destination.DirectionInvRange = glm::vec4(direction, 1.0f / std::max(source.Range, 1e-6f));
+            destination.ColorIntensity    = glm::vec4(source.Color, source.Intensity);
+            destination.SpotCutoff        = std::cos(glm::radians(source.SpotAngle));
+            destination.Type              = source.Type;
+            destination.IsShadowCaster    = source.IsShadowCaster ? 1 : 0;
         }
 
-        mLightingBuffer->Update(&lighting, sizeof(lighting));
-        mLightingBuffer->Bind(0);
+        UpdateUniformBuffer(mLightingBuffer, sizeof(lighting), &lighting, GpuLayout::LightingBinding);
+    }
+
+    void CommandQueue::UpdateFrameBuffer(const CameraCommand& cameraCommand) {
+        GpuFrame frame       = {};
+        frame.View           = cameraCommand.View;
+        frame.Projection     = cameraCommand.Projection;
+        frame.Ortho          = cameraCommand.Ortho;
+        frame.CameraPosition = glm::vec4(cameraCommand.CameraPosition, 1.0f);
+        for (uint32_t cascade = 0; cascade < kMaxShadowCascades; ++cascade) {
+            frame.ShadowMatrices[cascade] = mShadowCsm.GetCascade(cascade).ViewProjection;
+            frame.ShadowSplits[cascade]   = mShadowCsm.GetSplit(cascade);
+        }
+
+        UpdateUniformBuffer(mFrameBuffer, sizeof(frame), &frame, GpuLayout::FrameBinding);
+    }
+
+    void CommandQueue::UpdateObjectBuffer(
+        const glm::mat4& model, int instanceCount, int isSkinned, const glm::vec4& spritePivotSize, const glm::vec4& spriteUvBounds) {
+        GpuObject object       = {};
+        object.Model           = model;
+        object.Flags           = glm::ivec4(instanceCount, isSkinned, 0, 0);
+        object.SpritePivotSize = spritePivotSize;
+        object.SpriteUvBounds  = spriteUvBounds;
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(model)));
+        object.NormalMatrix[0] = glm::vec4(normalMatrix[0], 0.0f);
+        object.NormalMatrix[1] = glm::vec4(normalMatrix[1], 0.0f);
+        object.NormalMatrix[2] = glm::vec4(normalMatrix[2], 0.0f);
+
+        UpdateUniformBuffer(mObjectBuffer, sizeof(object), &object, GpuLayout::ObjectBinding);
+    }
+
+    void CommandQueue::UpdateShadowViewProjection(const glm::mat4& viewProjection) {
+        mFrameBuffer->Update(&viewProjection, sizeof(viewProjection), static_cast<uint32_t>(offsetof(GpuFrame, ShadowViewProjection)));
+        mFrameBuffer->Bind(GpuLayout::FrameBinding);
+    }
+
+    void CommandQueue::UpdateMaterialBuffer(const glm::vec4& baseColor) {
+        GpuMaterial material = {.BaseColor = baseColor};
+        UpdateUniformBuffer(mMaterialBuffer, sizeof(material), &material, GpuLayout::MaterialBinding);
+    }
+
+    void CommandQueue::UpdatePostProcessBuffer(const GpuPostProcess& postProcess) {
+        UpdateUniformBuffer(mPostProcessBuffer, sizeof(postProcess), &postProcess, GpuLayout::PostProcessBinding);
     }
 
     void CommandQueue::CategorizeRenderCommands(const Frustum& frustum,
@@ -284,31 +334,23 @@ namespace golias {
         GraphicsDevice& device = Engine::GetInstance().GetGraphicsDevice();
 
         if (command.Material) {
-            command.Material->SetParameterValue("_ModelMatrix", command.Model);
-            command.Material->SetParameterValue("_ViewMatrix", cameraCommand.View);
-            command.Material->SetParameterValue("_ProjectionMatrix", cameraCommand.Projection);
-            command.Material->SetParameterValue("_CameraPos", cameraCommand.CameraPosition);
             device.BindMaterial(command.Material);
+            const bool hasSkin = command.JointMatrices && command.JointCount > 0 && command.JointCount <= kMaxJoints;
+            UpdateObjectBuffer(command.Model, 0, hasSkin ? 1 : 0);
+            UpdateMaterialBuffer(command.Material->GetBaseColor());
 
             Shader* shader = command.Material->GetShader().get();
 
             if (mShadowTexture) {
                 for (uint32_t cascade = 0; cascade < CascadedShadowMapDesc::kMaxCascades; ++cascade) {
-                    shader->SetUniform("_ShadowMatrices[" + std::to_string(cascade) + "]", mShadowCsm.GetCascade(cascade).ViewProjection);
-                    shader->SetUniform("_ShadowSplits[" + std::to_string(cascade) + "]", mShadowCsm.GetSplit(cascade));
                 }
 
                 shader->SetTexture(TextureSlots::ShadowMap, mShadowTexture.get());
             }
 
-            if (shader == mDefault3DShader.get()) {
-                if (command.JointMatrices && command.JointCount > 0 && command.JointCount <= kMaxJoints) {
-                    mJointBuffer->Update(command.JointMatrices, command.JointCount * sizeof(glm::mat4));
-                    mJointBuffer->Bind(2);
-                    shader->SetUniform("_IsSkinned", 1);
-                } else {
-                    shader->SetUniform("_IsSkinned", 0);
-                }
+            if (hasSkin) {
+                mJointBuffer->Update(command.JointMatrices, command.JointCount * sizeof(glm::mat4));
+                mJointBuffer->Bind(GpuLayout::JointsBinding);
             }
 
             if (instanceCount > 0 && instanceData && shader == mDefault3DShader.get()) {
@@ -318,7 +360,7 @@ namespace golias {
                     const uint32_t batchSize = std::min<uint32_t>(kMaxInstancesPerBatch, remaining);
                     mInstanceBuffer->Update(instanceData + offset, batchSize * sizeof(InstanceData));
 
-                    shader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
+                    UpdateObjectBuffer(command.Model, static_cast<int>(batchSize), 0);
 
                     device.BindMesh(command.Mesh);
                     command.Mesh->DrawInstanced(mInstanceBuffer, batchSize);
@@ -328,13 +370,8 @@ namespace golias {
                     remaining -= batchSize;
                 }
 
-                shader->SetUniform("_InstanceCount", 0);
                 return;
             }
-        }
-
-        if (command.Material && command.Material->GetShader().get() == mDefault3DShader.get()) {
-            command.Material->GetShader()->SetUniform("_InstanceCount", 0);
         }
 
         device.BindMesh(command.Mesh);
@@ -439,14 +476,9 @@ namespace golias {
         for (const auto& command : mCommands2D) {
             mDefault2DMaterial->Bind();
             Shader* shader = mDefault2DMaterial->GetShader().get();
-            shader->SetUniform("_ModelMatrix", command.Model);
-            shader->SetUniform("_ViewMatrix", glm::mat4(1.0f));
-            shader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
-            shader->SetUniform("_Pivot", command.Pivot);
-            shader->SetUniform("_Size", command.Size);
-            shader->SetUniform("_LowerLeftUV", command.LowerLeftUV);
-            shader->SetUniform("_UpperRightUV", command.UpperRightUV);
-            shader->SetUniform("_BaseColor", command.Color);
+            UpdateObjectBuffer(
+                command.Model, 0, 0, glm::vec4(command.Pivot, command.Size), glm::vec4(command.LowerLeftUV, command.UpperRightUV));
+            UpdateMaterialBuffer(command.Color);
             shader->SetTexture(TextureSlots::MainTexture, command.Texture);
             mQuadMesh->Draw();
         }
@@ -468,9 +500,7 @@ namespace golias {
 
             command.Mesh->Bind();
             mDefaultUIMaterial->Bind();
-            Shader* shader = mDefaultUIMaterial->GetShader().get();
-            shader->SetUniform("_ProjectionMatrix", cameraCommand.Ortho);
-
+            Shader* shader       = mDefaultUIMaterial->GetShader().get();
             uint32_t indexOffset = 0;
             for (const CanvasBatch& batch : command.Batches) {
 
@@ -542,6 +572,7 @@ namespace golias {
 
             // NOTE: The shadow pass unbinds its own framebuffer, so re-bind the HDR target.
             mHdrFramebuffer->Bind();
+            UpdateFrameBuffer(cameraCommand);
 
             // Categorize draw calls frustum-culled into opaque and transparent sets.
             std::vector<const RenderCommand*> opaque;
@@ -669,8 +700,10 @@ namespace golias {
 
         mPostProcessShader->Bind();
         mPostProcessShader->SetTexture(TextureSlots::MainTexture, mHdrColorTexture.get());
-        mPostProcessShader->SetUniform("_Exposure", 1.0f);
-        mPostProcessShader->SetUniform("_Tonemap", static_cast<int>(mTonemap));
+        UpdatePostProcessBuffer({
+            .Exposure = 1.0f,
+            .Tonemap  = static_cast<int>(mTonemap),
+        });
 
         mFullscreenQuad->Draw();
         mLdrFramebuffer->Unbind();
@@ -679,11 +712,13 @@ namespace golias {
 
         mFxaaShader->Bind();
         mFxaaShader->SetTexture(TextureSlots::MainTexture, mLdrColorTexture.get());
-        mFxaaShader->SetUniform("_TexelSizeX", 1.0f / static_cast<float>(mLdrColorTexture->GetDesc().Width));
-        mFxaaShader->SetUniform("_TexelSizeY", 1.0f / static_cast<float>(mLdrColorTexture->GetDesc().Height));
-        mFxaaShader->SetUniform("_SubpixelQuality", 0.75f);
-        mFxaaShader->SetUniform("_EdgeThreshold", 0.25f);
-        mFxaaShader->SetUniform("_EdgeThresholdMin", 0.0625f);
+        UpdatePostProcessBuffer({
+            .TexelSizeX       = 1.0f / static_cast<float>(mLdrColorTexture->GetDesc().Width),
+            .TexelSizeY       = 1.0f / static_cast<float>(mLdrColorTexture->GetDesc().Height),
+            .SubpixelQuality  = 0.75f,
+            .EdgeThreshold    = 0.25f,
+            .EdgeThresholdMin = 0.0625f,
+        });
 
         mFullscreenQuad->Draw();
         mFullscreenQuad->Unbind();
@@ -736,9 +771,7 @@ namespace golias {
 
             if (geometry.Commands.size() < 2) {
                 const RenderCommand& command = *geometry.Commands[0];
-                mShadowShader->SetUniform("_ModelMatrix", command.Model);
-                mShadowShader->SetUniform("_InstanceCount", 0);
-                mShadowShader->SetUniform("_IsSkinned", 0);
+                UpdateObjectBuffer(command.Model, 0, 0);
 
                 device.BindMesh(command.Mesh);
                 device.DrawMesh(command.Mesh);
@@ -758,28 +791,23 @@ namespace golias {
                 const uint32_t batchSize = std::min<uint32_t>(kMaxInstancesPerBatch, remaining);
                 mInstanceBuffer->Update(instanceData.data() + offset, batchSize * sizeof(InstanceData));
 
-                mShadowShader->SetUniform("_InstanceCount", static_cast<int>(batchSize));
-                mShadowShader->SetUniform("_IsSkinned", 0);
+                UpdateObjectBuffer(glm::mat4(1.0f), static_cast<int>(batchSize), 0);
                 device.BindMesh(geometry.Mesh);
                 geometry.Mesh->DrawInstanced(mInstanceBuffer, batchSize);
                 device.UnbindMesh(geometry.Mesh);
                 offset += batchSize;
                 remaining -= batchSize;
             }
-            mShadowShader->SetUniform("_InstanceCount", 0);
             continue;
         }
 
         for (const RenderCommand* command : skinned) {
-            mShadowShader->SetUniform("_ModelMatrix", command->Model);
-            mShadowShader->SetUniform("_InstanceCount", 0);
+            const bool hasSkin = command->JointMatrices && command->JointCount > 0 && command->JointCount <= kMaxJoints;
+            UpdateObjectBuffer(command->Model, 0, hasSkin ? 1 : 0);
 
-            if (command->JointMatrices && command->JointCount > 0 && command->JointCount <= kMaxJoints) {
+            if (hasSkin) {
                 mJointBuffer->Update(command->JointMatrices, command->JointCount * sizeof(glm::mat4));
-                mJointBuffer->Bind(2);
-                mShadowShader->SetUniform("_IsSkinned", 1);
-            } else {
-                mShadowShader->SetUniform("_IsSkinned", 0);
+                mJointBuffer->Bind(GpuLayout::JointsBinding);
             }
 
             device.BindMesh(command->Mesh);
@@ -793,6 +821,7 @@ namespace golias {
 
         mShadowCsm.Prepare();
         mShadowCsm.Build(cameraCommand.View, cameraCommand.Projection, light.Direction, cameraCommand.NearPlane, cameraCommand.FarPlane);
+        UpdateFrameBuffer(cameraCommand);
 
         const CascadedShadowMapDesc shadowCsmDesc = mShadowCsm.GetSettings();
 
@@ -832,7 +861,7 @@ namespace golias {
             device.ClearBuffers(ClearFlag::Depth);
 
             const Cascade& cascadeData = mShadowCsm.GetCascades()[cascade];
-            mShadowShader->SetUniform("_ViewMatrix", cascadeData.ViewProjection);
+            UpdateShadowViewProjection(cascadeData.ViewProjection);
 
             std::vector<const RenderCommand*> cascadeCasters;
             if (mCommands.size() > 0) {
@@ -861,7 +890,8 @@ namespace golias {
         }
 
         mShadowFramebuffer->Unbind();
-        device.SetCullMode(CullMode::None);
+        UpdateFrameBuffer(cameraCommand);
+        device.SetCullMode(CullMode::Back);
         device.SetViewport(cameraCommand.Viewport);
     }
 

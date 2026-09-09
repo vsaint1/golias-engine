@@ -1,5 +1,6 @@
 #pragma once
 #include "graphics/framebuffer.h"
+#include "graphics/gpu_types.h"
 #include "graphics/graphics_device.h"
 #include "graphics/texture_2d_array.h"
 #include "math/frustum.h"
@@ -139,6 +140,20 @@ namespace golias {
         /// @brief Updates and binds the per-frame lighting uniform buffer.
         void UpdateLightingBuffer();
 
+        void UpdateFrameBuffer(const CameraCommand& cameraCommand);
+
+        void UpdateShadowViewProjection(const glm::mat4& viewProjection);
+
+        void UpdateObjectBuffer(const glm::mat4& model,
+                                int instanceCount,
+                                int isSkinned,
+                                const glm::vec4& spritePivotSize = glm::vec4(0.0f),
+                                const glm::vec4& spriteUvBounds  = glm::vec4(0.0f));
+
+        void UpdateMaterialBuffer(const glm::vec4& baseColor);
+
+        void UpdatePostProcessBuffer(const GpuPostProcess& postProcess);
+
         /// @brief Splits mCommands into frustum-culled opaque/transparent lists.
         void CategorizeRenderCommands(const Frustum& frustum,
                                       std::vector<const RenderCommand*>& outOpaque,
@@ -172,7 +187,11 @@ namespace golias {
         std::vector<RenderCommand2D> mCommands2D         = {};
         std::vector<RenderCanvasCommand> mCanvasCommands = {};
 
-        Ref<Buffer> mLightingBuffer = nullptr;
+        Ref<Buffer> mLightingBuffer    = nullptr;
+        Ref<Buffer> mFrameBuffer       = nullptr;
+        Ref<Buffer> mObjectBuffer      = nullptr;
+        Ref<Buffer> mMaterialBuffer    = nullptr;
+        Ref<Buffer> mPostProcessBuffer = nullptr;
 
         /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices + colors of the current instanced batch.
         Ref<Buffer> mInstanceBuffer = nullptr;

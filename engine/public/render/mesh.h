@@ -60,6 +60,8 @@ namespace golias {
 
         static Ref<Mesh> CreateQuad(const glm::vec2& size = {1.0f, 1.0f});
 
+        static Ref<Mesh> CreatePlane(const glm::vec2& size, uint32_t subdivisionsX, uint32_t subdivisionsY);
+
         static Ref<Mesh> CreateSphere(float radius = 0.5f, uint32_t sectorCount = 32, uint32_t stackCount = 16);
 
         static Ref<Mesh>

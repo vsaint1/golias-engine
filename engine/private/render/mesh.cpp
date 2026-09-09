@@ -153,6 +153,45 @@ namespace golias {
         return mesh;
     }
 
+    Ref<Mesh> Mesh::CreatePlane(const glm::vec2& size, uint32_t subdivisionsX, uint32_t subdivisionsY) {
+        subdivisionsX = std::max(1u, subdivisionsX);
+        subdivisionsY = std::max(1u, subdivisionsY);
+
+        std::vector<float> vertices;
+        std::vector<uint32_t> indices;
+        const uint32_t columns = subdivisionsX + 1;
+        vertices.reserve(static_cast<size_t>(columns) * (subdivisionsY + 1) * kVertexFloatCount);
+
+        // clang-format off
+        for (uint32_t y = 0; y <= subdivisionsY; ++y) {
+            for (uint32_t x = 0; x <= subdivisionsX; ++x) {
+                const float u = static_cast<float>(x) / subdivisionsX;
+                const float v = static_cast<float>(y) / subdivisionsY;
+                vertices.insert(vertices.end(), {
+                    (u - 0.5f) * size.x, 0.0f, (v - 0.5f) * size.y,
+                    1.0f, 1.0f, 1.0f,
+                    u, v,
+                    0.0f, 1.0f, 0.0f,
+                    1.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f,
+                });
+            }
+        }
+
+        for (uint32_t y = 0; y < subdivisionsY; ++y) {
+            for (uint32_t x = 0; x < subdivisionsX; ++x) {
+                const uint32_t a = y * columns + x;
+                const uint32_t b = a + 1;
+                const uint32_t c = a + columns;
+                const uint32_t d = c + 1;
+                indices.insert(indices.end(), {a, b, c, b, d, c});
+            }
+        }
+        // clang-format on
+
+        return std::make_shared<Mesh>(StandardVertexLayout(), vertices, indices);
+    }
+
     Ref<Mesh> Mesh::Create(const Model& model, const ModelPrimitive& primitive) {
         return Create(model, std::vector<const ModelPrimitive*>{&primitive});
     }
@@ -248,6 +287,22 @@ namespace golias {
     void Mesh::Update(const std::vector<float>& vertices, const std::vector<uint32_t>& indices) {
         mVertexCount = vertices.size() / (mVertexLayout.Stride / sizeof(float));
         mIndexCount  = indices.size();
+
+        for (const VertexElement& element : mVertexLayout.Elements) {
+            if (element.Index != VertexAttributeBinding::Position || element.Format != VertexFormat::Float3) {
+                continue;
+            }
+
+            const size_t stride = mVertexLayout.Stride / sizeof(float);
+            const size_t offset = element.Offset / sizeof(float);
+            for (size_t vertex = 0; vertex < mVertexCount; ++vertex) {
+                const size_t position = vertex * stride + offset;
+                if (position + 2 < vertices.size()) {
+                    mAABB.Expand(glm::vec3(vertices[position], vertices[position + 1], vertices[position + 2]));
+                }
+            }
+            break;
+        }
 
         mVAO->Bind();
         mVBO->Update(vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(float)));
