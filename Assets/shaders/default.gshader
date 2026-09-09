@@ -11,13 +11,24 @@ layout(location = 7) in vec4 aWeights;
 layout(location = 8) in mat4 aInstanceMatrix;
 layout(location = 12) in vec4 aInstanceColor;
 
-uniform mat4 _ModelMatrix;
-uniform mat4 _ViewMatrix;
-uniform mat4 _ProjectionMatrix;
-uniform vec3 _CameraPos;
+layout(std140) uniform PerFrame {
+    mat4 _ViewMatrix;
+    mat4 _ProjectionMatrix;
+    mat4 _OrthoMatrix;
+    vec4 _CameraPos;
+    vec4 _ShadowSplits;
+    mat4 _ShadowMatrices[4];
+    mat4 _ShadowViewProjection;
+};
 
-uniform int _InstanceCount;
-uniform int _IsSkinned;
+layout(std140) uniform PerObject {
+    mat4 _ModelMatrix;
+    ivec4 _ObjectFlags;
+    vec4 _SpritePivotSize;
+    vec4 _SpriteUvBounds;
+    mat3 _NormalMatrix;
+ 
+};
 
 layout(std140) uniform JointMatrices {
     mat4 _JointMatrices[1024];
@@ -38,7 +49,8 @@ mat4 skin_matrix() {
 }
 
 void main() {
-    vInstanced = (_InstanceCount > 0) ? 1 : 0;
+    vInstanced = (_ObjectFlags.x > 0) ? 1 : 0;
+    bool isSkinned = _ObjectFlags.y != 0;
 
     if (vInstanced != 0) {
         vInstanceColor = aInstanceColor;
@@ -46,24 +58,32 @@ void main() {
         vInstanceColor = vec4(1.0);
     }
 
-    mat4 modelMatrix = (_InstanceCount > 0) ? aInstanceMatrix : _ModelMatrix;
+    mat4 modelMatrix = (_ObjectFlags.x > 0) ? aInstanceMatrix : _ModelMatrix;
 
-    vec4 localPosition = (_IsSkinned != 0) ? skin_matrix() * vec4(aPos, 1.0) : vec4(aPos, 1.0);
+    mat4 skinMatrix = mat4(1.0);
+    if(isSkinned) {
+        skinMatrix = skin_matrix();
+    }
+
+    vec4 localPosition = isSkinned ? skinMatrix * vec4(aPos, 1.0) : vec4(aPos, 1.0);
     vec4 worldPosition = modelMatrix * localPosition;
 
     gl_Position = _ProjectionMatrix * _ViewMatrix * worldPosition;
     vColor = aColor;
     vTexCoord = aTexCoord;
 
-    mat3 skinNormalMatrix = (_IsSkinned != 0) ? mat3(skin_matrix()) : mat3(1.0);
-    mat3 normalMatrix = mat3(transpose(inverse(modelMatrix))) * skinNormalMatrix;
+    mat3 objectNormalMatrix = _NormalMatrix;
+    mat3 normalMatrix = (vInstanced != 0) ? mat3(transpose(inverse(modelMatrix))) : objectNormalMatrix;
+    if(isSkinned) {
+        normalMatrix *= mat3(skinMatrix);
+    }
 
     vNormal = normalMatrix * aNormals;
     vTangent = normalMatrix * aTangent;
     vBitangent = normalMatrix * aBitangent;
 
     vWorldPosition = worldPosition.xyz;
-    vViewPosition = (_CameraPos - worldPosition.xyz);
+    vViewPosition = (_CameraPos.xyz - worldPosition.xyz);
 
 }
 
@@ -71,15 +91,23 @@ void main() {
 
 out vec4 COLOR;
 
-uniform mat4 _ViewMatrix;
+layout(std140) uniform PerFrame {
+    mat4 _ViewMatrix;
+    mat4 _ProjectionMatrix;
+    mat4 _OrthoMatrix;
+    vec4 _CameraPos;
+    vec4 _ShadowSplits;
+    mat4 _ShadowMatrices[4];
+    mat4 _ShadowViewProjection;
+};
 
 uniform sampler2D _MainTexture;
 uniform sampler2D _NormalMap;
-uniform vec4 _BaseColor;
+layout(std140) uniform PerMaterial {
+    vec4 _BaseColor;
+};
 
 uniform mediump sampler2DArray _ShadowMap;
-uniform mat4 _ShadowMatrices[4];
-uniform float _ShadowSplits[4];
 
 in vec3 vColor;
 in vec2 vTexCoord;
@@ -95,12 +123,12 @@ flat in int vInstanced;
 
 struct Light {
     vec4 Position;
-    vec4 Direction;
+    vec4 DirectionInvRange;
     vec4 ColorIntensity;
-    float Range;
-    float SpotAngle;
+    float SpotCutoff;
     int Type;
     int IsShadowCaster;
+    int Padding;
 };
 
 layout(std140) uniform Lighting {
@@ -118,12 +146,10 @@ vec3 calc_bumped_normal(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord
         return normal;
     }
 
-    mat3 TBN = mat3(1.0);
-
     tangent = normalize(tangent - normal * dot(normal, tangent));
     bitangent = bitangent - normal * dot(normal, bitangent);
     bitangent = normalize(bitangent - tangent * dot(tangent, bitangent));
-    TBN = mat3(tangent, bitangent, normal);
+    mat3 TBN = mat3(tangent, bitangent, normal);
 
     vec3 tangentSpaceNormal = texture(_NormalMap, texCoord).xyz * 2.0 - 1.0;
     tangentSpaceNormal.z = sqrt(max(1.0 - dot(tangentSpaceNormal.xy, tangentSpaceNormal.xy), 0.0));
@@ -131,17 +157,15 @@ vec3 calc_bumped_normal(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord
     return normalize(TBN * tangentSpaceNormal);
 }
 
-float shadow_compare(vec2 uv, float layer, float reference) {
-    vec2 mapSize = vec2(textureSize(_ShadowMap, 0));
-    vec2 texel = 1.0 / mapSize;
-    vec2 position = uv * mapSize - 0.5;
+float shadow_compare(vec2 uv, float layer, float reference, vec2 texelSize) {
+    vec2 position = uv / texelSize - 0.5;
     vec2 base = floor(position);
     vec2 fraction = fract(position);
     float result = 0.0;
 
     for(int x = 0; x <= 1; ++x) {
         for(int y = 0; y <= 1; ++y) {
-            vec2 sampleUv = (base + vec2(x, y) + 0.5) * texel;
+            vec2 sampleUv = (base + vec2(x, y) + 0.5) * texelSize;
             float depth = texture(_ShadowMap, vec3(sampleUv, layer)).r;
             float weight = (x == 0 ? 1.0 - fraction.x : fraction.x) *
                 (y == 0 ? 1.0 - fraction.y : fraction.y);
@@ -155,13 +179,13 @@ float shadow_compare(vec2 uv, float layer, float reference) {
 float shadow_factor(vec3 worldPosition, vec3 normal, vec3 lightDirection) {
     float viewDepth = abs((_ViewMatrix * vec4(worldPosition, 1.0)).z);
     int cascade = 0;
-    if(viewDepth > _ShadowSplits[0])
+    if(viewDepth > _ShadowSplits.x)
         cascade = 1;
 
-    if(viewDepth > _ShadowSplits[1])
+    if(viewDepth > _ShadowSplits.y)
         cascade = 2;
 
-    if(viewDepth > _ShadowSplits[2])
+    if(viewDepth > _ShadowSplits.z)
         cascade = 3;
 
     vec4 shadowPosition = _ShadowMatrices[cascade] * vec4(worldPosition, 1.0);
@@ -187,7 +211,10 @@ float shadow_factor(vec3 worldPosition, vec3 normal, vec3 lightDirection) {
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
             float weight = (x == 0 ? 2.0 : 1.0) * (y == 0 ? 2.0 : 1.0);
-            visibility += shadow_compare(shadowPosition.xy + vec2(x, y) * texelSize, float(cascade), shadowPosition.z - bias) * weight;
+            visibility += shadow_compare(shadowPosition.xy + vec2(x, y) * texelSize,
+                                         float(cascade),
+                                         shadowPosition.z - bias,
+                                         texelSize) * weight;
             totalWeight += weight;
         }
     }
@@ -204,6 +231,7 @@ void main() {
 
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
+    vec3 viewDirection = normalize(vViewPosition);
 
     for(int i = 0; i < Count; ++i) {
         Light light = Lights[i];
@@ -212,17 +240,16 @@ void main() {
         float attenuation = 1.0;
 
         if(light.Type == 0) {
-            lightDirection = normalize(-light.Direction.xyz);
+            lightDirection = -light.DirectionInvRange.xyz;
         } else {
             toLight = light.Position.xyz - vWorldPosition;
             float distanceToLight = length(toLight);
             lightDirection = normalize(toLight);
-            attenuation = max(0.0, 1.0 - distanceToLight / light.Range);
+            attenuation = max(0.0, 1.0 - distanceToLight * light.DirectionInvRange.w);
 
             if(light.Type == 2) {
-                float cone = dot(normalize(-light.Direction.xyz), lightDirection);
-                float cutoff = cos(radians(light.SpotAngle));
-                attenuation *= step(cutoff, cone);
+                float cone = dot(-light.DirectionInvRange.xyz, lightDirection);
+                attenuation *= step(light.SpotCutoff, cone);
             }
         }
 
@@ -235,7 +262,6 @@ void main() {
 
         diffuse += brightness * lightColor * shadow;
 
-        vec3 viewDirection = normalize(vViewPosition);
         vec3 reflectionDirection = reflect(-lightDirection, normal);
         float specularAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0), 32.0);
         specular += 0.5 * specularAmount * lightColor * shadow;

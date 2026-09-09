@@ -1,0 +1,22 @@
+{
+    "shader": "shaders/default.gshader",
+    "parameters": {
+        "textures": [
+            {
+                "name": "_MainTexture",
+                "path": "textures/150_4096x4096.png"
+            }
+        ],
+        "float4": [
+            {
+                "name": "_BaseColor",
+                "value": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                }
+            }
+        ]
+    }
+}

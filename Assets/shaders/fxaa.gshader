@@ -14,11 +14,16 @@ void main() {
 
 uniform sampler2D _MainTexture;
 
-uniform float _TexelSizeX;
-uniform float _TexelSizeY;
-uniform float _SubpixelQuality;
-uniform float _EdgeThreshold;
-uniform float _EdgeThresholdMin;
+layout(std140) uniform PostProcess {
+    float _Exposure;
+    int _Tonemap;
+    float _TexelSizeX;
+    float _TexelSizeY;
+    float _SubpixelQuality;
+    float _EdgeThreshold;
+    float _EdgeThresholdMin;
+    float _Padding0;
+};
 
 out vec4 COLOR;
 

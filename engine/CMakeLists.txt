@@ -5,7 +5,6 @@ project(engine)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 99)
 
-add_definitions(-DENGINE_VERSION="${ENGINE_VERSION}")
 
 set(ENGINE_PRIVATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/private")
 set(PLATFORM_DIR "${ENGINE_PRIVATE_DIR}/core/platform")
@@ -76,4 +75,4 @@ endif()
 
 # Precompiled header
 
-target_precompile_headers(engine PRIVATE "${ENGINE_PRIVATE_DIR}/../public/stdafx.h")
+target_precompile_headers(engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/public/stdafx.h")

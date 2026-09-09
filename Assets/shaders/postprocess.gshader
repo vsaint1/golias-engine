@@ -15,8 +15,17 @@ void main() {
 out vec4 COLOR;
 
 uniform sampler2D _MainTexture; // HDR texture
-uniform int _Tonemap;
-uniform float _Exposure;
+
+layout(std140) uniform PostProcess {
+    float _Exposure;
+    int _Tonemap;
+    float _TexelSizeX;
+    float _TexelSizeY;
+    float _SubpixelQuality;
+    float _EdgeThreshold;
+    float _EdgeThresholdMin;
+    float _Padding0;
+};
 
 in vec2 vUV;
 
