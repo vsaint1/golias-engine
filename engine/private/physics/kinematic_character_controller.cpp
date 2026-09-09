@@ -29,11 +29,10 @@ namespace golias {
         btConvexShape* convexShape = static_cast<btConvexShape*>(mGhostObject->getCollisionShape());
 
         mController = new btKinematicCharacterController(mGhostObject, convexShape, kStepHeight);
-        mController->setMaxSlope(btRadians(50.0f));
+        mController->setMaxSlope(btRadians(45.0f));
         mController->setGravity(world->getGravity());
 
-        world->addCollisionObject(
-            mGhostObject, btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::StaticFilter | btBroadphaseProxy::DefaultFilter);
+        world->addCollisionObject(mGhostObject, btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::AllFilter);
 
         world->addAction(mController);
     }

@@ -29,11 +29,7 @@ namespace golias {
         if (!mJointObjectsResolved) {
             mJointObjects.clear();
 
-            // Scope the joint lookup to THIS instance.
-            GameObject* instanceRoot = GetOwner();
-            while (instanceRoot->GetParent() && instanceRoot->GetParent()->GetParent()) {
-                instanceRoot = instanceRoot->GetParent();
-            }
+            GameObject* instanceRoot = GetOwner()->GetRoot();
 
             for (const String& jointName : mSkin->jointNames) {
                 mJointObjects.push_back(instanceRoot ? instanceRoot->FindChildByName(jointName) : nullptr);

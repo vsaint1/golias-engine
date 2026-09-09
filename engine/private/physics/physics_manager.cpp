@@ -4,6 +4,9 @@
 #include "physics/rigid_body.h"
 #include <btBulletCollisionCommon.h>
 #include <btBulletDynamicsCommon.h>
+#include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
+#include <BulletSoftBody/btSoftBody.h>
+#include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
 
 namespace golias {
 
@@ -18,13 +21,14 @@ namespace golias {
     bool PhysicsManager::Initialize() {
 
         mBroadphase             = new btDbvtBroadphase();
-        mCollisionConfiguration = new btDefaultCollisionConfiguration();
+        mCollisionConfiguration = new btSoftBodyRigidBodyCollisionConfiguration();
         mDispatcher             = new btCollisionDispatcher(mCollisionConfiguration);
         mSolver                 = new btSequentialImpulseConstraintSolver();
-        mWorld                  = new btDiscreteDynamicsWorld(mDispatcher, mBroadphase, mSolver, mCollisionConfiguration);
+        mWorld                  = new btSoftRigidDynamicsWorld(mDispatcher, mBroadphase, mSolver, mCollisionConfiguration);
 
         constexpr btScalar kDefaultGravity = -9.81f;
         mWorld->setGravity(btVector3(0, kDefaultGravity, 0));
+        mWorld->getWorldInfo().m_gravity = btVector3(0, kDefaultGravity, 0);
 
         return true;
     }
@@ -127,9 +131,15 @@ namespace golias {
         return mWorld;
     }
 
+    btSoftRigidDynamicsWorld* PhysicsManager::GetSoftWorld() const {
+        return mWorld;
+    }
+
     void PhysicsManager::SetGravity(float x, float y, float z) {
         if (mWorld) {
-            mWorld->setGravity(btVector3(x, y, z));
+            const btVector3 gravity(x, y, z);
+            mWorld->setGravity(gravity);
+            mWorld->getWorldInfo().m_gravity = gravity;
         }
     }
 
@@ -137,7 +147,6 @@ namespace golias {
         if (rigidBody && mWorld) {
 
             short group = btBroadphaseProxy::StaticFilter;
-
             if (rigidBody->GetType() == RigidBodyType::Dynamic) {
                 group = btBroadphaseProxy::DefaultFilter;
             } else if (rigidBody->GetType() == RigidBodyType::Kinematic) {
@@ -154,6 +163,18 @@ namespace golias {
             mWorld->removeRigidBody(rigidBody->GetBody());
             rigidBody->SetAddedToWorld(false);
             ForgetCollisionObject(rigidBody);
+        }
+    }
+
+    void PhysicsManager::AddSoftBody(btSoftBody* softBody) {
+        if (softBody && mWorld) {
+            mWorld->addSoftBody(softBody);
+        }
+    }
+
+    void PhysicsManager::RemoveSoftBody(btSoftBody* softBody) {
+        if (softBody && mWorld) {
+            mWorld->removeSoftBody(softBody);
         }
     }
 

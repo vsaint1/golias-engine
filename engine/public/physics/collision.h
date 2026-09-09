@@ -11,6 +11,7 @@ namespace golias {
     class GameObject;
     class PhysicsComponent;
     class PlayerControllerComponent;
+    class SoftBodyComponent;
 
     struct Collision {
         GameObject* Object = nullptr;
@@ -44,6 +45,7 @@ namespace golias {
         friend class PhysicsManager;
         friend class PhysicsComponent;
         friend class PlayerControllerComponent;
+        friend class SoftBodyComponent;
     };
 
 

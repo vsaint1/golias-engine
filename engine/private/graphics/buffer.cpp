@@ -60,14 +60,21 @@ namespace golias {
 
         GLenum internalTarget = BufferTargetToGl(mDesc.Target);
 
+        GLenum usage = GL_STATIC_DRAW;
+        if (mDesc.Usage == BufferUsage::Dynamic) {
+            usage = GL_DYNAMIC_DRAW;
+        } else if (mDesc.Usage == BufferUsage::Stream) {
+            usage = GL_STREAM_DRAW;
+        }
+
         glBindBuffer(internalTarget, mBufferId);
 
         if (offset + size > mDesc.Size) {
             mDesc.Size = offset + size;
-            glBufferData(internalTarget, mDesc.Size, data, GL_DYNAMIC_DRAW);
-        } else {
-            glBufferSubData(internalTarget, offset, size, data);
+            glBufferData(internalTarget, mDesc.Size, nullptr, usage);
         }
+
+        glBufferSubData(internalTarget, offset, size, data);
 
         glBindBuffer(internalTarget, 0);
     }

@@ -57,6 +57,10 @@ namespace golias {
 
         const InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
+        if (!inputManager.IsCanvasFocused()) {
+            return;
+        }
+
         bool mouseDown     = inputManager.IsMouseButtonPressed(MouseButton::Left);
         bool mouseUp       = inputManager.IsMouseButtonReleased(MouseButton::Left);
         bool mouseReleased = inputManager.IsMouseButtonReleased(MouseButton::Left);

@@ -96,11 +96,11 @@ namespace golias {
 
             const Clock::time_point cpuStart = Clock::now();
 
+            engine.mPhysicsManager.Update(deltaTime);
+
             engine.mApplication->Update(deltaTime);
 
             engine.mInputManager.ResetTransientState();
-
-            engine.mPhysicsManager.Update(deltaTime);
 
             int width, height;
             engine.mWindow->GetDrawableSize(&width, &height);

@@ -65,6 +65,10 @@ namespace golias {
         void SetTrigger(bool isTrigger);
 
         void ApplyImpulse(const glm::vec3& force);
+
+        glm::vec3 GetLinearVelocity() const;
+        void SetLinearVelocity(const glm::vec3& velocity);
+
         void ApplyTorque(const glm::vec3& torque);
         void ApplyForce(const glm::vec3& force);
 
@@ -78,5 +82,6 @@ namespace golias {
         int mDefaultCollisionFlags = 0;
         bool mIsAddedToWorld = false;
         bool mIsEnabled      = true;
+        
     };
 } // namespace golias

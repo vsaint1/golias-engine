@@ -4,10 +4,12 @@
 #include "stdafx.h"
 
 class btBroadphaseInterface;
-class btDefaultCollisionConfiguration;
+class btSoftBodyRigidBodyCollisionConfiguration;
 class btCollisionDispatcher;
 class btSequentialImpulseConstraintSolver;
 class btDiscreteDynamicsWorld;
+class btSoftRigidDynamicsWorld;
+class btSoftBody;
 
 
 namespace golias {
@@ -50,11 +52,17 @@ namespace golias {
 
         btDiscreteDynamicsWorld* GetWorld() const;
 
+        btSoftRigidDynamicsWorld* GetSoftWorld() const;
+
         void SetGravity(float x, float y, float z);
 
         void AddRigidBody(RigidBody* rigidBody);
 
         void RemoveRigidBody(RigidBody* rigidBody);
+
+        void AddSoftBody(btSoftBody* softBody);
+
+        void RemoveSoftBody(btSoftBody* softBody);
 
         void ForgetCollisionObject(CollisionObject* object);
 
@@ -69,10 +77,10 @@ namespace golias {
         };
 
         btBroadphaseInterface* mBroadphase                       = nullptr;
-        btDefaultCollisionConfiguration* mCollisionConfiguration = nullptr;
+        btSoftBodyRigidBodyCollisionConfiguration* mCollisionConfiguration = nullptr;
         btCollisionDispatcher* mDispatcher                       = nullptr;
         btSequentialImpulseConstraintSolver* mSolver             = nullptr;
-        btDiscreteDynamicsWorld* mWorld                          = nullptr;
+        btSoftRigidDynamicsWorld* mWorld                         = nullptr;
         std::unordered_map<ContactPair, ContactState, ContactPairHash> mContacts;
     };
 } // namespace golias

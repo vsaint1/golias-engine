@@ -36,6 +36,13 @@ namespace golias {
         mRigidBody->setFriction(mPhysicsMaterial.Friction);
         mRigidBody->setRestitution(mPhysicsMaterial.Restitution);
 
+        mCollider->GetShape()->setMargin(0.05f);
+
+        if (mType == RigidBodyType::Dynamic) {
+            mRigidBody->setCcdMotionThreshold(0.01f);
+            mRigidBody->setCcdSweptSphereRadius(0.2f);
+        }
+
         int collisionFlags = 0;
 
         if (mType == RigidBodyType::Kinematic) {
@@ -183,6 +190,22 @@ namespace golias {
 
 
         mRigidBody->applyCentralImpulse(btVector3(btScalar(force.x), btScalar(force.y), btScalar(force.z)));
+    }
+
+    void RigidBody::SetLinearVelocity(const glm::vec3& velocity) {
+        if (mRigidBody) {
+            mRigidBody->setLinearVelocity(btVector3(velocity.x, velocity.y, velocity.z));
+            mRigidBody->activate(true);
+        }
+    }
+
+    glm::vec3 RigidBody::GetLinearVelocity() const {
+        if (!mRigidBody) {
+            return glm::vec3(0.0f);
+        }
+
+        const btVector3 velocity = mRigidBody->getLinearVelocity();
+        return glm::vec3(velocity.x(), velocity.y(), velocity.z());
     }
 
     void RigidBody::ApplyForce(const glm::vec3& force) {
