@@ -47,7 +47,7 @@ namespace golias {
 
     private:
         uint32_t mUnitIndex                                  = 0;
-        std::unordered_map<size_t, GLuint> mUniformLocations = {};
+        std::unordered_map<size_t, GLint> mUniformLocations = {};
         GLuint mProgramID                                    = 0;
     };
 } // namespace golias

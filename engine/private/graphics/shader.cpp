@@ -61,52 +61,53 @@ namespace golias {
 
         if (location == -1) {
             GOLIAS_LOG_WARN("Uniform '%s' not found in shader program.", buffer);
-            return 0;
+            mUniformLocations[hash] = -1;
+            return -1;
         }
 
-        mUniformLocations[hash] = static_cast<GLuint>(location);
-        return static_cast<GLuint>(location);
+        mUniformLocations[hash] = location;
+        return location;
     }
 
 
     void Shader::SetUniform(CString name, int value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniform1i(location, value);
     }
 
     void Shader::SetUniform(CString name, float value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniform1f(location, value);
     }
 
     void Shader::SetUniform(CString name, const glm::vec2& value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniform2fv(location, 1, &value[0]);
     }
 
     void Shader::SetUniform(CString name, const glm::vec3& value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniform3fv(location, 1, &value[0]);
     }
 
     void Shader::SetUniform(CString name, const glm::vec4& value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniform4fv(location, 1, &value[0]);
     }
 
     void Shader::SetUniform(CString name, const glm::mat3& value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniformMatrix3fv(location, 1, GL_FALSE, &value[0][0]);
     }
 
     void Shader::SetUniform(CString name, const glm::mat4& value) {
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
         glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
     }
 
     void Shader::SetUniform(CString name, const Texture* texture) {
 
-        GLuint location = GetUniformLocation(name);
+        GLint location = GetUniformLocation(name);
 
         glActiveTexture(GL_TEXTURE0 + mUnitIndex);
         glBindTexture(texture->GetTarget(), texture->GetHandle());
@@ -115,7 +116,7 @@ namespace golias {
     }
 
     void Shader::SetTexture(const TextureBinding& binding, const Texture* texture) {
-        const GLuint location = GetUniformLocation(binding.Sampler);
+        const GLint location = GetUniformLocation(binding.Sampler);
 
         glActiveTexture(GL_TEXTURE0 + binding.Unit);
         glBindTexture(texture->GetTarget(), texture->GetHandle());
