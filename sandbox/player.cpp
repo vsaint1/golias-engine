@@ -68,14 +68,14 @@ void Player::TakeDamage(int amount) {
     }
 
     mAudioSource->Play("hurt");
-    
+
     if (mHealthBar) {
         mHealthBar->SetValue(mHealth);
     }
 }
 
 void Player::Knockback(const glm::vec3& direction, float force) {
-  
+
     mPlayerController->ApplyForce(direction, force);
 }
 
@@ -101,18 +101,18 @@ void Player::Update(float deltaTime) {
 
         if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
-            const glm::vec3 direction      = GetRotation() * glm::vec3(-0.1f, 0.2f, 1.75f);
+            const glm::vec3 direction      = glm::normalize(GetRotation() * glm::vec3(-0.1f, 0.2f, 1.75f));
 
             bullet->SetPosition(muzzlePosition + direction);
 
             Ref<Collider> collider = std::make_shared<SphereCollider>(0.2f);
 
-            PhysicsMaterial phys = {.Mass = 10, .Restitution = 1};
+            PhysicsMaterial phys = {.Mass = 10.0f, .Restitution = 0.0f};
             Ref<RigidBody> rb    = std::make_shared<RigidBody>(RigidBodyType::Dynamic, collider, phys);
 
             bullet->AddComponent(new PhysicsComponent(rb));
 
-            rb->ApplyImpulse(direction * 200.0f);
+            rb->SetLinearVelocity(direction * 30.0f);
         }
     }
 

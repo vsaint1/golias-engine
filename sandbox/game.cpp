@@ -27,6 +27,22 @@ bool GameApplication::Initialize() {
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
     mGodette        = mRoot->FindChildByName("Godette");
 
+    
+    if (mRoot) {
+        GameObject* softBodyObject = scene->CreateGameObject("SoftBodyPlane", mRoot);
+        softBodyObject->SetPosition(glm::vec3(-4.0f, 5.0f, -1.0f));
+
+        Ref<Mesh> plane        = Mesh::CreatePlane(glm::vec2(4.0f, 3.0f), 24, 18);
+        Ref<Material> material = Engine::GetInstance().GetAssetManager().Load<Material>("materials/cloth.gmat");
+        Ref<SoftBody> softBody = std::make_shared<SoftBody>(4.0f, 3.0f, 24, 18, SoftBodyPinnedCorners::Top);
+        
+        softBodyObject->AddComponent(new StaticMeshComponent(plane, material));
+        softBodyObject->AddComponent(new SoftBodyComponent(plane, softBody));
+    }
+
+    // TODO: change the name to RequestCanvasFocus?
+    Engine::GetInstance().GetInputManager().SetCanvasFocus(true);
+
     if (GameObject* playbutton = mCanvas->FindChildByName("PlayButton")) {
         ButtonComponent* button = playbutton->GetComponent<ButtonComponent>();
         button->onClick         = [this]() {
