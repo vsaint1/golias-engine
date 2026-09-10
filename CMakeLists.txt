@@ -20,11 +20,13 @@ message("Golias Engine - Building in 2D/3D mode | (OPENGL/VULKAN/METAL/DIRECTX12
 
 # ENGINE CONFIGURATION
 # TODO: build client shared and server static
-option(BUILD_SANDBOX "Build Sandbox (development)" ON)
+option(BUILD_SANDBOX "Build Sandbox (Development)" ON)
+option(BUILD_EDITOR "Build Editor (ImGui)" OFF)
 option(BUILD_GOLIAS_TESTS "Build tests" OFF)
 
 message(STATUS "Build configuration:")
 message(STATUS "  BUILD SANDBOX (DEVELOPMENT): ${BUILD_SANDBOX}")
+message(STATUS "  BUILD EDITOR: ${BUILD_EDITOR}")
 message(STATUS "  BUILD TESTS: ${BUILD_GOLIAS_TESTS}")
 message(STATUS "  Platform: ${CMAKE_SYSTEM_NAME}")
 

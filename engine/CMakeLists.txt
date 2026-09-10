@@ -73,6 +73,11 @@ if(WIN32)
     target_link_libraries(engine PUBLIC psapi)
 endif()
 
+if (BUILD_EDITOR)
+    target_link_libraries(engine PUBLIC imgui)
+    target_compile_definitions(engine PUBLIC GOLIAS_WITH_EDITOR=1)
+endif()
+
 # Precompiled header
 
 target_precompile_headers(engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/public/stdafx.h")

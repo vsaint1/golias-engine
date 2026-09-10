@@ -12,10 +12,15 @@
 #include "render/material.h"
 #include "render/render_stats.h"
 #include "scene/scene.h"
+#include "core/stl/string_utils.h"
 
 namespace golias {
 
     class Application;
+
+#if defined(GOLIAS_WITH_EDITOR)
+    class ImGuiContext;
+#endif
 
     class Engine {
 
@@ -52,6 +57,10 @@ namespace golias {
 
         AudioManager& GetAudioManager();
 
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGuiContext* GetImGui() const;
+#endif
+
         const RenderStats& GetRenderStats() const;
 
         const MemoryStats& GetMemoryStats() const;
@@ -76,6 +85,10 @@ namespace golias {
         FileSystem mFileSystem;
         PhysicsManager mPhysicsManager;
         AudioManager mAudioManager;
+
+#if defined(GOLIAS_WITH_EDITOR)
+        Scope<ImGuiContext> mImGui = nullptr;
+#endif
 
         AssetManager mAssetManager;
 

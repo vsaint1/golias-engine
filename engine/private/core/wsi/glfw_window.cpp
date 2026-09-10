@@ -2,6 +2,10 @@
 
 #include <glad.h>
 
+#if defined(GOLIAS_WITH_EDITOR)
+    #include <imgui_impl_glfw.h>
+#endif
+
 #if true
 
     #if defined(GOLIAS_PLATFORM_WINDOWS)
@@ -412,6 +416,10 @@ namespace golias {
             return;
         }
 
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+#endif
+
         win->OnMouseButton(translate_mouse_button(button), translate_mouse_action(action), mods);
     }
 
@@ -420,6 +428,10 @@ namespace golias {
         if (!win || !win->OnScroll) {
             return;
         }
+
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
+#endif
 
         win->OnScroll(xoffset, yoffset);
     }
@@ -430,7 +442,22 @@ namespace golias {
             return;
         }
 
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+#endif
+
         win->OnCursorPos(xpos, ypos);
+    }
+
+    void GlfwWindow::char_callback(GLFWwindow* window, unsigned int codepoint) {
+        GlfwWindow* win = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
+        if (!win) {
+            return;
+        }
+
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGui_ImplGlfw_CharCallback(window, codepoint);
+#endif
     }
 
     void GlfwWindow::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -438,6 +465,10 @@ namespace golias {
         if (!win || !win->OnKey) {
             return;
         }
+
+#if defined(GOLIAS_WITH_EDITOR)
+        ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+#endif
 
         win->OnKey(translate_key_code(key), translate_key_action(action), mods);
     }
@@ -507,6 +538,7 @@ namespace golias {
         glfwSetWindowUserPointer(static_cast<GLFWwindow*>(mWindow), this);
         glfwSetFramebufferSizeCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::framebuffer_size_callback);
         glfwSetKeyCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::key_callback);
+        glfwSetCharCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::char_callback);
         glfwSetMouseButtonCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::mouse_button_callback);
         glfwSetScrollCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::scroll_callback);
         glfwSetCursorPosCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::cursor_position_callback);

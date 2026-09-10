@@ -4,6 +4,10 @@
 #include "core/wsi/glfw_window.h"
 #include "scene/components/camera_component.h"
 
+#if defined(GOLIAS_WITH_EDITOR)
+    #include "editor/imgui_context.h"
+#endif
+
 #if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
     #include <emscripten/emscripten.h>
 #endif
@@ -46,6 +50,14 @@ namespace golias {
             GOLIAS_LOG_ERROR("Failed to initialize AudioManager");
             return false;
         }
+
+#if defined(GOLIAS_WITH_EDITOR)
+        mImGui = std::make_unique<ImGuiContext>();
+        if (!mImGui->Initialize(mWindow)) {
+            GOLIAS_LOG_ERROR("Failed to initialize ImGui context");
+            return false;
+        }
+#endif
 
         mGraphicsDevice.SetViewport({0, 0, width, height});
 
@@ -96,6 +108,12 @@ namespace golias {
 
             const Clock::time_point cpuStart = Clock::now();
 
+#if defined(GOLIAS_WITH_EDITOR)
+            if (engine.mImGui) {
+                engine.mImGui->BeginFrame();
+            }
+#endif
+
             engine.mPhysicsManager.Update(deltaTime);
 
             engine.mApplication->Update(deltaTime);
@@ -105,31 +123,40 @@ namespace golias {
             int width, height;
             engine.mWindow->GetDrawableSize(&width, &height);
 
-            CameraCommand cameraCommand;
-            if (GameObject* camera = Engine::GetInstance().GetScene()->GetMainCamera()) {
-                if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
 
-                    if (width <= 0 || height <= 0) {
-                        continue;
+            if (Scene* scene = Engine::GetInstance().GetScene()) {
+                if (GameObject* camera = scene->GetMainCamera()) {
+                    if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
+
+                        if (width <= 0 || height <= 0) {
+                            continue;
+                        }
+
+                        cameraComponent->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+
+                        CameraCommand cameraCommand;
+                        cameraCommand.View           = cameraComponent->GetViewMatrix();
+                        cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
+                        cameraCommand.CameraPosition = camera->GetWorldPosition();
+                        cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(width, height);
+                        cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
+                        cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
+                        cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
+
+                        engine.mCommandQueue.Submit(cameraCommand);
                     }
-
-                    cameraComponent->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
-
-                    cameraCommand.View           = cameraComponent->GetViewMatrix();
-                    cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
-                    cameraCommand.CameraPosition = camera->GetWorldPosition();
-                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(width, height);
-                    cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
-                    cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
-                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
-
-                    engine.mCommandQueue.Submit(cameraCommand);
                 }
             }
 
             engine.mCommandQueue.BeginFrame();
             engine.mCommandQueue.Execute();
             engine.mCommandQueue.EndFrame();
+
+#if defined(GOLIAS_WITH_EDITOR)
+            if (engine.mImGui) {
+                engine.mImGui->EndFrame();
+            }
+#endif
 
             const Clock::time_point cpuEnd = Clock::now();
 
@@ -167,11 +194,17 @@ namespace golias {
 
         if (mApplication) {
             mApplication->Shutdown();
-
-            delete mWindow;
-            mWindow = nullptr;
         }
 
+#if defined(GOLIAS_WITH_EDITOR)
+        if (mImGui) {
+            mImGui->Shutdown();
+            mImGui.reset();
+        }
+#endif
+
+        delete mWindow;
+        mWindow = nullptr;
 
         mApplication.reset();
     }
@@ -240,6 +273,14 @@ namespace golias {
     AudioManager& Engine::GetAudioManager() {
         return mAudioManager;
     }
+
+#if defined(GOLIAS_WITH_EDITOR)
+
+    ImGuiContext* Engine::GetImGui() const {
+        return mImGui.get();
+    }
+
+#endif
 
     const RenderStats& Engine::GetRenderStats() const {
         return FrameStats::Get();

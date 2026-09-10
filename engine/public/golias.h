@@ -21,8 +21,6 @@
 #include "math/aabb.h"
 #include "math/frustum.h"
 
-#include "core/stl/string_utils.h"
-
 #include "render/command_queue.h"
 #include "render/material.h"
 #include "render/mesh.h"
