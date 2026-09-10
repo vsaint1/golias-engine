@@ -16,6 +16,8 @@ namespace golias {
 
         virtual bool LoadProperties(const Json& properties);
 
+        virtual bool SaveProperties(Json& properties) const;
+
         virtual void Start();
 
         virtual void Update(float deltaTime) = 0;

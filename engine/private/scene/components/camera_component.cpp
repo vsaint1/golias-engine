@@ -11,6 +11,24 @@ namespace golias {
     void CameraComponent::Update(float deltaTime) {
     }
 
+    bool CameraComponent::LoadProperties(const Json& properties) {
+
+        mFOV       = properties.value("fov", mFOV);
+        mNearPlane = properties.value("near", mNearPlane);
+        mFarPlane  = properties.value("far", mFarPlane);
+
+        return true;
+    }
+
+    bool CameraComponent::SaveProperties(Json& properties) const {
+
+        properties["fov"]  = mFOV;
+        properties["near"] = mNearPlane;
+        properties["far"]  = mFarPlane;
+
+        return true;
+    }
+
     glm::mat4 CameraComponent::GetViewMatrix() const {
 
         auto world = GetOwner()->GetWorldTransform();

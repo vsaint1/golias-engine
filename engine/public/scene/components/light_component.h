@@ -13,6 +13,8 @@ namespace golias {
         ~LightComponent() = default;
 
         bool LoadProperties(const Json& properties) override;
+
+        bool SaveProperties(Json& properties) const override;
         
         void Update(float deltaTime) override;
 

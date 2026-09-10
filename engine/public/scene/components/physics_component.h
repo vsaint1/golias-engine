@@ -14,7 +14,9 @@ namespace golias {
         ~PhysicsComponent() override;
 
         bool LoadProperties(const Json& properties) override;
-        
+
+        bool SaveProperties(Json& properties) const override;
+
         void Start() override;
 
         void Update(float deltaTime) override;
@@ -28,6 +30,7 @@ namespace golias {
     private:
         Ref<RigidBody> mRigidBody = nullptr;
         bool mStarted = false;
+
     };
 
 } // namespace golias

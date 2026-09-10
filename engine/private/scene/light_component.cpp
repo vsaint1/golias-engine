@@ -81,6 +81,30 @@ namespace golias {
 
         return true;
     }
+
+    bool LightComponent::SaveProperties(Json& properties) const {
+
+        properties["color"]       = {{"r", mColor.x}, {"g", mColor.y}, {"b", mColor.z}};
+        properties["intensity"]   = mIntensity;
+        properties["range"]       = mRange;
+        properties["angle"]       = mSpotAngle;
+
+        switch (mType) {
+            case LightType::Directional:
+                properties["light_type"] = "directional";
+                break;
+            case LightType::Point:
+                properties["light_type"] = "point";
+                break;
+            case LightType::Spot:
+                properties["light_type"] = "spot";
+                break;
+        }
+
+        properties["casts_shadows"] = mIsShadowCaster;
+
+        return true;
+    }
     
     void LightComponent::Update(float deltaTime) {
         LightCommand light;

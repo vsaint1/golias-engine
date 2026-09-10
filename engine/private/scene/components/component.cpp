@@ -25,6 +25,15 @@ namespace golias {
         return true;
     }
 
+    bool Component::SaveProperties(Json& properties) const {
+
+        if (!mIsEnabled) {
+            properties["enabled"] = false;
+        }
+
+        return true;
+    }
+
     bool Component::IsEnabled() const {
         return mIsEnabled;
     }

@@ -374,7 +374,7 @@ namespace golias {
 
     bool Scene::Save(CString path) const {
         const Json json = Serialize();
-        return Engine::GetInstance().GetFileSystem().SaveAssetFileText(path, json.dump(4).c_str());
+        return Engine::GetInstance().GetFileSystem().SaveFileText(path, json.dump(4).c_str());
     }
 
 

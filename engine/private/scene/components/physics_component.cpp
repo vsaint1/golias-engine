@@ -90,6 +90,11 @@ namespace golias {
         GOLIAS_LOG_ERROR("Missing or invalid 'body' property in JSON.");
         return false;
     }
+
+    bool PhysicsComponent::SaveProperties(Json& properties) const {
+
+        return true;
+    }
     
     void PhysicsComponent::Start() {
         if (!mRigidBody) {

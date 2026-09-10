@@ -11,6 +11,7 @@ namespace golias {
     }
 
     bool StaticMeshComponent::LoadProperties(const Json& properties) {
+
         if (properties.contains("mesh")) {
             const auto& meshObj = properties["mesh"];
 
@@ -39,7 +40,23 @@ namespace golias {
 
                 Ref<Mesh> capsule = Mesh::CreateCapsule(radius, height);
                 mMesh             = capsule;
+
+            } else if (type == "plane") {
+                glm::vec2 size = glm::vec2(10.0f);
+                if (meshObj.contains("size")) {
+                    const auto& sizeObj = meshObj["size"];
+                    size.x              = sizeObj.value("x", 10.0f);
+                    size.y              = sizeObj.value("y", 10.0f);
+                }
+
+                if (meshObj.contains("subdivisions")) {
+                    const auto& subdivisionsObj = meshObj["subdivisions"];
+                    int subdivisionsX           = subdivisionsObj.value("x", 1);
+                    int subdivisionsY           = subdivisionsObj.value("y", 1);
+                    mMesh                       = Mesh::CreatePlane(size, subdivisionsX, subdivisionsY);
+                }
             }
+
         } else {
             GOLIAS_ASSERT_MSG(false, "StaticMeshComponent: Unsupported mesh type in JSON.");
         }
@@ -48,7 +65,12 @@ namespace golias {
             const auto& materialObj = properties["material"];
             if (materialObj.is_object() && materialObj.contains("path")) {
                 String path = materialObj["path"].get<String>();
-                mMaterial   = Engine::GetInstance().GetAssetManager().Load<Material>(path);
+
+                // if (path == "__default__") {
+                //     mMaterial = Material::CreateDefault();
+                // }
+                mMaterial = Engine::GetInstance().GetAssetManager().Load<Material>(path);
+
                 if (mMaterial && materialObj.contains("override") && materialObj["override"].is_object()) {
                     const auto& materialOverride = materialObj["override"];
 
@@ -60,6 +82,15 @@ namespace golias {
             }
         } else {
             GOLIAS_ASSERT_MSG(false, "StaticMeshComponent: Missing 'material' property in JSON.");
+        }
+
+        return true;
+    }
+
+    bool StaticMeshComponent::SaveProperties(Json& properties) const {
+
+        if (!mVisible) {
+            properties["visible"] = false;
         }
 
         return true;

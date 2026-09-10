@@ -13,6 +13,10 @@ namespace golias {
 
         void Update(float deltaTime) override;
 
+        bool LoadProperties(const Json& properties) override;
+
+        bool SaveProperties(Json& properties) const override;
+
         glm::mat4 GetViewMatrix() const;
 
         glm::mat4 GetProjectionMatrix() const;
