@@ -1,5 +1,6 @@
 #pragma once
 
+#include "math/aabb.h"
 #include "scene/components/static_mesh_component.h"
 
 namespace golias {
@@ -34,8 +35,12 @@ namespace golias {
     private:
         Ref<ModelSkin> mSkin = nullptr;
 
-        std::vector<glm::mat4> mJointMatrices;
         std::vector<GameObject*> mJointObjects;
+        std::vector<glm::mat4> mJointMatrices;
+
+        AABB mWorldBounds;
+        bool mWorldBoundsValid = false;
+        float mBindRadius      = 0.0f;
 
         bool mJointObjectsResolved = false;
     };

@@ -18,7 +18,7 @@ namespace golias {
     inline constexpr size_t kMaxInstancesPerBatch = 65535;
 
     /// @brief  Maximum number of joints used for skeletal animation.
-    inline constexpr size_t kMaxJoints = 1024;
+    inline constexpr uint32_t kMaxJoints = 256;
 
     enum class Tonemap : int {
         None     = 0, // Only applies gamma correction
@@ -35,6 +35,13 @@ namespace golias {
         /// @brief  Skin joint matrices (null for static meshes).
         const glm::mat4* JointMatrices = nullptr;
         uint32_t JointCount            = 0;
+
+        /// @brief  Identity of the joint matrices owner.
+        const void* JointKey  = nullptr;
+        uint64_t JointVersion = 0;
+
+        /// @brief  Optional world-space bounding box used for skinned-mesh culling.
+        const AABB* WorldBounds = nullptr;
     };
 
     /// @brief  Per-instance data streamed to the GPU for instanced draw calls.
@@ -137,8 +144,11 @@ namespace golias {
         /// @brief Ensures that the LDR intermediate render target is created and matches the given viewport.
         bool EnsureLdrTargets(const Viewport& viewport);
 
-        /// @brief Updates and binds the per-frame lighting uniform buffer.
+        /// @brief  Updates and binds the per-frame lighting uniform buffer.
         void UpdateLightingBuffer();
+
+        /// @brief  Uploads the joint owner's matrices to its own skin UBO, then binds it.
+        void UpdateJointBuffer(const RenderCommand& command);
 
         void UpdateFrameBuffer(const CameraCommand& cameraCommand);
 
@@ -196,8 +206,8 @@ namespace golias {
         /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices + colors of the current instanced batch.
         Ref<Buffer> mInstanceBuffer = nullptr;
 
-        /// @brief  Per-frame UBO holding the skin joint matrices of the current skinned mesh.
-        Ref<Buffer> mJointBuffer = nullptr;
+        /// @brief  One joint UBO per skinned-mesh owner (SkeletalMeshComponent*).
+        std::map<const void*, std::pair<Ref<Buffer>, uint64_t>> mJointBuffers = {};
 
         Ref<Shader> mDefault2DShader   = nullptr;
         Ref<Shader> mDefaultUIShader   = nullptr;

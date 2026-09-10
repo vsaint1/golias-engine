@@ -4,6 +4,7 @@
 #include "render/material.h"
 #include "render/mesh.h"
 #include "render/model.h"
+#include "render/render_stats.h"
 #include "scene/game_object.h"
 
 namespace golias {
@@ -22,14 +23,14 @@ namespace golias {
     }
 
     void SkeletalMeshComponent::UpdateJointMatrices() {
-        if (!mSkin || mSkin->jointNames.empty()) {
+        if (!mSkin) {
             return;
         }
 
         if (!mJointObjectsResolved) {
             mJointObjects.clear();
 
-            GameObject* instanceRoot = GetOwner()->GetRoot();
+            GameObject* instanceRoot = GetOwner()->GetInstanceRoot();
 
             for (const String& jointName : mSkin->jointNames) {
                 mJointObjects.push_back(instanceRoot ? instanceRoot->FindChildByName(jointName) : nullptr);
@@ -46,6 +47,7 @@ namespace golias {
         const size_t jointCount = std::min(mSkin->jointNames.size(), mSkin->inverseBindMatrices.size());
         mJointMatrices.resize(jointCount);
 
+        AABB bounds;
         for (size_t i = 0; i < jointCount; ++i) {
             GameObject* jointObject = mJointObjects[i];
             if (!jointObject) {
@@ -54,6 +56,20 @@ namespace golias {
             }
 
             mJointMatrices[i] = meshNodeWorldInverse * jointObject->GetWorldTransform() * mSkin->inverseBindMatrices[i];
+            bounds.Expand(glm::vec3(jointObject->GetWorldTransform()[3])); // Position in world space
+        }
+
+        // World-space bounds used for culling
+        if (mMesh && jointCount > 0) {
+            if (mBindRadius == 0.0f) {
+                const AABB& bindBounds = mMesh->GetAABB();
+                mBindRadius            = glm::length(bindBounds.GetMax() - bindBounds.GetCenter());
+            }
+
+            mWorldBounds      = AABB(bounds.GetMin() - glm::vec3(mBindRadius), bounds.GetMax() + glm::vec3(mBindRadius));
+            mWorldBoundsValid = true;
+        } else {
+            mWorldBoundsValid = false;
         }
     }
 
@@ -66,8 +82,6 @@ namespace golias {
 
     void SkeletalMeshComponent::Start() {
         StaticMeshComponent::Start();
-
-       
     }
 
     void SkeletalMeshComponent::Update(float deltaTime) {
@@ -85,6 +99,12 @@ namespace golias {
             UpdateJointMatrices();
             command.JointMatrices = mJointMatrices.empty() ? nullptr : mJointMatrices.data();
             command.JointCount    = static_cast<uint32_t>(mJointMatrices.size());
+            command.JointKey      = this;
+            command.JointVersion  = FrameStats::Get().FrameIndex;
+
+            if (mWorldBoundsValid) {
+                command.WorldBounds = &mWorldBounds;
+            }
         }
 
         Engine::GetInstance().GetCommandQueue().Submit(command);

@@ -23,7 +23,7 @@ layout(std140) uniform PerObject {
 };
 
 layout(std140) uniform JointMatrices {
-    mat4 _JointMatrices[1024];
+    mat4 _JointMatrices[256];
 };
 
 mat4 skin_matrix() {

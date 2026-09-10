@@ -11,6 +11,7 @@
 #include "render/render_stats.h"
 #include "scene/components/camera_component.h"
 
+
 namespace golias {
 
     namespace {
@@ -154,18 +155,6 @@ namespace golias {
             mInstanceBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
         }
 
-        {
-            // clang-format off
-            BufferDesc desc = {
-                .Target = BufferTarget::Uniform,
-                .Usage = BufferUsage::Dynamic,
-                .Size = kMaxJoints * sizeof(glm::mat4)
-            };
-            // clang-format on
-
-            mJointBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
-        }
-
         mShadowShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
         mShadowShader->SetUniformBlockBinding(GpuLayout::JointsBlock, GpuLayout::JointsBinding);
         mShadowShader->SetUniformBlockBinding(GpuLayout::ObjectBlock, GpuLayout::ObjectBinding);
@@ -297,6 +286,34 @@ namespace golias {
         UpdateUniformBuffer(mMaterialBuffer, sizeof(material), &material, GpuLayout::MaterialBinding);
     }
 
+    void CommandQueue::UpdateJointBuffer(const RenderCommand& command) {
+        if (!command.JointMatrices || command.JointCount == 0) {
+            return;
+        }
+
+        auto& [buffer, inFlightVersion] = mJointBuffers[command.JointKey];
+        if (!buffer) {
+            // clang-format off
+            BufferDesc desc = {
+                .Target = BufferTarget::Uniform,
+                .Usage  = BufferUsage::Dynamic,
+                .Size   = kMaxJoints * sizeof(glm::mat4)
+            };
+            // clang-format on
+
+            buffer          = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
+            inFlightVersion = static_cast<uint64_t>(-1);
+        }
+
+        const uint32_t safeJointCount = std::min(command.JointCount, kMaxJoints);
+        if (inFlightVersion != command.JointVersion) {
+            inFlightVersion = command.JointVersion;
+            buffer->Update(command.JointMatrices, safeJointCount * sizeof(glm::mat4));
+        }
+
+        buffer->Bind(GpuLayout::JointsBinding);
+    }
+
     void CommandQueue::UpdatePostProcessBuffer(const GpuPostProcess& postProcess) {
         UpdateUniformBuffer(mPostProcessBuffer, sizeof(postProcess), &postProcess, GpuLayout::PostProcessBinding);
     }
@@ -310,7 +327,17 @@ namespace golias {
         outTransparent.reserve(mCommands.size());
 
         for (const auto& command : mCommands) {
-            if (!command.Mesh || !frustum.Intersects(command.Mesh->GetAABB().Transformed(command.Model))) {
+            if (!command.Mesh) {
+                continue;
+            }
+
+            if (command.WorldBounds) {
+
+                if (!frustum.Intersects(*command.WorldBounds)) {
+                    continue;
+                }
+
+            } else if (!frustum.Intersects(command.Mesh->GetAABB().Transformed(command.Model))) {
                 continue;
             }
 
@@ -349,8 +376,7 @@ namespace golias {
             }
 
             if (hasSkin) {
-                mJointBuffer->Update(command.JointMatrices, command.JointCount * sizeof(glm::mat4));
-                mJointBuffer->Bind(GpuLayout::JointsBinding);
+                UpdateJointBuffer(command);
             }
 
             if (instanceCount > 0 && instanceData && shader == mDefault3DShader.get()) {
@@ -806,8 +832,7 @@ namespace golias {
             UpdateObjectBuffer(command->Model, 0, hasSkin ? 1 : 0);
 
             if (hasSkin) {
-                mJointBuffer->Update(command->JointMatrices, command->JointCount * sizeof(glm::mat4));
-                mJointBuffer->Bind(GpuLayout::JointsBinding);
+                UpdateJointBuffer(*command);
             }
 
             device.BindMesh(command->Mesh);
@@ -877,8 +902,11 @@ namespace golias {
                 }
 
                 if (command.JointMatrices) {
+                    if (!command.WorldBounds || !CascadeContains(*command.WorldBounds, glm::mat4(1.0f), cascadeData.ViewProjection)) {
+                        continue;
+                    }
+
                     cascadeCasters.push_back(&command);
-                    continue;
                 }
 
                 if (CascadeContains(command.Mesh->GetAABB(), command.Model, cascadeData.ViewProjection)) {
