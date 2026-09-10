@@ -11,11 +11,27 @@ namespace golias {
     public:
         Scene() = default;
 
+        /// @brief  Loads a scene from an asset path (e.g. "scene/main.gscene").
+        static Ref<Scene> Load(const char* path);
+
+        /// @brief  Loads a scene from a JSON object.
+        static Ref<Scene> Load(const Json& json);
+
+        /// @brief  Loads a scene from an asset path (e.g. "scene/main.gscene").
         static Ref<Scene> Load(CString path);
+
+        /// @brief  Serializes the scene graph (objects, hierarchy, components).
+        Json Serialize() const;
+
+        /// @brief  Serializes and writes the scene to an asset path (e.g. "scene/main.gscene").
+        bool Save(CString path) const;
 
         GameObject* CreateGameObject(CString name, GameObject* parent = nullptr);
 
         GameObject* InstantiatePrefab(const Json& json, GameObject* parent = nullptr);
+
+        /// @brief  Deep-copies an object into scene.
+        GameObject* DuplicateObject(GameObject* object, GameObject* parent = nullptr);
 
         template <typename T, typename = typename std::enable_if<std::is_base_of<GameObject, T>::value>::type>
         T* CreateGameObject(CString name, GameObject* parent = nullptr) {
@@ -37,6 +53,8 @@ namespace golias {
         }
 
         GameObject* FindGameObjectByName(CString name) const;
+
+        const std::vector<std::unique_ptr<GameObject>>& GetAllObjects() const;
 
         bool SetParent(GameObject* object, GameObject* parent);
 
@@ -60,6 +78,8 @@ namespace golias {
         void PostUpdate(float deltaTime);
 
         void PrintObjectTree(const GameObject* object, size_t depth) const;
+
+        Json SerializeObject(const GameObject* object) const;
 
         void LoadObject(const Json& objectData, GameObject* parent = nullptr);
 

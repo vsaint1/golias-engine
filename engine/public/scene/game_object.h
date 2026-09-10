@@ -15,7 +15,11 @@ namespace golias {
 
         virtual void Start();
 
+        virtual const char* GetTypeName() const;
+
         virtual bool LoadProperties(const Json& properties);
+
+        virtual bool SaveProperties(Json& properties) const;
 
         virtual void Update(float deltaTime);
 
@@ -31,6 +35,9 @@ namespace golias {
         GameObject* GetParent() const;
 
         GameObject* GetRoot() const;
+
+        /// @brief  Root of this object's model/prefab instance.
+        GameObject* GetInstanceRoot() const;
 
         GameObject* FindChildByName(CString name) const;
 
@@ -82,6 +89,8 @@ namespace golias {
 
         const std::vector<std::unique_ptr<GameObject>>& GetChildren() const;
 
+        const std::vector<std::unique_ptr<Component>>& GetComponentList() const;
+
         template <typename T, typename = typename std::enable_if<std::is_base_of_v<Component, T>>>
         T* GetComponent() {
 
@@ -110,6 +119,10 @@ namespace golias {
         /// @param component
         void AddComponent(Component* component);
 
+        /// @brief  Removes a component from the game object immediately.
+        /// @param component
+        void RemoveComponent(Component* component);
+
     protected:
         GameObject() = default;
 
@@ -118,9 +131,18 @@ namespace golias {
     private:
         void RecomputeActiveState();
 
+        /// @brief  Marks this object's cached world transform as stale so it is rebuilt on next access.
+        void MarkTransformDirty();
+
+        /// @brief  Recursively marks all descendants' cached world transforms as stale.
+        void MarkChildrenTransformDirty() const;
+
         String mName;
 
         GameObject* mParent = nullptr;
+
+        /// @brief  Topmost GameObject of the model/prefab instance this node belongs to (nullptr = scene object).
+        GameObject* mInstanceRoot = nullptr;
 
         Scene* mScene = nullptr;
 
@@ -135,6 +157,10 @@ namespace golias {
         glm::vec3 mPosition = glm::vec3(0.0f);
         glm::quat mRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         glm::vec3 mScale    = glm::vec3(1.0f);
+
+        /// @brief  Lazily rebuilt world transform.
+        mutable bool mWorldTransformDirty = true;
+        mutable glm::mat4 mWorldTransform = glm::mat4(1.0f);
     };
 
 
@@ -171,9 +197,12 @@ namespace golias {
         std::unordered_map<std::string, std::unique_ptr<ObjectFactoryBase>> creators;
     };
 
-#define GCLASS(Clazz)                                                        \
-public:                                                                      \
-    static void Register() {                                                 \
-        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz); \
+#define GCLASS(Clazz)                                                            \
+public:                                                                           \
+    static void Register() {                                                      \
+        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz);      \
+    }                                                                             \
+    virtual const char* GetTypeName() const override {                      \
+        return #Clazz;                                                            \
     }
 } // namespace golias

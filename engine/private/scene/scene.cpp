@@ -77,6 +77,15 @@ namespace golias {
             return nullptr;
         }
 
+        return Load(json);
+    }
+
+    Ref<Scene> Scene::Load(const char* path) {
+        return Load((CString) path);
+    }
+
+    Ref<Scene> Scene::Load(const Json& json) {
+
         const String sceneName = json.value("name", "UnnamedScene");
 
         Ref<Scene> scene = std::make_shared<Scene>();
@@ -108,7 +117,7 @@ namespace golias {
             GOLIAS_LOG_WARN("Scene '%s' does not have a valid main camera specified.", sceneName.data());
         }
 
-        GOLIAS_LOG_INFO("Scene '%s' loaded successfully from path: %s", sceneName.data(), path.data());
+        GOLIAS_LOG_INFO("Scene '%s' loaded successfully.", sceneName.data());
 
         return scene;
     }
@@ -120,7 +129,25 @@ namespace golias {
     GameObject* Scene::InstantiatePrefab(const Json& json, GameObject* parent) {
         return LoadObject(json, parent, true);
     }
-    
+
+    GameObject* Scene::DuplicateObject(GameObject* object, GameObject* parent) {
+        if (!object) {
+            return nullptr;
+        }
+
+        Json copy    = SerializeObject(object);
+        copy["name"] = String_Format("%s (Copy)", object->GetName().data());
+
+        GameObject* created = LoadObject(copy, parent, true);
+        if (created) {
+            glm::vec3 position = created->GetPosition();
+            position.x += 0.5f;
+            created->SetPosition(position);
+        }
+
+        return created;
+    }
+
     GameObject* Scene::LoadObject(const Json& objectData, GameObject* parent, bool callStart) {
         if (!objectData.is_object()) {
             GOLIAS_LOG_ERROR("Invalid object data: expected an object.");
@@ -266,6 +293,90 @@ namespace golias {
         return gameObject;
     }
 
+    Json Scene::Serialize() const {
+        Json root;
+        root["name"]    = mName;
+        root["version"] = 1;
+
+        if (mMainCamera) {
+            root["camera"] = mMainCamera->GetName();
+        }
+
+        Json& objects = root["objects"];
+        objects       = Json::array();
+        for (const auto& object : mObjects) {
+            const Json& objectData = SerializeObject(object.get());
+            objects.push_back(objectData);
+        }
+
+        return root;
+    }
+
+    Json Scene::SerializeObject(const GameObject* object) const {
+        Json node;
+        node["name"] = object->GetName();
+
+        const char* typeName = object->GetTypeName();
+        if (String(typeName) != "GameObject") {
+            node["type"] = typeName;
+        }
+
+        if (!object->IsActiveSelf()) {
+            node["active"] = false;
+        }
+
+        const glm::vec3 position = object->GetPosition();
+        node["position"]         = {
+            {"x", position.x},
+            {"y", position.y},
+            {"z", position.z}
+        };
+
+        const glm::vec3 euler = glm::eulerAngles(object->GetRotation());
+        node["rotation"]      = {
+            {"x", euler.x},
+            {"y", euler.y},
+            {"z", euler.z}
+        };
+
+        const glm::vec3 scale = object->GetScale();
+        node["scale"]         = {
+            {"x", scale.x},
+            {"y", scale.y},
+            {"z", scale.z}
+        };
+
+        object->SaveProperties(node);
+
+        const auto& components = object->GetComponentList();
+        if (!components.empty()) {
+            Json& componentsJson = node["components"];
+            componentsJson       = Json::array();
+            for (const auto& component : components) {
+                Json componentJson;
+                componentJson["type"] = component->GetTypeName();
+                component->SaveProperties(componentJson);
+                componentsJson.push_back(componentJson);
+            }
+        }
+
+        const auto& children = object->GetChildren();
+        if (!children.empty()) {
+            Json& childrenJson = node["children"];
+            childrenJson       = Json::array();
+            for (const auto& child : children) {
+                childrenJson.push_back(SerializeObject(child.get()));
+            }
+        }
+
+        return node;
+    }
+
+    bool Scene::Save(CString path) const {
+        const Json json = Serialize();
+        return Engine::GetInstance().GetFileSystem().SaveAssetFileText(path, json.dump(4).c_str());
+    }
+
 
     void Scene::PrintTree() {
         GOLIAS_LOG_INFO("Scene: %s", mName.c_str());
@@ -406,6 +517,10 @@ namespace golias {
         }
 
         return nullptr;
+    }
+
+    const std::vector<std::unique_ptr<GameObject>>& Scene::GetAllObjects() const {
+        return mObjects;
     }
 
     void Scene::PreUpdate(float deltaTime) {

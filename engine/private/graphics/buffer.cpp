@@ -72,6 +72,8 @@ namespace golias {
         if (offset + size > mDesc.Size) {
             mDesc.Size = offset + size;
             glBufferData(internalTarget, mDesc.Size, nullptr, usage);
+        } else if (offset == 0 && (mDesc.Usage == BufferUsage::Dynamic || mDesc.Usage == BufferUsage::Stream)) {
+            glBufferData(internalTarget, mDesc.Size, nullptr, usage);
         }
 
         glBufferSubData(internalTarget, offset, size, data);

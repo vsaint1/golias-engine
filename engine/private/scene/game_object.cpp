@@ -27,6 +27,7 @@ namespace golias {
         if (!root) {
             return nullptr;
         }
+        root->mInstanceRoot = root;
 
         if (model->HasAnimations()) {
             auto* animation = new AnimationComponent();
@@ -71,6 +72,7 @@ namespace golias {
 
                     GameObject* child = scene->CreateGameObject(name, parent);
                     if (child) {
+                        child->mInstanceRoot = root;
                         if (key.second) {
                             auto* meshComponent = new SkeletalMeshComponent(mesh, material);
                             if (skin) {
@@ -108,6 +110,7 @@ namespace golias {
             if (!object) {
                 return;
             }
+            object->mInstanceRoot = root;
 
             glm::vec3 scale;
             glm::quat rotation;
@@ -150,7 +153,16 @@ namespace golias {
     void GameObject::Start() {
     }
 
+    const char* GameObject::GetTypeName() const {
+        return "GameObject";
+    }
+
     bool GameObject::LoadProperties(const Json& properties) {
+
+        return true;
+    }
+
+    bool GameObject::SaveProperties(Json& properties) const {
 
         return true;
     }
@@ -268,7 +280,19 @@ namespace golias {
 
     void GameObject::SetParent(GameObject* parent) {
         mParent = parent;
+        MarkTransformDirty();
         RecomputeActiveState();
+    }
+
+    void GameObject::MarkTransformDirty() {
+        mWorldTransformDirty = true;
+    }
+
+    void GameObject::MarkChildrenTransformDirty() const {
+        for (const auto& child : mChildren) {
+            child->mWorldTransformDirty = true;
+            child->MarkChildrenTransformDirty();
+        }
     }
 
     GameObject* GameObject::GetParent() const {
@@ -285,6 +309,10 @@ namespace golias {
         return const_cast<GameObject*>(current);
     }
 
+    GameObject* GameObject::GetInstanceRoot() const {
+        return mInstanceRoot ? mInstanceRoot : const_cast<GameObject*>(this);
+    }
+
     void GameObject::Destroy() {
         mIsAlive = false;
     }
@@ -298,6 +326,21 @@ namespace golias {
         }
     }
 
+    void GameObject::RemoveComponent(Component* component) {
+        if (!component) {
+            return;
+        }
+
+        const auto it = std::find_if(mComponents.begin(), mComponents.end(), [component](const std::unique_ptr<Component>& el) {
+            return el.get() == component;
+        });
+
+        if (it != mComponents.end()) {
+            component->SetEnabled(false);
+            mComponents.erase(it);
+        }
+    }
+
     bool GameObject::IsAlive() const {
         return mIsAlive;
     }
@@ -306,12 +349,17 @@ namespace golias {
         return mChildren;
     }
 
+    const std::vector<std::unique_ptr<Component>>& GameObject::GetComponentList() const {
+        return mComponents;
+    }
+
     glm::vec3 GameObject::GetPosition() const {
         return mPosition;
     }
 
     void GameObject::SetPosition(const glm::vec3& position) {
         mPosition = position;
+        MarkTransformDirty();
     }
 
     void GameObject::SetWorldPosition(const glm::vec3& position) {
@@ -323,6 +371,7 @@ namespace golias {
         } else {
             mPosition = position;
         }
+        MarkTransformDirty();
     }
 
 
@@ -351,14 +400,17 @@ namespace golias {
         } else {
             mRotation = rotation;
         }
+        MarkTransformDirty();
     }
 
     void GameObject::SetRotation(const glm::quat& rotation) {
         mRotation = rotation;
+        MarkTransformDirty();
     }
 
     void GameObject::SetRotation(const glm::vec3& eulerAngles) {
         mRotation = glm::quat(eulerAngles);
+        MarkTransformDirty();
     }
 
     glm::vec3 GameObject::GetScale() const {
@@ -367,20 +419,24 @@ namespace golias {
 
     void GameObject::SetScale(const glm::vec3& scale) {
         mScale = scale;
+        MarkTransformDirty();
     }
 
     void GameObject::RotateLocal(const glm::vec3& axis, float angle) {
         glm::quat rotation = glm::angleAxis(angle, axis);
         mRotation          = rotation * mRotation;
+        MarkTransformDirty();
     }
 
     glm::mat4 GameObject::GetWorldTransform() const {
 
-        if (mParent) {
-            return mParent->GetWorldTransform() * GetLocalTransform();
-        } else {
-            return GetLocalTransform();
+        if (mWorldTransformDirty) {
+            MarkChildrenTransformDirty();
+            mWorldTransform = mParent ? mParent->GetWorldTransform() * GetLocalTransform() : GetLocalTransform();
+            mWorldTransformDirty = false;
         }
+
+        return mWorldTransform;
     }
 
     glm::mat4 GameObject::GetLocalTransform() const {
@@ -414,6 +470,7 @@ namespace golias {
 
     void GameObject::SetPosition2D(const glm::vec2& position) {
         mPosition = glm::vec3(position.x, position.y, 0.0f);
+        MarkTransformDirty();
     }
 
     glm::vec2 GameObject::GetWorldPosition2D() const {
@@ -427,6 +484,7 @@ namespace golias {
 
     void GameObject::SetRotation2D(float angle) {
         mRotation = glm::angleAxis(glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+        MarkTransformDirty();
     }
 
     glm::vec2 GameObject::GetScale2D() const {
@@ -435,6 +493,7 @@ namespace golias {
 
     void GameObject::SetScale2D(const glm::vec2& scale) {
         mScale = glm::vec3(scale.x, scale.y, 1.0f);
+        MarkTransformDirty();
     }
 
     glm::mat4 GameObject::GetLocalTransform2D() const {
