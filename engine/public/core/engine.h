@@ -72,7 +72,7 @@ namespace golias {
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
 
-        friend void engine_core_loop();
+        friend void engine_tick_internal();
 
     private:
         Scope<Application> mApplication = nullptr;

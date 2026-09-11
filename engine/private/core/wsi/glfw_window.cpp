@@ -451,13 +451,14 @@ namespace golias {
 
     void GlfwWindow::char_callback(GLFWwindow* window, unsigned int codepoint) {
         GlfwWindow* win = static_cast<GlfwWindow*>(glfwGetWindowUserPointer(window));
-        if (!win) {
+        if (!win || !win->OnChar) {
             return;
         }
 
 #if defined(GOLIAS_WITH_EDITOR)
         ImGui_ImplGlfw_CharCallback(window, codepoint);
 #endif
+        win->OnChar(codepoint);
     }
 
     void GlfwWindow::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -542,6 +543,9 @@ namespace golias {
         glfwSetMouseButtonCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::mouse_button_callback);
         glfwSetScrollCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::scroll_callback);
         glfwSetCursorPosCallback(static_cast<GLFWwindow*>(mWindow), GlfwWindow::cursor_position_callback);
+
+        // TODO: Make vsync configurable (Application settings???)
+        glfwSwapInterval(1);
 
         glfwSetCursorPos(static_cast<GLFWwindow*>(mWindow), mWidth / 2.0, mHeight / 2.0);
 

@@ -51,6 +51,7 @@ enum class InputMode {
         std::function<void(MouseButton, bool, int)> OnMouseButton;
         std::function<void(double, double)> OnCursorPos;
         std::function<void(double, double)> OnScroll;
+        std::function<void(unsigned int)> OnChar;
 
     protected:
         void* mWindow = nullptr; // Native window handle (HWND, NSWindow*, etc.)

@@ -73,6 +73,11 @@ namespace golias {
             mInputManager.SetMouseButtonPressed(button, pressed);
         };
 
+        // TODO: Handle character input (e.g., for text input fields)
+        mWindow->OnChar = [this](unsigned int codepoint) {
+            
+        };
+
         mWindow->OnCursorPos = [this](double xpos, double ypos) {
             mInputManager.SetMousePosition(static_cast<float>(xpos), static_cast<float>(ypos));
         };
@@ -89,92 +94,88 @@ namespace golias {
         return true;
     }
 
-    void engine_core_loop() {
+    void engine_tick_internal() {
 
         Engine& engine = Engine::GetInstance();
 
-        Time::Start();
 
         static Clock::time_point lastMemorySample = Clock::now();
         engine.mMemoryStats                       = GetMemoryStats();
 
-        while (!engine.mWindow->ShouldClose()) {
 
-            Time::Tick();
+        Time::Tick();
 
-            engine.mWindow->PollEvents();
+        engine.mWindow->PollEvents();
 
-            const float deltaTime = Time::GetDeltaTime();
+        const float deltaTime = Time::GetDeltaTime();
 
-            const Clock::time_point cpuStart = Clock::now();
+        const Clock::time_point cpuStart = Clock::now();
 
 #if defined(GOLIAS_WITH_EDITOR)
-            if (engine.mImGui) {
-                engine.mImGui->BeginFrame();
-            }
+        if (engine.mImGui) {
+            engine.mImGui->BeginFrame();
+        }
 #endif
 
-            engine.mPhysicsManager.Update(deltaTime);
+        engine.mPhysicsManager.Update(deltaTime);
 
-            engine.mApplication->Update(deltaTime);
+        engine.mApplication->Update(deltaTime);
 
-            engine.mInputManager.ResetTransientState();
+        engine.mInputManager.ResetTransientState();
 
-            int width, height;
-            engine.mWindow->GetDrawableSize(&width, &height);
+        int width, height;
+        engine.mWindow->GetDrawableSize(&width, &height);
 
+        if (Scene* scene = Engine::GetInstance().GetScene()) {
+            if (GameObject* camera = scene->GetMainCamera()) {
+                if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
 
-            if (Scene* scene = Engine::GetInstance().GetScene()) {
-                if (GameObject* camera = scene->GetMainCamera()) {
-                    if (CameraComponent* cameraComponent = camera->GetComponent<CameraComponent>()) {
-
-                        if (width <= 0 || height <= 0) {
-                            continue;
-                        }
-
-                        cameraComponent->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
-
-                        CameraCommand cameraCommand;
-                        cameraCommand.View           = cameraComponent->GetViewMatrix();
-                        cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
-                        cameraCommand.CameraPosition = camera->GetWorldPosition();
-                        cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(width, height);
-                        cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
-                        cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
-                        cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
-
-                        engine.mCommandQueue.Submit(cameraCommand);
+                    if (width <= 0 || height <= 0) {
+                        return;
                     }
+
+                    cameraComponent->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+
+                    CameraCommand cameraCommand;
+                    cameraCommand.View           = cameraComponent->GetViewMatrix();
+                    cameraCommand.Projection     = cameraComponent->GetProjectionMatrix();
+                    cameraCommand.CameraPosition = camera->GetWorldPosition();
+                    cameraCommand.Ortho          = cameraComponent->GetOrthoMatrix(width, height);
+                    cameraCommand.NearPlane      = cameraComponent->GetNearPlane();
+                    cameraCommand.FarPlane       = cameraComponent->GetFarPlane();
+                    cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
+
+                    engine.mCommandQueue.Submit(cameraCommand);
                 }
             }
+        }
 
-            engine.mCommandQueue.BeginFrame();
-            engine.mCommandQueue.Execute();
-            engine.mCommandQueue.EndFrame();
+        engine.mCommandQueue.BeginFrame();
+        engine.mCommandQueue.Execute();
+        engine.mCommandQueue.EndFrame();
 
 #if defined(GOLIAS_WITH_EDITOR)
-            if (engine.mImGui) {
-                engine.mImGui->EndFrame();
-            }
+        if (engine.mImGui) {
+            engine.mImGui->EndFrame();
+        }
 #endif
 
-            const Clock::time_point cpuEnd = Clock::now();
+        const Clock::time_point cpuEnd = Clock::now();
 
-            engine.mWindow->SwapBuffers();
+        engine.mWindow->SwapBuffers();
 
-            const Clock::time_point frameEnd = Clock::now();
+        const Clock::time_point frameEnd = Clock::now();
 
-            const float frameMs = deltaTime * 1000.0f;
-            const float cpuMs   = std::chrono::duration<float, std::milli>(cpuEnd - cpuStart).count();
+        const float frameMs = deltaTime * 1000.0f;
+        const float cpuMs   = std::chrono::duration<float, std::milli>(cpuEnd - cpuStart).count();
 
-            FrameStats::RecordFrame(frameMs, cpuMs);
-            FrameStats::NextFrame();
+        FrameStats::RecordFrame(frameMs, cpuMs);
+        FrameStats::NextFrame();
 
-            static constexpr std::chrono::duration<float, std::milli> kMemoryInterval = std::chrono::duration<float, std::milli>(500.0f);
-            if (frameEnd - lastMemorySample >= kMemoryInterval) {
-                engine.mMemoryStats = GetMemoryStats();
-                lastMemorySample    = frameEnd;
-            }
+        static constexpr std::chrono::duration<float, std::milli> kMemoryInterval = std::chrono::duration<float, std::milli>(500.0f);
+        if (frameEnd - lastMemorySample >= kMemoryInterval) {
+            engine.mMemoryStats = GetMemoryStats();
+            lastMemorySample    = frameEnd;
         }
     }
 
@@ -183,10 +184,14 @@ namespace golias {
             return;
         }
 
+        Time::Start();
+
 #if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
-        emscripten_set_main_loop(engine_core_loop, 0, true);
+        emscripten_set_main_loop(engine_tick_internal, 0, true);
 #else
-        engine_core_loop();
+        while (!mWindow->ShouldClose()) {
+            engine_tick_internal();
+        }
 #endif
     }
 
