@@ -15,9 +15,8 @@ void Player::Start() {
             bullet->SetActive(false);
         }
 
-        // TODO: We should disable the Mesh not the GObject
         if (GameObject* fire = gun->FindChildByName("BOOM_35")) {
-            // fire->SetActive(false);
+            fire->SetActive(false);
         }
 
         if (AnimationComponent* animComp = gun->GetComponent<AnimationComponent>()) {
@@ -84,24 +83,46 @@ void Player::Update(float deltaTime) {
 
     InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
-    if (!inputManager.IsCanvasFocused() && inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
+    if (inputManager.IsCanvasFocused()) {
+        return;
+    }
 
-        if (mGunAnimation->IsPlaying()) {
+
+    if (inputManager.IsKeyJustPressed(KeyCode::R)) {
+
+        if (mGunAnimation->IsPlaying("reload")) {
+            return;
+        }
+
+        mGunAnimation->Play("reload", false);
+        mAudioSource->Play("gun_reload");
+        mAmmo = mMaxAmmo;
+    }
+
+    if (inputManager.IsMouseButtonJustPressed(MouseButton::Left)) {
+
+        if (mGunAnimation->IsPlaying("shoot") || mGunAnimation->IsPlaying("reload")) {
             return;
         }
 
         mGunAnimation->Play("shoot", false);
+       
+        if (mAmmo <= 0) {
+            mAudioSource->Play("gun_clip_empty");
+            return;
+        }
 
         mAudioSource->Play("gun_shoot");
+        mAmmo--;
 
 
-        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet", GetParent());
+        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet", this);
 
         bullet->AddComponent(new StaticMeshComponent(mSphereMesh, mSphereMaterial));
 
         if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
-            const glm::vec3 direction      = glm::normalize(GetRotation() * glm::vec3(-0.1f, 0.2f, 1.75f));
+            const glm::vec3 direction      = glm::normalize(GetRotation() * glm::vec3(0.0f, 0.0f, 1.75f));
 
             bullet->SetPosition(muzzlePosition + direction);
 
@@ -112,7 +133,7 @@ void Player::Update(float deltaTime) {
 
             bullet->AddComponent(new PhysicsComponent(rb));
 
-            rb->SetLinearVelocity(direction * 30.0f);
+            rb->SetLinearVelocity(direction * 80.0f);
         }
     }
 

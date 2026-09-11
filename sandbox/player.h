@@ -36,4 +36,8 @@ private:
     AudioSourceComponent* mAudioSource           = nullptr;
 
     ProgressBarComponent* mHealthBar = nullptr;
+
+    int mAmmo    = 5;
+    int mMaxAmmo = 10;
+    
 };

@@ -54,6 +54,8 @@ namespace golias {
 
         bool IsPlaying();
 
+        bool IsPlaying(CString name);
+
         const std::unordered_map<String, Ref<AnimationClip>>& GetAnimationClips() const;
 
     private:
