@@ -122,7 +122,7 @@ namespace golias {
         return mUIFocus;
     }
 
-    void InputManager::SetCanvasFocus(bool focus) {
+    void InputManager::RequestCanvasFocus(bool focus) {
         mUIFocus = focus;
 
         Engine::GetInstance().SetInputMode(focus ? InputMode::Cursor : InputMode::Disabled);

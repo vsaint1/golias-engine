@@ -42,7 +42,7 @@ namespace golias {
         glm::vec2 GetScrollOffset() const;
 
         bool IsCanvasFocused() const;
-        void SetCanvasFocus(bool focus);
+        void RequestCanvasFocus(bool focus);
 
         void ResetMouseBaseline();
 
