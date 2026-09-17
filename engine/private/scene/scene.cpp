@@ -126,8 +126,30 @@ namespace golias {
         LoadObject(objectData, parent, true);
     }
 
-    GameObject* Scene::InstantiatePrefab(const Json& json, GameObject* parent) {
+    GameObject* Scene::Instantiate(const Json& json, GameObject* parent) {
         return LoadObject(json, parent, true);
+    }
+
+    GameObject* Scene::Instantiate(CString path, GameObject* parent) {
+        const String contents = Engine::GetInstance().GetFileSystem().LoadAssetFileText(path);
+
+        if (contents.empty()) {
+            GOLIAS_LOG_ERROR("Failed to load prefab from path: %s", path.data());
+            return nullptr;
+        }
+
+        Json json = Json::parse(contents);
+
+        if (json.is_discarded() || !json.is_object()) {
+            GOLIAS_LOG_ERROR("Failed to parse prefab from path: %s", path.data());
+            return nullptr;
+        }
+
+        return LoadObject(json, parent, true);
+    }
+
+    GameObject* Scene::Instantiate(const char* path, GameObject* parent) {
+        return Instantiate((CString) path, parent);
     }
 
     GameObject* Scene::DuplicateObject(GameObject* object, GameObject* parent) {

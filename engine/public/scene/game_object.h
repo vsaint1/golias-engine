@@ -13,6 +13,8 @@ namespace golias {
 
         static GameObject* Load(CString modelPath, Scene* scene, CString name = "");
 
+        GameObject* Instantiate(CString path, GameObject* parent = nullptr);
+
         virtual void Start();
 
         virtual const char* GetTypeName() const;
@@ -197,12 +199,12 @@ namespace golias {
         std::unordered_map<std::string, std::unique_ptr<ObjectFactoryBase>> creators;
     };
 
-#define GCLASS(Clazz)                                                            \
-public:                                                                           \
-    static void Register() {                                                      \
-        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz);      \
-    }                                                                             \
-    virtual const char* GetTypeName() const override {                      \
-        return #Clazz;                                                            \
+#define GCLASS(Clazz)                                                        \
+public:                                                                      \
+    static void Register() {                                                 \
+        golias::ObjectRegistry::GetInstance().RegisterObject<Clazz>(#Clazz); \
+    }                                                                        \
+    virtual const char* GetTypeName() const override {                       \
+        return #Clazz;                                                       \
     }
 } // namespace golias

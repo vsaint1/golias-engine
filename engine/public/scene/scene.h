@@ -28,7 +28,11 @@ namespace golias {
 
         GameObject* CreateGameObject(CString name, GameObject* parent = nullptr);
 
-        GameObject* InstantiatePrefab(const Json& json, GameObject* parent = nullptr);
+        GameObject* Instantiate(const Json& json, GameObject* parent = nullptr);
+
+        GameObject* Instantiate(CString path, GameObject* parent = nullptr);
+
+        GameObject* Instantiate(const char* path, GameObject* parent = nullptr);
 
         /// @brief  Deep-copies an object into scene.
         GameObject* DuplicateObject(GameObject* object, GameObject* parent = nullptr);

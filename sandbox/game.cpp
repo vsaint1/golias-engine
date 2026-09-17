@@ -25,9 +25,13 @@ bool GameApplication::Initialize() {
     mRoot           = scene->FindGameObjectByName("Main");
     mCanvas         = scene->FindGameObjectByName("Canvas");
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
-    mGodette        = mRoot->FindChildByName("Godette");
+    mGodette        = scene->Instantiate("scene/prefabs/godette.gprefab", mRoot);
 
-    
+    if(mGodette){
+        mGodette->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
+    }
+
+
     if (mRoot) {
         GameObject* softBodyObject = scene->CreateGameObject("SoftBodyPlane", mRoot);
         softBodyObject->SetPosition(glm::vec3(-4.0f, 5.0f, -1.0f));
@@ -35,13 +39,12 @@ bool GameApplication::Initialize() {
         Ref<Mesh> plane        = Mesh::CreatePlane(glm::vec2(4.0f, 3.0f), 24, 18);
         Ref<Material> material = Engine::GetInstance().GetAssetManager().Load<Material>("materials/cloth.gmat");
         Ref<SoftBody> softBody = std::make_shared<SoftBody>(4.0f, 3.0f, 24, 18, SoftBodyPinnedCorners::Top);
-        
+
         softBodyObject->AddComponent(new StaticMeshComponent(plane, material));
         softBodyObject->AddComponent(new SoftBodyComponent(plane, softBody));
     }
 
-    // TODO: change the name to RequestCanvasFocus?
-    Engine::GetInstance().GetInputManager().SetCanvasFocus(true);
+    Engine::GetInstance().GetInputManager().RequestCanvasFocus(true);
 
     if (GameObject* playbutton = mCanvas->FindChildByName("PlayButton")) {
         ButtonComponent* button = playbutton->GetComponent<ButtonComponent>();
@@ -49,7 +52,7 @@ bool GameApplication::Initialize() {
             if (mRoot && !mRoot->IsActive()) {
                 mRoot->SetActive(true);
                 mCanvas->SetActive(false);
-                Engine::GetInstance().GetInputManager().SetCanvasFocus(false);
+                Engine::GetInstance().GetInputManager().RequestCanvasFocus(false);
             }
         };
     }
@@ -121,9 +124,9 @@ void GameApplication::Update(float deltaTime) {
 
 
         if (inputManager.IsCanvasFocused()) {
-            inputManager.SetCanvasFocus(false);
+            inputManager.RequestCanvasFocus(false);
         } else {
-            inputManager.SetCanvasFocus(true);
+            inputManager.RequestCanvasFocus(true);
         }
     }
 
@@ -131,7 +134,7 @@ void GameApplication::Update(float deltaTime) {
 
         if (mRoot && mRoot->IsActive()) {
             mRoot->SetActive(false);
-            inputManager.SetCanvasFocus(true);
+            inputManager.RequestCanvasFocus(true);
             mCanvas->SetActive(true);
         }
 

@@ -2039,27 +2039,6 @@
                     }
                 },
                 {
-                    "name": "Godette",
-                    "type": "Prefab",
-                    "path": "scene/prefabs/godette.gprefab",
-                    "position": {
-                        "x": -10.0,
-                        "y": 0.5,
-                        "z": 9.0
-                    },
-                    "rotation": {
-                        "x": 0,
-                        "y": 0,
-                        "z": 0,
-                        "w": 1
-                    },
-                    "scale": {
-                        "x": 1.0,
-                        "y": 1.0,
-                        "z": 1.0
-                    }
-                },
-                {
                     "name": "Medkit_Obj",
                     "type": "Medkit",
                     "position": {
@@ -2149,7 +2128,21 @@
                             "audios": [
                                 {
                                     "name": "gun_shoot",
-                                    "path": "audios/FirstPersonTemplateWeaponFire.OGG",
+                                    "path": "audios/weapon_fire.ogg",
+                                    "looping": false,
+                                    "play_on_start": false,
+                                    "volume": 0.1
+                                },
+                                {
+                                    "name": "gun_reload",
+                                    "path": "audios/reload.mp3",
+                                    "looping": false,
+                                    "play_on_start": false,
+                                    "volume": 0.1
+                                },
+                                {
+                                    "name": "gun_clip_empty",
+                                    "path": "audios/clip_empty.mp3",
                                     "looping": false,
                                     "play_on_start": false,
                                     "volume": 0.1
@@ -2188,9 +2181,9 @@
                                 "w": 1
                             },
                             "scale": {
-                                "x": -1,
-                                "y": 1,
-                                "z": 1
+                                "x": -1.0,
+                                "y": 1.0,
+                                "z": 1.0
                             }
                         },
                         {

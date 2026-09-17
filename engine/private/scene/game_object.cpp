@@ -153,6 +153,17 @@ namespace golias {
     void GameObject::Start() {
     }
 
+    GameObject* GameObject::Instantiate(CString path, GameObject* parent) {
+
+        GameObject* instance = nullptr;
+
+        if (mScene) {
+            instance = mScene->Instantiate(path, parent);
+        }
+
+        return instance;
+    }
+
     const char* GameObject::GetTypeName() const {
         return "GameObject";
     }
@@ -331,9 +342,8 @@ namespace golias {
             return;
         }
 
-        const auto it = std::find_if(mComponents.begin(), mComponents.end(), [component](const std::unique_ptr<Component>& el) {
-            return el.get() == component;
-        });
+        const auto it = std::find_if(
+            mComponents.begin(), mComponents.end(), [component](const std::unique_ptr<Component>& el) { return el.get() == component; });
 
         if (it != mComponents.end()) {
             component->SetEnabled(false);
@@ -432,7 +442,7 @@ namespace golias {
 
         if (mWorldTransformDirty) {
             MarkChildrenTransformDirty();
-            mWorldTransform = mParent ? mParent->GetWorldTransform() * GetLocalTransform() : GetLocalTransform();
+            mWorldTransform      = mParent ? mParent->GetWorldTransform() * GetLocalTransform() : GetLocalTransform();
             mWorldTransformDirty = false;
         }
 
