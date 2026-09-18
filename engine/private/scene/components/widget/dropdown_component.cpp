@@ -84,6 +84,10 @@ namespace golias {
     void DropdownComponent::Update(float deltaTime) {
         UNUSED_PARAMETER(deltaTime);
 
+        if (mOptions.empty()) {
+            return;
+        }
+
         if (!mOpen) {
             if (mScrollRect && mScrollRect->GetOwner()) {
                 mScrollRect->GetOwner()->SetActive(false);
