@@ -13,6 +13,7 @@
 #include "render/render_stats.h"
 #include "scene/scene.h"
 #include "core/stl/string_utils.h"
+#include "core/script/script_runtime.h"
 
 namespace golias {
 
@@ -57,6 +58,8 @@ namespace golias {
 
         AudioManager& GetAudioManager();
 
+        ScriptRuntime& GetScriptRuntime();
+        
 #if defined(GOLIAS_WITH_EDITOR)
         ImGuiContext* GetImGui() const;
 #endif
@@ -85,6 +88,7 @@ namespace golias {
         FileSystem mFileSystem;
         PhysicsManager mPhysicsManager;
         AudioManager mAudioManager;
+        ScriptRuntime mScriptRuntime;
 
 #if defined(GOLIAS_WITH_EDITOR)
         Scope<ImGuiContext> mImGui = nullptr;

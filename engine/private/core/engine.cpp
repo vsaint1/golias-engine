@@ -51,6 +51,11 @@ namespace golias {
             return false;
         }
 
+        if(!mScriptRuntime.Initialize()) {
+            GOLIAS_LOG_ERROR("Failed to initialize ScriptRuntime");
+            return false;
+        }
+
 #if defined(GOLIAS_WITH_EDITOR)
         mImGui = std::make_unique<ImGuiContext>();
         if (!mImGui->Initialize(mWindow)) {
@@ -208,6 +213,8 @@ namespace golias {
         }
 #endif
 
+        mScriptRuntime.Shutdown();
+
         delete mWindow;
         mWindow = nullptr;
 
@@ -277,6 +284,10 @@ namespace golias {
 
     AudioManager& Engine::GetAudioManager() {
         return mAudioManager;
+    }
+
+    ScriptRuntime& Engine::GetScriptRuntime() {
+        return mScriptRuntime;
     }
 
 #if defined(GOLIAS_WITH_EDITOR)
