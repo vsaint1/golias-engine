@@ -1,0 +1,43 @@
+{
+    "name": "SpinCube",
+    "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    },
+    "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+    },
+    "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+    },
+    "components": [
+        {
+            "type": "StaticMeshComponent",
+            "material": {
+                "path": "materials/glass.gmat"
+            },
+            "mesh": {
+                "type": "cube",
+                "size": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            }
+        },
+        {
+            "type": "PythonScriptComponent",
+            "script": "scripts/spin.py",
+            "class": "Spin",
+            "properties": {
+                "speed": 67.0
+            }
+        }
+    ]
+}
