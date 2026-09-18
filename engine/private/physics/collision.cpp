@@ -43,4 +43,30 @@ namespace golias {
         }
     }
 
+    short parse_collision_bitmask(const Json& value) {
+        short mask = 0;
+
+        if (value.is_array()) {
+            for (const auto& layer : value) {
+                const int index = layer.get<int>();
+                if (index < 0 || index > 15) {
+                    GOLIAS_LOG_ERROR("Collision layer index out of range 0-15. Got %d.", index);
+                    continue;
+                }
+
+                mask = static_cast<short>(mask | static_cast<short>(1 << index));
+            }
+
+            return mask;
+        }
+
+        const int index = value.get<int>();
+        if (index < 0 || index > 15) {
+            GOLIAS_LOG_ERROR("Collision layer index out of range 0-15. Got %d.", index);
+            return 0;
+        }
+
+        return static_cast<short>(1 << index);
+    }
+
 } // namespace golias

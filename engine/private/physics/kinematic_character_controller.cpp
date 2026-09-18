@@ -6,7 +6,8 @@
 #include <btBulletDynamicsCommon.h>
 
 namespace golias {
-    KinematicCharacterController::KinematicCharacterController(float radius, float height) : mHeight(height), mRadius(radius) {
+    KinematicCharacterController::KinematicCharacterController(float radius, float height, short group, short mask)
+        : mHeight(height), mRadius(radius) {
 
         btDynamicsWorld* world = Engine::GetInstance().GetPhysicsManager().GetWorld();
 
@@ -32,7 +33,15 @@ namespace golias {
         mController->setMaxSlope(btRadians(45.0f));
         mController->setGravity(world->getGravity());
 
-        world->addCollisionObject(mGhostObject, btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::AllFilter);
+        if (group == 0) {
+            group = btBroadphaseProxy::CharacterFilter;
+        }
+
+        if (mask == 0) {
+            mask = btBroadphaseProxy::AllFilter;
+        }
+
+        world->addCollisionObject(mGhostObject, group, mask);
 
         world->addAction(mController);
     }

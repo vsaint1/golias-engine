@@ -10,7 +10,7 @@ class btKinematicCharacterController;
 namespace golias {
     class KinematicCharacterController : public CollisionObject {
     public:
-        KinematicCharacterController(float radius, float height);
+        KinematicCharacterController(float radius, float height, short group = 0, short mask = 0);
         ~KinematicCharacterController();
 
         glm::vec3 GetPosition() const;

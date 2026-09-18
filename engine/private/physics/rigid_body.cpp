@@ -35,7 +35,8 @@ namespace golias {
 
         mRigidBody->setFriction(mPhysicsMaterial.Friction);
         mRigidBody->setRestitution(mPhysicsMaterial.Restitution);
-
+        // mRigidBody->setDamping(0.1f,0.3f); // TODO: Get damping values 
+        
         mCollider->GetShape()->setMargin(0.05f);
 
         if (mType == RigidBodyType::Dynamic) {
@@ -104,6 +105,22 @@ namespace golias {
 
     void RigidBody::SetRestitution(float restitution) {
         mPhysicsMaterial.Restitution = restitution;
+    }
+
+    short RigidBody::GetCollisionLayer() const {
+        return mCollisionLayer;
+    }
+
+    short RigidBody::GetCollisionMask() const {
+        return mCollisionMask;
+    }
+
+    void RigidBody::SetCollisionLayer(short mask) {
+        mCollisionLayer = mask;
+    }
+
+    void RigidBody::SetCollisionMask(short mask) {
+        mCollisionMask = mask;
     }
 
     glm::vec3 RigidBody::GetPosition() const {

@@ -25,7 +25,6 @@ namespace golias {
     /// @brief  Represents a rigid body in the physics simulation, which can be static, dynamic, or kinematic. A rigid body is associated with a collider that defines its shape and collision properties.
     class RigidBody : public CollisionObject {
     public:
-
         /// @brief  Creates a new RigidBody with the specified type, collider, mass, friction, and restitution.
         /// @param type  The type of the rigid body (Static, Dynamic, Kinematic).
         /// @param collider The collider associated with the rigid body.
@@ -66,6 +65,12 @@ namespace golias {
 
         void ApplyImpulse(const glm::vec3& force);
 
+        short GetCollisionLayer() const;
+        void SetCollisionLayer(short mask);
+
+        short GetCollisionMask() const;
+        void SetCollisionMask(short mask);
+
         glm::vec3 GetLinearVelocity() const;
         void SetLinearVelocity(const glm::vec3& velocity);
 
@@ -80,8 +85,10 @@ namespace golias {
         Scope<btRigidBody> mRigidBody = nullptr;
 
         int mDefaultCollisionFlags = 0;
-        bool mIsAddedToWorld = false;
-        bool mIsEnabled      = true;
-        
+        bool mIsAddedToWorld       = false;
+        bool mIsEnabled            = true;
+
+        short mCollisionLayer = 0;
+        short mCollisionMask  = 0;
     };
 } // namespace golias

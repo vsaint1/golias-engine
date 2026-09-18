@@ -5,7 +5,7 @@
 
 namespace golias {
 
-    PlayerControllerComponent::~PlayerControllerComponent() {
+    CharacterControllerComponent::~CharacterControllerComponent() {
 
         if (mCharacterController) {
             mCharacterController->RemoveContactListener(this);
@@ -14,7 +14,7 @@ namespace golias {
         }
     }
 
-    bool PlayerControllerComponent::LoadProperties(const Json& properties) {
+    bool CharacterControllerComponent::LoadProperties(const Json& properties) {
 
         if (properties.contains("properties") && properties["properties"].is_object()) {
 
@@ -35,19 +35,32 @@ namespace golias {
             if (prop.contains("sensitivity")) {
                 mSensitivity = prop["sensitivity"].get<float>();
             }
+
+            if (prop.contains("collision") && prop["collision"].is_object()) {
+                const auto& collisionObj = prop["collision"];
+                if (collisionObj.contains("layer")) {
+                    short layer     = parse_collision_bitmask(collisionObj["layer"]);
+                    mCollisionLayer = layer;
+                }
+
+                if (collisionObj.contains("mask")) {
+                    short mask     = parse_collision_bitmask(collisionObj["mask"]);
+                    mCollisionMask = mask;
+                }
+            }
         }
 
         return true;
     }
 
-    void PlayerControllerComponent::Start() {
-        mCharacterController = new KinematicCharacterController(mRadius, mHeight);
+    void CharacterControllerComponent::Start() {
+        mCharacterController = new KinematicCharacterController(mRadius, mHeight, mCollisionLayer, mCollisionMask);
         mCharacterController->SetGameObject(GetOwner());
         mCharacterController->AddContactListener(this);
         mCharacterController->SetPosition(GetOwner()->GetPosition());
     }
 
-    void PlayerControllerComponent::Update(float deltaTime) {
+    void CharacterControllerComponent::Update(float deltaTime) {
         InputManager& inputManager = Engine::GetInstance().GetInputManager();
 
         glm::quat rotation = GetOwner()->GetRotation();
@@ -106,26 +119,26 @@ namespace golias {
         GetOwner()->SetPosition(mCharacterController->GetPosition());
     }
 
-    float PlayerControllerComponent::GetMoveSpeed() const {
+    float CharacterControllerComponent::GetMoveSpeed() const {
         return mMoveSpeed;
     }
-    void PlayerControllerComponent::SetMoveSpeed(float speed) {
+    void CharacterControllerComponent::SetMoveSpeed(float speed) {
         mMoveSpeed = speed;
     }
 
-    float PlayerControllerComponent::GetSensitivity() const {
+    float CharacterControllerComponent::GetSensitivity() const {
         return mSensitivity;
     }
 
-    void PlayerControllerComponent::SetSensitivity(float sensitivity) {
+    void CharacterControllerComponent::SetSensitivity(float sensitivity) {
         mSensitivity = sensitivity;
     }
 
-    KinematicCharacterController* PlayerControllerComponent::GetCharacterController() const {
+    KinematicCharacterController* CharacterControllerComponent::GetCharacterController() const {
         return mCharacterController;
     }
 
-    bool PlayerControllerComponent::OnGround() const {
+    bool CharacterControllerComponent::OnGround() const {
         if (mCharacterController) {
             return mCharacterController->IsOnGround();
         }
@@ -133,25 +146,25 @@ namespace golias {
         return false;
     }
 
-    void PlayerControllerComponent::Jump(const glm::vec3& direction) {
+    void CharacterControllerComponent::Jump(const glm::vec3& direction) {
         if (mCharacterController) {
             mCharacterController->Jump(direction);
         }
     }
 
-    void PlayerControllerComponent::ApplyForce(const glm::vec3& direction, float force) {
+    void CharacterControllerComponent::ApplyForce(const glm::vec3& direction, float force) {
         if (mCharacterController) {
             mCharacterController->ApplyForce(direction, force);
         }
     }
 
-    void PlayerControllerComponent::OnCollisionEnter(const Collision& collision) {
+    void CharacterControllerComponent::OnCollisionEnter(const Collision& collision) {
         if (GetOwner()) {
             GetOwner()->OnCollisionEnter(collision);
         }
     }
 
-    void PlayerControllerComponent::OnCollisionExit(const Collision& collision) {
+    void CharacterControllerComponent::OnCollisionExit(const Collision& collision) {
         if (GetOwner()) {
             GetOwner()->OnCollisionExit(collision);
         }

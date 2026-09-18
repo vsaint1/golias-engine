@@ -2,11 +2,11 @@
 
 #include "physics/collision.h"
 #include "physics/rigid_body.h"
-#include <btBulletCollisionCommon.h>
-#include <btBulletDynamicsCommon.h>
-#include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
 #include <BulletSoftBody/btSoftBody.h>
 #include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
+#include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
+#include <btBulletCollisionCommon.h>
+#include <btBulletDynamicsCommon.h>
 
 namespace golias {
 
@@ -146,14 +146,26 @@ namespace golias {
     void PhysicsManager::AddRigidBody(RigidBody* rigidBody) {
         if (rigidBody && mWorld) {
 
-            short group = btBroadphaseProxy::StaticFilter;
-            if (rigidBody->GetType() == RigidBodyType::Dynamic) {
-                group = btBroadphaseProxy::DefaultFilter;
-            } else if (rigidBody->GetType() == RigidBodyType::Kinematic) {
-                group = btBroadphaseProxy::KinematicFilter;
+            short group = 0;
+            short mask  = btBroadphaseProxy::AllFilter;
+
+            if (rigidBody->GetCollisionLayer() != 0) {
+                group = rigidBody->GetCollisionLayer();
+                if (rigidBody->GetCollisionMask() != 0) {
+                    mask = rigidBody->GetCollisionMask();
+                }
+
+            } else {
+                group = btBroadphaseProxy::StaticFilter;
+
+                if (rigidBody->GetType() == RigidBodyType::Dynamic) {
+                    group = btBroadphaseProxy::DefaultFilter;
+                } else if (rigidBody->GetType() == RigidBodyType::Kinematic) {
+                    group = btBroadphaseProxy::KinematicFilter;
+                }
             }
 
-            mWorld->addRigidBody(rigidBody->GetBody(), group, btBroadphaseProxy::AllFilter);
+            mWorld->addRigidBody(rigidBody->GetBody(), group, mask);
             rigidBody->SetAddedToWorld(true);
         }
     }

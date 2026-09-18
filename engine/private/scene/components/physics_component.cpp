@@ -17,6 +17,8 @@ namespace golias {
     }
 
     bool PhysicsComponent::LoadProperties(const Json& properties) {
+        Component::LoadProperties(properties);
+
         if (properties.contains("body") && properties["body"].is_object()) {
             const auto& rigidBodyObj = properties["body"];
 
@@ -76,14 +78,28 @@ namespace golias {
             }
 
             PhysicsMaterial material;
-            if (rigidBodyObj.contains("physics_material") && rigidBodyObj["physics_material"].is_object()) {
-                const auto& materialObj = rigidBodyObj["physics_material"];
+            if (rigidBodyObj.contains("material") && rigidBodyObj["material"].is_object()) {
+                const auto& materialObj = rigidBodyObj["material"];
                 material.Mass           = materialObj.value("mass", 1.0f);
                 material.Friction       = materialObj.value("friction", 0.5f);
                 material.Restitution    = materialObj.value("restitution", 0.0f);
             }
 
             mRigidBody = std::make_shared<RigidBody>(type, collider, material);
+
+            if (rigidBodyObj.contains("collision") && rigidBodyObj["collision"].is_object()) {
+                const auto& collisionObj = rigidBodyObj["collision"];
+                if (collisionObj.contains("layer")) {
+                    short layer = parse_collision_bitmask(collisionObj["layer"]);
+                    mRigidBody->SetCollisionLayer(layer);
+                }
+
+                if (collisionObj.contains("mask")) {
+                    short mask = parse_collision_bitmask(collisionObj["mask"]);
+                    mRigidBody->SetCollisionMask(mask);
+                }
+            }
+
             return true;
         }
 
@@ -95,7 +111,7 @@ namespace golias {
 
         return true;
     }
-    
+
     void PhysicsComponent::Start() {
         if (!mRigidBody) {
             GOLIAS_LOG_ERROR("PhysicsComponent requires a valid RigidBody to function properly.");

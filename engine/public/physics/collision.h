@@ -3,6 +3,8 @@
 
 namespace golias {
 
+    constexpr short kCollisionLayerPropBit = static_cast<short>(1 << 6);
+
     class ContactListener;
 
     enum class CollisonObjectType { RigidBody, KinematicCharacterController };
@@ -10,7 +12,7 @@ namespace golias {
     class CollisionObject;
     class GameObject;
     class PhysicsComponent;
-    class PlayerControllerComponent;
+    class CharacterControllerComponent;
     class SoftBodyComponent;
 
     struct Collision {
@@ -44,7 +46,7 @@ namespace golias {
 
         friend class PhysicsManager;
         friend class PhysicsComponent;
-        friend class PlayerControllerComponent;
+        friend class CharacterControllerComponent;
         friend class SoftBodyComponent;
     };
 
@@ -54,4 +56,8 @@ namespace golias {
         virtual void OnCollisionEnter(const Collision& collision) = 0;
         virtual void OnCollisionExit(const Collision& collision)  = 0;
     };
+
+    /// Example `3` becomes `1 << 3` and `[0, 2]` becomes `(1 << 0) | (1 << 2)`
+    short parse_collision_bitmask(const Json& value);
+
 } // namespace golias

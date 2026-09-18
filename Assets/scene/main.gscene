@@ -50,12 +50,12 @@
                                         "y": 1,
                                         "z": 30
                                     }
+                                },
+                                "material": {
+                                    "mass": 0.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 0.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]
@@ -64,7 +64,7 @@
                     "name": "Sphere_0",
                     "position": {
                         "x": 0,
-                        "y": 1,
+                        "y": 1.5,
                         "z": 5
                     },
                     "rotation": {
@@ -111,12 +111,16 @@
                                 "collider": {
                                     "type": "sphere",
                                     "radius": 1.0
+                                },
+                                "material": {
+                                    "mass": 20.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
+                                },
+                                "collision": {
+                                    "layer": 6,
+                                    "mask": 6
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 1.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]
@@ -125,7 +129,7 @@
                     "name": "Sphere_1",
                     "position": {
                         "x": 3,
-                        "y": 1,
+                        "y": 1.5,
                         "z": 5
                     },
                     "rotation": {
@@ -172,12 +176,15 @@
                                 "collider": {
                                     "type": "sphere",
                                     "radius": 1.0
+                                },
+                                "material": {
+                                    "mass": 20.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
+                                },
+                                "collision": {
+                                    "layer": 6
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 1.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]
@@ -186,7 +193,7 @@
                     "name": "Sphere_3",
                     "position": {
                         "x": 6,
-                        "y": 1,
+                        "y": 1.5,
                         "z": 5
                     },
                     "rotation": {
@@ -233,12 +240,15 @@
                                 "collider": {
                                     "type": "sphere",
                                     "radius": 1.0
+                                },
+                                "material": {
+                                    "mass": 20.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
+                                },
+                                "collision": {
+                                    "layer": 6
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 1.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]
@@ -287,12 +297,15 @@
                                         "y": 1,
                                         "z": 1
                                     }
+                                },
+                                "material": {
+                                    "mass": 10.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
+                                },
+                                "collision": {
+                                    "layer": 6
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 1.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]
@@ -1080,7 +1093,7 @@
                             "name": "Sphere_4",
                             "position": {
                                 "x": 10,
-                                "y": 1.5,
+                                "y": 2.0,
                                 "z": -8
                             },
                             "components": [
@@ -1102,8 +1115,11 @@
                                             "type": "sphere",
                                             "radius": 1.5
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 40
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1113,7 +1129,7 @@
                             "name": "Sphere_5",
                             "position": {
                                 "x": 10,
-                                "y": 1.5,
+                                "y": 2.0,
                                 "z": -6
                             },
                             "components": [
@@ -1135,8 +1151,11 @@
                                             "type": "sphere",
                                             "radius": 1.5
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 40
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1146,7 +1165,7 @@
                             "name": "Sphere_6",
                             "position": {
                                 "x": 10,
-                                "y": 1.5,
+                                "y": 2.0,
                                 "z": -4
                             },
                             "components": [
@@ -1168,8 +1187,11 @@
                                             "type": "sphere",
                                             "radius": 1.5
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 40
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1224,8 +1246,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1280,8 +1305,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1336,8 +1364,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1392,8 +1423,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1448,8 +1482,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1504,8 +1541,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1560,8 +1600,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1616,8 +1659,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1672,8 +1718,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1728,8 +1777,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1784,8 +1836,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1840,8 +1895,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1896,8 +1954,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -1952,8 +2013,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -2008,8 +2072,11 @@
                                                 "z": 1.5
                                             }
                                         },
-                                        "physics_material": {
-                                            "mass": 15
+                                        "material": {
+                                            "mass": 30
+                                        },
+                                        "collision": {
+                                            "layer": 6
                                         }
                                     }
                                 }
@@ -2563,7 +2630,7 @@
                     "name": "TestObject",
                     "position": {
                         "x": 2,
-                        "y": 0,
+                        "y": 1.0,
                         "z": 0
                     },
                     "rotation": {
@@ -2603,12 +2670,15 @@
                                         "y": 1,
                                         "z": 1
                                     }
+                                },
+                                "material": {
+                                    "mass": 15.0,
+                                    "friction": 0.5,
+                                    "restitution": 0.0
+                                },
+                                "collision": {
+                                    "layer": 6
                                 }
-                            },
-                            "physics_material": {
-                                "mass": 5.0,
-                                "friction": 0.5,
-                                "restitution": 0.0
                             }
                         }
                     ]

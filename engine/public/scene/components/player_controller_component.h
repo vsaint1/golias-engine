@@ -6,12 +6,12 @@ namespace golias {
 
     class KinematicCharacterController;
 
-    class PlayerControllerComponent : public Component, public ContactListener {
+    class CharacterControllerComponent : public Component, public ContactListener {
 
-        COMPONENT(PlayerControllerComponent)
+        COMPONENT(CharacterControllerComponent)
     public:
-        PlayerControllerComponent() = default;
-        ~PlayerControllerComponent() override;
+        CharacterControllerComponent() = default;
+        ~CharacterControllerComponent() override;
 
         bool LoadProperties(const Json& properties) override;
 
@@ -42,6 +42,9 @@ namespace golias {
 
         float mRadius = 0.4f;
         float mHeight = 1.2f;
+
+        short mCollisionLayer = 0;
+        short mCollisionMask  = 0;
 
         KinematicCharacterController* mCharacterController = nullptr;
     };
