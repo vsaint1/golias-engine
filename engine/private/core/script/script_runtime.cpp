@@ -14,6 +14,8 @@ namespace golias {
 
     bool ScriptRuntime::Initialize() {
 
+        py_initialize();
+        
         RegisterModules();
 
         sInitialized = true;

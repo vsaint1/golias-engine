@@ -4,7 +4,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(golias_engine)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 
 # OUTPUT DIRECTORIES
 # TODO: separate the server and client output directories
