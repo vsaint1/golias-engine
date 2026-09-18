@@ -9,6 +9,9 @@ namespace golias {
 
         void Shutdown();
 
+ 
+        static bool IsAlive();
+
         /// Finds an instance of a script object with the given name. 
         void* FindInstance(CString name);
 
@@ -19,5 +22,7 @@ namespace golias {
 
     private:
         void RegisterModules();
+
+        static bool sInitialized;
     };
 } // namespace golias

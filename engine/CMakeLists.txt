@@ -67,6 +67,8 @@ list(APPEND ENGINE_SOURCES ${PLATFORM_SOURCES})
 
 add_library(engine STATIC ${ENGINE_SOURCES})
 
+target_include_directories(engine PRIVATE "${ENGINE_PRIVATE_DIR}")
+
 target_link_libraries(engine PUBLIC thirdparty)
 
 if(WIN32)
