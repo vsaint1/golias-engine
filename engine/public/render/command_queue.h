@@ -203,6 +203,9 @@ namespace golias {
         Ref<Buffer> mMaterialBuffer    = nullptr;
         Ref<Buffer> mPostProcessBuffer = nullptr;
 
+  
+        Ref<Buffer> mDefaultJointBuffer = nullptr;
+
         /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices + colors of the current instanced batch.
         Ref<Buffer> mInstanceBuffer = nullptr;
 

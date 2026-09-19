@@ -9,8 +9,8 @@ namespace golias {
 
         bool Enabled                 = true;
         uint32_t CascadeCount        = 3;
-        uint32_t ShadowMapResolution = 2048;
-        float SplitLambda            = 0.5f;
+        uint32_t ShadowMapResolution = 4096;
+        float SplitLambda            = 0.75f;
         float MaxDistance            = 1000.0f;
 
         void Clamp();

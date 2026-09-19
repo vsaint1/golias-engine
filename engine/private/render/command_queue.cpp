@@ -155,6 +155,17 @@ namespace golias {
             mInstanceBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
         }
 
+        {
+            // Zero-filled dummy bone block
+            BufferDesc desc = {
+                .Target = BufferTarget::Uniform,
+                .Usage  = BufferUsage::Static,
+                .Size   = kMaxJoints * sizeof(glm::mat4),
+            };
+
+            mDefaultJointBuffer = Engine::GetInstance().GetGraphicsDevice().CreateBuffer(desc);
+        }
+
         mShadowShader->SetUniformBlockBinding(GpuLayout::FrameBlock, GpuLayout::FrameBinding);
         mShadowShader->SetUniformBlockBinding(GpuLayout::JointsBlock, GpuLayout::JointsBinding);
         mShadowShader->SetUniformBlockBinding(GpuLayout::ObjectBlock, GpuLayout::ObjectBinding);
@@ -575,6 +586,10 @@ namespace golias {
 
         UpdateLightingBuffer();
 
+        if (mDefaultJointBuffer) {
+            mDefaultJointBuffer->Bind(GpuLayout::JointsBinding);
+        }
+
         for (const auto& cameraCommand : mCameraCommands) {
 
             if (!EnsureHdrTargets(cameraCommand.Viewport)) {
@@ -854,8 +869,8 @@ namespace golias {
         desc.Width  = shadowCsmDesc.ShadowMapResolution;
         desc.Height = shadowCsmDesc.ShadowMapResolution;
         desc.Layers = CascadedShadowMapDesc::kMaxCascades;
-        desc.Format = TextureFormat::Depth24;
-        desc.Filter = TextureFilter::Linear;
+        desc.Format = device.GetDepthTextureFormat();
+        desc.Filter = TextureFilter::Nearest;
         desc.Wrap   = TextureWrap::ClampToBorder;
 
         if (!mShadowTexture) {
@@ -870,6 +885,7 @@ namespace golias {
         if (!mShadowFramebuffer->IsComplete()) {
             GOLIAS_LOG_ERROR("CSM framebuffer is incomplete.");
             mShadowFramebuffer->Unbind();
+            device.SetCullMode(CullMode::Back);
             device.SetViewport(cameraCommand.Viewport);
             return;
         }

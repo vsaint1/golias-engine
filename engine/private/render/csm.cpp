@@ -107,15 +107,18 @@ namespace golias {
             for (const glm::vec3& corner : corners) {
                 radius = std::max(radius, glm::length(corner - center));
             }
+
             radius = std::max(radius, 0.001f);
 
             const glm::vec3 up = std::abs(glm::dot(direction, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f)
                                                                                                     : glm::vec3(0.0f, 1.0f, 0.0f);
 
-            // cascade center
-            const glm::mat4 lightBasis       = glm::lookAtLH(-direction, glm::vec3(0.0f), up);
-            const float texelSize            = (2.0f * radius) / static_cast<float>(mSettings.ShadowMapResolution);
+            const glm::mat4 lightBasis = glm::lookAtLH(-direction, glm::vec3(0.0f), up);
+
+            const float texelSize = (2.0f * radius) / static_cast<float>(mSettings.ShadowMapResolution);
+
             const glm::vec3 lightSpaceCenter = glm::mat3(lightBasis) * center;
+
             const glm::vec3 snappedCenter(std::floor(lightSpaceCenter.x / texelSize + 0.5f) * texelSize,
                                           std::floor(lightSpaceCenter.y / texelSize + 0.5f) * texelSize,
                                           lightSpaceCenter.z);
@@ -124,18 +127,38 @@ namespace golias {
 
             const glm::mat4 lightView = glm::lookAtLH(center - direction * radius, center, up);
 
+            float minX = std::numeric_limits<float>::max();
+            float maxX = std::numeric_limits<float>::lowest();
+            float minY = std::numeric_limits<float>::max();
+            float maxY = std::numeric_limits<float>::lowest();
             float minZ = std::numeric_limits<float>::max();
             float maxZ = std::numeric_limits<float>::lowest();
+
             for (const glm::vec3& corner : corners) {
-                const float z = (lightView * glm::vec4(corner, 1.0f)).z;
-                minZ          = std::min(minZ, z);
-                maxZ          = std::max(maxZ, z);
+                const glm::vec3 lightSpace = glm::vec3(lightView * glm::vec4(corner, 1.0f));
+
+                minX = std::min(minX, lightSpace.x);
+                maxX = std::max(maxX, lightSpace.x);
+
+                minY = std::min(minY, lightSpace.y);
+                maxY = std::max(maxY, lightSpace.y);
+
+                minZ = std::min(minZ, lightSpace.z);
+                maxZ = std::max(maxZ, lightSpace.z);
             }
 
-            const float depthMargin = radius;
+            const float xyMargin = texelSize * 2.0f;
+            const float zMargin  = radius;
 
-            mCascades[cascade].ViewProjection =
-                glm::orthoLH_NO(-radius, radius, -radius, radius, minZ - depthMargin, maxZ + depthMargin) * lightView;
+            minX -= xyMargin;
+            maxX += xyMargin;
+            minY -= xyMargin;
+            maxY += xyMargin;
+
+            minZ -= zMargin;
+            maxZ += zMargin;
+
+            mCascades[cascade].ViewProjection = glm::orthoLH_NO(minX, maxX, minY, maxY, minZ, maxZ) * lightView;
 
             mCascades[cascade].SplitDistance = currentSplit;
         }
