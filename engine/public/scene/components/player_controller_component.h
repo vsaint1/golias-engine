@@ -7,7 +7,6 @@ namespace golias {
     class KinematicCharacterController;
 
     class CharacterControllerComponent : public Component, public ContactListener {
-
         COMPONENT(CharacterControllerComponent)
     public:
         CharacterControllerComponent() = default;

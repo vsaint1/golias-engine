@@ -3,12 +3,10 @@
 #include "hurt_platform.h"
 #include "medkit.h"
 #include "player.h"
-#include "test_obj.h"
 
 void GameApplication::RegisterTypes() {
 
     Player::Register();
-    TestObject::Register();
     HurtPlatform::Register();
     Medkit::Register();
 }
@@ -31,6 +29,11 @@ bool GameApplication::Initialize() {
         mGodette->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
     }
 
+    if (mRoot) {
+        if (GameObject* spinCube = scene->Instantiate("scene/prefabs/spin_cube.gprefab", mRoot)) {
+            // Whatever
+        }
+    }
 
     if (mRoot) {
         GameObject* softBodyObject = scene->CreateGameObject("SoftBodyPlane", mRoot);
@@ -169,4 +172,5 @@ void GameApplication::Update(float deltaTime) {
 }
 
 void GameApplication::Shutdown() {
+
 }

@@ -33,10 +33,12 @@
         },
         {
             "type": "PythonScriptComponent",
-            "script": "scripts/spin.py",
-            "class": "Spin",
-            "properties": {
-                "speed": 67.0
+            "script": {
+                "path": "scripts/spin.py",
+                "class_name": "Spin",
+                "properties": {
+                    "speed": 67.0
+                }
             }
         }
     ]

@@ -32,7 +32,7 @@ private:
     Ref<Material> mSphereMaterial = nullptr;
 
     AnimationComponent* mGunAnimation            = nullptr;
-    PlayerControllerComponent* mPlayerController = nullptr;
+    CharacterControllerComponent* mPlayerController = nullptr;
     AudioSourceComponent* mAudioSource           = nullptr;
 
     ProgressBarComponent* mHealthBar = nullptr;

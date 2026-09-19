@@ -122,6 +122,7 @@ namespace golias {
     float CharacterControllerComponent::GetMoveSpeed() const {
         return mMoveSpeed;
     }
+    
     void CharacterControllerComponent::SetMoveSpeed(float speed) {
         mMoveSpeed = speed;
     }

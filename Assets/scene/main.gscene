@@ -118,8 +118,7 @@
                                     "restitution": 0.0
                                 },
                                 "collision": {
-                                    "layer": 6,
-                                    "mask": 6
+                                    "layer": 6
                                 }
                             }
                         }
@@ -2185,7 +2184,7 @@
                             "type": "CameraComponent"
                         },
                         {
-                            "type": "PlayerControllerComponent"
+                            "type": "CharacterControllerComponent"
                         },
                         {
                             "type": "AudioListenerComponent"

@@ -24,7 +24,7 @@ void Player::Start() {
         }
     }
 
-    if (PlayerControllerComponent* playerController = GetComponent<PlayerControllerComponent>()) {
+    if (CharacterControllerComponent* playerController = GetComponent<CharacterControllerComponent>()) {
         mPlayerController = playerController;
     }
 
@@ -122,14 +122,15 @@ void Player::Update(float deltaTime) {
 
         if (GameObject* child = mGunObject->FindChildByName("BOOM_35")) {
             const glm::vec3 muzzlePosition = child->GetWorldPosition();
-            const glm::vec3 direction      = glm::normalize(GetRotation() * glm::vec3(0.0f, 0.0f, 1.75f));
+            const glm::vec3 direction      = glm::normalize(GetRotation() * glm::vec3(-0.1f, 0.1f, 1.75f));
 
-            bullet->SetPosition(muzzlePosition + direction);
+            bullet->SetWorldPosition(muzzlePosition + direction);
 
             Ref<Collider> collider = std::make_shared<SphereCollider>(0.2f);
 
-            PhysicsMaterial phys = {.Mass = 10.0f, .Restitution = 0.0f};
+            PhysicsMaterial phys = {.Mass = 2.0f, .Restitution = 0.0f};
             Ref<RigidBody> rb    = std::make_shared<RigidBody>(RigidBodyType::Dynamic, collider, phys);
+            rb->SetCollisionLayer(6);
 
             bullet->AddComponent(new PhysicsComponent(rb));
 
