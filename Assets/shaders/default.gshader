@@ -6,7 +6,7 @@ layout(location = 2) in vec2 aTexCoord;
 layout(location = 3) in vec3 aNormals;
 layout(location = 4) in vec3 aTangent;
 layout(location = 5) in vec3 aBitangent;
-layout(location = 6) in uvec4 aJoints;
+layout(location = 6) in vec4 aJoints;
 layout(location = 7) in vec4 aWeights;
 layout(location = 8) in mat4 aInstanceMatrix;
 layout(location = 12) in vec4 aInstanceColor;
@@ -45,7 +45,7 @@ out vec4 vInstanceColor;
 flat out int vInstanced;
 
 mat4 skin_matrix() {
-    return _JointMatrices[aJoints.x] * aWeights.x + _JointMatrices[aJoints.y] * aWeights.y + _JointMatrices[aJoints.z] * aWeights.z + _JointMatrices[aJoints.w] * aWeights.w;
+    return _JointMatrices[int(aJoints.x)] * aWeights.x + _JointMatrices[int(aJoints.y)] * aWeights.y + _JointMatrices[int(aJoints.z)] * aWeights.z + _JointMatrices[int(aJoints.w)] * aWeights.w;
 }
 
 void main() {
