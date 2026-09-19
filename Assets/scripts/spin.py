@@ -1,5 +1,4 @@
-from golias import *
-
+from golias.engine import *
 
 class Spin(PythonBehavior):
 
@@ -13,5 +12,8 @@ class Spin(PythonBehavior):
     def update(self, delta_time):
         self.transform.rotate_local(Vector3(0.0, 1.0, 0.5), deg_to_rad(self.speed * delta_time))
 
+        if Input.is_key_pressed(KeyCode.W):
+            print("W key is pressed")
+            
         pos = Input.get_mouse_position()
         print(f"Spin.update cursor position: {pos}")

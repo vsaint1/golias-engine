@@ -8,9 +8,7 @@
 
 namespace golias {
 
-    namespace {
-        constexpr const char* kDefaultCheckMarkPath = "textures/UICheckMark.png";
-    } // namespace
+    constexpr const char* kDefaultCheckMarkPath = "golias/textures/UICheckMark.png";
 
     bool CheckBoxComponent::LoadProperties(const Json& properties) {
         Component::LoadProperties(properties);

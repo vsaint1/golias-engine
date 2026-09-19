@@ -10,7 +10,7 @@
 
 namespace golias {
 
-    constexpr const char* kDefaultArrowPath = "textures/UIArrowDown.png";
+    constexpr const char* kDefaultArrowPath = "golias/textures/UIArrowDown.png";
 
     bool DropdownComponent::LoadProperties(const Json& properties) {
         Component::LoadProperties(properties);

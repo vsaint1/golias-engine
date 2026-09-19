@@ -44,6 +44,29 @@ vec3 aces_approx(vec3 v)
     return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0, 1.0);
 }
 
+vec3 neutral_curve(vec3 x, float a, float b, float c, float d, float e, float f) {
+    return ((x * (a * x + c * b) + d * e) / (x * (a * x + b) + d * f)) - e / f;
+}
+
+vec3 neutral_tonemap(vec3 x) {
+    const float a = 0.2;
+    const float b = 0.29;
+    const float c = 0.24;
+    const float d = 0.272;
+    const float e = 0.02;
+    const float f = 0.3;
+    const float whiteLevel = 5.3;
+    const float whiteClip = 1.0;
+
+    x = neutral_curve(x, a, b, c, d, e, f);
+    float whiteScale = 1.0 / neutral_curve(vec3(whiteLevel), a, b, c, d, e, f).r;
+    x *= whiteScale;
+
+    x = x / whiteClip;
+
+    return x;
+}
+
 vec3 gamma_correction(vec3 v) {
     return pow(max(v, vec3(0.0001)), vec3(1.0/2.2));
 }
@@ -57,6 +80,8 @@ void main() {
         color = aces_approx(color);
     } else if (_Tonemap == 2) {
         color = reinhard(color);
+    } else if (_Tonemap == 3) {
+        color = neutral_tonemap(color);
     }
 
     color = gamma_correction(color);

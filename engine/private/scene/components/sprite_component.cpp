@@ -71,7 +71,7 @@ namespace golias {
             return;
         }
 
-        RenderCommand2D command = {
+        SpriteRenderCommand command = {
             .Texture      = mTexture.get(),
             .Color        = mColor,
             .Model        = GetOwner()->GetWorldTransform2D(),
