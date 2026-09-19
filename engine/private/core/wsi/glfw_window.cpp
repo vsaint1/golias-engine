@@ -547,6 +547,8 @@ namespace golias {
         // TODO: Make vsync configurable (Application settings???)
         glfwSwapInterval(1);
 
+        glfwSetWindowPos(static_cast<GLFWwindow*>(mWindow), mWidth / 2.0, mHeight / 2.0); // Centered
+
         glfwSetCursorPos(static_cast<GLFWwindow*>(mWindow), mWidth / 2.0, mHeight / 2.0);
 
         GOLIAS_LOG_INFO("Created window with size %dx%d", mWidth, mHeight);

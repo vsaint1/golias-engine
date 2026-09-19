@@ -1,6 +1,7 @@
 #pragma once
 #include "graphics/gpu_types.h"
 #include "graphics/render_types.h"
+#include "graphics/texture.h"
 
 namespace golias {
 
@@ -35,6 +36,8 @@ namespace golias {
 
         Ref<Query> CreateQuery(QueryType type);
 
+        TextureFormat GetDepthTextureFormat() const;
+        
         bool IsQuerySupported() const;
 
         void SetClearColor(const Color& color = {0.25f, 0.45f, 0.75f, 1.0f});
@@ -71,5 +74,7 @@ namespace golias {
         std::unordered_map<std::string, Ref<Shader>> mShaderCache = {};
         Viewport mViewport                                        = {};
         bool mTimerQuerySupported                                 = false;
+
+        TextureFormat mDefaultDepthTextureFormat = TextureFormat::Depth24;
     };
 } // namespace golias

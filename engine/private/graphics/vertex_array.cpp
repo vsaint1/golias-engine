@@ -7,7 +7,7 @@ namespace golias {
     namespace {
 
         bool vertex_format_is_integer(VertexFormat format) {
-            return format == VertexFormat::UShort || format == VertexFormat::UShort4 || format == VertexFormat::Int
+            return format == VertexFormat::UShort ||  format == VertexFormat::Int
                 || format == VertexFormat::Int4 || format == VertexFormat::UByte4;
         }
 

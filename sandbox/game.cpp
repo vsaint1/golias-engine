@@ -25,7 +25,7 @@ bool GameApplication::Initialize() {
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
     mGodette        = scene->Instantiate("scene/prefabs/godette.gprefab", mRoot);
 
-    if(mGodette){
+    if (mGodette) {
         mGodette->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
     }
 
@@ -107,7 +107,7 @@ bool GameApplication::Initialize() {
             if (mGodette) {
                 if (AnimationComponent* anim = mGodette->GetComponent<AnimationComponent>()) {
                     String selectedOption = dropdown->GetSelectedOption();
-                    anim->Play(selectedOption, false);
+                    anim->Play(selectedOption, true);
                 }
             }
         };
@@ -172,5 +172,4 @@ void GameApplication::Update(float deltaTime) {
 }
 
 void GameApplication::Shutdown() {
-
 }

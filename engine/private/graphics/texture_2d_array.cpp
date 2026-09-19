@@ -36,16 +36,16 @@ namespace golias {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, TextureMagFilterToGl(desc.Filter));
 
         const GLint wrap = TextureWrapToGl(desc.Wrap);
+        const bool borderClampSupported = GLAD_GL_EXT_texture_border_clamp;
+        const GLint effectiveWrap = (wrap == GL_CLAMP_TO_BORDER && !borderClampSupported) ? GL_CLAMP_TO_EDGE : wrap;
 
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, wrap);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, wrap);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, wrap);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, effectiveWrap);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, effectiveWrap);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, effectiveWrap);
 
-#if defined(GOLIAS_PLATFORM_EMSCRIPTEN)
-        if (desc.Wrap == TextureWrap::ClampToBorder) {
+        if (desc.Wrap == TextureWrap::ClampToBorder && borderClampSupported) {
             glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, &desc.BorderColor.x);
         }
-#endif
 
         glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 

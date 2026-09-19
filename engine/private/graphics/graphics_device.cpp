@@ -45,6 +45,17 @@ namespace golias {
         GOLIAS_LOG_INFO("OpenGL Version: %s", version);
         GOLIAS_LOG_INFO("GPU Timer Queries: %s", mTimerQuerySupported ? "Supported" : "Not Supported");
 
+        GLint internalFormat;
+        glGetIntegerv(GL_DEPTH_BITS, &internalFormat);
+        if (internalFormat == 24) {
+            mDefaultDepthTextureFormat = TextureFormat::Depth24;
+        } else if (internalFormat == 32) {
+            mDefaultDepthTextureFormat = TextureFormat::Depth32F;
+        } else {
+            GOLIAS_LOG_WARN("Unsupported depth buffer format, defaulting to Depth24");
+            mDefaultDepthTextureFormat = TextureFormat::Depth24;
+        }
+
         return true;
     }
 
@@ -197,6 +208,10 @@ namespace golias {
         return buffer;
     }
 
+    TextureFormat GraphicsDevice::GetDepthTextureFormat() const {
+        return mDefaultDepthTextureFormat;
+    }
+    
     bool GraphicsDevice::IsQuerySupported() const {
         return mTimerQuerySupported;
     }
