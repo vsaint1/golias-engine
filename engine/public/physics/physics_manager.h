@@ -1,6 +1,7 @@
 #pragma once
 
 #include "physics/collision.h"
+#include "physics/physics_debug_drawer.h"
 #include "stdafx.h"
 
 class btBroadphaseInterface;
@@ -56,6 +57,10 @@ namespace golias {
 
         void SetGravity(float x, float y, float z);
 
+        PhysicsDebugDrawer& GetDebugDrawer();
+        
+        void SetDebugMode(PhysicsDebugMode mode);
+
         void AddRigidBody(RigidBody* rigidBody);
 
         void RemoveRigidBody(RigidBody* rigidBody);
@@ -81,6 +86,7 @@ namespace golias {
         btCollisionDispatcher* mDispatcher                       = nullptr;
         btSequentialImpulseConstraintSolver* mSolver             = nullptr;
         btSoftRigidDynamicsWorld* mWorld                         = nullptr;
+        PhysicsDebugDrawer mDebugDrawer;
         std::unordered_map<ContactPair, ContactState, ContactPairHash> mContacts;
     };
 } // namespace golias

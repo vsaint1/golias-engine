@@ -30,6 +30,8 @@ namespace golias {
         mWorld->setGravity(btVector3(0, kDefaultGravity, 0));
         mWorld->getWorldInfo().m_gravity = btVector3(0, kDefaultGravity, 0);
 
+        mWorld->setDebugDrawer(&mDebugDrawer);
+
         return true;
     }
 
@@ -45,6 +47,13 @@ namespace golias {
     void PhysicsManager::Update(float deltaTime) {
 
         mWorld->stepSimulation(deltaTime, PhysicsManager::kMaxSubSteps, PhysicsManager::kFixedTimeStep);
+
+        if (mDebugDrawer.GetDebugMode() != PhysicsDebugMode::None) {
+            mDebugDrawer.Begin();
+            mWorld->debugDrawWorld();
+            mDebugDrawer.Render();
+            mDebugDrawer.End();
+        }
 
         btDispatcher* dispatcher = mWorld->getDispatcher();
         const int manifolds      = dispatcher->getNumManifolds();
@@ -141,6 +150,10 @@ namespace golias {
             mWorld->setGravity(gravity);
             mWorld->getWorldInfo().m_gravity = gravity;
         }
+    }
+
+    PhysicsDebugDrawer& PhysicsManager::GetDebugDrawer() {
+        return mDebugDrawer;
     }
 
     void PhysicsManager::AddRigidBody(RigidBody* rigidBody) {

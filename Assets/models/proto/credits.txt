@@ -1,0 +1,6 @@
+Credits
+
+Character & Animations: Rzyas
+https://sketchfab.com/3d-models/mixamo-bot-character-lowpoly-c0c4d8c54d394e50821c193bd201f24d
+
+Retargeted and modified for use in this project.

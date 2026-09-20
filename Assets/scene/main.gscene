@@ -2536,7 +2536,7 @@
                                                     "components": [
                                                         {
                                                             "type": "CheckBoxComponent",
-                                                            "checked": true,
+                                                            "checked": false,
                                                             "color": {
                                                                 "r": 1.0,
                                                                 "g": 1.0,
@@ -2567,7 +2567,7 @@
                                                         {
                                                             "type": "TextComponent",
                                                             "font": {
-                                                                "text": "Physics Debug/AABB (TODO)",
+                                                                "text": "Physics Debug/AABB",
                                                                 "path": "fonts/arial.ttf",
                                                                 "size": 16,
                                                                 "color": {
@@ -2800,6 +2800,66 @@
                 }
             ],
             "children": [
+                {
+                    "name": "BackButton",
+                    "position": {
+                        "x": 80,
+                        "y": 40,
+                        "z": 0
+                    },
+                    "components": [
+                        {
+                            "type": "ButtonComponent"
+                        },
+                        {
+                            "type": "RectTransformComponent",
+                            "anchor": {
+                                "x": 0.0,
+                                "y": 0.0
+                            },
+                            "pivot": {
+                                "x": 0.5,
+                                "y": 0.5
+                            },
+                            "size": {
+                                "x": 100,
+                                "y": 50
+                            }
+                        }
+                    ],
+                    "children": [
+                        {
+                            "name": "PlayButtonText",
+                            "components": [
+                                {
+                                    "type": "TextComponent",
+                                    "font": {
+                                        "text": "Back",
+                                        "path": "fonts/arial.ttf",
+                                        "size": 24,
+                                        "color": {
+                                            "r": 0.0,
+                                            "g": 0.0,
+                                            "b": 0.0,
+                                            "a": 1.0
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "RectTransformComponent",
+                                    "anchor": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    },
+                                    "pivot": {
+                                        "x": 0.5,
+                                        "y": 0.5
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
                 {
                     "name": "MenuColumnSettings",
                     "components": [

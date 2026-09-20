@@ -86,7 +86,7 @@ namespace golias {
 
         CallPyFunction("on_destroy");
 
-        if (!py_getattr(py_getmodule("golias"), py_name("_instances"))) {
+        if (!py_getattr(py_getmodule("golias.engine"), py_name("_instances"))) {
             py_clearexc(nullptr);
             return;
         }
@@ -231,6 +231,7 @@ namespace golias {
         // One instance per component - py_retval().
         if (!py_tpcall(py_totype(cls), 0, nullptr)) {
             py_printexc();
+            py_clearexc(nullptr);
             GOLIAS_LOG_ERROR("PythonScript 'class %s' failed to construct.", mClassName.c_str());
             return false;
         }
@@ -278,6 +279,7 @@ namespace golias {
 
         if (!py_getattr(py_r2(), py_name(name))) {
             py_printexc();
+            py_clearexc(nullptr);
             GOLIAS_LOG_ERROR("Python '%s' on '%s' raised:", name, mScriptPath.c_str());
             SetEnabled(false);
             return false;
@@ -288,6 +290,7 @@ namespace golias {
         if (!py_call(py_r0(), argc, args)) {
             GOLIAS_LOG_ERROR("Python '%s' on '%s' raised:", name, mScriptPath.c_str());
             py_printexc();
+            py_clearexc(nullptr);
             SetEnabled(false);
             return false;
         }
