@@ -23,10 +23,10 @@ bool GameApplication::Initialize() {
     mRoot           = scene->FindGameObjectByName("Main");
     mCanvas         = scene->FindGameObjectByName("Canvas");
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
-    mGodette        = scene->Instantiate("scene/prefabs/godette.gprefab", mRoot);
+    mProtoCharacter        = scene->Instantiate("scene/prefabs/proto_character.gprefab", mRoot);
 
-    if (mGodette) {
-        mGodette->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
+    if (mProtoCharacter) {
+        mProtoCharacter->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
     }
 
     if (mRoot) {
@@ -75,6 +75,17 @@ bool GameApplication::Initialize() {
         slider->onValueChanged       = [](float value) { Engine::GetInstance().GetAudioManager().SetMasterVolume(value); };
     }
 
+    if (GameObject* settingsBack = mSettingsCanvas->FindChildByName("BackButton")) {
+        ButtonComponent* button = settingsBack->GetComponent<ButtonComponent>();
+        button->onClick         = [this]() {
+            if (mSettingsCanvas) {
+                mSettingsCanvas->SetActive(false);
+                mCanvas->SetActive(true);
+                Engine::GetInstance().GetInputManager().RequestCanvasFocus(true);
+            }
+        };
+    }
+
     if (GameObject* settingsVsync = mSettingsCanvas->FindChildByName("VsyncToggle")) {
         CheckBoxComponent* checkBox = settingsVsync->GetComponent<CheckBoxComponent>();
         checkBox->onValueChanged    = [](bool value) { GOLIAS_LOG_INFO("VSync toggled: %d", value); };
@@ -89,12 +100,20 @@ bool GameApplication::Initialize() {
         mHUDCanvas = hudCanvas;
     }
 
+    if (GameObject* hudDebugToggle = mHUDCanvas->FindChildByName("PhysicsCheckBox")) {
+        CheckBoxComponent* checkBox = hudDebugToggle->GetComponent<CheckBoxComponent>();
+        checkBox->onValueChanged    = [](bool value) {
+            Engine::GetInstance().GetPhysicsManager().GetDebugDrawer().SetDebugMode(value ? PhysicsDebugMode::Wireframe
+                                                                                          : PhysicsDebugMode::None);
+        };
+    }
+
     if (GameObject* hudAnimationDropdown = mHUDCanvas->FindChildByName("HUDAnimation_DD")) {
         DropdownComponent* dropdown = hudAnimationDropdown->GetComponent<DropdownComponent>();
         dropdown->ClearOptions();
 
-        if (mGodette) {
-            if (AnimationComponent* anim = mGodette->GetComponent<AnimationComponent>()) {
+        if (mProtoCharacter) {
+            if (AnimationComponent* anim = mProtoCharacter->GetComponent<AnimationComponent>()) {
                 for (const auto& [name, clip] : anim->GetAnimationClips()) {
                     dropdown->AddOption(name);
                 }
@@ -104,8 +123,8 @@ bool GameApplication::Initialize() {
         }
 
         dropdown->onValueChanged = [dropdown, this](int index) {
-            if (mGodette) {
-                if (AnimationComponent* anim = mGodette->GetComponent<AnimationComponent>()) {
+            if (mProtoCharacter) {
+                if (AnimationComponent* anim = mProtoCharacter->GetComponent<AnimationComponent>()) {
                     String selectedOption = dropdown->GetSelectedOption();
                     anim->Play(selectedOption, true);
                 }

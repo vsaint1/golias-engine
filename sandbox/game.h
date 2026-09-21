@@ -23,5 +23,5 @@ private:
 
     GameObject* mHUDCanvas = nullptr;
 
-    GameObject* mGodette = nullptr;
+    GameObject* mProtoCharacter = nullptr;
 };
