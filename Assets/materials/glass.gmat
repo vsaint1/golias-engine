@@ -1,5 +1,5 @@
 {
-    "shader": "shaders/default.gshader",
+    "shader": "golias/shaders/default.gshader",
     "parameters": {
         "float4": [
             {
