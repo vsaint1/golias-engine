@@ -312,9 +312,9 @@
                 {
                     "name": "Rain",
                     "position": {
-                        "x": -10.0,
-                        "y": 7.0,
-                        "z": 9.0
+                        "x": 0,
+                        "y": 10,
+                        "z": 10
                     },
                     "components": [
                         {
@@ -2736,9 +2736,9 @@
                     "type": "Prefab",
                     "path": "scene/prefabs/campfire.gprefab",
                     "position": {
-                        "x": 0,
+                        "x": -12.0,
                         "y": 0.6,
-                        "z": 10
+                        "z": 5.0
                     }
                 },
                 {
@@ -2770,38 +2770,6 @@
                             },
                             "intensity": 1.0,
                             "casts_shadows": true
-                        }
-                    ]
-                },
-                {
-                    "name": "RedSpotLight",
-                    "position": {
-                        "x": 1,
-                        "y": 5,
-                        "z": -15
-                    },
-                    "rotation": {
-                        "x": 0,
-                        "y": 0,
-                        "z": 0,
-                        "w": 1
-                    },
-                    "scale": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 1
-                    },
-                    "components": [
-                        {
-                            "type": "LightComponent",
-                            "light_type": "spot",
-                            "color": {
-                                "r": 1.0,
-                                "g": 0.0,
-                                "b": 0.0
-                            },
-                            "range": 20.0,
-                            "intensity": 5.0
                         }
                     ]
                 }

@@ -116,7 +116,7 @@ void Player::Update(float deltaTime) {
         mAmmo--;
 
 
-        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet", this);
+        Bullet* bullet = GetCurrentScene()->CreateGameObject<Bullet>("Bullet", GetRoot());
 
         bullet->AddComponent(new StaticMeshComponent(mSphereMesh, mSphereMaterial));
 
@@ -126,7 +126,7 @@ void Player::Update(float deltaTime) {
 
             bullet->SetWorldPosition(muzzlePosition + direction);
 
-            Ref<Collider> collider = std::make_shared<SphereCollider>(0.2f);
+            Ref<Collider> collider = std::make_shared<SphereCollider>(0.3f);
 
             PhysicsMaterial phys = {.Mass = 2.0f, .Restitution = 0.0f};
             Ref<RigidBody> rb    = std::make_shared<RigidBody>(RigidBodyType::Dynamic, collider, phys);

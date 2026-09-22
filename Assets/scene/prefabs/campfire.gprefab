@@ -11,23 +11,11 @@
                 "g": 0.22,
                 "b": 0.02
             },
-            "intensity": 4.0,
+            "intensity": 5.0,
             "range": 12.0
         }
     ],
     "children": [
-        {
-            "type": "AudioSourceComponent",
-            "audios": [
-                {
-                    "name": "burning",
-                    "path": "audios/campfire.wav",
-                    "looping": true,
-                    "play_on_start": true,
-                    "volume": 0.1
-                }
-            ]
-        },
         {
             "name": "FireParticles",
             "position": {
@@ -36,6 +24,18 @@
                 "z": 0.0
             },
             "components": [
+                {
+                    "type": "AudioSourceComponent",
+                    "audios": [
+                        {
+                            "name": "burning",
+                            "path": "audios/campfire.wav",
+                            "looping": true,
+                            "play_on_start": true,
+                            "volume": 0.4
+                        }
+                    ]
+                },
                 {
                     "type": "CpuParticleComponent",
                     "material": {

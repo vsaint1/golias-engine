@@ -14,7 +14,8 @@ namespace golias {
 
         static Ref<Audio> Load(CString path);
         
-        void Play(bool loop = false);
+        void Play();
+        void Play(bool loop);
         void Pause();
         void Resume();
         void Stop();
@@ -26,10 +27,15 @@ namespace golias {
 
         bool IsPlaying() const;
 
+        bool IsLooping() const;
+        void SetLooping(bool loop);
+
     private:
         Scope<ma_sound> mSound     = nullptr;
         Scope<ma_decoder> mDecoder = nullptr;
 
         std::vector<char> mAudioData;
+
+        bool mLooping = false;
     };
 } // namespace golias

@@ -66,12 +66,18 @@ namespace golias {
 
 
     void Audio::Play(bool loop) {
+        mLooping = loop;
+        
         if (mSound) {
             ma_sound_stop(mSound.get());
             ma_sound_seek_to_pcm_frame(mSound.get(), 0);
             ma_sound_set_looping(mSound.get(), loop ? MA_TRUE : MA_FALSE);
             ma_sound_start(mSound.get());
         }
+    }
+
+    void Audio::Play() {
+        Play(mLooping);
     }
 
     void Audio::Pause() {
@@ -121,4 +127,17 @@ namespace golias {
 
         return false;
     }
+
+    bool Audio::IsLooping() const {
+        return mLooping;
+    }
+
+    void Audio::SetLooping(bool loop) {
+        mLooping = loop;
+
+        if (mSound) {
+            ma_sound_set_looping(mSound.get(), loop ? MA_TRUE : MA_FALSE);
+        }
+    }
+
 } // namespace golias

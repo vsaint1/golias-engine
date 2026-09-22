@@ -14,6 +14,7 @@ namespace golias {
                 String name      = audioProp.value("name", "UnamedAudio");
                 String path      = audioProp.value("path", "");
                 bool playOnStart = audioProp.value("play_on_start", false);
+                bool looping     = audioProp.value("looping", false);
 
                 Ref<Audio> audio = Audio::Load(path);
 
@@ -26,6 +27,10 @@ namespace golias {
                         mDeferredAudios.push_back(name);
                     }
 
+                    if (looping) {
+                        audio->SetLooping(looping);
+                    }
+
                 } else {
                     GOLIAS_LOG_ERROR("Failed to load audio: %s", path.c_str());
                 }
@@ -36,7 +41,7 @@ namespace golias {
     }
 
     void AudioSourceComponent::Start() {
-        if (const GameObject* owner = GetOwner(); owner && owner->IsActive()) {
+        if (const auto& owner = GetOwner(); owner && owner->IsActive()) {
             PlayDeferredAudios();
         }
     }
