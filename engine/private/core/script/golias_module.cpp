@@ -21,6 +21,7 @@ namespace golias {
         py_Type gGameObject;
         py_Type gTime;
         py_Type gInput;
+        py_Type gKeyCode;
 
         bool parse_number(py_Ref ref, double& out) {
             if (py_isfloat(ref)) {
@@ -85,9 +86,22 @@ namespace golias {
                 return false;
             }
 
-            const float radians = (float) (degrees * 0.0174532925f);
+            const float radians = Math_Radians((float) degrees);
 
             py_newfloat(py_retval(), radians);
+            return true;
+        }
+
+        bool mathf_rad_to_deg(int argc, py_StackRef argv) {
+            PY_CHECK_ARGC(1);
+            double radians;
+            if (!parse_number(py_arg(0), radians)) {
+                return false;
+            }
+
+            const float degrees = Math_Degrees((float) radians);
+
+            py_newfloat(py_retval(), degrees);
             return true;
         }
 
@@ -205,70 +219,118 @@ namespace golias {
 
 #pragma endregion
 
+
 #pragma region Input
 
-        std::unordered_map<std::string, KeyCode> MakeKeyCodeMap() {
-            std::unordered_map<std::string, KeyCode> map;
+        struct KeyCodeEntry {
+            std::string name;
+            int value;
+        };
+
+        std::vector<KeyCodeEntry> KeyCodeEntries() {
+            std::vector<KeyCodeEntry> entries;
 
             // Letters A..Z
             for (int i = 0; i <= static_cast<int>(KeyCode::Z) - static_cast<int>(KeyCode::A); i++) {
                 std::string name(1, static_cast<char>('A' + i));
-                map[name] = static_cast<KeyCode>(static_cast<int>(KeyCode::A) + i);
+                entries.push_back({name, static_cast<int>(KeyCode::A) + i});
             }
 
-            // Digit row
+            // Digit row -> Num0..Num9
             for (int i = 0; i <= 9; i++) {
-                map[std::string(1, static_cast<char>('0' + i))] = static_cast<KeyCode>(static_cast<int>(KeyCode::Num0) + i);
+                entries.push_back({"Num" + std::to_string(i), static_cast<int>(KeyCode::Num0) + i});
             }
 
             // Function keys
-            for (int i = 1; i <= static_cast<int>(KeyCode::F25) - static_cast<int>(KeyCode::F1) + 1; i++) {
-                map["F" + std::to_string(i)] = static_cast<KeyCode>(static_cast<int>(KeyCode::F1) + i - 1);
+            int fCount = static_cast<int>(KeyCode::F25) - static_cast<int>(KeyCode::F1) + 1;
+            for (int i = 1; i <= fCount; i++) {
+                entries.push_back({"F" + std::to_string(i), static_cast<int>(KeyCode::F1) + i - 1});
             }
 
-            // Modifiers
-            map["LeftShift"]    = KeyCode::LeftShift;
-            map["RightShift"]   = KeyCode::RightShift;
-            map["LeftControl"]  = KeyCode::LeftControl;
-            map["RightControl"] = KeyCode::RightControl;
-            map["LeftAlt"]      = KeyCode::LeftAlt;
-            map["RightAlt"]     = KeyCode::RightAlt;
-            map["LeftSuper"]    = KeyCode::LeftSuper;
-            map["RightSuper"]   = KeyCode::RightSuper;
+            auto add = [&](const char* name, KeyCode kc) { entries.push_back({name, static_cast<int>(kc)}); };
 
-            // Navigation
-            map["Escape"]      = KeyCode::Escape;
-            map["Enter"]       = KeyCode::Enter;
-            map["Tab"]         = KeyCode::Tab;
-            map["Backspace"]   = KeyCode::Backspace;
-            map["Insert"]      = KeyCode::Insert;
-            map["Delete"]      = KeyCode::Delete;
-            map["Home"]        = KeyCode::Home;
-            map["End"]         = KeyCode::End;
-            map["PageUp"]      = KeyCode::PageUp;
-            map["PageDown"]    = KeyCode::PageDown;
-            map["Space"]       = KeyCode::Space;
-            map["Left"]        = KeyCode::Left;
-            map["Right"]       = KeyCode::Right;
-            map["Up"]          = KeyCode::Up;
-            map["Down"]        = KeyCode::Down;
-            map["CapsLock"]    = KeyCode::CapsLock;
-            map["NumLock"]     = KeyCode::NumLock;
-            map["ScrollLock"]  = KeyCode::ScrollLock;
-            map["PrintScreen"] = KeyCode::PrintScreen;
-            map["Pause"]       = KeyCode::Pause;
-            map["Menu"]        = KeyCode::Menu;
-            return map;
+            add("LeftShift", KeyCode::LeftShift);
+            add("RightShift", KeyCode::RightShift);
+            add("LeftControl", KeyCode::LeftControl);
+            add("RightControl", KeyCode::RightControl);
+            add("LeftAlt", KeyCode::LeftAlt);
+            add("RightAlt", KeyCode::RightAlt);
+            add("LeftSuper", KeyCode::LeftSuper);
+            add("RightSuper", KeyCode::RightSuper);
+            add("Escape", KeyCode::Escape);
+            add("Enter", KeyCode::Enter);
+            add("Tab", KeyCode::Tab);
+            add("Backspace", KeyCode::Backspace);
+            add("Insert", KeyCode::Insert);
+            add("Delete", KeyCode::Delete);
+            add("Home", KeyCode::Home);
+            add("End", KeyCode::End);
+            add("PageUp", KeyCode::PageUp);
+            add("PageDown", KeyCode::PageDown);
+            add("Space", KeyCode::Space);
+            add("Left", KeyCode::Left);
+            add("Right", KeyCode::Right);
+            add("Up", KeyCode::Up);
+            add("Down", KeyCode::Down);
+            add("CapsLock", KeyCode::CapsLock);
+            add("NumLock", KeyCode::NumLock);
+            add("ScrollLock", KeyCode::ScrollLock);
+            add("PrintScreen", KeyCode::PrintScreen);
+            add("Pause", KeyCode::Pause);
+            add("Menu", KeyCode::Menu);
+
+            add("Space", KeyCode::Space);
+            add("Apostrophe", KeyCode::Apostrophe);
+            add("Comma", KeyCode::Comma);
+            add("Minus", KeyCode::Minus);
+            add("Period", KeyCode::Period);
+            add("Slash", KeyCode::Slash);
+            add("Semicolon", KeyCode::Semicolon);
+            add("Equal", KeyCode::Equal);
+            add("LeftBracket", KeyCode::LeftBracket);
+            add("Backslash", KeyCode::Backslash);
+            add("RightBracket", KeyCode::RightBracket);
+            add("GraveAccent", KeyCode::GraveAccent);
+
+            for (int i = 0; i <= 9; i++) {
+                entries.push_back({"KP" + std::to_string(i), static_cast<int>(KeyCode::KP0) + i});
+            }
+
+            add("KPDecimal", KeyCode::KPDecimal);
+            add("KPDivide", KeyCode::KPDivide);
+            add("KPMultiply", KeyCode::KPMultiply);
+            add("KPSubtract", KeyCode::KPSubtract);
+            add("KPAdd", KeyCode::KPAdd);
+            add("KPEnter", KeyCode::KPEnter);
+            add("KPEqual", KeyCode::KPEqual);
+            add("KPInsert", KeyCode::KPInsert);
+            add("KPDelete", KeyCode::KPDelete);
+            add("KPHome", KeyCode::KPHome);
+            add("KPEnd", KeyCode::KPEnd);
+            add("KPPageUp", KeyCode::KPPageUp);
+            add("KPPageDown", KeyCode::KPPageDown);
+            add("KPLeft", KeyCode::KPLeft);
+            add("KPRight", KeyCode::KPRight);
+            add("KPUp", KeyCode::KPUp);
+            add("KPDown", KeyCode::KPDown);
+
+            add("World1", KeyCode::World1);
+            add("World2", KeyCode::World2);
+
+            return entries;
         }
 
-        const std::unordered_map<std::string, KeyCode> gKeyCodeMap = MakeKeyCodeMap();
-
-        // Input.is_key_pressed("W") — key_name only
+        // Input.is_key_pressed(KeyCode.W)
         bool input_is_key_pressed(int argc, py_StackRef argv) {
             PY_CHECK_ARGC(1);
-            PY_CHECK_ARG_TYPE(0, tp_str);
-            auto it = gKeyCodeMap.find(py_tostr(py_arg(0)));
-            py_newbool(py_retval(), it != gKeyCodeMap.end() && Engine::GetInstance().GetInputManager().IsKeyPressed(it->second));
+            py_Ref arg = py_arg(0);
+
+            if (!py_isint(arg)) {
+                return TypeError("Input.is_key_pressed() expects a KeyCode (e.g. KeyCode.W)");
+            }
+
+            InputManager& input = Engine::GetInstance().GetInputManager();
+            py_newbool(py_retval(), input.IsKeyPressed((KeyCode) py_toint(arg)));
             return true;
         }
 
@@ -279,33 +341,9 @@ namespace golias {
             return true;
         }
 
-        const char* kBootstrap = R"py(
-class PythonBehavior:
-
-    def start(self):              pass
-    def update(self, delta_time): pass
-    def on_enable(self):          pass
-    def on_disable(self):         pass
-    def on_destroy(self):         pass
-
-    @property
-    def transform(self):
-        return self.get_transform()
-
-    # `self` proxies the owning GameObject: self.get_name(), self.set_active(...), ...
-    def __getattr__(self, name):
-        owner = self.__dict__.get("_owner", None)
-        if owner is None:
-            raise AttributeError(name)
-        return getattr(owner, name)
-
-golias.PythonBehavior = PythonBehavior
-
-
-from golias import *
-)py";
-
     } // namespace
+
+#pragma endregion Input
 
     void push_vector2(py_OutRef out, Vector2 v) {
         py_newobject(out, gVector2, -1, 0);
@@ -403,17 +441,29 @@ from golias import *
     void register_golias_py_module() {
         py_GlobalRef golias = py_newmodule("golias");
 
-        gVector3    = py_newtype("Vector3", 0, golias, nullptr);
-        gVector2    = py_newtype("Vector2", 0, golias, nullptr);
-        gTransform  = py_newtype("Transform", 0, golias, nullptr);
-        gGameObject = py_newtype("GameObject", 0, golias, nullptr);
-        gTime       = py_newtype("Time", 0, golias, nullptr);
-        gInput      = py_newtype("Input", 0, golias, nullptr);
+        py_GlobalRef engine = py_newmodule("golias.engine");
+
+        py_setattr(golias, py_name("engine"), engine);
+
+        gVector3    = py_newtype("Vector3", 0, engine, nullptr);
+        gVector2    = py_newtype("Vector2", 0, engine, nullptr);
+        gTransform  = py_newtype("Transform", 0, engine, nullptr);
+        gGameObject = py_newtype("GameObject", 0, engine, nullptr);
+        gTime       = py_newtype("Time", 0, engine, nullptr);
+        gInput      = py_newtype("Input", 0, engine, nullptr);
+        gKeyCode    = py_newtype("KeyCode", 0, engine, nullptr);
+
+        // KeyCode enum members -> class attributes (int values match C++ `KeyCode`).
+        for (const auto& e : KeyCodeEntries()) {
+            py_newint(py_r0(), e.value);
+            py_setdict(py_tpobject(gKeyCode), py_name(e.name.c_str()), py_r0());
+        }
 
         // module-level functions
-        py_bindfunc(golias, "Vector3", vector3_factory);
-        py_bindfunc(golias, "Vector2", vector2_factory);
-        py_bindfunc(golias, "deg_to_rad", mathf_deg_to_rad);
+        py_bindfunc(engine, "Vector3", vector3_factory);
+        py_bindfunc(engine, "Vector2", vector2_factory);
+        py_bindfunc(engine, "deg_to_rad", mathf_deg_to_rad);
+        py_bindfunc(engine, "rad_to_deg", mathf_rad_to_deg);
 
         py_bindmagic(gVector2, py_name("__repr__"), vector2_repr);
         py_bindmagic(gVector3, py_name("__repr__"), vector3_repr);
@@ -431,7 +481,7 @@ from golias import *
         py_bindmethod(gGameObject, "is_active", gameobject_get_active);
         py_bindmethod(gGameObject, "set_active", gameobject_set_active);
 
-        // static helper classes: Time.get_delta_time(), Input.is_key_pressed("W")
+        // static helper classes: Time.get_delta_time(), Input.is_key_pressed(KeyCode.W)
         py_bindstaticmethod(gTime, "get_delta_time", time_get_delta_time);
         py_bindstaticmethod(gTime, "get_elapsed_time", time_get_elapsed_time);
         py_bindstaticmethod(gInput, "is_key_pressed", input_is_key_pressed);
@@ -439,13 +489,16 @@ from golias import *
 
         // instance store — script instances survive the tracing GC
         py_newdict(py_r0());
-        py_setattr(golias, py_name("_instances"), py_r0());
+        py_setattr(engine, py_name("_instances"), py_r0());
 
-        // scripts can `import golias`
         py_setglobal(py_name("golias"), golias);
 
+        py_setglobal(py_name("engine"), engine);
+
+        String bootstrap = Engine::GetInstance().GetFileSystem().LoadAssetFileText("golias/engine/__init__.py");
+
         // PythonBehavior + unqualified names (input, time, Vector3, deg_to_rad, ...)
-        if (!py_exec(kBootstrap, "<golias bootstrap>", EXEC_MODE, nullptr)) {
+        if (!py_exec(bootstrap.c_str(), "<golias bootstrap>", EXEC_MODE, nullptr)) {
             GOLIAS_LOG_ERROR("Python bootstrap failed to execute.");
             py_printexc();
             py_clearexc(nullptr);
