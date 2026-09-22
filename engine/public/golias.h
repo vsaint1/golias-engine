@@ -20,6 +20,7 @@
 
 #include "math/aabb.h"
 #include "math/frustum.h"
+#include "math/random.h"
 
 #include "render/command_queue.h"
 #include "render/material.h"
@@ -47,6 +48,7 @@
 #include "scene/components/skeletal_mesh_component.h"
 #include "scene/components/sprite_component.h"
 #include "scene/components/soft_body_component.h"
+#include "scene/components/cpu_particle_component.h"
 
 
 #include "scene/components/widget/button_component.h"

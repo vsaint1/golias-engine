@@ -73,6 +73,23 @@ namespace golias {
         }
     }
 
+    GLenum PrimitiveTypeToGl(PrimitiveType primitive) {
+        switch (primitive) {
+        case PrimitiveType::Triangles:
+            return GL_TRIANGLES;
+        case PrimitiveType::TriangleStrip:
+            return GL_TRIANGLE_STRIP;
+        case PrimitiveType::Lines:
+            return GL_LINES;
+        case PrimitiveType::LineStrip:
+            return GL_LINE_STRIP;
+        case PrimitiveType::Points:
+            return GL_POINTS;
+        }
+
+        return GL_TRIANGLES;
+    }
+
     GLenum VertexFormatToGl(VertexFormat format) {
         switch (format) {
         case VertexFormat::Float:

@@ -33,4 +33,7 @@ namespace golias {
     /// @brief  Maps a VertexFormat to its corresponding OpenGL type enum.
     GLenum VertexFormatToGl(VertexFormat format);
 
+    /// @brief  Maps a PrimitiveType to its corresponding OpenGL primitive enum.
+    GLenum PrimitiveTypeToGl(PrimitiveType primitive);
+
 } // namespace golias

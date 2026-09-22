@@ -153,6 +153,52 @@ namespace golias {
         return mesh;
     }
 
+    Ref<Mesh> Mesh::CreateFromJson(const Json& meshData) {
+        if (!meshData.is_object()) {
+            return nullptr;
+        }
+
+        const String type = meshData.value("type", "");
+        if (type == "cube") {
+            glm::vec3 size(1.0f);
+            if (meshData.contains("size") && meshData["size"].is_object()) {
+                const Json& sizeData = meshData["size"];
+                size.x               = sizeData.value("x", size.x);
+                size.y               = sizeData.value("y", size.y);
+                size.z               = sizeData.value("z", size.z);
+            }
+            return CreateCube(size);
+        }
+
+        if (type == "sphere") {
+            return CreateSphere(meshData.value("radius", 1.0f));
+        }
+
+        if (type == "capsule") {
+            return CreateCapsule(meshData.value("radius", 0.4f), meshData.value("height", 1.2f));
+        }
+
+        if (type == "plane") {
+            glm::vec2 size(10.0f);
+            uint32_t subdivisionsX = 1;
+            uint32_t subdivisionsY = 1;
+            if (meshData.contains("size") && meshData["size"].is_object()) {
+                const Json& sizeData = meshData["size"];
+                size.x               = sizeData.value("x", size.x);
+                size.y               = sizeData.value("y", size.y);
+            }
+            if (meshData.contains("subdivisions") && meshData["subdivisions"].is_object()) {
+                const Json& subdivisionData = meshData["subdivisions"];
+                subdivisionsX               = subdivisionData.value("x", subdivisionsX);
+                subdivisionsY               = subdivisionData.value("y", subdivisionsY);
+            }
+            return CreatePlane(size, subdivisionsX, subdivisionsY);
+        }
+
+        GOLIAS_LOG_WARN("Mesh: unsupported procedural mesh type '%s'.", type.data());
+        return nullptr;
+    }
+
     Ref<Mesh> Mesh::CreatePlane(const glm::vec2& size, uint32_t subdivisionsX, uint32_t subdivisionsY) {
         subdivisionsX = std::max(1u, subdivisionsX);
         subdivisionsY = std::max(1u, subdivisionsY);
@@ -319,19 +365,19 @@ namespace golias {
         mVAO->Unbind();
     }
 
-    void Mesh::Draw() const {
+    void Mesh::Draw(PrimitiveType primitive) const {
         FrameStats::RecordDrawCall(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
 
-        mVAO->Draw(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
+        mVAO->Draw(static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount), primitive);
     }
 
-    void Mesh::DrawIndexed(uint32_t start, uint32_t count) const {
+    void Mesh::DrawIndexed(uint32_t start, uint32_t count, PrimitiveType primitive) const {
         FrameStats::RecordDrawCall(count, count);
 
-        mVAO->DrawIndexed(start, count);
+        mVAO->DrawIndexed(start, count, primitive);
     }
 
-    void Mesh::DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount) const {
+    void Mesh::DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount, PrimitiveType primitive) const {
         if (instanceCount == 0) {
             return;
         }
@@ -347,7 +393,8 @@ namespace golias {
         std::vector<VertexArray::InstanceAttribute> attributes;
         attributes.reserve(kMatrixColumns + 1);
         for (uint32_t column = 0; column < kMatrixColumns; ++column) {
-            attributes.emplace_back(VertexArray::InstanceAttribute{VertexAttributeBinding::InstanceMatrix + column, 4, column * sizeof(glm::vec4)});
+            attributes.emplace_back(
+                VertexArray::InstanceAttribute{VertexAttributeBinding::InstanceMatrix + column, 4, column * sizeof(glm::vec4)});
         }
         attributes.emplace_back(VertexArray::InstanceAttribute{VertexAttributeBinding::InstanceColor, 4, matrixBytes});
 
@@ -355,7 +402,7 @@ namespace golias {
 
         mVAO->SetInstanceBuffer(instanceBuffer, stride, attributes);
         mVAO->Bind();
-        mVAO->DrawInstanced(instanceCount, static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount));
+        mVAO->DrawInstanced(instanceCount, static_cast<uint32_t>(mVertexCount), static_cast<uint32_t>(mIndexCount), primitive);
         mVAO->Unbind();
     }
 
@@ -364,17 +411,18 @@ namespace golias {
     }
 
     Ref<Mesh> Mesh::CreateCube(const glm::vec3& size, uint32_t segments) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Cube, {size.x, size.y, size.z, static_cast<float>(segments)}};
+        const ProceduralMeshKey key = {
+            ProceduralMeshKind::Cube, {size.x, size.y, size.z, static_cast<float>(segments)}
+        };
 
         return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [size, segments]() {
+            const glm::vec3 halfSize = size * 0.5f;
 
-        const glm::vec3 halfSize = size * 0.5f;
+            const float sx = size.x;
+            const float sy = size.y;
+            const float sz = size.z;
 
-        const float sx = size.x;
-        const float sy = size.y;
-        const float sz = size.z;
-
-        // clang-format off
+            // clang-format off
         std::vector<Vertex> vertices = {
             // Front (+Z)
             {{ halfSize.x,  halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {sx,   sy },  {0.0f, 0.0f, 1.0f}},
@@ -407,164 +455,227 @@ namespace golias {
             {{-halfSize.x, -halfSize.y, -halfSize.z},  {1.0f, 1.0f, 1.0f},  {sz,   0.0f}, {-1.0f, 0.0f, 0.0f}},
             {{-halfSize.x, -halfSize.y,  halfSize.z},  {1.0f, 1.0f, 1.0f},  {0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}}
         };
-        // clang-format on
+            // clang-format on
 
 
-        std::vector<uint32_t> indices = {
-            0,  1,  2,  0,  2,  3, // Front
-            4,  5,  6,  4,  6,  7, // Back
-            8,  9,  10, 8,  10, 11, // Top
-            12, 13, 14, 12, 14, 15, // Bottom
-            16, 17, 18, 16, 18, 19, // Right
-            20, 21, 22, 20, 22, 23 // Left
-        };
-        //  clang-format on
+            std::vector<uint32_t> indices = {
+                0,  1,  2,  0,  2,  3, // Front
+                4,  5,  6,  4,  6,  7, // Back
+                8,  9,  10, 8,  10, 11, // Top
+                12, 13, 14, 12, 14, 15, // Bottom
+                16, 17, 18, 16, 18, 19, // Right
+                20, 21, 22, 20, 22, 23 // Left
+            };
+            //  clang-format on
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
+            std::vector<float> fullVertices = flatten(vertices);
+            generate_mesh_tangents(fullVertices, indices);
 
-        const VertexLayout layout = StandardVertexLayout();
+            const VertexLayout layout = StandardVertexLayout();
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+            Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
-        return mesh;
+            return mesh;
         });
     }
 
 
     Ref<Mesh> Mesh::CreateQuad(const glm::vec2& size) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Quad, {size.x, size.y}};
+        const ProceduralMeshKey key{
+            ProceduralMeshKind::Quad, {size.x, size.y}
+        };
 
         return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [size]() {
-        const glm::vec2 half = size * 0.5f;
+            const glm::vec2 half = size * 0.5f;
 
-        // clang-format off
+            // clang-format off
         std::vector<Vertex> vertices = {
             {{ half.x,  half.y, 0.0f},  {1,1,1},  {1.0f, 1.0f},  {0,0,1}},
             {{-half.x,  half.y, 0.0f},  {1,1,1},  {0.0f, 1.0f},  {0,0,1}},
             {{-half.x, -half.y, 0.0f},  {1,1,1},  {0.0f, 0.0f},  {0,0,1}},
             {{ half.x, -half.y, 0.0f},  {1,1,1},  {1.0f, 0.0f},  {0,0,1}}
         };
-        // clang-format on
+            // clang-format on
 
-        std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
+            std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
+            std::vector<float> fullVertices = flatten(vertices);
+            generate_mesh_tangents(fullVertices, indices);
 
-        const VertexLayout layout = StandardVertexLayout();
+            const VertexLayout layout = StandardVertexLayout();
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+            Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
-        return mesh;
+            return mesh;
         });
     }
 
 
     Ref<Mesh> Mesh::CreateSphere(float radius, uint32_t sectorCount, uint32_t stackCount) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Sphere, {radius, static_cast<float>(sectorCount), static_cast<float>(stackCount)}};
+        const ProceduralMeshKey key{
+            ProceduralMeshKind::Sphere, {radius, static_cast<float>(sectorCount), static_cast<float>(stackCount)}
+        };
 
         return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [radius, sectorCount, stackCount]() {
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
 
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+            for (uint32_t i = 0; i <= stackCount; ++i) {
+                float stackAngle = glm::half_pi<float>() - (float) i * (glm::pi<float>() / stackCount); // +pi/2 -> -pi/2
+                float xy         = radius * cosf(stackAngle);
+                float z          = radius * sinf(stackAngle);
 
-        for (uint32_t i = 0; i <= stackCount; ++i) {
-            float stackAngle = glm::half_pi<float>() - (float) i * (glm::pi<float>() / stackCount); // +pi/2 -> -pi/2
-            float xy         = radius * cosf(stackAngle);
-            float z          = radius * sinf(stackAngle);
+                for (uint32_t j = 0; j <= sectorCount; ++j) {
+                    float sectorAngle = (float) j * (glm::two_pi<float>() / sectorCount);
 
-            for (uint32_t j = 0; j <= sectorCount; ++j) {
-                float sectorAngle = (float) j * (glm::two_pi<float>() / sectorCount);
+                    float x = xy * cosf(sectorAngle);
+                    float y = xy * sinf(sectorAngle);
 
-                float x = xy * cosf(sectorAngle);
-                float y = xy * sinf(sectorAngle);
+                    glm::vec3 normal = glm::normalize(glm::vec3(x, y, z));
+                    float u          = (float) j / sectorCount;
+                    float v          = (float) i / stackCount;
 
-                glm::vec3 normal = glm::normalize(glm::vec3(x, y, z));
-                float u          = (float) j / sectorCount;
-                float v          = (float) i / stackCount;
-
-                vertices.push_back({
-                    {x, y, z},
-                    {1.0f, 1.0f, 1.0f},
-                    {u, v},
-                    normal, {0.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f}
-                });
-            }
-        }
-
-        for (uint32_t i = 0; i < stackCount; ++i) {
-            uint32_t k1 = i * (sectorCount + 1);
-            uint32_t k2 = k1 + sectorCount + 1;
-
-            for (uint32_t j = 0; j < sectorCount; ++j, ++k1, ++k2) {
-                if (i != 0) {
-                    indices.push_back(k1);
-                    indices.push_back(k2);
-                    indices.push_back(k1 + 1);
-                }
-                if (i != (stackCount - 1)) {
-                    indices.push_back(k1 + 1);
-                    indices.push_back(k2);
-                    indices.push_back(k2 + 1);
+                    vertices.push_back({
+                        {x, y, z},
+                        {1.0f, 1.0f, 1.0f},
+                        {u, v},
+                        normal, {0.0f, 0.0f, 0.0f},
+                        {0.0f, 0.0f, 0.0f}
+                    });
                 }
             }
-        }
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
+            for (uint32_t i = 0; i < stackCount; ++i) {
+                uint32_t k1 = i * (sectorCount + 1);
+                uint32_t k2 = k1 + sectorCount + 1;
 
-        const VertexLayout layout = StandardVertexLayout();
+                for (uint32_t j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+                    if (i != 0) {
+                        indices.push_back(k1);
+                        indices.push_back(k2);
+                        indices.push_back(k1 + 1);
+                    }
+                    if (i != (stackCount - 1)) {
+                        indices.push_back(k1 + 1);
+                        indices.push_back(k2);
+                        indices.push_back(k2 + 1);
+                    }
+                }
+            }
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+            std::vector<float> fullVertices = flatten(vertices);
+            generate_mesh_tangents(fullVertices, indices);
 
-        return mesh;
+            const VertexLayout layout = StandardVertexLayout();
+
+            Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+            return mesh;
         });
     }
 
 
     Ref<Mesh> Mesh::CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Torus,
-                                    {majorRadius, minorRadius, static_cast<float>(majorSegments), static_cast<float>(minorSegments)}};
+        const ProceduralMeshKey key{
+            ProceduralMeshKind::Torus, {majorRadius, minorRadius, static_cast<float>(majorSegments), static_cast<float>(minorSegments)}
+        };
 
         return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
             key, [majorRadius, minorRadius, majorSegments, minorSegments]() {
+                std::vector<Vertex> vertices;
+                std::vector<uint32_t> indices;
 
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+                for (uint32_t i = 0; i <= majorSegments; ++i) {
+                    float theta = (float) i * (glm::two_pi<float>() / majorSegments);
+                    float cosT = cosf(theta), sinT = sinf(theta);
 
-        for (uint32_t i = 0; i <= majorSegments; ++i) {
-            float theta = (float) i * (glm::two_pi<float>() / majorSegments);
-            float cosT = cosf(theta), sinT = sinf(theta);
+                    for (uint32_t j = 0; j <= minorSegments; ++j) {
+                        float phi  = (float) j * (glm::two_pi<float>() / minorSegments);
+                        float cosP = cosf(phi), sinP = sinf(phi);
 
-            for (uint32_t j = 0; j <= minorSegments; ++j) {
-                float phi  = (float) j * (glm::two_pi<float>() / minorSegments);
-                float cosP = cosf(phi), sinP = sinf(phi);
+                        float x = (majorRadius + minorRadius * cosP) * cosT;
+                        float z = (majorRadius + minorRadius * cosP) * sinT;
+                        float y = minorRadius * sinP;
 
-                float x = (majorRadius + minorRadius * cosP) * cosT;
-                float z = (majorRadius + minorRadius * cosP) * sinT;
-                float y = minorRadius * sinP;
+                        glm::vec3 normal = glm::normalize(glm::vec3(cosP * cosT, sinP, cosP * sinT));
+                        float u          = (float) i / majorSegments;
+                        float v          = (float) j / minorSegments;
 
-                glm::vec3 normal = glm::normalize(glm::vec3(cosP * cosT, sinP, cosP * sinT));
-                float u          = (float) i / majorSegments;
-                float v          = (float) j / minorSegments;
+                        vertices.push_back({
+                            {x, y, z},
+                            {1.0f, 1.0f, 1.0f},
+                            {u, v},
+                            normal, {0.0f, 0.0f, 0.0f},
+                            {0.0f, 0.0f, 0.0f}
+                        });
+                    }
+                }
 
-                vertices.push_back({
-                    {x, y, z},
-                    {1.0f, 1.0f, 1.0f},
-                    {u, v},
-                    normal, {0.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f}
-                });
+                for (uint32_t i = 0; i < majorSegments; ++i) {
+                    uint32_t k1 = i * (minorSegments + 1);
+                    uint32_t k2 = k1 + minorSegments + 1;
+
+                    for (uint32_t j = 0; j < minorSegments; ++j, ++k1, ++k2) {
+                        indices.push_back(k1);
+                        indices.push_back(k2);
+                        indices.push_back(k1 + 1);
+
+                        indices.push_back(k1 + 1);
+                        indices.push_back(k2);
+                        indices.push_back(k2 + 1);
+                    }
+                }
+
+                std::vector<float> fullVertices = flatten(vertices);
+                generate_mesh_tangents(fullVertices, indices);
+
+                const VertexLayout layout = StandardVertexLayout();
+
+                Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+
+                return mesh;
+            });
+    }
+
+
+    Ref<Mesh> Mesh::CreateCylinder(float radiusTop, float radiusBottom, float height, uint32_t sectorCount) {
+        const ProceduralMeshKey key{
+            ProceduralMeshKind::Cylinder, {radiusTop, radiusBottom, height, static_cast<float>(sectorCount)}
+        };
+
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [radiusTop, radiusBottom, height, sectorCount]() {
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
+            float halfH = height * 0.5f;
+
+            // Side surface
+            for (uint32_t i = 0; i <= 1; ++i) {
+                float y = (i == 0) ? halfH : -halfH;
+                float r = (i == 0) ? radiusTop : radiusBottom;
+
+                for (uint32_t j = 0; j <= sectorCount; ++j) {
+                    float angle = (float) j * (glm::two_pi<float>() / sectorCount);
+                    float x     = r * cosf(angle);
+                    float z     = r * sinf(angle);
+
+                    glm::vec3 normal = glm::normalize(glm::vec3(x, (radiusBottom - radiusTop) / height, z));
+                    float u          = (float) j / sectorCount;
+                    float v          = (float) i;
+
+                    vertices.push_back({
+                        {x, y, z},
+                        {1.0f, 1.0f, 1.0f},
+                        {u, v},
+                        normal, {0.0f, 0.0f, 0.0f},
+                        {0.0f, 0.0f, 0.0f}
+                    });
+                }
             }
-        }
 
-        for (uint32_t i = 0; i < majorSegments; ++i) {
-            uint32_t k1 = i * (minorSegments + 1);
-            uint32_t k2 = k1 + minorSegments + 1;
+            for (uint32_t j = 0; j < sectorCount; ++j) {
+                uint32_t k1 = j;
+                uint32_t k2 = k1 + sectorCount + 1;
 
-            for (uint32_t j = 0; j < minorSegments; ++j, ++k1, ++k2) {
                 indices.push_back(k1);
                 indices.push_back(k2);
                 indices.push_back(k1 + 1);
@@ -573,126 +684,65 @@ namespace golias {
                 indices.push_back(k2);
                 indices.push_back(k2 + 1);
             }
-        }
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
-
-        const VertexLayout layout = StandardVertexLayout();
-
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
-
-        return mesh;
-        });
-    }
-
-
-    Ref<Mesh> Mesh::CreateCylinder(float radiusTop, float radiusBottom, float height, uint32_t sectorCount) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Cylinder,
-                                    {radiusTop, radiusBottom, height, static_cast<float>(sectorCount)}};
-
-        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
-            key, [radiusTop, radiusBottom, height, sectorCount]() {
-
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
-        float halfH = height * 0.5f;
-
-        // Side surface
-        for (uint32_t i = 0; i <= 1; ++i) {
-            float y = (i == 0) ? halfH : -halfH;
-            float r = (i == 0) ? radiusTop : radiusBottom;
-
-            for (uint32_t j = 0; j <= sectorCount; ++j) {
-                float angle = (float) j * (glm::two_pi<float>() / sectorCount);
-                float x     = r * cosf(angle);
-                float z     = r * sinf(angle);
-
-                glm::vec3 normal = glm::normalize(glm::vec3(x, (radiusBottom - radiusTop) / height, z));
-                float u          = (float) j / sectorCount;
-                float v          = (float) i;
+            // Caps
+            auto add_cap = [&](float y, float r, bool top) {
+                uint32_t centerIdx = (uint32_t) vertices.size();
+                glm::vec3 normal(0.0f, top ? 1.0f : -1.0f, 0.0f);
 
                 vertices.push_back({
-                    {x, y, z},
-                    {1.0f, 1.0f, 1.0f},
-                    {u, v},
-                    normal, {0.0f, 0.0f, 0.0f},
-                    {0.0f, 0.0f, 0.0f}
-                });
-            }
-        }
-
-        for (uint32_t j = 0; j < sectorCount; ++j) {
-            uint32_t k1 = j;
-            uint32_t k2 = k1 + sectorCount + 1;
-
-            indices.push_back(k1);
-            indices.push_back(k2);
-            indices.push_back(k1 + 1);
-
-            indices.push_back(k1 + 1);
-            indices.push_back(k2);
-            indices.push_back(k2 + 1);
-        }
-
-        // Caps
-        auto add_cap = [&](float y, float r, bool top) {
-            uint32_t centerIdx = (uint32_t) vertices.size();
-            glm::vec3 normal(0.0f, top ? 1.0f : -1.0f, 0.0f);
-
-            vertices.push_back({
-                {0.0f, y, 0.0f},
-                {1, 1, 1},
-                {0.5f, 0.5f},
-                normal, {0, 0, 0},
-                {0, 0, 0}
-            });
-
-            uint32_t startIdx = (uint32_t) vertices.size();
-            for (uint32_t j = 0; j <= sectorCount; ++j) {
-                float angle = (float) j * (glm::two_pi<float>() / sectorCount);
-                float x     = r * cosf(angle);
-                float z     = r * sinf(angle);
-                float u     = 0.5f + 0.5f * cosf(angle);
-                float v     = 0.5f + 0.5f * sinf(angle);
-
-                vertices.push_back({
-                    {x, y, z},
+                    {0.0f, y, 0.0f},
                     {1, 1, 1},
-                    {u, v},
+                    {0.5f, 0.5f},
                     normal, {0, 0, 0},
                     {0, 0, 0}
                 });
-            }
 
-            for (uint32_t j = 0; j < sectorCount; ++j) {
-                if (top) {
-                    indices.push_back(centerIdx);
-                    indices.push_back(startIdx + j);
-                    indices.push_back(startIdx + j + 1);
-                } else {
-                    indices.push_back(centerIdx);
-                    indices.push_back(startIdx + j + 1);
-                    indices.push_back(startIdx + j);
+                uint32_t startIdx = (uint32_t) vertices.size();
+                for (uint32_t j = 0; j <= sectorCount; ++j) {
+                    float angle = (float) j * (glm::two_pi<float>() / sectorCount);
+                    float x     = r * cosf(angle);
+                    float z     = r * sinf(angle);
+                    float u     = 0.5f + 0.5f * cosf(angle);
+                    float v     = 0.5f + 0.5f * sinf(angle);
+
+                    vertices.push_back({
+                        {x, y, z},
+                        {1, 1, 1},
+                        {u, v},
+                        normal, {0, 0, 0},
+                        {0, 0, 0}
+                    });
                 }
+
+                for (uint32_t j = 0; j < sectorCount; ++j) {
+                    if (top) {
+                        indices.push_back(centerIdx);
+                        indices.push_back(startIdx + j);
+                        indices.push_back(startIdx + j + 1);
+                    } else {
+                        indices.push_back(centerIdx);
+                        indices.push_back(startIdx + j + 1);
+                        indices.push_back(startIdx + j);
+                    }
+                }
+            };
+
+            if (radiusTop > 0.0f) {
+                add_cap(halfH, radiusTop, true);
             }
-        };
+            if (radiusBottom > 0.0f) {
+                add_cap(-halfH, radiusBottom, false);
+            }
 
-        if (radiusTop > 0.0f) {
-            add_cap(halfH, radiusTop, true);
-        }
-        if (radiusBottom > 0.0f) {
-            add_cap(-halfH, radiusBottom, false);
-        }
+            std::vector<float> fullVertices = flatten(vertices);
+            generate_mesh_tangents(fullVertices, indices);
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
+            const VertexLayout layout = StandardVertexLayout();
 
-        const VertexLayout layout = StandardVertexLayout();
+            Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
-
-        return mesh;
+            return mesh;
         });
     }
 
@@ -702,106 +752,105 @@ namespace golias {
 
 
     Ref<Mesh> Mesh::CreateCapsule(float radius, float cylinderHeight, uint32_t sectorCount, uint32_t hemisphereRings) {
-        const ProceduralMeshKey key{ProceduralMeshKind::Capsule,
-                                    {radius, cylinderHeight, static_cast<float>(sectorCount), static_cast<float>(hemisphereRings)}};
+        const ProceduralMeshKey key{
+            ProceduralMeshKind::Capsule, {radius, cylinderHeight, static_cast<float>(sectorCount), static_cast<float>(hemisphereRings)}
+        };
 
-        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(
-            key, [radius, cylinderHeight, sectorCount, hemisphereRings]() {
+        return Engine::GetInstance().GetAssetManager().AcquireProceduralMesh(key, [radius, cylinderHeight, sectorCount, hemisphereRings]() {
+            std::vector<Vertex> vertices;
+            std::vector<uint32_t> indices;
 
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+            float halfH           = cylinderHeight * 0.5f;
+            uint32_t ringsPerHemi = hemisphereRings;
 
-        float halfH           = cylinderHeight * 0.5f;
-        uint32_t ringsPerHemi = hemisphereRings;
+            // Top hemisphere
+            for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
+                float stackAngle = glm::half_pi<float>() * (1.0f - (float) i / ringsPerHemi); // pi/2 -> 0
+                float ringRadius = radius * cosf(stackAngle);
+                float y          = halfH + radius * sinf(stackAngle);
 
-        // Top hemisphere
-        for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
-            float stackAngle = glm::half_pi<float>() * (1.0f - (float) i / ringsPerHemi); // pi/2 -> 0
-            float ringRadius = radius * cosf(stackAngle);
-            float y          = halfH + radius * sinf(stackAngle);
+                for (uint32_t j = 0; j <= sectorCount; ++j) {
+                    float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
+                    float x          = ringRadius * cosf(angle);
+                    float z          = ringRadius * sinf(angle);
+                    glm::vec3 normal = glm::normalize(glm::vec3(x, radius * sinf(stackAngle), z));
+                    float u          = (float) j / sectorCount;
+                    float v          = (float) i / (ringsPerHemi * 2.0f + 1.0f);
+                    vertices.push_back({
+                        {x, y, z},
+                        {1, 1, 1},
+                        {u, v},
+                        normal, {0, 0, 0},
+                        {0, 0, 0}
+                    });
+                }
+            }
 
+            //  Bottom ring of cylinder
             for (uint32_t j = 0; j <= sectorCount; ++j) {
                 float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
-                float x          = ringRadius * cosf(angle);
-                float z          = ringRadius * sinf(angle);
-                glm::vec3 normal = glm::normalize(glm::vec3(x, radius * sinf(stackAngle), z));
+                float x          = radius * cosf(angle);
+                float z          = radius * sinf(angle);
+                glm::vec3 normal = glm::normalize(glm::vec3(x, 0.0f, z));
                 float u          = (float) j / sectorCount;
-                float v          = (float) i / (ringsPerHemi * 2.0f + 1.0f);
                 vertices.push_back({
-                    {x, y, z},
+                    {x, -halfH, z},
                     {1, 1, 1},
-                    {u, v},
+                    {u, 0.5f},
                     normal, {0, 0, 0},
                     {0, 0, 0}
                 });
             }
-        }
 
-        //  Bottom ring of cylinder
-        for (uint32_t j = 0; j <= sectorCount; ++j) {
-            float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
-            float x          = radius * cosf(angle);
-            float z          = radius * sinf(angle);
-            glm::vec3 normal = glm::normalize(glm::vec3(x, 0.0f, z));
-            float u          = (float) j / sectorCount;
-            vertices.push_back({
-                {x, -halfH, z},
-                {1, 1, 1},
-                {u, 0.5f},
-                normal, {0, 0, 0},
-                {0, 0, 0}
-            });
-        }
+            //  Bottom hemisphere
+            for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
+                float stackAngle = glm::half_pi<float>() * ((float) i / ringsPerHemi); // 0 -> pi/2
+                float ringRadius = radius * cosf(stackAngle);
+                float y          = -halfH - radius * sinf(stackAngle);
 
-        //  Bottom hemisphere
-        for (uint32_t i = 0; i <= ringsPerHemi; ++i) {
-            float stackAngle = glm::half_pi<float>() * ((float) i / ringsPerHemi); // 0 -> pi/2
-            float ringRadius = radius * cosf(stackAngle);
-            float y          = -halfH - radius * sinf(stackAngle);
-
-            for (uint32_t j = 0; j <= sectorCount; ++j) {
-                float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
-                float x          = ringRadius * cosf(angle);
-                float z          = ringRadius * sinf(angle);
-                glm::vec3 normal = glm::normalize(glm::vec3(x, -radius * sinf(stackAngle), z));
-                float u          = (float) j / sectorCount;
-                float v          = 0.5f + (float) (i + 1) / (ringsPerHemi * 2.0f + 2.0f);
-                vertices.push_back({
-                    {x, y, z},
-                    {1, 1, 1},
-                    {u, v},
-                    normal, {0, 0, 0},
-                    {0, 0, 0}
-                });
+                for (uint32_t j = 0; j <= sectorCount; ++j) {
+                    float angle      = (float) j * (glm::two_pi<float>() / sectorCount);
+                    float x          = ringRadius * cosf(angle);
+                    float z          = ringRadius * sinf(angle);
+                    glm::vec3 normal = glm::normalize(glm::vec3(x, -radius * sinf(stackAngle), z));
+                    float u          = (float) j / sectorCount;
+                    float v          = 0.5f + (float) (i + 1) / (ringsPerHemi * 2.0f + 2.0f);
+                    vertices.push_back({
+                        {x, y, z},
+                        {1, 1, 1},
+                        {u, v},
+                        normal, {0, 0, 0},
+                        {0, 0, 0}
+                    });
+                }
             }
-        }
 
-        uint32_t ringStride = sectorCount + 1;
-        uint32_t ringCount  = (ringsPerHemi + 1) + 1 + (ringsPerHemi + 1); // top hemi rings + cyl bottom ring + bottom hemi rings
+            uint32_t ringStride = sectorCount + 1;
+            uint32_t ringCount  = (ringsPerHemi + 1) + 1 + (ringsPerHemi + 1); // top hemi rings + cyl bottom ring + bottom hemi rings
 
-        for (uint32_t i = 0; i < ringCount - 1; ++i) {
-            uint32_t k1 = i * ringStride;
-            uint32_t k2 = k1 + ringStride;
+            for (uint32_t i = 0; i < ringCount - 1; ++i) {
+                uint32_t k1 = i * ringStride;
+                uint32_t k2 = k1 + ringStride;
 
-            for (uint32_t j = 0; j < sectorCount; ++j) {
-                indices.push_back(k1 + j);
-                indices.push_back(k2 + j);
-                indices.push_back(k1 + j + 1);
+                for (uint32_t j = 0; j < sectorCount; ++j) {
+                    indices.push_back(k1 + j);
+                    indices.push_back(k2 + j);
+                    indices.push_back(k1 + j + 1);
 
-                indices.push_back(k1 + j + 1);
-                indices.push_back(k2 + j);
-                indices.push_back(k2 + j + 1);
+                    indices.push_back(k1 + j + 1);
+                    indices.push_back(k2 + j);
+                    indices.push_back(k2 + j + 1);
+                }
             }
-        }
 
-        std::vector<float> fullVertices = flatten(vertices);
-        generate_mesh_tangents(fullVertices, indices);
+            std::vector<float> fullVertices = flatten(vertices);
+            generate_mesh_tangents(fullVertices, indices);
 
-        const VertexLayout layout = StandardVertexLayout();
+            const VertexLayout layout = StandardVertexLayout();
 
-        Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
+            Ref<Mesh> mesh = std::make_shared<Mesh>(layout, fullVertices, indices);
 
-        return mesh;
+            return mesh;
         });
     }
 

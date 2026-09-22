@@ -26,7 +26,7 @@ namespace golias {
 
     void* ScriptRuntime::FindInstance(CString name) {
 
-        if (!py_getattr(py_getmodule("golias"), py_name("_instances"))) {
+        if (!py_getattr(py_getmodule("golias.engine"), py_name("_instances"))) {
             py_clearexc(nullptr);
             return nullptr;
         }
@@ -46,8 +46,9 @@ namespace golias {
 
         py_assign(py_r1(), (py_Ref)instance);
 
-        if (!py_getattr(py_getmodule("golias"), py_name("_instances"))) {
+        if (!py_getattr(py_getmodule("golias.engine"), py_name("_instances"))) {
             py_printexc();
+            py_clearexc(nullptr);
             return false;
         }
         py_Ref instances = py_retval();
@@ -55,6 +56,7 @@ namespace golias {
         py_GlobalRef key = py_name2ref(py_name(std::string(name).c_str()));
         if (!py_setitem(instances, key, py_r1())) {
             py_printexc();
+            py_clearexc(nullptr);
             return false;
         }
 
@@ -64,6 +66,7 @@ namespace golias {
     bool ScriptRuntime::Exec(const String& source, CString name) {
         if (!py_exec(source.c_str(), name.data(), EXEC_MODE, nullptr)) {
             py_printexc(); // dump traceback
+            py_clearexc(nullptr);
             GOLIAS_LOG_ERROR("Python exec failed for '%s'.", name.data());
             return false;
         }

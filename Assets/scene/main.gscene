@@ -310,6 +310,55 @@
                     ]
                 },
                 {
+                    "name": "Rain",
+                    "position": {
+                        "x": -10.0,
+                        "y": 7.0,
+                        "z": 9.0
+                    },
+                    "components": [
+                        {
+                            "type": "CpuParticleComponent",
+                            "material": {
+                                "path": "materials/particle.gmat"
+                            },
+                            "shape": "line",
+                            "max_particles": 320,
+                            "emission_rate": 120.0,
+                            "lifetime": 1.6,
+                            "position_variance": {
+                                "x": 4.0,
+                                "y": 0.25,
+                                "z": 4.0
+                            },
+                            "velocity": {
+                                "x": 0.0,
+                                "y": -12.0,
+                                "z": 0.0
+                            },
+                            "velocity_variance": {
+                                "x": 1.0,
+                                "y": 2.0,
+                                "z": 1.0
+                            },
+                            "start_color": {
+                                "x": 0.55,
+                                "y": 0.75,
+                                "z": 1.0,
+                                "w": 0.65
+                            },
+                            "end_color": {
+                                "x": 0.35,
+                                "y": 0.55,
+                                "z": 1.0,
+                                "w": 0.1
+                            },
+                            "line_length": 0.7,
+                            "playing": true
+                        }
+                    ]
+                },
+                {
                     "name": "TestProps",
                     "children": [
                         {
@@ -2683,6 +2732,16 @@
                     ]
                 },
                 {
+                    "name": "Campfire",
+                    "type": "Prefab",
+                    "path": "scene/prefabs/campfire.gprefab",
+                    "position": {
+                        "x": 0,
+                        "y": 0.6,
+                        "z": 10
+                    }
+                },
+                {
                     "name": "SunLight",
                     "position": {
                         "x": 0,
@@ -2743,38 +2802,6 @@
                             },
                             "range": 20.0,
                             "intensity": 5.0
-                        }
-                    ]
-                },
-                {
-                    "name": "GreenPointLight",
-                    "position": {
-                        "x": 0,
-                        "y": 5,
-                        "z": 10
-                    },
-                    "rotation": {
-                        "x": 0,
-                        "y": 30,
-                        "z": 0,
-                        "w": 1
-                    },
-                    "scale": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 1
-                    },
-                    "components": [
-                        {
-                            "type": "LightComponent",
-                            "light_type": "point",
-                            "color": {
-                                "r": 0.0,
-                                "g": 1.0,
-                                "b": 0.0
-                            },
-                            "range": 10.0,
-                            "intensity": 3.0
                         }
                     ]
                 }

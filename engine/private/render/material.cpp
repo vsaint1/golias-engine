@@ -16,7 +16,7 @@ namespace golias {
     }
 
     Ref<Material> Material::CreateDefault() {
-        Ref<Shader> shader = Engine::GetInstance().GetAssetManager().Load<Shader>("shaders/default.gshader");
+        Ref<Shader> shader = Engine::GetInstance().GetAssetManager().Load<Shader>("golias/shaders/default.gshader");
 
         return shader ? Create(shader) : nullptr;
     }
@@ -24,6 +24,8 @@ namespace golias {
     Ref<Material> Material::Clone() const {
         Ref<Material> material = std::make_shared<Material>();
         material->mShader      = mShader;
+        material->mShaderPath  = mShaderPath;
+        material->mRenderState = mRenderState;
         material->mParameters  = mParameters;
         return material;
     }
@@ -38,6 +40,33 @@ namespace golias {
         }
 
         Json json = Json::parse(content, nullptr, false);
+        if (json.is_discarded()) {
+            GOLIAS_LOG_ERROR("Failed to parse material from path: %s", path.data());
+            return nullptr;
+        }
+
+        return LoadFromJson(json);
+    }
+
+    Ref<Material> Material::LoadFromJson(const Json& json) {
+        if (!json.is_object()) {
+            GOLIAS_LOG_ERROR("Material data must be an object.");
+            return nullptr;
+        }
+
+        if (json.contains("path") && json["path"].is_string()) {
+            Ref<Material> material = Load(json["path"].get<String>());
+            if (!material) {
+                return nullptr;
+            }
+
+            if (json.contains("override") && json["override"].is_object() &&
+                json["override"].contains("parameters")) {
+                material = material->Clone();
+                material->ApplyParametersFromJson(json["override"]["parameters"]);
+            }
+            return material;
+        }
 
         Ref<Material> mat = std::make_shared<Material>();
         mat->SetParameterValue("_BaseColor", glm::vec4(1.0f));
@@ -53,6 +82,7 @@ namespace golias {
             }
 
             mat->SetShader(shaderProgram);
+            mat->mShaderPath = shaderPath;
         }
 
         if (json.contains("parameters")) {
@@ -96,8 +126,6 @@ namespace golias {
                 }
             }
         }
-
-        GOLIAS_LOG_INFO("Material loaded successfully from path: %s", path.data());
 
         return mat;
     }
@@ -190,6 +218,10 @@ namespace golias {
 
     Ref<Shader> Material::GetShader() const {
         return mShader;
+    }
+
+    bool Material::IsUnlit() const {
+        return mShaderPath == "golias/shaders/unlit.gshader";
     }
 
     void Material::SetRenderState(const RenderState& state) {

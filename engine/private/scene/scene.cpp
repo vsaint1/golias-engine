@@ -7,6 +7,7 @@
 #include "scene/components/camera_component.h"
 #include "scene/components/light_component.h"
 #include "scene/components/physics_component.h"
+#include "scene/components/cpu_particle_component.h"
 #include "scene/components/player_controller_component.h"
 #include "scene/components/python_script_component.h"
 #include "scene/components/skeletal_mesh_component.h"
@@ -38,6 +39,7 @@ namespace golias {
         AnimationComponent::Register();
         CharacterControllerComponent::Register();
         PhysicsComponent::Register();
+        CpuParticleComponent::Register();
         SoftBodyComponent::Register();
         LightComponent::Register();
         AudioSourceComponent::Register();

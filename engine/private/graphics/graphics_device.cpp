@@ -30,6 +30,15 @@ namespace golias {
         return std::make_shared<TextureCube>(desc);
     }
 
+    void gl_debug_callback(
+        GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+            return;
+        }
+
+        GOLIAS_LOG_ERROR("OpenGL Debug: %s", message);
+    }
+
     bool GraphicsDevice::Initialize() {
 
 
@@ -44,6 +53,12 @@ namespace golias {
         GOLIAS_LOG_INFO("OpenGL Vendor: %s | Device: %s", vendor, renderer);
         GOLIAS_LOG_INFO("OpenGL Version: %s", version);
         GOLIAS_LOG_INFO("GPU Timer Queries: %s", mTimerQuerySupported ? "Supported" : "Not Supported");
+
+        if (GLAD_GL_KHR_debug) {
+            glEnable(GL_DEBUG_OUTPUT);
+            glDebugMessageCallback(gl_debug_callback, nullptr);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        }
 
         GLint internalFormat;
         glGetIntegerv(GL_DEPTH_BITS, &internalFormat);
@@ -211,7 +226,7 @@ namespace golias {
     TextureFormat GraphicsDevice::GetDepthTextureFormat() const {
         return mDefaultDepthTextureFormat;
     }
-    
+
     bool GraphicsDevice::IsQuerySupported() const {
         return mTimerQuerySupported;
     }

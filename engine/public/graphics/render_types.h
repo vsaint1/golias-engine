@@ -55,6 +55,14 @@ namespace golias {
         ClockWise 
     };
 
+    enum class PrimitiveType : uint8_t {
+        Triangles,
+        TriangleStrip,
+        Lines,
+        LineStrip,
+        Points
+    };
+
     enum class CullMode { 
         None, 
         Front,

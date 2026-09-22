@@ -1,4 +1,5 @@
 #pragma once
+#include "graphics/render_types.h"
 #include "graphics/vertex_layout.h"
 #include "math/aabb.h"
 #include "stdafx.h"
@@ -50,6 +51,7 @@ namespace golias {
         ~Mesh();
 
         static Ref<Mesh> Load(CString path);
+        static Ref<Mesh> CreateFromJson(const Json& meshData);
 
         static Ref<Mesh> Create(const Model& model, const ModelPrimitive& primitive);
 
@@ -81,12 +83,12 @@ namespace golias {
 
         void Unbind() const;
 
-        void Draw() const;
+        void Draw(PrimitiveType primitive = PrimitiveType::Triangles) const;
 
-        void DrawIndexed(uint32_t start, uint32_t count) const;
+        void DrawIndexed(uint32_t start, uint32_t count, PrimitiveType primitive = PrimitiveType::Triangles) const;
 
         /// @brief  Renders the mesh multiple times in a single draw call.
-        void DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount) const;
+        void DrawInstanced(const Ref<Buffer>& instanceBuffer, uint32_t instanceCount, PrimitiveType primitive = PrimitiveType::Triangles) const;
 
         const AABB& GetAABB() const;
 

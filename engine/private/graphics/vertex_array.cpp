@@ -7,8 +7,8 @@ namespace golias {
     namespace {
 
         bool vertex_format_is_integer(VertexFormat format) {
-            return format == VertexFormat::UShort ||  format == VertexFormat::Int
-                || format == VertexFormat::Int4 || format == VertexFormat::UByte4;
+            return format == VertexFormat::UShort || format == VertexFormat::Int || format == VertexFormat::Int4
+                || format == VertexFormat::UByte4;
         }
 
     } // namespace
@@ -61,8 +61,8 @@ namespace golias {
     void VertexArray::SetInstanceBuffer(const Ref<Buffer>& instanceBuffer,
                                         uint32_t stride,
                                         const std::vector<InstanceAttribute>& attributes) {
-       
-                                            glBindVertexArray(mHandle);
+
+        glBindVertexArray(mHandle);
         instanceBuffer->Bind();
 
         for (const InstanceAttribute& attribute : attributes) {
@@ -88,27 +88,28 @@ namespace golias {
         glBindVertexArray(0);
     }
 
-    void VertexArray::Draw(uint32_t vertexCount, uint32_t indexCount) const {
+    void VertexArray::Draw(uint32_t vertexCount, uint32_t indexCount, PrimitiveType type) const {
         if (indexCount > 0) {
-            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
+            glDrawElements(PrimitiveTypeToGl(type), static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
         } else {
-            glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertexCount));
+            glDrawArrays(PrimitiveTypeToGl(type), 0, static_cast<GLsizei>(vertexCount));
         }
     }
 
-    void VertexArray::DrawIndexed(uint32_t start, uint32_t count) const {
+    void VertexArray::DrawIndexed(uint32_t start, uint32_t count, PrimitiveType type) const {
         if (count == 0) {
             return;
         }
 
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(count), GL_UNSIGNED_INT, reinterpret_cast<void*>(start * sizeof(uint32_t)));
+        glDrawElements(
+            PrimitiveTypeToGl(type), static_cast<GLsizei>(count), GL_UNSIGNED_INT, reinterpret_cast<void*>(start * sizeof(uint32_t)));
     }
 
-    void VertexArray::DrawInstanced(uint32_t instanceCount, uint32_t vertexCount, uint32_t indexCount) const {
+    void VertexArray::DrawInstanced(uint32_t instanceCount, uint32_t vertexCount, uint32_t indexCount, PrimitiveType type) const {
         if (indexCount > 0) {
-            glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr, instanceCount);
+            glDrawElementsInstanced(PrimitiveTypeToGl(type), static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr, instanceCount);
         } else {
-            glDrawArraysInstanced(GL_TRIANGLES, 0, static_cast<GLsizei>(vertexCount), instanceCount);
+            glDrawArraysInstanced(PrimitiveTypeToGl(type), 0, static_cast<GLsizei>(vertexCount), instanceCount);
         }
     }
 

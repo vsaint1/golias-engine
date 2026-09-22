@@ -1,0 +1,9 @@
+{
+    "shader": "golias/shaders/unlit.gshader",
+    "render_state": {
+        "blend": "alpha",
+        "depth_test": true,
+        "depth_write": false,
+        "cull": "none"
+    }
+}

@@ -16,6 +16,7 @@ namespace golias {
         Material() = default;
 
         static Ref<Material> Load(CString path);
+        static Ref<Material> LoadFromJson(const Json& materialData);
 
         static Ref<Material> Create(const Ref<Shader>& shader);
 
@@ -26,6 +27,7 @@ namespace golias {
         void SetShader(const Ref<Shader>& shader);
 
         Ref<Shader> GetShader() const;
+        bool IsUnlit() const;
 
         void Bind() const;
 
@@ -53,6 +55,7 @@ namespace golias {
 
     private:
         Ref<Shader> mShader = nullptr;
+        String mShaderPath;
 
         RenderState mRenderState = {};
 

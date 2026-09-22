@@ -1,0 +1,145 @@
+{
+    "name": "Campfire",
+    "type": "Model",
+    "path": "models/campfire/campfire.glb",
+    "components": [
+        {
+            "type": "LightComponent",
+            "light_type": "point",
+            "color": {
+                "r": 1.0,
+                "g": 0.22,
+                "b": 0.02
+            },
+            "intensity": 4.0,
+            "range": 12.0
+        }
+    ],
+    "children": [
+        {
+            "type": "AudioSourceComponent",
+            "audios": [
+                {
+                    "name": "burning",
+                    "path": "audios/campfire.wav",
+                    "looping": true,
+                    "play_on_start": true,
+                    "volume": 0.1
+                }
+            ]
+        },
+        {
+            "name": "FireParticles",
+            "position": {
+                "x": 0.0,
+                "y": 0.2,
+                "z": 0.0
+            },
+            "components": [
+                {
+                    "type": "CpuParticleComponent",
+                    "material": {
+                        "path": "materials/campfire_fire.gmat"
+                    },
+                    "shape": "mesh",
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 0.22,
+                            "y": 0.35,
+                            "z": 0.22
+                        }
+                    },
+                    "max_particles": 28,
+                    "emission_rate": 18.0,
+                    "lifetime": 0.9,
+                    "lifetime_variance": 0.3,
+                    "position_variance": {
+                        "x": 0.3,
+                        "y": 0.15,
+                        "z": 0.3
+                    },
+                    "velocity": {
+                        "x": 0.0,
+                        "y": 1.2,
+                        "z": 0.0
+                    },
+                    "velocity_variance": {
+                        "x": 0.45,
+                        "y": 0.55,
+                        "z": 0.45
+                    },
+                    "start_size": {
+                        "x": 0.7,
+                        "y": 0.9
+                    },
+                    "end_size": {
+                        "x": 0.35,
+                        "y": 0.5
+                    },
+                    "size_variance": 0.35,
+                    "playing": true
+                }
+            ]
+        },
+        {
+            "name": "SmokeParticles",
+            "position": {
+                "x": 0.0,
+                "y": 1.25,
+                "z": 0.0
+            },
+            "components": [
+                {
+                    "type": "CpuParticleComponent",
+                    "material": {
+                        "path": "materials/campfire_smoke.gmat"
+                    },
+                    "shape": "mesh",
+                    "mesh": {
+                        "type": "cube",
+                        "size": {
+                            "x": 0.3,
+                            "y": 0.3,
+                            "z": 0.3
+                        }
+                    },
+                    "max_particles": 18,
+                    "emission_rate": 4.0,
+                    "lifetime": 3.0,
+                    "lifetime_variance": 0.8,
+                    "position_variance": {
+                        "x": 0.22,
+                        "y": 0.12,
+                        "z": 0.22
+                    },
+                    "velocity": {
+                        "x": 0.0,
+                        "y": 0.7,
+                        "z": 0.0
+                    },
+                    "velocity_variance": {
+                        "x": 0.3,
+                        "y": 0.25,
+                        "z": 0.3
+                    },
+                    "acceleration": {
+                        "x": 0.0,
+                        "y": 0.08,
+                        "z": 0.0
+                    },
+                    "start_size": {
+                        "x": 0.5,
+                        "y": 0.5
+                    },
+                    "end_size": {
+                        "x": 2.0,
+                        "y": 2.0
+                    },
+                    "size_variance": 0.4,
+                    "playing": true
+                }
+            ]
+        }
+    ]
+}

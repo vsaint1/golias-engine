@@ -1,0 +1,22 @@
+{
+    "shader": "golias/shaders/default.gshader",
+    "parameters": {
+        "float4": [
+            {
+                "name": "_BaseColor",
+                "value": {
+                    "x": 1.0,
+                    "y": 0.16,
+                    "z": 0.01,
+                    "w": 1.0
+                }
+            }
+        ]
+    },
+    "render_state": {
+        "blend": "additive",
+        "depth_test": true,
+        "depth_write": false,
+        "cull": "back"
+    }
+}

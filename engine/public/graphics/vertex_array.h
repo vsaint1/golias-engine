@@ -25,11 +25,14 @@ namespace golias {
         void Bind() const;
         void Unbind() const;
 
-        void Draw(uint32_t vertexCount, uint32_t indexCount) const;
+        void Draw(uint32_t vertexCount, uint32_t indexCount, PrimitiveType primitive = PrimitiveType::Triangles) const;
 
-        void DrawIndexed(uint32_t start, uint32_t count) const;
+        void DrawIndexed(uint32_t start, uint32_t count, PrimitiveType primitive = PrimitiveType::Triangles) const;
 
-        void DrawInstanced(uint32_t instanceCount, uint32_t vertexCount, uint32_t indexCount) const;
+        void DrawInstanced(uint32_t instanceCount,
+                           uint32_t vertexCount,
+                           uint32_t indexCount,
+                           PrimitiveType primitive = PrimitiveType::Triangles) const;
 
 
     private:

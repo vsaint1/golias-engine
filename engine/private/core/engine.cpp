@@ -151,8 +151,6 @@ namespace golias {
                     cameraCommand.Viewport       = {.X = 0, .Y = 0, .Width = width, .Height = height};
 
                     engine.mCommandQueue.Submit(cameraCommand);
-
-                    engine.mPhysicsManager.GetDebugDrawer().Render();
                 }
             }
         }
