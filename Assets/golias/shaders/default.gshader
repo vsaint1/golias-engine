@@ -136,6 +136,7 @@ layout(std140) uniform Lighting {
     int _Padding0;
     int _Padding1;
     int _Padding2;
+    vec4 AmbientColor;
     Light Lights[MAX_LIGHTS];
 };
 
@@ -222,6 +223,12 @@ float shadow_factor(vec3 worldPosition, vec3 normal, vec3 lightDirection) {
     return visibility / totalWeight;
 }
 
+vec4 debug_depth(float rawZ, float nearVal, float farVal) {
+    float linearDepth = -rawZ; // flip sign: camera looks down -Z
+    float depth01 = clamp((linearDepth - nearVal) / (farVal - nearVal), 0.0, 1.0);
+    return vec4(vec3(depth01), 1.0);
+}
+
 void main() {
     vec4 tex = texture(_MainTexture, vTexCoord);
 
@@ -267,17 +274,20 @@ void main() {
         specular += 0.5 * specularAmount * lightColor * shadow;
     }
 
-    vec3 kAmbient = vec3(0.08);
 
     vec4 baseColor = (vInstanced != 0) ? vInstanceColor : _BaseColor;
 
-    vec3 result = (diffuse + specular + kAmbient) * tex.rgb * vColor * baseColor.rgb;
+    vec3 result = (diffuse + specular + vec3(AmbientColor)) * tex.rgb * vColor * baseColor.rgb;
 
     alpha *= baseColor.a;
 
-    // COLOR = vec4(tex.rgb * vColor * _BaseColor.rgb, alpha); // Albedo pass
+    // COLOR = vec4(tex.rgb * vColor * _BaseColor.rgb, alpha); return; // Albedo pass
 
-    // COLOR = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0); // Normal visualization pass
+    // COLOR = vec4(normalize(vNormal) * 0.5 + 0.5, 1.0); return; // Normal visualization pass
+
+    // COLOR = debug_depth(vViewPosition.z, 0.1, 100.0); return; //  Depth visualization pass
 
     COLOR = vec4(result, alpha); // Final 
+
+
 }

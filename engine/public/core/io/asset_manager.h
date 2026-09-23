@@ -11,11 +11,12 @@ namespace golias {
     class Material;
     class Shader;
     class Texture2D;
+    class TextureCube;
     class Model;
     class Mesh;
     struct ModelPrimitive;
 
-    using AssetType = std::variant<Ref<Material>, Ref<Shader>, Ref<Texture2D>, Ref<Model>, Ref<Mesh>>;
+    using AssetType = std::variant<Ref<Material>, Ref<Shader>, Ref<Texture2D>, Ref<TextureCube>, Ref<Model>, Ref<Mesh>>;
 
     class AssetManager {
     public:
@@ -23,7 +24,8 @@ namespace golias {
             typename T,
             typename... Args,
             typename = std::enable_if_t<std::is_same_v<Shader, T> || std::is_same_v<Model, T> || std::is_same_v<Mesh, T>
-                                        || std::is_same_v<Font, T> || std::is_base_of_v<Material, T> || std::is_base_of_v<Texture2D, T>>>
+                                        || std::is_same_v<Font, T> || std::is_same_v<TextureCube, T>
+                                        || std::is_base_of_v<Material, T> || std::is_base_of_v<Texture2D, T>>>
         Ref<T> Load(CString path, Args&&... args) {
             if constexpr (std::is_same_v<Font, T>) {
                 return LoadFont(path, std::forward<Args>(args)...);

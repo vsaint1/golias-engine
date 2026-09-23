@@ -12,6 +12,7 @@ namespace golias {
         inline constexpr uint32_t ObjectBinding      = 3;
         inline constexpr uint32_t MaterialBinding    = 4;
         inline constexpr uint32_t PostProcessBinding = 5;
+        inline constexpr uint32_t SkyboxBinding      = 6;
 
         inline constexpr CString LightBlock       = "PerLight";
         inline constexpr CString FrameBlock       = "PerFrame";
@@ -20,6 +21,7 @@ namespace golias {
         inline constexpr CString LightingBlock    = "Lighting";
         inline constexpr CString JointsBlock      = "JointMatrices";
         inline constexpr CString PostProcessBlock = "PostProcess";
+        inline constexpr CString SkyboxBlock      = "Skybox";
     } // namespace GpuLayout
 
     struct alignas(16) GpuFrame {
@@ -59,10 +61,25 @@ namespace golias {
         float _Padding0;
     };
 
+    struct alignas(16) GpuSkybox {
+        glm::mat4 Projection;
+        glm::mat4 ViewRotation;
+        glm::mat4 InverseProjection;
+        glm::mat4 InverseViewRotation;
+        glm::vec4 ViewportSize;
+
+        glm::vec4 SkyTint;
+        glm::vec4 GroundColor;
+        glm::vec4 SunDirection;
+        glm::vec4 Parameters;  // x=atmosphere, y=exposure, z=sun size, w=convergence
+        glm::vec4 SunSettings; // x=brightness
+    };
+
     static_assert(sizeof(GpuFrame) % 16 == 0, "GpuFrame must match the std140 frame layout");
     static_assert(sizeof(GpuObject) % 16 == 0, "GpuObject must match the std140 object layout");
     static_assert(sizeof(GpuMaterial) % 16 == 0, "GpuMaterial must match the std140 material layout");
     static_assert(sizeof(GpuPostProcess) % 16 == 0, "GpuPostProcess must be a multiple of 16 bytes");
+    static_assert(sizeof(GpuSkybox) % 16 == 0, "GpuSkybox must match the std140 skybox layout");
 
     struct alignas(16) GpuLight {
         glm::vec4 Position;
@@ -81,6 +98,7 @@ namespace golias {
         int Padding0;
         int Padding1;
         int Padding2;
+        glm::vec4 AmbientColor;
         GpuLight Lights[kMaxLights];
     };
 } // namespace golias

@@ -23,7 +23,7 @@ bool GameApplication::Initialize() {
     mRoot           = scene->FindGameObjectByName("Main");
     mCanvas         = scene->FindGameObjectByName("Canvas");
     mSettingsCanvas = scene->FindGameObjectByName("SettingsCanvas");
-    mProtoCharacter        = scene->Instantiate("scene/prefabs/proto_character.gprefab", mRoot);
+    mProtoCharacter = scene->Instantiate("scene/prefabs/proto_character.gprefab", mRoot);
 
     if (mProtoCharacter) {
         mProtoCharacter->SetPosition(glm::vec3(-10.0f, 0.5f, 9.0f));
@@ -172,7 +172,7 @@ void GameApplication::Update(float deltaTime) {
             RenderStats rs = engine.GetRenderStats();
             MemoryStats ms = engine.GetMemoryStats();
             String fmt     = String_Format("FPS: %d\nFrame Time: %.2f ms\nCPU: %.2f ms\nGPU: %.2f ms\nRendering\nDraw Calls: %d\nBatches: "
-                                           "%d\nVertices: %d\nTriangles: %d\nRAM: %.2f/%s \nVRAM: N/A",
+                                           "%d\nVertices: %d\nTriangles: %d\nRAM: %s (%.2f%%)\nVRAM: N/A",
                                            rs.Fps,
                                            rs.FrameTimeMs,
                                            rs.CpuTimeMs,
@@ -181,8 +181,8 @@ void GameApplication::Update(float deltaTime) {
                                            rs.Batches,
                                            rs.Vertices,
                                            rs.Triangles,
-                                           ms.ProcessRamBytes / pow(1024.0, 2),
-                                           String_FormatBytes(ms.TotalRamBytes).c_str());
+                                           String_FormatBytes(ms.ProcessRamBytes).c_str(),
+                                           (float) ms.ProcessRamBytes / (float) ms.TotalRamBytes * 100.0f);
             text->SetText(fmt);
         }
     }
