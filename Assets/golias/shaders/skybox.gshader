@@ -50,7 +50,7 @@ out vec4 COLOR;
 const vec3 kRayleighCoefficient = vec3(5.8, 13.5, 33.1) * 0.008;
 
 // starfield hash gen
-float Hash21(vec2 p) {
+float hash_21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
     return fract(p.x * p.y);
@@ -62,7 +62,7 @@ vec3 ComputeStars(vec3 direction, float nightFactor) {
     // star positions stay fixed relative to the sky rather than the screen.
     vec2 grid = direction.xz / (abs(direction.y) + 0.15) * 40.0;
     vec2 cell = floor(grid);
-    float n = Hash21(cell);
+    float n = hash_21(cell);
 
     float star = step(0.9935, n) * (1.0 - smoothstep(0.0, 0.06, length(fract(grid) - 0.5)));
     float twinkle = 0.6 + 0.4 * sin(n * 634.0); // static per-star variation, no time input needed
@@ -70,7 +70,7 @@ vec3 ComputeStars(vec3 direction, float nightFactor) {
 }
 
 
-vec3 ComputeSkyColor(vec3 direction, vec3 sunDir, float atmosphereThickness, out float nightFactor) {
+vec3 compute_sky_color(vec3 direction, vec3 sunDir, float atmosphereThickness, out float nightFactor) {
     float altitude = clamp(direction.y, -1.0, 1.0);
     float aboveHorizon = max(altitude, 0.0);
 
@@ -112,7 +112,7 @@ vec3 ComputeSkyColor(vec3 direction, vec3 sunDir, float atmosphereThickness, out
 }
 
 // Textured sun/moon sprite
-vec3 SampleCelestialTexture(vec3 direction, vec3 celestialDir, float celestialDot, float angularRadius) {
+vec3 sample_celestial_texture(vec3 direction, vec3 celestialDir, float celestialDot, float angularRadius) {
     vec3 upHint = (abs(celestialDir.y) > 0.99) ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(upHint, celestialDir));
     vec3 up = cross(celestialDir, right);
@@ -146,7 +146,7 @@ void main() {
     float starIntensity        = (SunSettings.z > 0.0001) ? SunSettings.z : 0.6;
 
     float nightFactor;
-    vec3 sky = ComputeSkyColor(direction, sunDir, atmosphereThickness, nightFactor);
+    vec3 sky = compute_sky_color(direction, sunDir, atmosphereThickness, nightFactor);
 
     sky += ComputeStars(direction, nightFactor) * starIntensity;
 
@@ -158,7 +158,7 @@ void main() {
     vec3 celestialDir = isDaytime ? sunDir : -sunDir;
     float celestialDot = max(dot(direction, celestialDir), 0.0);
 
-    vec3 celestialTexture = SampleCelestialTexture(direction, celestialDir, celestialDot, celestialAngularSize);
+    vec3 celestialTexture = sample_celestial_texture(direction, celestialDir, celestialDot, celestialAngularSize);
 
     float celestialAltitude = clamp(celestialDir.y, -1.0, 1.0);
     float celestialOpticalDepth = 1.0 / (max(celestialAltitude, 0.0) + 0.08);
