@@ -1,18 +1,21 @@
 #pragma once
-#include "graphics/framebuffer.h"
 #include "graphics/gpu_types.h"
-#include "graphics/graphics_device.h"
-#include "graphics/texture_2d_array.h"
-#include "math/frustum.h"
+#include "graphics/render_types.h"
+#include "math/aabb.h"
 #include "render/csm.h"
+#include "render/shader_parameter.h"
 
 namespace golias {
 
     class Mesh;
     class Material;
+    class Texture;
     class Texture2D;
     class TextureCube;
     class Query;
+    class Buffer;
+    class RenderPipeline;
+    class RenderTargets;
 
     /// @brief  Maximum number of instances drawn draw call.
     inline constexpr size_t kMaxInstancesPerBatch = 65535;
@@ -24,6 +27,7 @@ namespace golias {
         None     = 0, // Only applies gamma correction
         ACES     = 1, // ACES filmic tonemapping (approximation)
         Reinhard = 2, // Reinhard tonemapping
+        Neutral   = 3, // Neutral tonemapping
     };
 
 
@@ -61,6 +65,13 @@ namespace golias {
         bool HasClip         = false;
     };
 
+    struct UnlitCommand {
+        Texture* Texture = nullptr;
+        Material* Material = nullptr;
+        std::vector<float> Vertices = {}; // vec3 + vec4 + vec2 (position + color + texcoord)
+        PrimitiveType Primitive = PrimitiveType::Triangles;
+    };
+
     struct RenderCanvasCommand {
         Mesh* Mesh                       = nullptr;
         std::vector<CanvasBatch> Batches = {};
@@ -68,7 +79,7 @@ namespace golias {
     };
 
 
-    struct RenderCommand2D {
+    struct SpriteRenderCommand {
         Texture* Texture       = nullptr;
         glm::vec4 Color        = glm::vec4(1.0f);
         glm::mat4 Model        = glm::mat4(1.0f);
@@ -108,6 +119,9 @@ namespace golias {
         // bool ClearDepth      = true;
     };
 
+    /// @brief  Collects per-frame draw commands and drives them through a fixed RenderPipeline of
+    ///         RenderPass stages (shadows -> opaque -> transparent -> unlit -> post-process -> sprites
+    ///         -> canvas). Submit(...) is pure data collection; all actual GPU work lives in the passes.
     class CommandQueue {
     public:
         CommandQueue();
@@ -115,11 +129,12 @@ namespace golias {
 
         bool Initialize();
 
-        void Submit(const RenderCommand2D& command);
+        void Submit(const SpriteRenderCommand& command);
         void Submit(const RenderCommand& command);
         void Submit(const CameraCommand& command);
         void Submit(const LightCommand& command);
         void Submit(const RenderCanvasCommand& command);
+        void Submit(const UnlitCommand& command);
 
         void BeginFrame();
 
@@ -127,122 +142,24 @@ namespace golias {
 
         void EndFrame();
 
-
     private:
-        /// @brief  Renders the shadow cascades for the given light and camera.
-        void RenderShadowCascades(const CameraCommand& cameraCommand, const LightCommand& light);
-
-        /// @brief  Renders the given mesh into the currently bound shadow pass.
-        void DrawShadowOpaque(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& casters);
-
-        /// @brief Renders the post-processing effects for the given camera.
-        void RenderPostProcess(const CameraCommand& cameraCommand);
-
-        /// @brief Ensures that the HDR render targets are created and match the given viewport.
-        bool EnsureHdrTargets(const Viewport& viewport);
-
-        /// @brief Ensures that the LDR intermediate render target is created and matches the given viewport.
-        bool EnsureLdrTargets(const Viewport& viewport);
-
-        /// @brief  Updates and binds the per-frame lighting uniform buffer.
-        void UpdateLightingBuffer();
-
-        /// @brief  Uploads the joint owner's matrices to its own skin UBO, then binds it.
-        void UpdateJointBuffer(const RenderCommand& command);
-
-        void UpdateFrameBuffer(const CameraCommand& cameraCommand);
-
-        void UpdateShadowViewProjection(const glm::mat4& viewProjection);
-
-        void UpdateObjectBuffer(const glm::mat4& model,
-                                int instanceCount,
-                                int isSkinned,
-                                const glm::vec4& spritePivotSize = glm::vec4(0.0f),
-                                const glm::vec4& spriteUvBounds  = glm::vec4(0.0f));
-
-        void UpdateMaterialBuffer(const glm::vec4& baseColor);
-
-        void UpdatePostProcessBuffer(const GpuPostProcess& postProcess);
-
-        /// @brief Splits mCommands into frustum-culled opaque/transparent lists.
-        void CategorizeRenderCommands(const Frustum& frustum,
-                                      std::vector<const RenderCommand*>& outOpaque,
-                                      std::vector<const RenderCommand*>& outTransparent) const;
-
-        /// @brief  Binds material params and issues the draw call.
-        void DrawRenderCommand(const RenderCommand& command,
-                               const CameraCommand& cameraCommand,
-                               uint32_t instanceCount           = 0,
-                               const InstanceData* instanceData = nullptr);
-
-        /// @brief  Draws instanced batches of identical (mesh, material) pairs.
-        void RenderInstanced(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
-
-        /// @brief Draws opaque geometry (depth-tested, order-independent).
-        void RenderGeometry(const CameraCommand& cameraCommand, const std::vector<const RenderCommand*>& opaque);
-
-        /// @brief Sorts and draws transparent geometry back-to-front.
-        void RenderTransparent(const CameraCommand& cameraCommand, std::vector<const RenderCommand*>& transparent);
-
-        /// @brief Draws queued sprite/2D commands with the default 2D material.
-        void RenderSprites(const CameraCommand& cameraCommand);
-
-        /// @brief Draws queued UI canvas commands (batched by texture).
-        void RenderCanvas(const CameraCommand& cameraCommand);
-
-
         std::vector<RenderCommand> mCommands             = {};
         std::vector<CameraCommand> mCameraCommands       = {};
         std::vector<LightCommand> mLightCommands         = {};
-        std::vector<RenderCommand2D> mCommands2D         = {};
+        std::vector<SpriteRenderCommand> mSpriteCommands = {};
         std::vector<RenderCanvasCommand> mCanvasCommands = {};
+        std::vector<UnlitCommand> mUnlitCommands         = {};
 
-        Ref<Buffer> mLightingBuffer    = nullptr;
-        Ref<Buffer> mFrameBuffer       = nullptr;
-        Ref<Buffer> mObjectBuffer      = nullptr;
-        Ref<Buffer> mMaterialBuffer    = nullptr;
-        Ref<Buffer> mPostProcessBuffer = nullptr;
+        RenderTargets* mRenderTargets = nullptr;
+        RenderPipeline* mPipeline     = nullptr;
 
-  
+        /// @brief  Frame-level renderer state (not pass-owned): the lighting parameter block is uploaded
+        ///         once per frame regardless of camera, and the zero-filled default joint buffer is
+        ///         rebound once per frame so non-skinned draws never sample a stale per-object skin buffer.
+        LightingParameter mLightingParams;
         Ref<Buffer> mDefaultJointBuffer = nullptr;
-
-        /// @brief  Per-frame dynamic VBO streaming the per-instance model matrices + colors of the current instanced batch.
-        Ref<Buffer> mInstanceBuffer = nullptr;
-
-        /// @brief  One joint UBO per skinned-mesh owner (SkeletalMeshComponent*).
-        std::map<const void*, std::pair<Ref<Buffer>, uint64_t>> mJointBuffers = {};
-
-        Ref<Shader> mDefault2DShader   = nullptr;
-        Ref<Shader> mDefaultUIShader   = nullptr;
-        Ref<Shader> mFxaaShader        = nullptr;
-        Ref<Shader> mPostProcessShader = nullptr;
-        Ref<Shader> mDefault3DShader   = nullptr;
-
-        Ref<Material> mDefault2DMaterial = nullptr;
-        Ref<Material> mDefaultUIMaterial = nullptr;
-
-        Ref<Mesh> mQuadMesh       = nullptr;
-        Ref<Mesh> mFullscreenQuad = nullptr;
-
-        Ref<Framebuffer> mHdrFramebuffer     = nullptr;
-        Ref<Texture2D> mHdrColorTexture      = nullptr;
-        Ref<Texture2DArray> mHdrDepthTexture = nullptr;
-
-        Ref<Framebuffer> mLdrFramebuffer = nullptr;
-        Ref<Texture2D> mLdrColorTexture  = nullptr;
-
-        Viewport mHdrViewport = {0, 0, 0, 0};
-        Viewport mLdrViewport = {0, 0, 0, 0};
-
-        Ref<Framebuffer> mShadowFramebuffer = nullptr;
-        Ref<Texture2DArray> mShadowTexture  = nullptr;
-        Ref<Shader> mShadowShader           = nullptr;
 
         Ref<Query> mActiveGpuQuery  = nullptr;
         Ref<Query> mStandbyGpuQuery = nullptr;
-
-        CascadedShadowMap mShadowCsm;
-
-        Tonemap mTonemap = Tonemap::Reinhard;
     };
 } // namespace golias
